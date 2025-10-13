@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Clock, MapPin, AlertCircle, Home as HomeIcon, Globe } from "lucide-react";
-import type { Booking, ParkingSpot } from "@shared/schema";
+import { ArrowLeft, Calendar, Clock, MapPin, AlertCircle, Home as HomeIcon, Globe, Star, MessageSquare } from "lucide-react";
+import type { Booking, ParkingSpot, Review } from "@shared/schema";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
+import ReviewDialog from "@/components/ReviewDialog";
 
 export default function MyBookings() {
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
@@ -52,10 +54,25 @@ export default function MyBookings() {
     }
   };
 
-  const BookingCard = ({ booking }: { booking: Booking }) => {
+  const BookingCard = ({ booking, isPast }: { booking: Booking; isPast: boolean }) => {
+    const [showReviewDialog, setShowReviewDialog] = useState(false);
+    
     const { data: spot } = useQuery<ParkingSpot>({
       queryKey: ["/api/parking-spots", booking.spotId],
     });
+
+    const { data: existingReview } = useQuery<Review | null>({
+      queryKey: ["/api/reviews/booking", booking.id],
+      enabled: isPast && booking.paymentStatus === "paid",
+    });
+
+    const { data: canReviewData } = useQuery<{ canReview: boolean }>({
+      queryKey: ["/api/bookings", booking.id, "can-review"],
+      enabled: isPast && booking.paymentStatus === "paid" && !existingReview,
+    });
+
+    const canReview = canReviewData?.canReview && !existingReview;
+    const hasReview = !!existingReview;
 
     return (
       <Card className="p-6 hover-elevate" data-testid={`card-booking-${booking.id}`}>
@@ -112,14 +129,42 @@ export default function MyBookings() {
                 </div>
                 {getPaymentStatusBadge(booking.paymentStatus)}
               </div>
-              {spot && (
-                <Link href={`/spot/${spot.id}`}>
-                  <Button variant="outline" data-testid={`button-view-spot-${booking.id}`}>
-                    Pogledaj Mesto
+              <div className="flex flex-wrap gap-2">
+                {spot && (
+                  <Link href={`/spot/${spot.id}`}>
+                    <Button variant="outline" data-testid={`button-view-spot-${booking.id}`}>
+                      Pogledaj Mesto
+                    </Button>
+                  </Link>
+                )}
+                {canReview && (
+                  <Button
+                    onClick={() => setShowReviewDialog(true)}
+                    className="bg-accent hover:bg-accent/90"
+                    data-testid={`button-review-${booking.id}`}
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    Ostavi Recenziju
                   </Button>
-                </Link>
-              )}
+                )}
+                {hasReview && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3" />
+                    Recenzija Poslata
+                  </Badge>
+                )}
+              </div>
             </div>
+            
+            {/* Review Dialog */}
+            {spot && (
+              <ReviewDialog
+                open={showReviewDialog}
+                onClose={() => setShowReviewDialog(false)}
+                bookingId={booking.id}
+                spotTitle={spot.title}
+              />
+            )}
           </div>
         </div>
       </Card>
@@ -205,7 +250,7 @@ export default function MyBookings() {
               </Card>
             ) : (
               upcomingBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard key={booking.id} booking={booking} isPast={false} />
               ))
             )}
           </TabsContent>
@@ -238,7 +283,7 @@ export default function MyBookings() {
               </Card>
             ) : (
               pastBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard key={booking.id} booking={booking} isPast={true} />
               ))
             )}
           </TabsContent>
