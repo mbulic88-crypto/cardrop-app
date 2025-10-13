@@ -14,9 +14,11 @@ import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe } from "lucide-react
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
@@ -34,9 +36,11 @@ const formSchema = z.object({
 
 export default function AddSpot() {
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [spotId, setSpotId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,6 +98,12 @@ export default function AddSpot() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    // Check if user is authenticated before submitting
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+      return;
+    }
+    
     mutation.mutate(values);
   };
 
@@ -421,6 +431,14 @@ export default function AddSpot() {
           </Card>
         )}
       </div>
+
+      {/* Login Required Dialog */}
+      <LoginRequiredDialog
+        open={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        message="Za dodavanje parking mesta potrebna je prijava na nalog."
+        redirectPath="/add-spot"
+      />
     </div>
   );
 }

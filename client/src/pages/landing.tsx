@@ -1,41 +1,10 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import { Link } from "wouter";
-import TermsAcceptanceDialog from "@/components/TermsAcceptanceDialog";
 
 export default function Landing() {
-  const [showTermsDialog, setShowTermsDialog] = useState(false);
-  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
-
-  const handleLoginClick = (redirectPath: string) => {
-    // Check if user has already accepted terms
-    const termsAccepted = localStorage.getItem("parkshare_terms_accepted");
-    
-    if (termsAccepted === "true") {
-      // Terms already accepted, proceed to login
-      window.location.href = `/api/login?redirect_uri=${redirectPath}`;
-    } else {
-      // Show terms acceptance dialog first
-      setPendingRedirect(redirectPath);
-      setShowTermsDialog(true);
-    }
-  };
-
-  const handleTermsAccept = () => {
-    setShowTermsDialog(false);
-    if (pendingRedirect) {
-      window.location.href = `/api/login?redirect_uri=${pendingRedirect}`;
-      setPendingRedirect(null);
-    }
-  };
-
-  const handleTermsCancel = () => {
-    setShowTermsDialog(false);
-    setPendingRedirect(null);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,22 +34,24 @@ export default function Landing() {
             Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6"
-              onClick={() => handleLoginClick('/home')}
-              data-testid="button-login-hero"
-            >
-              Pronađite Vaše Mesto
-            </Button>
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6"
-              onClick={() => handleLoginClick('/add-spot')}
-              data-testid="button-list-spot-hero"
-            >
-              Iznajmite Vaše Mesto
-            </Button>
+            <Link href="/home">
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6 w-full sm:w-auto"
+                data-testid="button-find-spot-hero"
+              >
+                Pronađite Vaše Mesto
+              </Button>
+            </Link>
+            <Link href="/add-spot">
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6 w-full sm:w-auto"
+                data-testid="button-list-spot-hero"
+              >
+                Iznajmite Vaše Mesto
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -182,15 +153,16 @@ export default function Landing() {
           <p className="text-lg text-muted-foreground mb-8">
             Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.
           </p>
-          <Button 
-            size="lg" 
-            className="text-lg px-8 py-6"
-            onClick={() => handleLoginClick('/add-spot')}
-            data-testid="button-list-spot-cta"
-          >
-            <Zap className="w-5 h-5 mr-2" />
-            Iznajmite Vaše Mesto
-          </Button>
+          <Link href="/add-spot">
+            <Button 
+              size="lg" 
+              className="text-lg px-8 py-6"
+              data-testid="button-list-spot-cta"
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Iznajmite Vaše Mesto
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -207,13 +179,6 @@ export default function Landing() {
           <p className="text-muted-foreground">&copy; 2024 ParkShare Novi Sad. Sva prava zadržana.</p>
         </div>
       </footer>
-
-      {/* Terms Acceptance Dialog */}
-      <TermsAcceptanceDialog
-        open={showTermsDialog}
-        onAccept={handleTermsAccept}
-        onCancel={handleTermsCancel}
-      />
     </div>
   );
 }

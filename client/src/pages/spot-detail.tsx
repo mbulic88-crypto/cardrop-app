@@ -10,19 +10,23 @@ import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, 
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot, User as UserType, Booking, Review } from "@shared/schema";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 export default function SpotDetail() {
   const [, params] = useRoute("/spot/:id");
   const spotId = params?.id;
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -97,6 +101,12 @@ export default function SpotDetail() {
 
   const handleBooking = () => {
     if (!spot || !selectedDate || !startTime || !endTime) return;
+    
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+      return;
+    }
     
     const start = new Date(selectedDate);
     const [startHour, startMin] = startTime.split(":").map(Number);
@@ -417,6 +427,14 @@ export default function SpotDetail() {
           </div>
         </div>
       </div>
+
+      {/* Login Required Dialog */}
+      <LoginRequiredDialog
+        open={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        message="Za rezervaciju parking mesta potrebna je prijava na nalog."
+        redirectPath={`/spot/${spotId}`}
+      />
     </div>
   );
 }

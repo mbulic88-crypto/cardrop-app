@@ -13,7 +13,7 @@ import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [searchLocation, setSearchLocation] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 500]);
