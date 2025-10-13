@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap } from "lucide-react";
+import parkingImage from "@assets/stock_images/parking_lot_urban_ci_9300d8e4.jpg";
 
 export default function Landing() {
   return (
@@ -8,17 +9,26 @@ export default function Landing() {
       {/* Hero Section */}
       <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background z-10" />
         
-        {/* Hero Background - would be an image in production */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
+        {/* Hero Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={parkingImage} 
+            alt="Parking lot" 
+            className="w-full h-full object-cover"
+          />
+        </div>
         
         {/* Hero Content */}
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Pronađite ili Podelite<br />Parking u Novom Sadu
+          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-4">
+            ParkShare
           </h1>
-          <p className="text-lg md:text-xl text-foreground/90 mb-8 max-w-2xl mx-auto">
+          <p className="text-2xl md:text-3xl text-foreground/90 mb-4 max-w-2xl mx-auto">
+            Pronađite ili Podelite Parking u Novom Sadu
+          </p>
+          <p className="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
             Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -32,8 +42,7 @@ export default function Landing() {
             </Button>
             <Button 
               size="lg" 
-              variant="outline" 
-              className="text-lg px-8 py-6 backdrop-blur-md bg-background/10 border-accent/50 hover:bg-background/20"
+              className="text-lg px-8 py-6"
               onClick={() => window.location.href = '/api/login'}
               data-testid="button-list-spot-hero"
             >
