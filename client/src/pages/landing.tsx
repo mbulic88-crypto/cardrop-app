@@ -49,38 +49,38 @@ export default function Landing() {
           Kako Funkcioniše
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="p-6 hover-elevate">
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
-              <MapPin className="w-6 h-6 text-accent" />
+          <Card className="p-6 hover-elevate bg-primary border-primary-border">
+            <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
+              <MapPin className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-card-foreground">
+            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
               1. Pronađite Parking
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-primary-foreground/80">
               Pretražite dostupna parking mesta na mapi prema lokaciji, ceni i vremenskom periodu.
             </p>
           </Card>
 
-          <Card className="p-6 hover-elevate">
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
-              <Clock className="w-6 h-6 text-accent" />
+          <Card className="p-6 hover-elevate bg-primary border-primary-border">
+            <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
+              <Clock className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-card-foreground">
+            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
               2. Rezervišite Brzo
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-primary-foreground/80">
               Izaberite željene datume i vreme, rezervišite trenutno i sigurno platite preko Monri sistema.
             </p>
           </Card>
 
-          <Card className="p-6 hover-elevate">
-            <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6 text-accent" />
+          <Card className="p-6 hover-elevate bg-primary border-primary-border">
+            <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
+              <Shield className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-card-foreground">
+            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
               3. Parkirajte Bezbrižno
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-primary-foreground/80">
               Dobijte potvrdu rezervacije i upute kako doći do parking mesta. Sve sigurno i zaštićeno.
             </p>
           </Card>
