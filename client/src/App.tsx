@@ -23,6 +23,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
           <Route path="/spot/:id" component={SpotDetail} />
           <Route path="/add-spot" component={AddSpot} />
           <Route path="/my-bookings" component={MyBookings} />

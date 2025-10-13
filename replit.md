@@ -89,12 +89,23 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - Authentication: WP3-v2 scheme with SHA512 digest
 - Payment flow: Create payment → Redirect to Monri → Callback confirmation
 
-## Recent Changes
-- Created complete database schema with relations
-- Built all frontend pages and components
-- Configured black/green design system
-- Implemented Serbian language UI
-- Set up authentication flow with Replit Auth
+## Recent Changes (October 13, 2024)
+### Navigation & UX Improvements
+- **Logo Navigation**: Logo and app name in all page headers now link to home page
+- **Consistent Headers**: Added unified header design across all pages with:
+  - ParkShare logo (links to home)
+  - "Početna Stranica" button for quick home navigation  
+  - "ENG" language toggle button (placeholder for English translation)
+- **Direct Navigation**: Landing page CTAs now route directly to app pages:
+  - "Pronađite Vaše Mesto" → `/home` (search parking)
+  - "Iznajmite Vaše Mesto" → `/add-spot` (list your spot)
+- **Updated Button Labels**: Clearer action buttons throughout the app
+- **Improved Spacing**: Better visual hierarchy on landing page (increased title/subtitle separation)
+
+### Technical Fixes
+- Fixed `apiRequest` function to return JSON data instead of Response object
+- Resolved TypeScript errors across all pages
+- Updated all pages with consistent navigation patterns
 
 ## Next Steps
 1. Implement backend API routes

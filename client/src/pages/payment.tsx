@@ -110,7 +110,7 @@ export default function Payment() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <Link href="/">
+          <Link href="/home">
             <Button variant="ghost" data-testid="button-back">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Nazad
@@ -183,7 +183,7 @@ export default function Payment() {
                     Moje Rezervacije
                   </Button>
                 </Link>
-                <Link href="/" className="flex-1">
+                <Link href="/home" className="flex-1">
                   <Button variant="outline" className="w-full" data-testid="button-home">
                     Početna
                   </Button>
@@ -215,7 +215,7 @@ export default function Payment() {
                 >
                   Pokušaj Ponovo
                 </Button>
-                <Link href="/" className="flex-1">
+                <Link href="/home" className="flex-1">
                   <Button variant="outline" className="w-full" data-testid="button-cancel">
                     Otkaži
                   </Button>

@@ -133,7 +133,7 @@ export default function SpotDetail() {
         <Card className="p-8 text-center">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Mesto Nije Pronađeno</h3>
-          <Link href="/">
+          <Link href="/home">
             <Button className="mt-4">Nazad na Početnu</Button>
           </Link>
         </Card>
@@ -149,7 +149,7 @@ export default function SpotDetail() {
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/home" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-primary-foreground" />
               </div>
@@ -157,7 +157,7 @@ export default function SpotDetail() {
             </Link>
 
             <div className="flex items-center gap-2">
-              <Link href="/">
+              <Link href="/home">
                 <Button variant="outline" data-testid="button-home">
                   <HomeIcon className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Početna</span>
