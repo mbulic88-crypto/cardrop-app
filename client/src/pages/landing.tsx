@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
+import { Link } from "wouter";
 
 export default function Landing() {
   return (
@@ -163,8 +164,15 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
-        <div className="max-w-7xl mx-auto text-center text-muted-foreground">
-          <p>&copy; 2024 ParkShare Novi Sad. Sva prava zadržana.</p>
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="mb-4">
+            <Link href="/terms">
+              <Button variant="link" className="text-muted-foreground" data-testid="link-terms">
+                Uslovi Korišćenja
+              </Button>
+            </Link>
+          </div>
+          <p className="text-muted-foreground">&copy; 2024 ParkShare Novi Sad. Sva prava zadržana.</p>
         </div>
       </footer>
     </div>
