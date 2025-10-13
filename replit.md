@@ -122,6 +122,13 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 
 ## Recent Changes (October 13, 2025)
 
+### Booking Date Validation Fix
+- **Problem**: Booking API was rejecting valid reservations with "Expected date, received string" error
+- **Root Cause**: Frontend sends dates as ISO strings (JSON serialization), but backend Zod schema expected Date objects
+- **Solution**: Updated `insertBookingSchema` in `shared/schema.ts` to accept both Date objects and ISO strings using `z.union` with transform
+- **Result**: Booking flow now works correctly - users can select date/time, submit booking, and get redirected to payment
+- **Testing**: E2E test confirms booking creation succeeds with 201 response and payment redirect
+
 ### Public Browsing with Authentication-Protected Actions
 - **Routing Architecture Change**: Refactored App.tsx router to enable public access to all pages
   - Removed authentication-based conditional routing

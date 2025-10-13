@@ -98,12 +98,26 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertBookingSchema = createInsertSchema(bookings).omit({
-  id: true,
-  renterId: true,
-  createdAt: true,
-  updatedAt: true,
-});
+// Date preprocessor that accepts both Date objects and ISO strings
+const dateSchema = z.preprocess((val) => {
+  if (val instanceof Date) return val;
+  if (typeof val === 'string') return new Date(val);
+  return val;
+}, z.date().refine((date) => !isNaN(date.getTime()), {
+  message: "Invalid date",
+}));
+
+export const insertBookingSchema = createInsertSchema(bookings)
+  .omit({
+    id: true,
+    renterId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    startTime: dateSchema,
+    endTime: dateSchema,
+  });
 
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
