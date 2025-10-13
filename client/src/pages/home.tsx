@@ -10,6 +10,7 @@ import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shi
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
+import { MapView } from "@/components/MapView";
 
 export default function Home() {
   const { user } = useAuth();
@@ -179,100 +180,107 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* Parking Spots Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="p-4 animate-pulse">
-                <div className="aspect-video bg-muted rounded-lg mb-4" />
-                <div className="h-6 bg-muted rounded mb-2" />
-                <div className="h-4 bg-muted rounded w-3/4" />
-              </Card>
-            ))}
-          </div>
-        ) : filteredSpots.length === 0 ? (
-          <Card className="p-12 text-center">
-            <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2 text-card-foreground">
-              Nema Rezultata
-            </h3>
-            <p className="text-muted-foreground">
-              Pokušajte da promenite filter ili pretragu
-            </p>
-          </Card>
+        {/* Map or List View */}
+        {viewMode === "map" ? (
+          <MapView spots={filteredSpots} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSpots.map((spot) => (
-              <Link key={spot.id} href={`/spot/${spot.id}`}>
-                <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-spot-${spot.id}`}>
-                  {/* Image */}
-                  <div className="aspect-video bg-muted relative">
-                    {spot.imageUrls && spot.imageUrls.length > 0 ? (
-                      <img
-                        src={spot.imageUrls[0]}
-                        alt={spot.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <MapPin className="w-12 h-12 text-muted-foreground" />
+          <>
+            {/* Parking Spots Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card key={i} className="p-4 animate-pulse">
+                    <div className="aspect-video bg-muted rounded-lg mb-4" />
+                    <div className="h-6 bg-muted rounded mb-2" />
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                  </Card>
+                ))}
+              </div>
+            ) : filteredSpots.length === 0 ? (
+              <Card className="p-12 text-center">
+                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+                  Nema Rezultata
+                </h3>
+                <p className="text-muted-foreground">
+                  Pokušajte da promenite filter ili pretragu
+                </p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredSpots.map((spot) => (
+                  <Link key={spot.id} href={`/spot/${spot.id}`}>
+                    <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-spot-${spot.id}`}>
+                      {/* Image */}
+                      <div className="aspect-video bg-muted relative">
+                        {spot.imageUrls && spot.imageUrls.length > 0 ? (
+                          <img
+                            src={spot.imageUrls[0]}
+                            alt={spot.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <MapPin className="w-12 h-12 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge className="bg-accent/90 text-accent-foreground border-0">
+                            {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
+                          </Badge>
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-accent/90 text-accent-foreground border-0">
-                        {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
-                      </Badge>
-                    </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2 text-card-foreground line-clamp-1">
-                      {spot.title}
-                    </h3>
-                    <div className="flex items-center text-muted-foreground mb-3">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      <span className="text-sm line-clamp-1">{spot.address}</span>
-                    </div>
+                      {/* Content */}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-lg mb-2 text-card-foreground line-clamp-1">
+                          {spot.title}
+                        </h3>
+                        <div className="flex items-center text-muted-foreground mb-3">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          <span className="text-sm line-clamp-1">{spot.address}</span>
+                        </div>
 
-                    {/* Features */}
-                    <div className="flex gap-2 mb-3">
-                      {spot.hasEvCharging && (
-                        <Badge variant="outline" className="text-xs">
-                          <Zap className="w-3 h-3 mr-1" />
-                          EV Punjač
-                        </Badge>
-                      )}
-                      {spot.hasSecurityCamera && (
-                        <Badge variant="outline" className="text-xs">
-                          <Camera className="w-3 h-3 mr-1" />
-                          Kamera
-                        </Badge>
-                      )}
-                      {spot.is24Hours && (
-                        <Badge variant="outline" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
-                          24/7
-                        </Badge>
-                      )}
-                    </div>
+                        {/* Features */}
+                        <div className="flex gap-2 mb-3">
+                          {spot.hasEvCharging && (
+                            <Badge variant="outline" className="text-xs">
+                              <Zap className="w-3 h-3 mr-1" />
+                              EV Punjač
+                            </Badge>
+                          )}
+                          {spot.hasSecurityCamera && (
+                            <Badge variant="outline" className="text-xs">
+                              <Camera className="w-3 h-3 mr-1" />
+                              Kamera
+                            </Badge>
+                          )}
+                          {spot.is24Hours && (
+                            <Badge variant="outline" className="text-xs">
+                              <Clock className="w-3 h-3 mr-1" />
+                              24/7
+                            </Badge>
+                          )}
+                        </div>
 
-                    {/* Price */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-2xl font-bold text-accent">
-                          {spot.pricePerHour}
-                        </span>
-                        <span className="text-muted-foreground ml-1">
-                          {spot.currency}/sat
-                        </span>
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-2xl font-bold text-accent">
+                              {spot.pricePerHour}
+                            </span>
+                            <span className="text-muted-foreground ml-1">
+                              {spot.currency}/sat
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
