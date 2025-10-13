@@ -11,6 +11,7 @@ import SpotDetail from "@/pages/spot-detail";
 import AddSpot from "@/pages/add-spot";
 import MyBookings from "@/pages/my-bookings";
 import Payment from "@/pages/payment";
+import Transactions from "@/pages/transactions";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -25,6 +26,7 @@ function Router() {
           <Route path="/spot/:id" component={SpotDetail} />
           <Route path="/add-spot" component={AddSpot} />
           <Route path="/my-bookings" component={MyBookings} />
+          <Route path="/transactions" component={Transactions} />
           <Route path="/payment/:bookingId" component={Payment} />
         </>
       )}

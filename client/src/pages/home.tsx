@@ -144,11 +144,17 @@ export default function Home() {
               Pronađeno {filteredSpots.length} parking {filteredSpots.length === 1 ? "mesto" : "mesta"}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Link href="/my-bookings">
               <Button variant="outline" data-testid="link-my-bookings">
                 <Calendar className="w-4 h-4 mr-2" />
                 Moje Rezervacije
+              </Button>
+            </Link>
+            <Link href="/transactions">
+              <Button variant="outline" data-testid="link-transactions">
+                <Shield className="w-4 h-4 mr-2" />
+                Transakcije
               </Button>
             </Link>
             <Link href="/add-spot">
