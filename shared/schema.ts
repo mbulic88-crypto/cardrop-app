@@ -72,6 +72,7 @@ export const parkingSpotsRelations = relations(parkingSpots, ({ one, many }) => 
 
 export const insertParkingSpotSchema = createInsertSchema(parkingSpots).omit({
   id: true,
+  ownerId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -109,6 +110,7 @@ export const bookingsRelations = relations(bookings, ({ one }) => ({
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
+  renterId: true,
   createdAt: true,
   updatedAt: true,
 });
