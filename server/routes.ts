@@ -1,0 +1,244 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { insertParkingSpotSchema, insertBookingSchema } from "@shared/schema";
+import { createHash } from "crypto";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Parking spots routes
+  app.get('/api/parking-spots', async (req, res) => {
+    try {
+      const spots = await storage.getAllParkingSpots();
+      res.json(spots);
+    } catch (error) {
+      console.error("Error fetching parking spots:", error);
+      res.status(500).json({ message: "Failed to fetch parking spots" });
+    }
+  });
+
+  app.get('/api/parking-spots/:id', async (req, res) => {
+    try {
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) {
+        return res.status(404).json({ message: "Parking spot not found" });
+      }
+      res.json(spot);
+    } catch (error) {
+      console.error("Error fetching parking spot:", error);
+      res.status(500).json({ message: "Failed to fetch parking spot" });
+    }
+  });
+
+  app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Validate request body
+      const validatedData = insertParkingSpotSchema.parse(req.body);
+      
+      const spot = await storage.createParkingSpot({
+        ...validatedData,
+        ownerId: userId,
+      });
+      
+      res.status(201).json(spot);
+    } catch (error: any) {
+      console.error("Error creating parking spot:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create parking spot" });
+    }
+  });
+
+  // User routes
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Bookings routes
+  app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookings = await storage.getUserBookings(userId);
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  app.get('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      res.json(booking);
+    } catch (error) {
+      console.error("Error fetching booking:", error);
+      res.status(500).json({ message: "Failed to fetch booking" });
+    }
+  });
+
+  app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Validate request body
+      const validatedData = insertBookingSchema.parse(req.body);
+      
+      // Check for conflicting bookings
+      const existingBookings = await storage.getSpotBookings(validatedData.spotId);
+      const hasConflict = existingBookings.some((booking) => {
+        if (booking.status === 'cancelled') return false;
+        
+        const newStart = new Date(validatedData.startTime);
+        const newEnd = new Date(validatedData.endTime);
+        const existingStart = new Date(booking.startTime);
+        const existingEnd = new Date(booking.endTime);
+        
+        return (
+          (newStart >= existingStart && newStart < existingEnd) ||
+          (newEnd > existingStart && newEnd <= existingEnd) ||
+          (newStart <= existingStart && newEnd >= existingEnd)
+        );
+      });
+      
+      if (hasConflict) {
+        return res.status(400).json({ message: "Time slot is already booked" });
+      }
+      
+      const booking = await storage.createBooking({
+        ...validatedData,
+        renterId: userId,
+      });
+      
+      res.status(201).json(booking);
+    } catch (error: any) {
+      console.error("Error creating booking:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create booking" });
+    }
+  });
+
+  // Monri payment routes
+  app.post('/api/payments/monri/create', isAuthenticated, async (req: any, res) => {
+    try {
+      const { bookingId, amount, currency } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // In production, these would come from environment variables
+      const merchantKey = process.env.MONRI_MERCHANT_KEY || 'test_merchant_key';
+      const authenticityToken = process.env.MONRI_AUTHENTICITY_TOKEN || 'test_authenticity_token';
+      const timestamp = Date.now();
+      const fullpath = '/v2/payment/new';
+      
+      const orderNumber = `PARK-${bookingId}-${Date.now()}`;
+      
+      const body = {
+        transaction_type: "purchase",
+        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
+        currency: currency || "RSD",
+        order_number: orderNumber,
+        order_info: `ParkShare Booking ${bookingId}`,
+        language: "sr",
+        ch_full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
+        ch_address: "N/A",
+        ch_city: "Novi Sad",
+        ch_zip: "21000",
+        ch_country: "RS",
+        ch_phone: user.phoneNumber || "000000000",
+        ch_email: user.email || "user@parkshare.rs",
+        supported_payment_methods: ["card"]
+      };
+      
+      // Generate digest: SHA512(merchantKey + timestamp + authenticityToken + fullpath + body)
+      const message = merchantKey + timestamp + authenticityToken + fullpath + JSON.stringify(body);
+      const digest = createHash('sha512').update(message).digest('hex');
+      
+      // In production, make actual API call to Monri
+      // For now, return mock response
+      const mockResponse = {
+        status: "approved",
+        id: `monri_${Date.now()}`,
+        client_secret: `secret_${Date.now()}`,
+        order_number: orderNumber,
+        payment_url: `https://ipgtest.monri.com/payment/${orderNumber}`,
+      };
+      
+      res.json({
+        success: true,
+        payment: mockResponse,
+        // In production, don't return these
+        debug: {
+          digest,
+          timestamp,
+          authHeader: `WP3-v2 ${authenticityToken} ${timestamp} ${digest}`,
+        }
+      });
+    } catch (error) {
+      console.error("Error creating Monri payment:", error);
+      res.status(500).json({ message: "Failed to create payment" });
+    }
+  });
+
+  app.post('/api/payments/monri/callback', async (req, res) => {
+    try {
+      // Handle Monri payment callback
+      const { order_number, status, transaction_id } = req.body;
+      
+      // Extract booking ID from order number
+      const bookingId = order_number.split('-')[1];
+      
+      if (status === 'approved') {
+        await storage.updateBooking(bookingId, {
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          monriOrderNumber: order_number,
+          monriTransactionId: transaction_id,
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error handling Monri callback:", error);
+      res.status(500).json({ message: "Failed to process callback" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
