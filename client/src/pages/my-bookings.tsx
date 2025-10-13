@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,14 +6,27 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, Clock, MapPin, AlertCircle, Home as HomeIcon, Globe, Star, MessageSquare } from "lucide-react";
 import type { Booking, ParkingSpot, Review } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
 import ReviewDialog from "@/components/ReviewDialog";
+import { useAuth } from "@/hooks/useAuth";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 export default function MyBookings() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setShowLoginDialog(true);
+    }
+  }, [isAuthenticated, authLoading]);
+
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
+    enabled: isAuthenticated,
   });
 
   const upcomingBookings = bookings.filter((b) => {
@@ -172,9 +185,20 @@ export default function MyBookings() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
+    <>
+      <LoginRequiredDialog
+        open={showLoginDialog}
+        onClose={() => {
+          setShowLoginDialog(false);
+          setLocation("/");
+        }}
+        message="Za pregled rezervacija potrebna je prijava na nalog."
+        redirectPath="/my-bookings"
+      />
+      
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <Link href="/home" className="flex items-center gap-2">
@@ -290,5 +314,6 @@ export default function MyBookings() {
         </Tabs>
       </div>
     </div>
+    </>
   );
 }

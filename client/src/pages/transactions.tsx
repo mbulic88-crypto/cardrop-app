@@ -1,16 +1,30 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, DollarSign, Calendar, MapPin, Download, CreditCard, Home as HomeIcon, Globe } from "lucide-react";
 import type { Booking, ParkingSpot } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
+import { useAuth } from "@/hooks/useAuth";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 export default function Transactions() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setShowLoginDialog(true);
+    }
+  }, [isAuthenticated, authLoading]);
+
   const { data: bookings = [], isLoading } = useQuery<Booking[]>({
     queryKey: ["/api/bookings"],
+    enabled: isAuthenticated,
   });
 
   // Filter for paid transactions only
@@ -107,9 +121,20 @@ export default function Transactions() {
     .reduce((sum, b) => sum + parseFloat(b.totalPrice), 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
+    <>
+      <LoginRequiredDialog
+        open={showLoginDialog}
+        onClose={() => {
+          setShowLoginDialog(false);
+          setLocation("/");
+        }}
+        message="Za pregled transakcija potrebna je prijava na nalog."
+        redirectPath="/transactions"
+      />
+      
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <Link href="/home" className="flex items-center gap-2">
@@ -207,5 +232,6 @@ export default function Transactions() {
         </Card>
       </div>
     </div>
+    </>
   );
 }

@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Terms from "@/pages/terms";
@@ -15,24 +14,16 @@ import Payment from "@/pages/payment";
 import Transactions from "@/pages/transactions";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
   return (
     <Switch>
+      <Route path="/" component={Landing} />
       <Route path="/terms" component={Terms} />
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/home" component={Home} />
-          <Route path="/spot/:id" component={SpotDetail} />
-          <Route path="/add-spot" component={AddSpot} />
-          <Route path="/my-bookings" component={MyBookings} />
-          <Route path="/transactions" component={Transactions} />
-          <Route path="/payment/:bookingId" component={Payment} />
-        </>
-      )}
+      <Route path="/home" component={Home} />
+      <Route path="/spot/:id" component={SpotDetail} />
+      <Route path="/add-spot" component={AddSpot} />
+      <Route path="/my-bookings" component={MyBookings} />
+      <Route path="/transactions" component={Transactions} />
+      <Route path="/payment/:bookingId" component={Payment} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -122,6 +122,26 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 
 ## Recent Changes (October 13, 2025)
 
+### Public Browsing with Authentication-Protected Actions
+- **Routing Architecture Change**: Refactored App.tsx router to enable public access to all pages
+  - Removed authentication-based conditional routing
+  - All routes (/, /home, /spot/:id, /add-spot, /my-bookings, /transactions) now publicly accessible
+  - Landing page always at "/" for unauthenticated users
+  - Home page at "/home" for browsing parking spots
+- **Authentication Enforcement**: Moved from route-level to action-level protection
+  - Public users can browse parking spots without login
+  - LoginRequiredDialog appears when attempting protected actions (booking, adding spots)
+  - My Bookings and Transactions pages show LoginRequiredDialog if accessed without auth
+- **LoginRequiredDialog Integration**:
+  - Custom-branded dialog with ParkShare colors (#52B788 accent green)
+  - Serbian language messages for all scenarios:
+    - Booking: "Za rezervaciju parking mesta potrebna je prijava na nalog."
+    - Add Spot: "Za dodavanje parking mesta potrebna je prijava na nalog."
+    - My Bookings: "Za pregled rezervacija potrebna je prijava na nalog."
+    - Transactions: "Za pregled transakcija potrebna je prijava na nalog."
+  - Dialog redirects to /api/login with redirect_uri for post-auth return
+- **Testing**: E2E tests confirm LoginRequiredDialog appears correctly on Add Spot and Spot Detail pages
+
 ### Terms & Conditions System
 - **Terms Page**: Created `/terms` route with comprehensive liability disclaimer
   - Clear statement that site/owner not responsible for owner delivery failures
