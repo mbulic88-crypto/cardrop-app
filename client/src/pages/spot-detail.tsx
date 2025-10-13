@@ -6,12 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe } from "lucide-react";
+import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import type { ParkingSpot, User as UserType, Booking } from "@shared/schema";
+import type { ParkingSpot, User as UserType, Booking, Review } from "@shared/schema";
 import { Link } from "wouter";
+import { format } from "date-fns";
+import { sr } from "date-fns/locale";
 
 export default function SpotDetail() {
   const [, params] = useRoute("/spot/:id");
@@ -31,6 +33,15 @@ export default function SpotDetail() {
     queryKey: ["/api/users", spot?.ownerId],
     enabled: !!spot?.ownerId,
   });
+
+  const { data: reviews = [] } = useQuery<Review[]>({
+    queryKey: ["/api/reviews/spot", spotId],
+    enabled: !!spotId,
+  });
+
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   const [, setLocation] = useLocation();
 
@@ -262,6 +273,66 @@ export default function SpotDetail() {
                 </div>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="w-5 h-5 text-accent" />
+                <h3 className="text-xl font-bold text-foreground">
+                  Recenzije
+                  {averageRating && (
+                    <span className="text-accent ml-2">
+                      {averageRating} ★
+                    </span>
+                  )}
+                </h3>
+                <span className="text-sm text-muted-foreground">
+                  ({reviews.length})
+                </span>
+              </div>
+
+              {reviews.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    Još nema recenzija za ovo parking mesto
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="pb-4 border-b border-border last:border-0"
+                      data-testid={`review-${review.id}`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < review.rating
+                                  ? "fill-accent text-accent"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {review.createdAt && format(new Date(review.createdAt), "dd MMM yyyy", { locale: sr })}
+                        </span>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-card-foreground" data-testid={`text-review-comment-${review.id}`}>
+                          {review.comment}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Right Column - Booking Widget */}

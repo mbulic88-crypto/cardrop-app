@@ -36,6 +36,7 @@ export interface IStorage {
   // Reviews operations
   createReview(review: InsertReview & { reviewerId: string; spotOwnerId: string }): Promise<Review>;
   getReviewsForOwner(ownerId: string): Promise<Review[]>;
+  getReviewsForSpot(spotId: string): Promise<Review[]>;
   getReviewForBooking(bookingId: string): Promise<Review | undefined>;
   canUserReviewBooking(bookingId: string, userId: string): Promise<boolean>;
 }
@@ -142,6 +143,24 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(reviews)
       .where(eq(reviews.spotOwnerId, ownerId))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async getReviewsForSpot(spotId: string): Promise<Review[]> {
+    return await db
+      .select({
+        id: reviews.id,
+        bookingId: reviews.bookingId,
+        reviewerId: reviews.reviewerId,
+        spotOwnerId: reviews.spotOwnerId,
+        rating: reviews.rating,
+        comment: reviews.comment,
+        createdAt: reviews.createdAt,
+        updatedAt: reviews.updatedAt,
+      })
+      .from(reviews)
+      .innerJoin(bookings, eq(reviews.bookingId, bookings.id))
+      .where(eq(bookings.spotId, spotId))
       .orderBy(desc(reviews.createdAt));
   }
 

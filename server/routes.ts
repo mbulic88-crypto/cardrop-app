@@ -370,6 +370,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/reviews/spot/:spotId', async (req, res) => {
+    try {
+      const reviews = await storage.getReviewsForSpot(req.params.spotId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews for spot:", error);
+      res.status(500).json({ message: "Greška pri učitavanju recenzija za parking mesto" });
+    }
+  });
+
   app.get('/api/reviews/booking/:bookingId', isAuthenticated, async (req: any, res) => {
     try {
       const review = await storage.getReviewForBooking(req.params.bookingId);
