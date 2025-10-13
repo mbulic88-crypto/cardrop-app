@@ -1,10 +1,42 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import { Link } from "wouter";
+import TermsAcceptanceDialog from "@/components/TermsAcceptanceDialog";
 
 export default function Landing() {
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
+
+  const handleLoginClick = (redirectPath: string) => {
+    // Check if user has already accepted terms
+    const termsAccepted = localStorage.getItem("parkshare_terms_accepted");
+    
+    if (termsAccepted === "true") {
+      // Terms already accepted, proceed to login
+      window.location.href = `/api/login?redirect_uri=${redirectPath}`;
+    } else {
+      // Show terms acceptance dialog first
+      setPendingRedirect(redirectPath);
+      setShowTermsDialog(true);
+    }
+  };
+
+  const handleTermsAccept = () => {
+    setShowTermsDialog(false);
+    if (pendingRedirect) {
+      window.location.href = `/api/login?redirect_uri=${pendingRedirect}`;
+      setPendingRedirect(null);
+    }
+  };
+
+  const handleTermsCancel = () => {
+    setShowTermsDialog(false);
+    setPendingRedirect(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -36,7 +68,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               className="text-lg px-8 py-6"
-              onClick={() => window.location.href = '/api/login?redirect_uri=/home'}
+              onClick={() => handleLoginClick('/home')}
               data-testid="button-login-hero"
             >
               Pronađite Vaše Mesto
@@ -44,7 +76,7 @@ export default function Landing() {
             <Button 
               size="lg" 
               className="text-lg px-8 py-6"
-              onClick={() => window.location.href = '/api/login?redirect_uri=/add-spot'}
+              onClick={() => handleLoginClick('/add-spot')}
               data-testid="button-list-spot-hero"
             >
               Iznajmite Vaše Mesto
@@ -153,7 +185,7 @@ export default function Landing() {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => window.location.href = '/api/login?redirect_uri=/add-spot'}
+            onClick={() => handleLoginClick('/add-spot')}
             data-testid="button-list-spot-cta"
           >
             <Zap className="w-5 h-5 mr-2" />
@@ -167,7 +199,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="mb-4">
             <Link href="/terms">
-              <Button variant="link" className="text-muted-foreground" data-testid="link-terms">
+              <Button variant="ghost" className="text-muted-foreground" data-testid="link-terms">
                 Uslovi Korišćenja
               </Button>
             </Link>
@@ -175,6 +207,13 @@ export default function Landing() {
           <p className="text-muted-foreground">&copy; 2024 ParkShare Novi Sad. Sva prava zadržana.</p>
         </div>
       </footer>
+
+      {/* Terms Acceptance Dialog */}
+      <TermsAcceptanceDialog
+        open={showTermsDialog}
+        onAccept={handleTermsAccept}
+        onCancel={handleTermsCancel}
+      />
     </div>
   );
 }
