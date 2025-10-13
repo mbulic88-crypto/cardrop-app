@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap } from "lucide-react";
-import parkingImage from "@assets/stock_images/parking_lot_urban_ci_9300d8e4.jpg";
+import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 
 export default function Landing() {
   return (
@@ -22,7 +22,7 @@ export default function Landing() {
         
         {/* Hero Content */}
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-4">
+          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6">
             ParkShare
           </h1>
           <p className="text-2xl md:text-3xl text-foreground/90 mb-4 max-w-2xl mx-auto">
