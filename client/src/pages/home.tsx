@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield } from "lucide-react";
+import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
@@ -80,6 +80,24 @@ export default function Home() {
               data-testid="button-toggle-filters"
             >
               <SlidersHorizontal className="w-5 h-5" />
+            </Button>
+
+            <Link href="/">
+              <Button
+                variant="outline"
+                data-testid="button-home"
+              >
+                <HomeIcon className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Početna</span>
+              </Button>
+            </Link>
+
+            <Button
+              variant="outline"
+              data-testid="button-language"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">ENG</span>
             </Button>
 
             <Button
