@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertParkingSpotSchema, insertBookingSchema } from "@shared/schema";
+import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema } from "@shared/schema";
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
@@ -310,6 +310,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting parking spot image:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Reviews routes
+  app.post('/api/reviews', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Validate request body
+      const validatedData = insertReviewSchema.parse(req.body);
+      
+      // Check if user can review this booking
+      const canReview = await storage.canUserReviewBooking(validatedData.bookingId, userId);
+      if (!canReview) {
+        return res.status(403).json({ 
+          message: "Ne možete ostaviti recenziju. Booking mora biti plaćen i ne smete već imati recenziju." 
+        });
+      }
+
+      // Get booking to find spot owner
+      const booking = await storage.getBooking(validatedData.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking nije pronađen" });
+      }
+
+      const spot = await storage.getParkingSpot(booking.spotId);
+      if (!spot) {
+        return res.status(404).json({ message: "Parking mesto nije pronađeno" });
+      }
+
+      const review = await storage.createReview({
+        ...validatedData,
+        reviewerId: userId,
+        spotOwnerId: spot.ownerId,
+      });
+      
+      res.status(201).json(review);
+    } catch (error: any) {
+      console.error("Error creating review:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
+      // Handle unique constraint violation (duplicate review)
+      if (error.code === '23505' && error.constraint === 'reviews_booking_id_unique') {
+        return res.status(409).json({ message: "Recenzija za ovaj booking već postoji" });
+      }
+      res.status(500).json({ message: "Greška pri kreiranju recenzije" });
+    }
+  });
+
+  app.get('/api/reviews/owner/:ownerId', async (req, res) => {
+    try {
+      const reviews = await storage.getReviewsForOwner(req.params.ownerId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Greška pri učitavanju recenzija" });
+    }
+  });
+
+  app.get('/api/reviews/booking/:bookingId', isAuthenticated, async (req: any, res) => {
+    try {
+      const review = await storage.getReviewForBooking(req.params.bookingId);
+      res.json(review || null);
+    } catch (error) {
+      console.error("Error fetching review:", error);
+      res.status(500).json({ message: "Greška pri učitavanju recenzije" });
+    }
+  });
+
+  app.get('/api/bookings/:id/can-review', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const canReview = await storage.canUserReviewBooking(req.params.id, userId);
+      res.json({ canReview });
+    } catch (error) {
+      console.error("Error checking review eligibility:", error);
+      res.status(500).json({ message: "Greška pri proveri mogućnosti recenzije" });
     }
   });
 

@@ -2,12 +2,15 @@ import {
   users,
   parkingSpots,
   bookings,
+  reviews,
   type User,
   type UpsertUser,
   type ParkingSpot,
   type InsertParkingSpot,
   type Booking,
   type InsertBooking,
+  type Review,
+  type InsertReview,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
@@ -29,6 +32,12 @@ export interface IStorage {
   getSpotBookings(spotId: string): Promise<Booking[]>;
   createBooking(booking: InsertBooking & { renterId: string }): Promise<Booking>;
   updateBooking(id: string, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
+  
+  // Reviews operations
+  createReview(review: InsertReview & { reviewerId: string; spotOwnerId: string }): Promise<Review>;
+  getReviewsForOwner(ownerId: string): Promise<Review[]>;
+  getReviewForBooking(bookingId: string): Promise<Review | undefined>;
+  canUserReviewBooking(bookingId: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -117,6 +126,52 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id))
       .returning();
     return booking;
+  }
+
+  // Reviews operations
+  async createReview(reviewData: InsertReview & { reviewerId: string; spotOwnerId: string }): Promise<Review> {
+    const [review] = await db
+      .insert(reviews)
+      .values(reviewData)
+      .returning();
+    return review;
+  }
+
+  async getReviewsForOwner(ownerId: string): Promise<Review[]> {
+    return await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.spotOwnerId, ownerId))
+      .orderBy(desc(reviews.createdAt));
+  }
+
+  async getReviewForBooking(bookingId: string): Promise<Review | undefined> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(eq(reviews.bookingId, bookingId));
+    return review;
+  }
+
+  async canUserReviewBooking(bookingId: string, userId: string): Promise<boolean> {
+    // Check if booking exists and belongs to user
+    const booking = await this.getBooking(bookingId);
+    if (!booking || booking.renterId !== userId) {
+      return false;
+    }
+
+    // Check if booking is paid
+    if (booking.paymentStatus !== 'paid') {
+      return false;
+    }
+
+    // Check if review already exists
+    const existingReview = await this.getReviewForBooking(bookingId);
+    if (existingReview) {
+      return false;
+    }
+
+    return true;
   }
 }
 

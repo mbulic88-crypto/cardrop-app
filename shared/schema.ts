@@ -9,6 +9,7 @@ import {
   integer,
   decimal,
   boolean,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -97,17 +98,6 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const bookingsRelations = relations(bookings, ({ one }) => ({
-  spot: one(parkingSpots, {
-    fields: [bookings.spotId],
-    references: [parkingSpots.id],
-  }),
-  renter: one(users, {
-    fields: [bookings.renterId],
-    references: [users.id],
-  }),
-}));
-
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
   renterId: true,
@@ -118,8 +108,67 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 
+// Reviews table - for renters to review spot owners after payment
+// MUST be declared before bookingsRelations to avoid ReferenceError
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => bookings.id, { onDelete: 'cascade' }).unique(), // Unique constraint to prevent duplicate reviews
+  reviewerId: varchar("reviewer_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // The renter who left the review
+  spotOwnerId: varchar("spot_owner_id").notNull().references(() => users.id, { onDelete: 'cascade' }), // The owner being reviewed
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [reviews.bookingId],
+    references: [bookings.id],
+  }),
+  reviewer: one(users, {
+    fields: [reviews.reviewerId],
+    references: [users.id],
+  }),
+  spotOwner: one(users, {
+    fields: [reviews.spotOwnerId],
+    references: [users.id],
+  }),
+}));
+
+export const insertReviewSchema = createInsertSchema(reviews)
+  .omit({
+    id: true,
+    reviewerId: true,
+    spotOwnerId: true, // Server will calculate this from booking
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    rating: z.number().min(1).max(5),
+    comment: z.string().min(10, "Komentar mora imati najmanje 10 karaktera").max(1000, "Komentar može imati maksimalno 1000 karaktera"),
+  });
+
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
+
+// Bookings relations - MUST be after reviews table declaration
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  spot: one(parkingSpots, {
+    fields: [bookings.spotId],
+    references: [parkingSpots.id],
+  }),
+  renter: one(users, {
+    fields: [bookings.renterId],
+    references: [users.id],
+  }),
+  review: one(reviews),
+}));
+
 // User relations
 export const usersRelations = relations(users, ({ many }) => ({
   ownedSpots: many(parkingSpots),
   bookings: many(bookings),
+  reviewsGiven: many(reviews, { relationName: "reviewsGiven" }),
+  reviewsReceived: many(reviews, { relationName: "reviewsReceived" }),
 }));
