@@ -29,17 +29,26 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - ✅ **Map-based search** - Interactive Leaflet map with markers, popups, and navigation
 - ✅ **Photo upload system** - Secure image storage with presigned URLs and ACL policies
 - ✅ **Transaction history** - Financial dashboard showing paid/refunded transactions
-
-### In Progress
-- Enhanced booking calendar with visual availability display
+- ✅ **Terms & Conditions** - Legal disclaimer page with acceptance requirement before login
+- ✅ **Review/Rating System** - Complete review functionality for paid bookings:
+  - Review submission dialog with 1-5 star rating and comment validation
+  - Display reviews on spot detail pages with average rating
+  - Unique constraint preventing duplicate reviews per booking
 
 ## Features
 1. **User Registration & Authentication**: Replit Auth with profile management for parking space owners and renters
+   - Terms & Conditions acceptance required before login
+   - Liability disclaimer protecting site/owner from delivery failures
 2. **Listing Management**: Users can list available parking spaces with location, time slots, and pricing in RSD/BAM
 3. **Search & Discovery**: Interactive search and filtering by location, availability, price, and time slots
 4. **Booking System**: Secure booking flow with calendar selection and real-time availability
 5. **Payment Processing**: Monri Payments (Payten) integration for secure transactions
 6. **User Dashboard**: Manage bookings and owned parking spots
+7. **Review & Rating System**: 
+   - Renters can review spot owners after paid bookings
+   - 1-5 star ratings with detailed comments (10-1000 characters)
+   - Reviews displayed on spot detail pages with average ratings
+   - One review per booking (unique constraint)
 
 ## Design Guidelines
 - **Colors**: 
@@ -74,14 +83,36 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - Payment status (pending, paid, refunded)
 - Monri transaction details
 
-## API Endpoints (To Be Implemented)
+### Reviews Table
+- Booking relationship (unique constraint - one review per booking)
+- Reviewer (renter) and spot owner relationships
+- Rating (1-5 stars)
+- Comment (10-1000 characters)
+- Timestamps (created/updated)
+
+## API Endpoints
+### Parking Spots
 - `GET /api/parking-spots` - List all active parking spots
 - `GET /api/parking-spots/:id` - Get spot details
 - `POST /api/parking-spots` - Create new parking spot (authenticated)
+
+### Bookings
 - `GET /api/bookings` - Get user bookings (authenticated)
+- `GET /api/bookings/:id/can-review` - Check if user can review booking
 - `POST /api/bookings` - Create booking (authenticated)
+
+### Reviews
+- `POST /api/reviews` - Create review (authenticated, requires paid booking)
+- `GET /api/reviews/owner/:ownerId` - Get reviews for owner
+- `GET /api/reviews/spot/:spotId` - Get reviews for parking spot
+- `GET /api/reviews/booking/:bookingId` - Get review for specific booking (authenticated)
+
+### Payments
 - `POST /api/payments/monri` - Process Monri payment
+
+### Users
 - `GET /api/users/:id` - Get user details
+- `GET /api/auth/user` - Get current authenticated user
 
 ## Monri Payments Integration
 - Using API v2 (REST/JSON)
@@ -89,27 +120,49 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - Authentication: WP3-v2 scheme with SHA512 digest
 - Payment flow: Create payment → Redirect to Monri → Callback confirmation
 
-## Recent Changes (October 13, 2024)
-### Navigation & UX Improvements
-- **Logo Navigation**: Logo and app name in all page headers now link to home page
-- **Consistent Headers**: Added unified header design across all pages with:
-  - ParkShare logo (links to home)
-  - "Početna Stranica" button for quick home navigation  
-  - "ENG" language toggle button (placeholder for English translation)
-- **Direct Navigation**: Landing page CTAs now route directly to app pages:
-  - "Pronađite Vaše Mesto" → `/home` (search parking)
-  - "Iznajmite Vaše Mesto" → `/add-spot` (list your spot)
-- **Updated Button Labels**: Clearer action buttons throughout the app
-- **Improved Spacing**: Better visual hierarchy on landing page (increased title/subtitle separation)
+## Recent Changes (October 13, 2025)
 
-### Technical Fixes
-- Fixed `apiRequest` function to return JSON data instead of Response object
-- Resolved TypeScript errors across all pages
-- Updated all pages with consistent navigation patterns
+### Terms & Conditions System
+- **Terms Page**: Created `/terms` route with comprehensive liability disclaimer
+  - Clear statement that site/owner not responsible for owner delivery failures
+  - Legal protection for platform and parking spot owners
+- **Terms Acceptance Dialog**: Mandatory acceptance before login/signup
+  - Checkbox stored in localStorage
+  - Blocks access to authenticated features until accepted
+  - Integrated into login redirect flow
+
+### Review & Rating System
+- **Database Schema**: 
+  - Added `reviews` table with unique constraint on bookingId
+  - Relationships: reviewer (renter), spotOwner, booking
+  - Rating (1-5 stars) and comment (10-1000 chars) with validation
+- **Backend API**:
+  - `POST /api/reviews` - Create review with server-side security (reviewerId/spotOwnerId injection)
+  - `GET /api/reviews/spot/:spotId` - Fetch reviews for parking spot (JOIN with bookings)
+  - `GET /api/reviews/owner/:ownerId` - Get all reviews for owner
+  - `GET /api/reviews/booking/:bookingId` - Check existing review for booking
+  - `GET /api/bookings/:id/can-review` - Verify review eligibility (paid booking by current user)
+- **Frontend Components**:
+  - `ReviewDialog`: Star rating selector, comment textarea with character counter (10-1000 validation)
+  - Integrated into My Bookings page with "Ostavi Recenziju" button for eligible bookings
+  - Review display on Spot Detail page with average rating and star indicators
+  - Visual feedback for review status (button/badge states)
+
+### Navigation & UX Improvements
+- **Authentication Flow**: Fixed 404 errors with proper `/api/login` redirects using redirect_uri
+- **Logo Navigation**: Logo and app name in all page headers now link to home page
+- **Consistent Headers**: Added unified header design across all pages
+- **Direct Navigation**: Landing page CTAs route directly to app pages
+
+### Technical Implementation
+- **Security**: Server-side injection of reviewerId and spotOwnerId to prevent tampering
+- **Race Condition Protection**: Unique constraint with 409 error handling for duplicate reviews
+- **Type Safety**: Full TypeScript integration with Zod validation schemas
+- **Query Invalidation**: Proper cache management for reviews and bookings
 
 ## Next Steps
-1. Implement backend API routes
-2. Set up Monri Payments integration
-3. Connect frontend to backend
-4. Test complete user journey
+1. Add review display on owner profile pages
+2. Implement review pagination for high-volume spots
+3. Add review filtering/sorting options
+4. Consider adding review helpful votes/reporting
 5. Deploy to production
