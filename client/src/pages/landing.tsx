@@ -22,7 +22,7 @@ export default function Landing() {
         
         {/* Hero Content */}
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6">
+          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8">
             ParkShare
           </h1>
           <p className="text-2xl md:text-3xl text-foreground/90 mb-4 max-w-2xl mx-auto">
@@ -38,7 +38,7 @@ export default function Landing() {
               onClick={() => window.location.href = '/api/login'}
               data-testid="button-login-hero"
             >
-              Počnite Sada
+              Pronađite Vaše Mesto
             </Button>
             <Button 
               size="lg" 
@@ -46,7 +46,7 @@ export default function Landing() {
               onClick={() => window.location.href = '/api/login'}
               data-testid="button-list-spot-hero"
             >
-              Postavite Vaše Mesto
+              Iznajmite Vaše Mesto
             </Button>
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function Landing() {
             data-testid="button-list-spot-cta"
           >
             <Zap className="w-5 h-5 mr-2" />
-            Postavite Vaše Mesto
+            Iznajmite Vaše Mesto
           </Button>
         </div>
       </div>
