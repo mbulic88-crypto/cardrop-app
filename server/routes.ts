@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertParkingSpotSchema, insertBookingSchema } from "@shared/schema";
 import { createHash } from "crypto";
+import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -236,6 +237,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error handling Monri callback:", error);
       res.status(500).json({ message: "Failed to process callback" });
+    }
+  });
+
+  // Object storage routes - for protected file uploading
+  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+    const userId = req.user?.claims?.sub;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const objectFile = await objectStorageService.getObjectEntityFile(
+        req.path,
+      );
+      const canAccess = await objectStorageService.canAccessObjectEntity({
+        objectFile,
+        userId: userId,
+      });
+      if (!canAccess) {
+        return res.sendStatus(401);
+      }
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error checking object access:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
+    const objectStorageService = new ObjectStorageService();
+    const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+    res.json({ uploadURL });
+  });
+
+  app.put("/api/parking-spots/:id/images", isAuthenticated, async (req: any, res) => {
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
+    }
+
+    const userId = req.user.claims.sub;
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        req.body.imageURL,
+        {
+          owner: userId,
+          visibility: "public", // Parking spot images are public
+        },
+      );
+
+      // Update parking spot with new image
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) {
+        return res.status(404).json({ error: "Parking spot not found" });
+      }
+
+      if (spot.ownerId !== userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const updatedImages = [...spot.imageUrls, objectPath];
+      await storage.updateParkingSpot(req.params.id, {
+        imageUrls: updatedImages,
+      });
+
+      res.status(200).json({
+        objectPath: objectPath,
+        imageUrls: updatedImages,
+      });
+    } catch (error) {
+      console.error("Error setting parking spot image:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

@@ -10,11 +10,13 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Upload } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Link, useLocation } from "wouter";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
@@ -33,6 +35,8 @@ const formSchema = z.object({
 export default function AddSpot() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [spotId, setSpotId] = useState<string | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,13 +59,19 @@ export default function AddSpot() {
     mutationFn: async (data: z.infer<typeof formSchema>) => {
       return await apiRequest("POST", "/api/parking-spots", data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setSpotId(data.id);
       toast({
         title: "Uspešno Dodato",
-        description: "Vaše parking mesto je uspešno dodato!",
+        description: "Sada možete dodati slike parking mesta ili kliknite Završi.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
-      setLocation("/");
+      // Scroll to the image upload section
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
@@ -328,6 +338,72 @@ export default function AddSpot() {
             </form>
           </Form>
         </Card>
+
+        {spotId && (
+          <Card className="p-6 mt-6">
+            <h3 className="text-xl font-semibold mb-4 text-foreground">
+              Dodajte Slike Parking Mesta
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Dodajte do 5 slika vašeg parking mesta kako bi privukli više korisnika.
+            </p>
+            
+            {uploadedImages.length > 0 && (
+              <div className="mb-4 grid grid-cols-3 gap-4">
+                {uploadedImages.map((img, index) => (
+                  <img 
+                    key={index} 
+                    src={img} 
+                    alt={`Uploaded ${index + 1}`} 
+                    className="rounded-md object-cover h-32 w-full"
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <ObjectUploader
+                maxNumberOfFiles={1}
+                maxFileSize={10485760}
+                onGetUploadParameters={async () => {
+                  const response = await apiRequest("POST", "/api/objects/upload", {});
+                  return {
+                    method: "PUT" as const,
+                    url: response.uploadURL,
+                  };
+                }}
+                onComplete={async (result) => {
+                  const uploadURL = result.successful[0]?.uploadURL;
+                  if (uploadURL && spotId) {
+                    const response = await apiRequest("PUT", `/api/parking-spots/${spotId}/images`, {
+                      imageURL: uploadURL,
+                    });
+                    setUploadedImages(response.imageUrls);
+                    toast({
+                      title: "Slika Dodata",
+                      description: "Vaša slika je uspešno dodata parking mestu.",
+                    });
+                  }
+                }}
+                buttonClassName="flex-1"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Dodaj Sliku
+              </ObjectUploader>
+
+              <Button 
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
+                  setLocation("/");
+                }}
+                className="flex-1"
+                data-testid="button-finish"
+              >
+                Završi
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
