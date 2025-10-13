@@ -11,22 +11,27 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - **Payment**: Monri Payments (Payten) API v2
 
 ## Current State
-### Completed
+### Completed MVP Features
 - ✅ Database schema with users, parking spots, and bookings tables
 - ✅ Design system configured with black/green color scheme (#1B4332, #40916C, #52B788, #212529, #343A40, #F8F9FA)
-- ✅ Frontend components and pages:
+- ✅ Authentication with Replit Auth (OIDC)
+- ✅ Serbian language interface throughout
+- ✅ **Backend API routes** - Complete CRUD operations for parking spots, bookings, payments
+- ✅ **Object Storage integration** - Photo upload with Replit Object Storage, ACL security framework
+- ✅ **Frontend pages:**
   - Landing page for logged-out users
-  - Home page with search and filters
+  - Home page with search, filters, and **interactive map view (Leaflet)**
   - Spot detail page with booking widget
-  - Add spot page for owners
+  - Add spot page with **image upload functionality**
   - My bookings page
-- ✅ Authentication hooks and utilities
-- ✅ Serbian language interface
+  - **Transaction history page** with financial summaries
+  - Payment processing page (Monri integration)
+- ✅ **Map-based search** - Interactive Leaflet map with markers, popups, and navigation
+- ✅ **Photo upload system** - Secure image storage with presigned URLs and ACL policies
+- ✅ **Transaction history** - Financial dashboard showing paid/refunded transactions
 
 ### In Progress
-- Backend API implementation
-- Monri Payments integration
-- Database operations
+- Enhanced booking calendar with visual availability display
 
 ## Features
 1. **User Registration & Authentication**: Replit Auth with profile management for parking space owners and renters
