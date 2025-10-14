@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Clock, Shield, Zap } from "lucide-react";
+import { MapPin, Clock, Shield, Zap, Globe } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import { Link } from "wouter";
 
@@ -8,6 +8,29 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-30 bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-foreground">ParkShare</span>
+            </Link>
+
+            <Button
+              variant="outline"
+              data-testid="button-language"
+              className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              <span>ENG</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
         {/* Dark overlay for better text readability */}

@@ -93,14 +93,6 @@ export default function Home() {
             </Link>
 
             <Button
-              variant="outline"
-              data-testid="button-language"
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">ENG</span>
-            </Button>
-
-            <Button
               onClick={() => window.location.href = '/api/logout'}
               variant="ghost"
               data-testid="button-logout"
