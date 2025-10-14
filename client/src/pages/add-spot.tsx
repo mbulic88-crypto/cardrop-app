@@ -420,7 +420,7 @@ export default function AddSpot() {
               <Button 
                 onClick={() => {
                   queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
-                  setLocation("/");
+                  setLocation("/home");
                 }}
                 className="flex-1"
                 data-testid="button-finish"
