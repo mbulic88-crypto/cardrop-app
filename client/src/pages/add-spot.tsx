@@ -22,7 +22,7 @@ import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
-  description: z.string().min(20, "Opis mora imati najmanje 20 karaktera"),
+  description: z.string().min(1, "Opis je obavezan"),
   address: z.string().min(5, "Adresa mora biti uneta"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
