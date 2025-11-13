@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, ShieldCheck } from "lucide-react";
+import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 interface LoginRequiredDialogProps {
   open: boolean;
@@ -31,10 +32,8 @@ export default function LoginRequiredDialog({
       <DialogContent className="sm:max-w-md" data-testid="dialog-login-required">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <DialogTitle className="text-2xl">ParkShare</DialogTitle>
+            <img src={parkInLogo} alt="ParkIN" className="w-12 h-12 rounded-lg" />
+            <DialogTitle className="text-2xl">ParkIN</DialogTitle>
           </div>
           <DialogDescription className="text-base pt-2">
             {message}
