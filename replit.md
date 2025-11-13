@@ -1,7 +1,7 @@
-# ParkShare - Parking Space Sharing Platform
+# ParkIN - Parking Space Sharing Platform
 
 ## Overview
-A web-based parking space sharing application for Novi Sad, Serbia, where users can rent out their paid parking spots when not in use. The platform features a modern black and green design tailored for the Serbian market, integrates with Monri Payments (Payten) for transactions, and provides an intuitive experience across both mobile and desktop devices.
+A web-based parking space sharing application for Serbia, where users can rent out their paid parking spots when not in use. The platform features a modern black and green design with a custom logo, tailored for the Serbian market, integrates with Monri Payments (Payten) for transactions, and provides an intuitive experience across both mobile and desktop devices.
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, Tailwind CSS, Shadcn UI components
@@ -140,7 +140,7 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
   - LoginRequiredDialog appears when attempting protected actions (booking, adding spots)
   - My Bookings and Transactions pages show LoginRequiredDialog if accessed without auth
 - **LoginRequiredDialog Integration**:
-  - Custom-branded dialog with ParkShare colors (#52B788 accent green)
+  - Custom-branded dialog with ParkIN colors (#52B788 accent green)
   - Serbian language messages for all scenarios:
     - Booking: "Za rezervaciju parking mesta potrebna je prijava na nalog."
     - Add Spot: "Za dodavanje parking mesta potrebna je prijava na nalog."
@@ -186,6 +186,12 @@ A web-based parking space sharing application for Novi Sad, Serbia, where users 
 - **Race Condition Protection**: Unique constraint with 409 error handling for duplicate reviews
 - **Type Safety**: Full TypeScript integration with Zod validation schemas
 - **Query Invalidation**: Proper cache management for reviews and bookings
+
+## Branding & Geographic Scope
+- **Application Name**: ParkIN (rebranded from ParkShare)
+- **Logo**: Custom ParkIN logo image (`Parkin pic_1763062246399.png`) used across all page headers
+- **Geographic Scope**: Expanded from Novi Sad-only to all of Serbia
+- **Language Toggle**: Moved from home page to landing page header for better UX
 
 ## Next Steps
 1. Add review display on owner profile pages
