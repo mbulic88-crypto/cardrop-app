@@ -15,7 +15,7 @@ A web-based parking space sharing application for Serbia, where users can rent o
 - ✅ Database schema with users, parking spots, and bookings tables
 - ✅ Design system configured with black/green color scheme (#1B4332, #40916C, #52B788, #212529, #343A40, #F8F9FA)
 - ✅ Authentication with Replit Auth (OIDC)
-- ✅ Serbian language interface throughout
+- ✅ **Language Toggle** - Serbian/English interface with localStorage persistence on landing page
 - ✅ **Backend API routes** - Complete CRUD operations for parking spots, bookings, payments
 - ✅ **Object Storage integration** - Photo upload with Replit Object Storage, ACL security framework
 - ✅ **Frontend pages:**
@@ -60,7 +60,7 @@ A web-based parking space sharing application for Serbia, where users can rent o
   - Text: #F8F9FA (off-white)
 - **Typography**: Inter (primary), Roboto (fallback)
 - **Spacing**: 16px base unit, mobile-first responsive design
-- **Language**: Serbian (Latin and Cyrillic support)
+- **Language**: Serbian/English toggle on landing page with localStorage persistence
 
 ## Database Schema
 ### Users Table
@@ -119,6 +119,35 @@ A web-based parking space sharing application for Serbia, where users can rent o
 - Test environment: https://ipgtest.monri.com
 - Authentication: WP3-v2 scheme with SHA512 digest
 - Payment flow: Create payment → Redirect to Monri → Callback confirmation
+
+## Recent Changes (November 13, 2025)
+
+### Language Toggle Feature
+- **Functional Language Switcher**: Added working language toggle button (ENG ↔ SRP) on landing page
+  - State management with React useState and useEffect
+  - Language preference saved to localStorage (key: "parkin-language")
+  - Default language: Serbian (sr)
+  - Full translations for all landing page content:
+    - Hero section (title, subtitle, CTAs)
+    - How It Works section (all 3 steps)
+    - Popular Destinations heading
+    - Trust section labels
+    - CTA section
+    - Footer (Terms button, copyright)
+  - Button displays "ENG" in Serbian mode, "SRP" in English mode
+  - Instant UI updates when language changes
+
+### Popular Destinations Redesign
+- **Geographic Scope**: Changed from Novi Sad neighborhoods to Serbian cities
+  - Old: Centar, Liman, Grbavica (Novi Sad specific)
+  - New: Beograd (Belgrade), Novi Sad, Niš, Kragujevac
+- **Cleaner Display**: Removed clutter from city cards
+  - Eliminated parking spot counts (e.g., "45+ dostupnih mesta")
+  - Removed average pricing info (e.g., "od 150 RSD/sat")
+  - Now shows only city names in clean, centered cards
+- **Functionality**: Each city card links to /home?search={cityName} for quick city-based search
+- **Responsive Layout**: Grid adjusted to 4 columns on desktop (grid-cols-1 md:grid-cols-4)
+- **Bilingual Support**: City names adapt to selected language (e.g., "Beograd" vs "Belgrade")
 
 ## Recent Changes (October 13, 2025)
 
