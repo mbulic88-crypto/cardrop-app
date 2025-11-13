@@ -12,6 +12,7 @@ import { sr } from "date-fns/locale";
 import ReviewDialog from "@/components/ReviewDialog";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
+import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 export default function MyBookings() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -202,10 +203,8 @@ export default function MyBookings() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
             <Link href="/home" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground hidden sm:inline">ParkShare</span>
+              <img src={parkInLogo} alt="ParkIN" className="w-8 h-8 rounded-lg" />
+              <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
             </Link>
 
             <div className="flex items-center gap-2">
@@ -215,11 +214,6 @@ export default function MyBookings() {
                   <span className="hidden sm:inline">Početna</span>
                 </Button>
               </Link>
-
-              <Button variant="outline" data-testid="button-language">
-                <Globe className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">ENG</span>
-              </Button>
             </div>
           </div>
         </div>

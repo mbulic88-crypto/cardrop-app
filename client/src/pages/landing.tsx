@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap, Globe } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
+import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link } from "wouter";
 
 export default function Landing() {
@@ -13,10 +14,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">ParkShare</span>
+              <img src={parkInLogo} alt="ParkIN" className="w-10 h-10 rounded-lg" />
+              <span className="text-xl font-bold text-foreground">ParkIN</span>
             </Link>
 
             <Button
@@ -48,10 +47,10 @@ export default function Landing() {
         {/* Hero Content */}
         <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8">
-            ParkShare
+            ParkIN
           </h1>
           <p className="text-2xl md:text-3xl text-foreground/90 mb-4 max-w-2xl mx-auto">
-            Pronađite ili Podelite Parking u Novom Sadu
+            Pronađite ili Podelite Parking Mesto
           </p>
           <p className="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
             Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.
@@ -199,7 +198,7 @@ export default function Landing() {
               </Button>
             </Link>
           </div>
-          <p className="text-muted-foreground">&copy; 2024 ParkShare Novi Sad. Sva prava zadržana.</p>
+          <p className="text-muted-foreground">&copy; 2024 ParkIN Srbija. Sva prava zadržana.</p>
         </div>
       </footer>
     </div>
