@@ -122,6 +122,21 @@ A web-based parking space sharing application for Serbia, where users can rent o
 
 ## Recent Changes (November 13, 2025)
 
+### Home Page Updates
+- **Page Title Change**: Changed from personalized "Pozdrav, {userName}!" to generic "Izaberite Parking"
+  - More professional and action-oriented heading
+  - Removes dependency on user authentication state
+- **Header Simplification**: Removed redundant "Odjavi se" (Logout) button
+  - Streamlined header with only essential navigation
+  - "Početna" button now links to landing page (/) instead of /home
+- **City Filter Feature**: Added comprehensive city dropdown filter next to search bar
+  - 16 Serbian cities available: Svi Gradovi (default), Beograd, Novi Sad, Niš, Kragujevac, Subotica, Zrenjanin, Pančevo, Čačak, Kraljevo, Smederevo, Leskovac, Užice, Valjevo, Šabac, Sombor
+  - Optional filter - "Svi Gradovi" shows all parking spots
+  - Filters parking spots by city name in address (case-insensitive)
+  - Works in combination with search bar and other filters (price, spot type)
+  - Responsive layout with dropdown next to search bar
+  - data-testid="select-city-filter" for testing
+
 ### Language Toggle Feature
 - **Functional Language Switcher**: Added working language toggle button (ENG ↔ SRP) on landing page
   - State management with React useState and useEffect
