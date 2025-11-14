@@ -354,35 +354,36 @@
 }
 
 .geoapify-autocomplete-items {
-  position: absolute;
-  z-index: 50;
-  width: 100%;
-  margin-top: 0.25rem;
-  border-radius: calc(var(--radius) - 2px);
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--popover));
-  box-shadow: var(--shadow-md);
-  max-height: 300px;
-  overflow-y: auto;
+  position: absolute !important;
+  z-index: 50 !important;
+  width: 100% !important;
+  margin-top: 0.25rem !important;
+  border-radius: calc(var(--radius) - 2px) !important;
+  border: 1px solid #40916C !important;
+  background-color: #343A40 !important;
+  box-shadow: var(--shadow-md) !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
 }
 
 .geoapify-autocomplete-items div {
-  padding: 0.625rem 0.75rem;
-  cursor: pointer;
-  color: hsl(var(--popover-foreground));
-  font-size: 0.875rem;
-  border-bottom: 1px solid hsl(var(--border));
-  transition: background-color 0.2s;
+  padding: 0.625rem 0.75rem !important;
+  cursor: pointer !important;
+  color: #F8F9FA !important;
+  font-size: 0.875rem !important;
+  border-bottom: 1px solid rgba(64, 145, 108, 0.3) !important;
+  transition: background-color 0.2s !important;
+  background-color: #343A40 !important;
 }
 
 .geoapify-autocomplete-items div:last-child {
-  border-bottom: none;
+  border-bottom: none !important;
 }
 
 .geoapify-autocomplete-items div:hover,
 .geoapify-autocomplete-items .active {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
+  background-color: #52B788 !important;
+  color: #F8F9FA !important;
 }
 
 .geoapify-close-button {

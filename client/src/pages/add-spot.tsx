@@ -25,7 +25,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 const SERBIAN_CITIES = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
   "Pančevo", "Čačak", "Kraljevo", "Smederevo", "Leskovac", "Užice",
-  "Valjevo", "Šabac", "Sombor", "Kruševac"
+  "Valjevo", "Šabac", "Sombor", "Kruševac", "Ostalo"
 ];
 
 const formSchema = z.object({
