@@ -13,9 +13,29 @@ import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
+const serbianCities = [
+  "Svi Gradovi",
+  "Beograd",
+  "Novi Sad",
+  "Niš",
+  "Kragujevac",
+  "Subotica",
+  "Zrenjanin",
+  "Pančevo",
+  "Čačak",
+  "Kraljevo",
+  "Smederevo",
+  "Leskovac",
+  "Užice",
+  "Valjevo",
+  "Šabac",
+  "Sombor"
+];
+
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [searchLocation, setSearchLocation] = useState("");
+  const [selectedCity, setSelectedCity] = useState("Svi Gradovi");
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 500]);
   const [spotType, setSpotType] = useState("all");
@@ -30,12 +50,15 @@ export default function Home() {
       spot.address.toLowerCase().includes(searchLocation.toLowerCase()) ||
       spot.title.toLowerCase().includes(searchLocation.toLowerCase());
     
+    const matchesCity = selectedCity === "Svi Gradovi" ||
+      spot.address.toLowerCase().includes(selectedCity.toLowerCase());
+    
     const price = parseFloat(spot.pricePerHour);
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     
     const matchesType = spotType === "all" || spot.spotType === spotType;
     
-    return matchesLocation && matchesPrice && matchesType && spot.isActive;
+    return matchesLocation && matchesCity && matchesPrice && matchesType && spot.isActive;
   });
 
   return (
@@ -49,9 +72,9 @@ export default function Home() {
               <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
             </Link>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-2xl">
-              <div className="relative">
+            {/* Search Bar & City Filter */}
+            <div className="flex-1 max-w-2xl flex gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   placeholder="Pretražite po lokaciji ili adresi..."
@@ -70,6 +93,19 @@ export default function Home() {
                   </button>
                 )}
               </div>
+              
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-[180px]" data-testid="select-city-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {serbianCities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button
@@ -81,7 +117,7 @@ export default function Home() {
               <SlidersHorizontal className="w-5 h-5" />
             </Button>
 
-            <Link href="/home">
+            <Link href="/">
               <Button
                 variant="outline"
                 data-testid="button-home"
@@ -90,14 +126,6 @@ export default function Home() {
                 <span className="hidden sm:inline">Početna</span>
               </Button>
             </Link>
-
-            <Button
-              onClick={() => window.location.href = '/api/logout'}
-              variant="ghost"
-              data-testid="button-logout"
-            >
-              Odjavi se
-            </Button>
           </div>
 
           {/* Filters Panel */}
@@ -147,7 +175,7 @@ export default function Home() {
         <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Pozdrav, {user?.firstName || "Korisnik"}!
+              Izaberite Parking
             </h1>
             <p className="text-muted-foreground">
               Pronađeno {filteredSpots.length} parking {filteredSpots.length === 1 ? "mesto" : "mesta"}
