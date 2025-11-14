@@ -20,11 +20,19 @@ import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+
+const SERBIAN_CITIES = [
+  "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
+  "Pančevo", "Čačak", "Kraljevo", "Smederevo", "Leskovac", "Užice",
+  "Valjevo", "Šabac", "Sombor", "Kruševac"
+];
 
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
   description: z.string().min(1, "Opis je obavezan"),
   address: z.string().min(5, "Adresa mora biti uneta"),
+  city: z.string().optional(),
   phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
@@ -53,6 +61,7 @@ export default function AddSpot() {
       title: "",
       description: "",
       address: "",
+      city: "",
       phone: "",
       latitude: "45.2671",
       longitude: "19.8335",
@@ -195,8 +204,51 @@ export default function AddSpot() {
                   <FormItem>
                     <FormLabel>Adresa</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ulica i broj, Novi Sad" {...field} data-testid="input-address" />
+                      <AddressAutocomplete
+                        value={field.value}
+                        onChange={field.onChange}
+                        onLocationSelect={(data) => {
+                          // Automatically populate latitude, longitude, and city
+                          form.setValue('latitude', data.latitude.toString());
+                          form.setValue('longitude', data.longitude.toString());
+                          if (data.city) {
+                            form.setValue('city', data.city);
+                          }
+                        }}
+                        placeholder="Počnite da kucate adresu u Srbiji..."
+                      />
                     </FormControl>
+                    <FormDescription>
+                      Izaberite adresu iz ponuđenih opcija - koordinate će biti automatski popunjene
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grad (Opciono)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-city">
+                          <SelectValue placeholder="Izaberite grad" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SERBIAN_CITIES.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Grad će biti automatski popunjen iz adrese, ali možete ga promeniti
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
