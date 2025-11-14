@@ -32,7 +32,7 @@ const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
   description: z.string().min(1, "Opis je obavezan"),
   address: z.string().min(5, "Adresa mora biti uneta"),
-  city: z.string().optional(),
+  city: z.preprocess((val) => val === "" ? undefined : val, z.string().optional()),
   phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
