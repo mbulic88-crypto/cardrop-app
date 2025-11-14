@@ -25,10 +25,14 @@ const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
   description: z.string().min(1, "Opis je obavezan"),
   address: z.string().min(5, "Adresa mora biti uneta"),
+  phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
   pricePerHour: z.string().min(1, "Cena je obavezna"),
   currency: z.string().default("RSD"),
+  paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
+    errorMap: () => ({ message: "Tip plaćanja mora biti izabran" })
+  }),
   spotType: z.string().min(1, "Tip mesta je obavezan"),
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
@@ -49,10 +53,12 @@ export default function AddSpot() {
       title: "",
       description: "",
       address: "",
+      phone: "",
       latitude: "45.2671",
       longitude: "19.8335",
       pricePerHour: "",
       currency: "RSD",
+      paymentType: "cash",
       spotType: "uncovered",
       hasEvCharging: false,
       hasSecurityCamera: false,
@@ -196,6 +202,23 @@ export default function AddSpot() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kontakt Telefon</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+381 64 123 4567" {...field} data-testid="input-phone" />
+                    </FormControl>
+                    <FormDescription>
+                      Telefon za kontakt sa iznajmljivačima
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -263,6 +286,32 @@ export default function AddSpot() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="paymentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tip Plaćanja</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-payment-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cash">Keš</SelectItem>
+                        <SelectItem value="bank_transfer">Preko računa - kontaktirajte vlasnika</SelectItem>
+                        <SelectItem value="card_monri">Kartično (Monri)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Izaberite način plaćanja koji prihvatate
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
