@@ -58,6 +58,8 @@ export const parkingSpots = pgTable("parking_spots", {
   hasSecurityCamera: boolean("has_security_camera").notNull().default(false),
   is24Hours: boolean("is_24_hours").notNull().default(true),
   imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  paymentType: varchar("payment_type", { length: 50 }).notNull(), // cash, bank_transfer, card_monri
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
