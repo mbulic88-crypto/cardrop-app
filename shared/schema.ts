@@ -48,7 +48,7 @@ export const parkingSpots = pgTable("parking_spots", {
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
   address: text("address").notNull(),
-  city: varchar("city", { length: 100 }).notNull().default('Novi Sad'),
+  city: varchar("city", { length: 100 }),
   latitude: decimal("latitude", { precision: 10, scale: 7 }).notNull(),
   longitude: decimal("longitude", { precision: 10, scale: 7 }).notNull(),
   pricePerHour: decimal("price_per_hour", { precision: 10, scale: 2 }).notNull(),
