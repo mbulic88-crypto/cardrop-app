@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare } from "lucide-react";
+import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare, Phone, CreditCard } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -255,6 +255,39 @@ export default function SpotDetail() {
               <p className="text-muted-foreground whitespace-pre-wrap" data-testid="text-spot-description">
                 {spot.description}
               </p>
+            </Card>
+
+            {/* Payment & Contact Info */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4 text-card-foreground">Plaćanje i Kontakt</h2>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CreditCard className="w-5 h-5 text-accent mt-0.5" />
+                  <div>
+                    <p className="font-medium text-card-foreground">Tip Plaćanja</p>
+                    <p className="text-muted-foreground" data-testid="text-payment-type">
+                      {spot.paymentType === 'cash' && 'Keš'}
+                      {spot.paymentType === 'bank_transfer' && 'Preko računa - kontaktirajte vlasnika'}
+                      {spot.paymentType === 'card_monri' && 'Kartično (Monri)'}
+                    </p>
+                  </div>
+                </div>
+                {spot.phone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-accent mt-0.5" />
+                    <div>
+                      <p className="font-medium text-card-foreground">Kontakt Telefon</p>
+                      <a 
+                        href={`tel:${spot.phone}`} 
+                        className="text-accent hover:underline"
+                        data-testid="link-phone"
+                      >
+                        {spot.phone}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
             </Card>
 
             {/* Owner Info */}
