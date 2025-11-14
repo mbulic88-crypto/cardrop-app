@@ -353,7 +353,8 @@
   color: hsl(var(--muted-foreground));
 }
 
-.geoapify-autocomplete-items {
+.geoapify-autocomplete-items,
+div[class*="geoapify-autocomplete-items"] {
   position: absolute !important;
   z-index: 50 !important;
   width: 100% !important;
@@ -361,12 +362,16 @@
   border-radius: calc(var(--radius) - 2px) !important;
   border: 1px solid #40916C !important;
   background-color: #343A40 !important;
+  background: #343A40 !important;
   box-shadow: var(--shadow-md) !important;
   max-height: 300px !important;
   overflow-y: auto !important;
 }
 
-.geoapify-autocomplete-items div {
+.geoapify-autocomplete-items div,
+.geoapify-autocomplete-items > div,
+div[class*="geoapify-autocomplete-items"] div,
+div[class*="geoapify-autocomplete-items"] > div {
   padding: 0.625rem 0.75rem !important;
   cursor: pointer !important;
   color: #F8F9FA !important;
@@ -374,6 +379,14 @@
   border-bottom: 1px solid rgba(64, 145, 108, 0.3) !important;
   transition: background-color 0.2s !important;
   background-color: #343A40 !important;
+  background: #343A40 !important;
+}
+
+.geoapify-autocomplete-items div *,
+.geoapify-autocomplete-items > div *,
+div[class*="geoapify-autocomplete-items"] div *,
+div[class*="geoapify-autocomplete-items"] > div * {
+  color: #F8F9FA !important;
 }
 
 .geoapify-autocomplete-items div:last-child {
@@ -381,8 +394,18 @@
 }
 
 .geoapify-autocomplete-items div:hover,
-.geoapify-autocomplete-items .active {
+.geoapify-autocomplete-items .active,
+div[class*="geoapify-autocomplete-items"] div:hover,
+div[class*="geoapify-autocomplete-items"] .active {
   background-color: #52B788 !important;
+  background: #52B788 !important;
+  color: #F8F9FA !important;
+}
+
+.geoapify-autocomplete-items div:hover *,
+.geoapify-autocomplete-items .active *,
+div[class*="geoapify-autocomplete-items"] div:hover *,
+div[class*="geoapify-autocomplete-items"] .active * {
   color: #F8F9FA !important;
 }
 

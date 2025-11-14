@@ -330,7 +330,7 @@ export default function AddSpot() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="RSD">RSD (Dinar)</SelectItem>
-                          <SelectItem value="BAM">BAM (Konvertibilna Marka)</SelectItem>
+                          <SelectItem value="EUR">EUR (Euro)</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
