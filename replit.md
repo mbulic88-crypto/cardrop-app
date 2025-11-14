@@ -17,13 +17,14 @@ The platform utilizes a modern black and green color scheme (Primary: #1B4332, S
 *   **Authentication**: Replit Auth (OpenID Connect).
 *   **Object Storage**: Replit Object Storage for image uploads with ACL security.
 *   **Mapping**: Interactive Leaflet map for spot discovery.
+*   **Address Autocomplete**: Geoapify API integration (@geoapify/geocoder-autocomplete) with Serbia-only filter, 300ms debounce, and automatic coordinate population. Custom dark-themed styling matches application design (#343A40 background, #F8F9FA text, #52B788 hover).
 *   **Review System**: Allows renters to rate and comment on spots after paid bookings, with unique constraints to prevent duplicate reviews. Reviews are displayed on spot detail pages.
 *   **Public Browsing with Auth-Protected Actions**: All pages are publicly accessible, but actions like booking or adding spots require authentication, triggering a `LoginRequiredDialog`.
 *   **Terms & Conditions**: A dedicated page with a liability disclaimer, requiring acceptance before accessing authenticated features.
 
 ### Feature Specifications
 *   **User Management**: Registration, authentication, and profile management.
-*   **Listing Management**: Owners can list parking spots with location, time slots, pricing (RSD/BAM), contact phone, payment type, spot type, and features. Includes secure image upload.
+*   **Listing Management**: Owners can list parking spots with location, time slots, pricing (RSD/BAM), contact phone, payment type, spot type, and features. Includes secure image upload. City field is optional with 17 options (16 major Serbian cities + "Ostalo" for other locations).
 *   **Search & Discovery**: Interactive map-based search with filters for location (city), availability, price, and spot type.
 *   **Booking System**: Secure booking flow with calendar selection and real-time availability.
 *   **Payment Processing**: Integration with Monri Payments (Payten) for secure transactions.
