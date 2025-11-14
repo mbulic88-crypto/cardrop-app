@@ -58,8 +58,8 @@ export const parkingSpots = pgTable("parking_spots", {
   hasSecurityCamera: boolean("has_security_camera").notNull().default(false),
   is24Hours: boolean("is_24_hours").notNull().default(true),
   imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
-  phone: varchar("phone", { length: 50 }).notNull(),
-  paymentType: varchar("payment_type", { length: 50 }).notNull(), // cash, bank_transfer, card_monri
+  phone: varchar("phone", { length: 50 }).notNull().default(''),
+  paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer, card_monri
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -73,12 +73,19 @@ export const parkingSpotsRelations = relations(parkingSpots, ({ one, many }) => 
   bookings: many(bookings),
 }));
 
-export const insertParkingSpotSchema = createInsertSchema(parkingSpots).omit({
-  id: true,
-  ownerId: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
+  .omit({
+    id: true,
+    ownerId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
+    paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
+      errorMap: () => ({ message: "Tip plaćanja mora biti: Keš, Preko računa, ili Kartično" })
+    }),
+  });
 
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;
 export type ParkingSpot = typeof parkingSpots.$inferSelect;
