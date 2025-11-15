@@ -8,7 +8,7 @@ I prefer simple language and detailed explanations. I want iterative development
 
 ## System Architecture
 ### UI/UX Decisions
-The platform utilizes a modern black and green color scheme (Primary: #1B4332, Secondary: #40916C, Accent: #52B788, Background: #212529, Surface: #343A40, Text: #F8F9FA) with the Inter typeface. It features a mobile-first responsive design, 16px base spacing, and a custom ParkIN logo. A Serbian/English language toggle is available on the landing page, with preference saved to localStorage.
+The platform utilizes a modern black and green color scheme (Primary: #1B4332, Secondary: #40916C, Accent: #52B788, Background: #212529, Surface: #343A40, Text: #F8F9FA) with the Inter typeface. It features a mobile-first responsive design, 16px base spacing, and a custom ParkIN logo. A Serbian/English language toggle is available on the landing page and add-spot page, with preference saved to localStorage.
 
 ### Technical Implementations
 *   **Frontend**: React with TypeScript, Tailwind CSS, Shadcn UI.

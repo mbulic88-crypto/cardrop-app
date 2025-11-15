@@ -28,6 +28,121 @@ const SERBIAN_CITIES = [
   "Valjevo", "Šabac", "Sombor", "Kruševac", "Ostalo"
 ];
 
+const translations = {
+  sr: {
+    pageTitle: "Dodajte Parking Mesto",
+    pageSubtitle: "Popunite informacije o vašem parking mestu i počnite da zarađujete",
+    homeButton: "Početna",
+    langButton: "ENG",
+    title: "Naslov",
+    titlePlaceholder: "npr. Parking u centru grada",
+    description: "Opis",
+    descriptionPlaceholder: "Detaljan opis vašeg parking mesta",
+    address: "Adresa",
+    addressPlaceholder: "Unesite adresu",
+    addressDescription: "Koristite autocomplete za preciznu lokaciju",
+    city: "Grad",
+    cityPlaceholder: "Izaberite grad",
+    cityOptional: "(opciono)",
+    contactPhone: "Kontakt Telefon",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Telefon za kontakt sa iznajmljivačima",
+    contactEmail: "Kontakt Email",
+    emailPlaceholder: "primer@email.com",
+    emailDescription: "Email za kontakt i potvrde",
+    latitude: "Geografska Širina",
+    longitude: "Geografska Dužina",
+    coordinatesDescription: "Automatski popunjeno na osnovu adrese",
+    price: "Cena po Satu",
+    pricePlaceholder: "200",
+    priceDescription: "Cena po satu parkiranja",
+    currency: "Valuta",
+    paymentType: "Tip Plaćanja",
+    paymentCash: "Keš",
+    paymentBankTransfer: "Preko računa",
+    paymentCard: "Kartično (Monri)",
+    spotType: "Tip Parking Mesta",
+    spotUncovered: "Otvoreno",
+    spotCovered: "Pokriveno",
+    spotGarage: "Garaža",
+    evCharging: "Punjač za električna vozila",
+    evChargingDescription: "Da li imate punjač za EV?",
+    securityCamera: "Sigurnosna kamera",
+    securityCameraDescription: "Da li je prostor pod video nadzorom?",
+    available24h: "Dostupno 24/7",
+    available24hDescription: "Da li je parking mesto dostupno non-stop?",
+    additionalOptions: "Dodatne Opcije",
+    subscriptionPrice: "Cena pretplate",
+    subscriptionAmount: "1.000 RSD + Stripe provizija",
+    subscriptionDuration: "Vaše parking mesto će biti objavljeno 30 dana",
+    submitButton: "Dodaj Parking Mesto",
+    submittingButton: "Dodavanje...",
+    imageUploadTitle: "Dodaj Slike Parking Mesta",
+    imageUploadDescription: "Dodajte do 5 slika vašeg parking mesta kako bi privukli više korisnika.",
+    uploadButton: "Dodaj Slike",
+    finishButton: "Završi",
+    successTitle: "Uspešno Dodato",
+    successDescription: "Sada možete dodati slike parking mesta ili kliknite Završi.",
+    loginRequired: "Za dodavanje parking mesta potrebna je prijava na nalog.",
+  },
+  en: {
+    pageTitle: "Add Parking Spot",
+    pageSubtitle: "Fill in information about your parking spot and start earning",
+    homeButton: "Home",
+    langButton: "SRP",
+    title: "Title",
+    titlePlaceholder: "e.g. Parking in city center",
+    description: "Description",
+    descriptionPlaceholder: "Detailed description of your parking spot",
+    address: "Address",
+    addressPlaceholder: "Enter address",
+    addressDescription: "Use autocomplete for precise location",
+    city: "City",
+    cityPlaceholder: "Select city",
+    cityOptional: "(optional)",
+    contactPhone: "Contact Phone",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Phone for contact with renters",
+    contactEmail: "Contact Email",
+    emailPlaceholder: "example@email.com",
+    emailDescription: "Email for contact and confirmations",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    coordinatesDescription: "Automatically filled based on address",
+    price: "Price per Hour",
+    pricePlaceholder: "200",
+    priceDescription: "Price per hour of parking",
+    currency: "Currency",
+    paymentType: "Payment Type",
+    paymentCash: "Cash",
+    paymentBankTransfer: "Bank Transfer",
+    paymentCard: "Card (Monri)",
+    spotType: "Parking Spot Type",
+    spotUncovered: "Uncovered",
+    spotCovered: "Covered",
+    spotGarage: "Garage",
+    evCharging: "EV Charger",
+    evChargingDescription: "Do you have an EV charger?",
+    securityCamera: "Security Camera",
+    securityCameraDescription: "Is the area under video surveillance?",
+    available24h: "Available 24/7",
+    available24hDescription: "Is the parking spot available non-stop?",
+    additionalOptions: "Additional Options",
+    subscriptionPrice: "Subscription Price",
+    subscriptionAmount: "1,000 RSD + Stripe fee",
+    subscriptionDuration: "Your parking spot will be published for 30 days",
+    submitButton: "Add Parking Spot",
+    submittingButton: "Adding...",
+    imageUploadTitle: "Add Parking Spot Images",
+    imageUploadDescription: "Add up to 5 images of your parking spot to attract more users.",
+    uploadButton: "Add Images",
+    finishButton: "Finish",
+    successTitle: "Successfully Added",
+    successDescription: "You can now add images of the parking spot or click Finish.",
+    loginRequired: "Login is required to add a parking spot.",
+  }
+};
+
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
   description: z.string().min(1, "Opis je obavezan"),
@@ -50,7 +165,7 @@ const formSchema = z.object({
 
 export default function AddSpot() {
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [spotId, setSpotId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -79,10 +194,10 @@ export default function AddSpot() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       setLocation("/home");
     }
-  }, [isAuthenticated, setLocation]);
+  }, [isAuthenticated, isLoading, setLocation]);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -96,6 +211,8 @@ export default function AddSpot() {
     setLanguage(newLanguage);
     localStorage.setItem("parkin-language", newLanguage);
   };
+
+  const t = translations[language];
 
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -160,7 +277,7 @@ export default function AddSpot() {
               <Link href="/home">
                 <Button variant="outline" data-testid="button-home">
                   <HomeIcon className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Početna</span>
+                  <span className="hidden sm:inline">{t.homeButton}</span>
                 </Button>
               </Link>
 
@@ -170,7 +287,7 @@ export default function AddSpot() {
                 onClick={toggleLanguage}
               >
                 <Globe className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">{language === "sr" ? "ENG" : "SRP"}</span>
+                <span className="hidden sm:inline">{t.langButton}</span>
               </Button>
             </div>
           </div>
@@ -180,10 +297,10 @@ export default function AddSpot() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 text-foreground">
-            Dodajte Parking Mesto
+            {t.pageTitle}
           </h1>
           <p className="text-muted-foreground">
-            Popunite informacije o vašem parking mestu i počnite da zarađujete
+            {t.pageSubtitle}
           </p>
         </div>
 
@@ -195,9 +312,9 @@ export default function AddSpot() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Naslov</FormLabel>
+                    <FormLabel>{t.title}</FormLabel>
                     <FormControl>
-                      <Input placeholder="npr. Parking u centru grada" {...field} data-testid="input-title" />
+                      <Input placeholder={t.titlePlaceholder} {...field} data-testid="input-title" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,10 +326,10 @@ export default function AddSpot() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Opis</FormLabel>
+                    <FormLabel>{t.description}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Opišite parking mesto, pristup, okolinu..."
+                        placeholder={t.descriptionPlaceholder}
                         className="min-h-32"
                         {...field}
                         data-testid="input-description"
@@ -228,7 +345,7 @@ export default function AddSpot() {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Adresa</FormLabel>
+                    <FormLabel>{t.address}</FormLabel>
                     <FormControl>
                       <AddressAutocomplete
                         value={field.value}
@@ -241,11 +358,11 @@ export default function AddSpot() {
                             form.setValue('city', data.city);
                           }
                         }}
-                        placeholder="Počnite da kucate adresu u Srbiji..."
+                        placeholder={t.addressPlaceholder}
                       />
                     </FormControl>
                     <FormDescription>
-                      Izaberite adresu iz ponuđenih opcija - koordinate će biti automatski popunjene
+                      {t.addressDescription}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -257,11 +374,11 @@ export default function AddSpot() {
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Grad (Opciono)</FormLabel>
+                    <FormLabel>{t.city} {t.cityOptional}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-city">
-                          <SelectValue placeholder="Izaberite grad" />
+                          <SelectValue placeholder={t.cityPlaceholder} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -273,7 +390,7 @@ export default function AddSpot() {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Grad će biti automatski popunjen iz adrese, ali možete ga promeniti
+                      {t.addressDescription}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -286,12 +403,12 @@ export default function AddSpot() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kontakt Telefon</FormLabel>
+                      <FormLabel>{t.contactPhone}</FormLabel>
                       <FormControl>
-                        <Input placeholder="+381 64 123 4567" {...field} data-testid="input-phone" />
+                        <Input placeholder={t.phonePlaceholder} {...field} data-testid="input-phone" />
                       </FormControl>
                       <FormDescription>
-                        Telefon za kontakt sa iznajmljivačima
+                        {t.phoneDescription}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -303,12 +420,12 @@ export default function AddSpot() {
                   name="contactEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kontakt Email</FormLabel>
+                      <FormLabel>{t.contactEmail}</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="primer@email.com" {...field} data-testid="input-contact-email" />
+                        <Input type="email" placeholder={t.emailPlaceholder} {...field} data-testid="input-contact-email" />
                       </FormControl>
                       <FormDescription>
-                        Email za kontakt i potvrde
+                        {t.emailDescription}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -322,7 +439,7 @@ export default function AddSpot() {
                   name="latitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Geografska Širina</FormLabel>
+                      <FormLabel>{t.latitude}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.0001" {...field} data-testid="input-latitude" />
                       </FormControl>
@@ -336,7 +453,7 @@ export default function AddSpot() {
                   name="longitude"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Geografska Dužina</FormLabel>
+                      <FormLabel>{t.longitude}</FormLabel>
                       <FormControl>
                         <Input type="number" step="0.0001" {...field} data-testid="input-longitude" />
                       </FormControl>
@@ -346,16 +463,23 @@ export default function AddSpot() {
                 />
               </div>
 
+              <FormDescription className="text-sm text-muted-foreground -mt-4">
+                {t.coordinatesDescription}
+              </FormDescription>
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="pricePerHour"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cena po Satu</FormLabel>
+                      <FormLabel>{t.price}</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="150" {...field} data-testid="input-price" />
+                        <Input type="number" step="0.01" placeholder={t.pricePlaceholder} {...field} data-testid="input-price" />
                       </FormControl>
+                      <FormDescription>
+                        {t.priceDescription}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -366,7 +490,7 @@ export default function AddSpot() {
                   name="currency"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valuta</FormLabel>
+                      <FormLabel>{t.currency}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-currency">
@@ -389,7 +513,7 @@ export default function AddSpot() {
                 name="paymentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tip Plaćanja</FormLabel>
+                    <FormLabel>{t.paymentType}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-payment-type">
@@ -397,14 +521,11 @@ export default function AddSpot() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="cash">Keš</SelectItem>
-                        <SelectItem value="bank_transfer">Preko računa - kontaktirajte vlasnika</SelectItem>
-                        <SelectItem value="card_monri">Kartično (Monri)</SelectItem>
+                        <SelectItem value="cash">{t.paymentCash}</SelectItem>
+                        <SelectItem value="bank_transfer">{t.paymentBankTransfer}</SelectItem>
+                        <SelectItem value="card_monri">{t.paymentCard}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Izaberite način plaćanja koji prihvatate
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -415,7 +536,7 @@ export default function AddSpot() {
                 name="spotType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tip Parking Mesta</FormLabel>
+                    <FormLabel>{t.spotType}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-spot-type">
@@ -423,9 +544,9 @@ export default function AddSpot() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="uncovered">Nepokriveno</SelectItem>
-                        <SelectItem value="covered">Pokriveno</SelectItem>
-                        <SelectItem value="garage">Garaža</SelectItem>
+                        <SelectItem value="uncovered">{t.spotUncovered}</SelectItem>
+                        <SelectItem value="covered">{t.spotCovered}</SelectItem>
+                        <SelectItem value="garage">{t.spotGarage}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -434,7 +555,7 @@ export default function AddSpot() {
               />
 
               <div className="space-y-4 pt-4 border-t border-border">
-                <h3 className="font-semibold text-foreground">Dodatne Opcije</h3>
+                <h3 className="font-semibold text-foreground">{t.additionalOptions}</h3>
                 
                 <FormField
                   control={form.control}
@@ -442,8 +563,8 @@ export default function AddSpot() {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between">
                       <div>
-                        <FormLabel>EV Punjač</FormLabel>
-                        <FormDescription>Ima li punjač za električna vozila?</FormDescription>
+                        <FormLabel>{t.evCharging}</FormLabel>
+                        <FormDescription>{t.evChargingDescription}</FormDescription>
                       </div>
                       <FormControl>
                         <Switch
@@ -462,8 +583,8 @@ export default function AddSpot() {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between">
                       <div>
-                        <FormLabel>Sigurnosna Kamera</FormLabel>
-                        <FormDescription>Ima li video nadzor?</FormDescription>
+                        <FormLabel>{t.securityCamera}</FormLabel>
+                        <FormDescription>{t.securityCameraDescription}</FormDescription>
                       </div>
                       <FormControl>
                         <Switch
@@ -482,8 +603,8 @@ export default function AddSpot() {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between">
                       <div>
-                        <FormLabel>Dostupno 24/7</FormLabel>
-                        <FormDescription>Da li je dostupno non-stop?</FormDescription>
+                        <FormLabel>{t.available24h}</FormLabel>
+                        <FormDescription>{t.available24hDescription}</FormDescription>
                       </div>
                       <FormControl>
                         <Switch
@@ -500,13 +621,13 @@ export default function AddSpot() {
               <div className="space-y-3">
                 <div className="p-4 bg-accent/10 border border-accent rounded-md">
                   <p className="text-sm text-muted-foreground mb-1">
-                    💳 Cena pretplate
+                    💳 {t.subscriptionPrice}
                   </p>
                   <p className="text-lg font-semibold text-foreground">
-                    1.000 RSD + Stripe provizija
+                    {t.subscriptionAmount}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Vaše parking mesto će biti objavljeno 30 dana
+                    {t.subscriptionDuration}
                   </p>
                 </div>
 
@@ -517,7 +638,7 @@ export default function AddSpot() {
                   disabled={mutation.isPending}
                   data-testid="button-submit"
                 >
-                  {mutation.isPending ? "Dodavanje..." : "Dodaj Parking Mesto"}
+                  {mutation.isPending ? t.submittingButton : t.submitButton}
                 </Button>
               </div>
             </form>
@@ -527,10 +648,10 @@ export default function AddSpot() {
         {spotId && (
           <Card className="p-6 mt-6">
             <h3 className="text-xl font-semibold mb-4 text-foreground">
-              Dodajte Slike Parking Mesta
+              {t.imageUploadTitle}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Dodajte do 5 slika vašeg parking mesta kako bi privukli više korisnika.
+              {t.imageUploadDescription}
             </p>
             
             {uploadedImages.length > 0 && (
@@ -565,15 +686,15 @@ export default function AddSpot() {
                     });
                     setUploadedImages(response.imageUrls);
                     toast({
-                      title: "Slika Dodata",
-                      description: "Vaša slika je uspešno dodata parking mestu.",
+                      title: t.successTitle,
+                      description: t.successDescription,
                     });
                   }
                 }}
                 buttonClassName="flex-1"
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Dodaj Sliku
+                {t.uploadButton}
               </ObjectUploader>
 
               <Button 
@@ -584,7 +705,7 @@ export default function AddSpot() {
                 className="flex-1"
                 data-testid="button-finish"
               >
-                Završi
+                {t.finishButton}
               </Button>
             </div>
           </Card>
@@ -595,7 +716,7 @@ export default function AddSpot() {
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
-        message="Za dodavanje parking mesta potrebna je prijava na nalog."
+        message={t.loginRequired}
         redirectPath="/add-spot"
       />
     </div>
