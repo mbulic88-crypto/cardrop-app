@@ -3,8 +3,10 @@ import { Card } from "@/components/ui/card";
 import { MapPin, Clock, Shield, Zap, Globe } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 
 const translations = {
   sr: {
@@ -55,6 +57,9 @@ const translations = {
 
 export default function Landing() {
   const [language, setLanguage] = useState<"sr" | "en">("sr");
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -67,6 +72,14 @@ export default function Landing() {
     const newLanguage = language === "sr" ? "en" : "sr";
     setLanguage(newLanguage);
     localStorage.setItem("parkin-language", newLanguage);
+  };
+
+  const handleListSpotClick = () => {
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+    } else {
+      setLocation("/add-spot");
+    }
   };
 
   const t = translations[language];
@@ -130,15 +143,14 @@ export default function Landing() {
                 {t.findSpotButton}
               </Button>
             </Link>
-            <Link href="/add-spot">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-6 w-full sm:w-auto"
-                data-testid="button-list-spot-hero"
-              >
-                {t.listSpotButton}
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="text-lg px-8 py-6 w-full sm:w-auto"
+              data-testid="button-list-spot-hero"
+              onClick={handleListSpotClick}
+            >
+              {t.listSpotButton}
+            </Button>
           </div>
         </div>
       </div>
@@ -237,16 +249,15 @@ export default function Landing() {
           <p className="text-lg text-muted-foreground mb-8">
             {t.ctaSubtitle}
           </p>
-          <Link href="/add-spot">
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6"
-              data-testid="button-list-spot-cta"
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              {t.listSpotButton}
-            </Button>
-          </Link>
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6"
+            data-testid="button-list-spot-cta"
+            onClick={handleListSpotClick}
+          >
+            <Zap className="w-5 h-5 mr-2" />
+            {t.listSpotButton}
+          </Button>
         </div>
       </div>
 
@@ -263,6 +274,11 @@ export default function Landing() {
           <p className="text-muted-foreground">{t.footerText}</p>
         </div>
       </footer>
+
+      <LoginRequiredDialog
+        isOpen={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+      />
     </div>
   );
 }
