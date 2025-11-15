@@ -55,6 +55,7 @@ export default function AddSpot() {
   const [spotId, setSpotId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [language, setLanguage] = useState<"sr" | "en">("sr");
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,6 +83,19 @@ export default function AddSpot() {
       setLocation("/home");
     }
   }, [isAuthenticated, setLocation]);
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("parkin-language");
+    if (savedLanguage === "en" || savedLanguage === "sr") {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  const toggleLanguage = () => {
+    const newLanguage = language === "sr" ? "en" : "sr";
+    setLanguage(newLanguage);
+    localStorage.setItem("parkin-language", newLanguage);
+  };
 
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
@@ -150,9 +164,13 @@ export default function AddSpot() {
                 </Button>
               </Link>
 
-              <Button variant="outline" data-testid="button-language">
+              <Button 
+                variant="outline" 
+                data-testid="button-language"
+                onClick={toggleLanguage}
+              >
                 <Globe className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">ENG</span>
+                <span className="hidden sm:inline">{language === "sr" ? "ENG" : "SRP"}</span>
               </Button>
             </div>
           </div>
