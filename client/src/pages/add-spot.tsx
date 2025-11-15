@@ -34,6 +34,7 @@ const formSchema = z.object({
   address: z.string().min(5, "Adresa mora biti uneta"),
   city: z.preprocess((val) => val === "" ? undefined : val, z.string().optional()),
   phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
+  contactEmail: z.string().email("Unesite validnu email adresu"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
   pricePerHour: z.string().min(1, "Cena je obavezna"),
@@ -63,6 +64,7 @@ export default function AddSpot() {
       address: "",
       city: "",
       phone: "",
+      contactEmail: "",
       latitude: "45.2671",
       longitude: "19.8335",
       pricePerHour: "",
@@ -260,22 +262,41 @@ export default function AddSpot() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kontakt Telefon</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+381 64 123 4567" {...field} data-testid="input-phone" />
-                    </FormControl>
-                    <FormDescription>
-                      Telefon za kontakt sa iznajmljivačima
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kontakt Telefon</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+381 64 123 4567" {...field} data-testid="input-phone" />
+                      </FormControl>
+                      <FormDescription>
+                        Telefon za kontakt sa iznajmljivačima
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contactEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kontakt Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="primer@email.com" {...field} data-testid="input-contact-email" />
+                      </FormControl>
+                      <FormDescription>
+                        Email za kontakt i potvrde
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -458,15 +479,29 @@ export default function AddSpot() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={mutation.isPending}
-                data-testid="button-submit"
-              >
-                {mutation.isPending ? "Dodavanje..." : "Dodaj Parking Mesto"}
-              </Button>
+              <div className="space-y-3">
+                <div className="p-4 bg-accent/10 border border-accent rounded-md">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    💳 Cena pretplate
+                  </p>
+                  <p className="text-lg font-semibold text-foreground">
+                    1.000 RSD + Stripe provizija
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Vaše parking mesto će biti objavljeno 30 dana
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={mutation.isPending}
+                  data-testid="button-submit"
+                >
+                  {mutation.isPending ? "Dodavanje..." : "Dodaj Parking Mesto"}
+                </Button>
+              </div>
             </form>
           </Form>
         </Card>

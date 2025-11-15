@@ -5,6 +5,15 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema } from "@shared/schema";
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import Stripe from "stripe";
+
+// Initialize Stripe - will be used when API keys are provided
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-10-29.clover",
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -46,17 +55,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check if currently in free trial period
+  app.get('/api/free-trial-status', async (req, res) => {
+    try {
+      const freeTrialPeriod = await storage.getActiveFreeTrialPeriod();
+      const isInFreeTrial = freeTrialPeriod ? new Date() <= new Date(freeTrialPeriod.endDate) : false;
+      
+      res.json({
+        isActive: isInFreeTrial,
+        startDate: freeTrialPeriod?.startDate || null,
+        endDate: freeTrialPeriod?.endDate || null,
+      });
+    } catch (error) {
+      console.error("Error checking free trial status:", error);
+      res.status(500).json({ message: "Failed to check free trial status" });
+    }
+  });
+
+  // Create Stripe payment intent for parking spot subscription
+  app.post('/api/create-parking-spot-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured. Please add STRIPE_SECRET_KEY." });
+      }
+
+      const { spotData } = req.body;
+      const userId = req.user.claims.sub;
+
+      // Validate spot data
+      const validatedData = insertParkingSpotSchema.parse(spotData);
+
+      // Create a temporary spot record (will be activated after payment)
+      const spot = await storage.createParkingSpot({
+        ...validatedData,
+        ownerId: userId,
+        isActive: false, // Will be activated after payment
+      });
+
+      // Create Stripe payment intent (1000 RSD = 1000 * 100 = 100000 dinars in smallest unit)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 100000, // 1000 RSD in smallest currency unit
+        currency: "rsd",
+        metadata: {
+          spotId: spot.id,
+          userId: userId,
+          subscriptionType: "monthly",
+        },
+        description: `ParkIN - Pretplata za parking mesto: ${validatedData.title}`,
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        spotId: spot.id,
+      });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid spot data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
+      // Check if in free trial period
+      const freeTrialPeriod = await storage.getActiveFreeTrialPeriod();
+      const isInFreeTrial = freeTrialPeriod ? new Date() <= new Date(freeTrialPeriod.endDate) : false;
+
+      if (!isInFreeTrial) {
+        return res.status(402).json({ 
+          message: "Payment required",
+          requiresPayment: true 
+        });
+      }
+
       // Validate request body
       const validatedData = insertParkingSpotSchema.parse(req.body);
       
+      // Calculate subscription expiry (30 days from now)
+      const subscriptionExpiresAt = new Date();
+      subscriptionExpiresAt.setDate(subscriptionExpiresAt.getDate() + 30);
+
       const spot = await storage.createParkingSpot({
         ...validatedData,
         ownerId: userId,
-      });
+        subscriptionExpiresAt: subscriptionExpiresAt,
+      } as any);
       
       res.status(201).json(spot);
     } catch (error: any) {

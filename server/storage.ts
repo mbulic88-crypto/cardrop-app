@@ -3,6 +3,7 @@ import {
   parkingSpots,
   bookings,
   reviews,
+  freeTrialPeriod,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -11,6 +12,7 @@ import {
   type InsertBooking,
   type Review,
   type InsertReview,
+  type FreeTrialPeriod,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
@@ -39,6 +41,9 @@ export interface IStorage {
   getReviewsForSpot(spotId: string): Promise<Review[]>;
   getReviewForBooking(bookingId: string): Promise<Review | undefined>;
   canUserReviewBooking(bookingId: string, userId: string): Promise<boolean>;
+
+  // Free trial period operations
+  getActiveFreeTrialPeriod(): Promise<FreeTrialPeriod | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -191,6 +196,17 @@ export class DatabaseStorage implements IStorage {
     }
 
     return true;
+  }
+
+  // Free trial period operations
+  async getActiveFreeTrialPeriod(): Promise<FreeTrialPeriod | undefined> {
+    const [period] = await db
+      .select()
+      .from(freeTrialPeriod)
+      .where(eq(freeTrialPeriod.isActive, true))
+      .orderBy(desc(freeTrialPeriod.createdAt))
+      .limit(1);
+    return period;
   }
 }
 
