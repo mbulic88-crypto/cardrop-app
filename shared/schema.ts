@@ -60,6 +60,9 @@ export const parkingSpots = pgTable("parking_spots", {
   imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
   phone: varchar("phone", { length: 50 }).notNull().default(''),
   paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer, card_monri
+  contactEmail: varchar("contact_email", { length: 255 }).notNull(),
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -77,6 +80,8 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
   .omit({
     id: true,
     ownerId: true,
+    subscriptionExpiresAt: true,
+    stripePaymentIntentId: true,
     createdAt: true,
     updatedAt: true,
   })
@@ -85,6 +90,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
       errorMap: () => ({ message: "Tip plaćanja mora biti: Keš, Preko računa, ili Kartično" })
     }),
+    contactEmail: z.string().email("Unesite validnu email adresu"),
   });
 
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;
@@ -195,3 +201,15 @@ export const usersRelations = relations(users, ({ many }) => ({
   reviewsGiven: many(reviews, { relationName: "reviewsGiven" }),
   reviewsReceived: many(reviews, { relationName: "reviewsReceived" }),
 }));
+
+// Free trial period table - to track promotional free period
+export const freeTrialPeriod = pgTable("free_trial_period", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type FreeTrialPeriod = typeof freeTrialPeriod.$inferSelect;
