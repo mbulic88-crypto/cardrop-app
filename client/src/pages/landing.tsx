@@ -276,7 +276,7 @@ export default function Landing() {
       </footer>
 
       <LoginRequiredDialog
-        isOpen={showLoginDialog}
+        open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
       />
     </div>

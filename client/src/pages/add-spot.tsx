@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,6 +74,12 @@ export default function AddSpot() {
       is24Hours: true,
     },
   });
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation("/home");
+    }
+  }, [isAuthenticated, setLocation]);
 
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
