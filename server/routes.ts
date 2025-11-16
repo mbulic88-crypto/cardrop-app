@@ -121,6 +121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       
+      // TODO: Enable payment check when ready to launch
+      // TEMPORARILY DISABLED FOR TESTING - Enable this when ready to activate paid subscriptions
+      /*
       // Check if in free trial period
       const freeTrialPeriod = await storage.getActiveFreeTrialPeriod();
       const isInFreeTrial = freeTrialPeriod ? new Date() <= new Date(freeTrialPeriod.endDate) : false;
@@ -131,6 +134,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requiresPayment: true 
         });
       }
+      */
 
       // Validate request body
       const validatedData = insertParkingSpotSchema.parse(req.body);
