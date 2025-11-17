@@ -8,6 +8,13 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Extend session type to include returnTo property
+declare module 'express-session' {
+  interface SessionData {
+    returnTo?: string;
+  }
+}
+
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
@@ -102,6 +109,12 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // Save redirect_uri to session so passport can redirect after login
+    if (req.query.redirect_uri && typeof req.query.redirect_uri === 'string') {
+      req.session.returnTo = req.query.redirect_uri;
+      console.log('[AUTH] Saved redirect_uri to session:', req.query.redirect_uri);
+    }
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -109,9 +122,29 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
-      failureRedirect: "/api/login",
+    const returnTo = req.session.returnTo;
+    console.log('[AUTH] Callback - session.returnTo:', returnTo);
+    
+    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any) => {
+      if (err || !user) {
+        console.log('[AUTH] Callback - authentication failed:', err);
+        return res.redirect("/api/login");
+      }
+      
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.log('[AUTH] Callback - login error:', loginErr);
+          return res.redirect("/api/login");
+        }
+        
+        // Clear returnTo from session after using it
+        delete req.session.returnTo;
+        
+        // Redirect to the saved path or default to home
+        const redirectPath = returnTo || "/";
+        console.log('[AUTH] Callback - redirecting to:', redirectPath);
+        res.redirect(redirectPath);
+      });
     })(req, res, next);
   });
 
