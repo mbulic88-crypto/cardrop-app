@@ -130,7 +130,7 @@ export default function Home() {
 
             <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2">
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[75px] xs:w-[95px] sm:w-[140px] md:w-[180px] text-xs xs:text-sm" data-testid="select-city-filter">
+                <SelectTrigger className="w-[75px] xs:w-[95px] sm:w-[140px] md:w-[180px] text-xs xs:text-sm px-1.5 xs:px-3" data-testid="select-city-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

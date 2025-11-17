@@ -136,16 +136,16 @@ export default function Transactions() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between gap-2">
-            <Link href="/home" className="flex items-center gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-8 h-8 rounded-lg" />
+        <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-1 xs:gap-2">
+            <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
+              <img src={parkInLogo} alt="ParkIN" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
               <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
             </Link>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
               <Link href="/home">
-                <Button variant="outline" size="icon" className="sm:w-auto sm:px-3" data-testid="button-home">
+                <Button variant="outline" size="icon" className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3" data-testid="button-home">
                   <HomeIcon className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Početna</span>
                 </Button>
