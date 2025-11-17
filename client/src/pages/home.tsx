@@ -120,17 +120,17 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
           {/* Top Row: Logo, City Filter, Filters Button */}
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <Link href="/home" className="flex items-center gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-8 h-8 rounded-lg" />
+          <div className="flex items-center justify-between gap-1 xs:gap-2 mb-3">
+            <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
+              <img src={parkInLogo} alt="ParkIN" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
               <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
             </Link>
 
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2">
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[100px] sm:w-[140px] md:w-[180px]" data-testid="select-city-filter">
+                <SelectTrigger className="w-[75px] xs:w-[95px] sm:w-[140px] md:w-[180px] text-xs xs:text-sm" data-testid="select-city-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -147,15 +147,16 @@ export default function Home() {
                 size="icon"
                 onClick={() => setShowFilters(!showFilters)}
                 data-testid="button-toggle-filters"
+                className="h-8 w-8 xs:h-9 xs:w-9"
               >
-                <SlidersHorizontal className="w-5 h-5" />
+                <SlidersHorizontal className="w-4 h-4 xs:w-5 xs:h-5" />
               </Button>
 
-              <Link href="/">
+              <Link href="/" className="hidden xs:inline-block">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="sm:w-auto sm:px-3"
+                  className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3"
                   data-testid="button-home"
                 >
                   <HomeIcon className="w-4 h-4 sm:mr-2" />
