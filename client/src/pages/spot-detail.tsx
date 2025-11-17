@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { sr } from "date-fns/locale";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { SpotLocationMap } from "@/components/SpotLocationMap";
 
 export default function SpotDetail() {
   const [, params] = useRoute("/spot/:id");
@@ -189,15 +190,15 @@ export default function SpotDetail() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Image Gallery */}
+        {/* Location Map */}
         <div className="mb-8">
           <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-            {spot.imageUrls && spot.imageUrls.length > 0 ? (
-              <img
-                src={spot.imageUrls[0]}
-                alt={spot.title}
-                className="w-full h-full object-cover"
-                data-testid="img-spot-main"
+            {spot.latitude && spot.longitude ? (
+              <SpotLocationMap
+                latitude={spot.latitude}
+                longitude={spot.longitude}
+                title={spot.title}
+                address={spot.address}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -206,6 +207,25 @@ export default function SpotDetail() {
             )}
           </div>
         </div>
+
+        {/* Image Gallery */}
+        {spot.imageUrls && spot.imageUrls.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">Galerija Slika</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {spot.imageUrls.map((imageUrl, index) => (
+                <div key={index} className="aspect-video rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={imageUrl}
+                    alt={`${spot.title} - Slika ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    data-testid={`img-spot-gallery-${index}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Details */}
