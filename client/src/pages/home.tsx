@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
-import { SpotLocationMap } from "@/components/SpotLocationMap";
+import { StaticMapImage } from "@/components/StaticMapImage";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 const serbianCities = [
@@ -67,36 +67,16 @@ export default function Home() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
+          {/* Top Row: Logo, City Filter, Filters Button */}
+          <div className="flex items-center justify-between gap-4 mb-3">
             <Link href="/home" className="flex items-center gap-2">
               <img src={parkInLogo} alt="ParkIN" className="w-8 h-8 rounded-lg" />
               <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
             </Link>
 
-            {/* Search Bar & City Filter */}
-            <div className="flex-1 max-w-2xl flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="Pretražite po lokaciji ili adresi..."
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10 pr-10 h-14 md:h-10 text-lg md:text-sm"
-                  data-testid="input-search-location"
-                />
-                {searchLocation && (
-                  <button
-                    onClick={() => setSearchLocation("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    data-testid="button-clear-search"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              
+            <div className="flex items-center gap-2">
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[180px]" data-testid="select-city-filter">
+                <SelectTrigger className="w-[140px] md:w-[180px]" data-testid="select-city-filter">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -107,26 +87,47 @@ export default function Home() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowFilters(!showFilters)}
-              data-testid="button-toggle-filters"
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-            </Button>
-
-            <Link href="/">
               <Button
                 variant="outline"
-                data-testid="button-home"
+                size="icon"
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="button-toggle-filters"
               >
-                <HomeIcon className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Početna</span>
+                <SlidersHorizontal className="w-5 h-5" />
               </Button>
-            </Link>
+
+              <Link href="/">
+                <Button
+                  variant="outline"
+                  data-testid="button-home"
+                >
+                  <HomeIcon className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Početna</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Search Bar Row */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+            <Input
+              placeholder="Pretražite po lokaciji ili adresi..."
+              value={searchLocation}
+              onChange={(e) => setSearchLocation(e.target.value)}
+              className="pl-10 pr-10 h-14 text-lg"
+              data-testid="input-search-location"
+            />
+            {searchLocation && (
+              <button
+                onClick={() => setSearchLocation("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                data-testid="button-clear-search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Filters Panel */}
@@ -231,7 +232,7 @@ export default function Home() {
           <>
             {/* Parking Spots Grid */}
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <Card key={i} className="p-4 animate-pulse">
                     <div className="aspect-video bg-muted rounded-lg mb-4" />
@@ -251,18 +252,19 @@ export default function Home() {
                 </p>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredSpots.map((spot) => (
                   <Link key={spot.id} href={`/spot/${spot.id}`}>
                     <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-spot-${spot.id}`}>
-                      {/* Map Preview */}
+                      {/* Static Map Preview */}
                       <div className="aspect-video bg-muted relative">
                         {spot.latitude && spot.longitude ? (
-                          <SpotLocationMap
+                          <StaticMapImage
                             latitude={spot.latitude}
                             longitude={spot.longitude}
-                            title={spot.title}
-                            address={spot.address}
+                            width={600}
+                            height={400}
+                            zoom={14}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
