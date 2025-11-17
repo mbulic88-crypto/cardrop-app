@@ -218,12 +218,6 @@ export default function AddSpot() {
   });
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setLocation("/home");
-    }
-  }, [isAuthenticated, isLoading, setLocation]);
-
-  useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
     if (savedLanguage === "en" || savedLanguage === "sr") {
       setLanguage(savedLanguage);
