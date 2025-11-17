@@ -19,6 +19,7 @@ export function StaticMapImage({
   const lat = typeof latitude === 'string' ? parseFloat(latitude) : latitude;
   const lon = typeof longitude === 'string' ? parseFloat(longitude) : longitude;
   
+  // %23 is the URL-encoded version of # for the marker color #52B788
   const mapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${width}&height=${height}&center=lonlat:${lon},${lat}&zoom=${zoom}&marker=lonlat:${lon},${lat};color:%2352B788;size:medium&apiKey=${apiKey}`;
 
   return (
