@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
+import { SpotLocationMap } from "@/components/SpotLocationMap";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 const serbianCities = [
@@ -80,7 +81,7 @@ export default function Home() {
                   placeholder="Pretražite po lokaciji ili adresi..."
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10 pr-10 h-12 md:h-10 text-base md:text-sm"
+                  className="pl-10 pr-10 h-14 md:h-10 text-lg md:text-sm"
                   data-testid="input-search-location"
                 />
                 {searchLocation && (
