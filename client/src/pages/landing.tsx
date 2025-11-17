@@ -278,6 +278,7 @@ export default function Landing() {
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
+        redirectPath="/add-spot"
       />
     </div>
   );
