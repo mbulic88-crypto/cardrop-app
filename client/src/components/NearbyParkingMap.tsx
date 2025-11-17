@@ -99,7 +99,7 @@ export function NearbyParkingMap({ searchedLocation, nearbySpots }: NearbyParkin
 
     if (allLatLngs.length > 0) {
       const bounds = L.latLngBounds(allLatLngs);
-      mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      mapRef.current.fitBounds(bounds, { padding: [50, 50], animate: false });
     }
 
     return () => {

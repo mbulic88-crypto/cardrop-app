@@ -100,7 +100,10 @@ export default function Home() {
               return { ...spot, distance };
             })
             .sort((a, b) => a.distance - b.distance)
-            .slice(0, 3); // Get 3 closest spots
+            .filter((spot, index, self) => 
+              index === self.findIndex((s) => s.id === spot.id)
+            )
+            .slice(0, 3); // Get 3 closest unique spots
 
           setNearbySpots(spotsWithDistance);
         }
