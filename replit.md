@@ -23,11 +23,17 @@ The platform utilizes a modern black and green color scheme (Primary: #1B4332, S
 *   **Terms & Conditions**: A dedicated page with a liability disclaimer, requiring acceptance before accessing authenticated features.
 
 ### Feature Specifications
-*   **User Management**: Registration, authentication, and profile management.
+*   **User Management**: Registration, authentication, and profile management. Users have `hasUsedFreeTrial` flag to track trial eligibility.
 *   **Listing Management**: Owners can list parking spots with location, time slots, pricing (RSD/BAM), contact phone, payment type, spot type, and features. Includes secure image upload. City field is optional with 17 options (16 major Serbian cities + "Ostalo" for other locations).
+*   **Subscription Pricing System**: Four subscription tiers for parking spot listings:
+    - **Free Trial**: 14 days, 0 RSD (one-time only, tracked per user via `hasUsedFreeTrial`)
+    - **Monthly**: 30 days, 1,000 RSD
+    - **Half-Yearly**: 180 days, 5,000 RSD (17% savings)
+    - **Yearly**: 365 days, 9,000 RSD (25% savings)
+    Interactive pricing cards show all options with automatic selection based on trial eligibility. Each parking spot has `subscriptionType` and `subscriptionExpiresAt` fields.
 *   **Search & Discovery**: Interactive map-based search with filters for location (city), availability, price, and spot type.
 *   **Booking System**: Secure booking flow with calendar selection and real-time availability.
-*   **Payment Processing**: Integration with Monri Payments (Payten) for secure transactions.
+*   **Payment Processing**: Integration with Monri Payments (Payten) for secure transactions (currently disabled for testing; spots can be created without payment).
 *   **User Dashboard**: Management of bookings and owned parking spots, including a transaction history with financial summaries.
 *   **Review & Rating System**: 1-5 star ratings and comments (10-1000 characters) for paid bookings, displayed on spot detail pages with average ratings.
 
@@ -35,8 +41,9 @@ The platform utilizes a modern black and green color scheme (Primary: #1B4332, S
 *   **API Design**: RESTful API endpoints for CRUD operations on parking spots, bookings, payments, and reviews.
 *   **Security**: Server-side validation for all inputs, secure handling of payment tokens, and injection prevention for review data.
 *   **Data Validation**: Zod schemas are used for robust data validation on both frontend and backend, handling type conversions for dates and other complex data.
-*   **Error Handling**: Comprehensive error handling, including specific responses for unique constraint violations (e.g., duplicate reviews).
+*   **Error Handling**: Comprehensive error handling, including specific responses for unique constraint violations (e.g., duplicate reviews), trial already used (403), and invalid subscription plans (400).
 *   **Geographic Scope**: Designed for Serbia, with city-based filtering and popular destination features.
+*   **Subscription Logic**: Backend validates trial eligibility by checking `hasUsedFreeTrial` flag, calculates expiry dates using `shared/pricing.ts` helper functions, and tracks subscription type per parking spot. Detailed logging added for debugging subscription flow.
 
 ## External Dependencies
 *   **Monri Payments (Payten)**: API v2 (REST/JSON) for secure payment processing.
