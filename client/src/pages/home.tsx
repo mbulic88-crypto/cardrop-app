@@ -80,7 +80,7 @@ export default function Home() {
                   placeholder="Pretražite po lokaciji ili adresi..."
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10 pr-10"
+                  className="pl-10 pr-10 h-12 md:h-10 text-base md:text-sm"
                   data-testid="input-search-location"
                 />
                 {searchLocation && (
