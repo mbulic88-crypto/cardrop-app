@@ -109,11 +109,11 @@ export default function Payment() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <Link href="/home">
-            <Button variant="ghost" data-testid="button-back">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Nazad
+            <Button variant="ghost" size="icon" className="sm:w-auto sm:px-3" data-testid="button-back">
+              <ArrowLeft className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nazad</span>
             </Button>
           </Link>
         </div>
