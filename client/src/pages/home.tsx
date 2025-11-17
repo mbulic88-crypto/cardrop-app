@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
 import { StaticMapImage } from "@/components/StaticMapImage";
+import { NearbyParkingMap } from "@/components/NearbyParkingMap";
+import { geocodeAddress, calculateDistance } from "@/lib/geocoding";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 const serbianCities = [
@@ -41,6 +43,8 @@ export default function Home() {
   const [priceRange, setPriceRange] = useState([0, 500]);
   const [spotType, setSpotType] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [geocodedLocation, setGeocodedLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [nearbySpots, setNearbySpots] = useState<Array<ParkingSpot & { distance: number }>>([]);
 
   const { data: spots = [], isLoading } = useQuery<ParkingSpot[]>({
     queryKey: ["/api/parking-spots"],
@@ -61,6 +65,53 @@ export default function Home() {
     
     return matchesLocation && matchesCity && matchesPrice && matchesType && spot.isActive;
   });
+
+  // Geocode search location when no results found
+  useEffect(() => {
+    async function findNearbySpots() {
+      if (searchLocation && filteredSpots.length === 0 && spots.length > 0) {
+        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+        
+        if (!apiKey) {
+          console.error('Geoapify API key not found');
+          return;
+        }
+
+        // Geocode the searched address
+        const location = await geocodeAddress(searchLocation, apiKey);
+        
+        if (location) {
+          setGeocodedLocation(location);
+
+          // Calculate distances to all parking spots
+          const spotsWithDistance = spots
+            .filter((spot) => spot.latitude && spot.longitude && spot.isActive)
+            .map((spot) => {
+              const lat = typeof spot.latitude === 'string' ? parseFloat(spot.latitude) : spot.latitude;
+              const lon = typeof spot.longitude === 'string' ? parseFloat(spot.longitude) : spot.longitude;
+              
+              const distance = calculateDistance(
+                location.lat,
+                location.lon,
+                lat,
+                lon
+              );
+
+              return { ...spot, distance };
+            })
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 3); // Get 3 closest spots
+
+          setNearbySpots(spotsWithDistance);
+        }
+      } else {
+        setGeocodedLocation(null);
+        setNearbySpots([]);
+      }
+    }
+
+    findNearbySpots();
+  }, [searchLocation, filteredSpots.length, spots]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,15 +293,119 @@ export default function Home() {
                 ))}
               </div>
             ) : filteredSpots.length === 0 ? (
-              <Card className="p-12 text-center">
-                <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">
-                  Nema Rezultata
-                </h3>
-                <p className="text-muted-foreground">
-                  Pokušajte da promenite filter ili pretragu
-                </p>
-              </Card>
+              <>
+                {geocodedLocation && nearbySpots.length > 0 ? (
+                  <div className="space-y-6">
+                    {/* Message */}
+                    <Card className="p-6 text-center bg-muted/30">
+                      <MapPin className="w-12 h-12 text-accent mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+                        Nema parking mesta na traženoj lokaciji
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Ali pronašli smo {nearbySpots.length} najbliža parking mesta u blizini
+                      </p>
+                    </Card>
+
+                    {/* Map with nearby spots */}
+                    <NearbyParkingMap
+                      searchedLocation={geocodedLocation}
+                      nearbySpots={nearbySpots}
+                    />
+
+                    {/* Nearby spots cards */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-foreground">
+                        Najbliža Parking Mesta
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {nearbySpots.map((spot) => (
+                          <Link key={spot.id} href={`/spot/${spot.id}`}>
+                            <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-nearby-spot-${spot.id}`}>
+                              {/* Static Map Preview */}
+                              <div className="aspect-video bg-muted relative">
+                                {spot.latitude && spot.longitude ? (
+                                  <StaticMapImage
+                                    latitude={spot.latitude}
+                                    longitude={spot.longitude}
+                                    width={600}
+                                    height={400}
+                                    zoom={14}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <MapPin className="w-12 h-12 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="absolute top-2 right-2 z-10">
+                                  <Badge className="bg-accent/90 text-accent-foreground border-0">
+                                    {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
+                                  </Badge>
+                                </div>
+                                {/* Distance badge */}
+                                <div className="absolute bottom-2 left-2 z-10">
+                                  <Badge className="bg-card/90 text-card-foreground border border-card-border">
+                                    ~{spot.distance.toFixed(1)} km
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Content */}
+                              <div className="p-3">
+                                <h3 className="font-semibold text-base mb-2 text-card-foreground">
+                                  {spot.title}
+                                </h3>
+                                <div className="flex items-center text-muted-foreground mb-3">
+                                  <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                                  <span className="text-xs line-clamp-1">{spot.address}</span>
+                                </div>
+
+                                {/* Features */}
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                  {spot.hasEvCharging && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Zap className="w-3 h-3 mr-1" />
+                                      EV
+                                    </Badge>
+                                  )}
+                                  {spot.hasSecurityCamera && (
+                                    <Badge variant="outline" className="text-xs">
+                                      <Camera className="w-3 h-3 mr-1" />
+                                      Kamera
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Price */}
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="text-xl font-bold text-accent">
+                                      {spot.pricePerHour}
+                                    </span>
+                                    <span className="text-muted-foreground text-xs ml-1">
+                                      {spot.currency}/sat
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Card className="p-12 text-center">
+                    <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-card-foreground">
+                      Nema Rezultata
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Pokušajte da promenite filter ili pretragu
+                    </p>
+                  </Card>
+                )}
+              </>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredSpots.map((spot) => (
