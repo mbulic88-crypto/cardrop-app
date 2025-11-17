@@ -255,20 +255,21 @@ export default function Home() {
                 {filteredSpots.map((spot) => (
                   <Link key={spot.id} href={`/spot/${spot.id}`}>
                     <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-spot-${spot.id}`}>
-                      {/* Image */}
+                      {/* Map Preview */}
                       <div className="aspect-video bg-muted relative">
-                        {spot.imageUrls && spot.imageUrls.length > 0 ? (
-                          <img
-                            src={spot.imageUrls[0]}
-                            alt={spot.title}
-                            className="w-full h-full object-cover"
+                        {spot.latitude && spot.longitude ? (
+                          <SpotLocationMap
+                            latitude={spot.latitude}
+                            longitude={spot.longitude}
+                            title={spot.title}
+                            address={spot.address}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <MapPin className="w-12 h-12 text-muted-foreground" />
                           </div>
                         )}
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-2 right-2 z-10">
                           <Badge className="bg-accent/90 text-accent-foreground border-0">
                             {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
                           </Badge>
