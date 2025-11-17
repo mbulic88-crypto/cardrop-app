@@ -122,30 +122,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const { subscriptionType, ...spotData } = req.body;
       
+      console.log('=== POST /api/parking-spots ===');
+      console.log('userId:', userId);
+      console.log('subscriptionType:', subscriptionType);
+      console.log('spotData:', JSON.stringify(spotData).substring(0, 200));
+      
       // Import pricing config
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
       
       // Get the selected plan
       const plan = getPlanById(subscriptionType || 'monthly');
+      console.log('Selected plan:', plan?.id, plan?.name);
       if (!plan) {
+        console.error('Invalid subscription plan:', subscriptionType);
         return res.status(400).json({ message: "Invalid subscription plan" });
       }
       
       // Check if user is trying to use trial
       if (plan.isTrial) {
+        console.log('User is trying to use trial plan');
         // Get user to check if they've already used trial
         const user = await storage.getUser(userId);
+        console.log('User data:', user ? `id=${user.id}, hasUsedFreeTrial=${user.hasUsedFreeTrial}` : 'null');
         if (!user) {
+          console.error('User not found:', userId);
           return res.status(404).json({ message: "User not found" });
         }
         
         if (user.hasUsedFreeTrial) {
+          console.log('User already used trial');
           return res.status(403).json({ 
             message: "Već ste iskoristili besplatni probni period. Molimo izaberite plaćeni plan.",
             alreadyUsedTrial: true
           });
         }
         
+        console.log('Marking user as having used trial');
         // Mark user as having used free trial
         await storage.updateUser(userId, { hasUsedFreeTrial: true });
       } else {
@@ -155,11 +167,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate spot data
+      console.log('Validating spot data...');
       const validatedData = insertParkingSpotSchema.parse(spotData);
+      console.log('Validation successful');
       
       // Calculate subscription expiry based on selected plan
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
+      console.log('Subscription expires at:', subscriptionExpiresAt.toISOString());
 
+      console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
         ...validatedData,
         ownerId: userId,
@@ -167,6 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionExpiresAt: subscriptionExpiresAt,
       } as any);
       
+      console.log('Parking spot created successfully:', spot.id);
       res.status(201).json(spot);
     } catch (error: any) {
       console.error("Error creating parking spot:", error);
