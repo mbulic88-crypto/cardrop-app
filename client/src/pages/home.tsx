@@ -279,21 +279,21 @@ export default function Home() {
                       </div>
 
                       {/* Content */}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-lg mb-2 text-card-foreground line-clamp-1">
+                      <div className="p-3">
+                        <h3 className="font-semibold text-base mb-2 text-card-foreground">
                           {spot.title}
                         </h3>
                         <div className="flex items-center text-muted-foreground mb-3">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          <span className="text-sm line-clamp-1">{spot.address}</span>
+                          <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                          <span className="text-xs line-clamp-1">{spot.address}</span>
                         </div>
 
                         {/* Features */}
-                        <div className="flex gap-2 mb-3">
+                        <div className="flex flex-wrap gap-1 mb-3">
                           {spot.hasEvCharging && (
                             <Badge variant="outline" className="text-xs">
                               <Zap className="w-3 h-3 mr-1" />
-                              EV Punjač
+                              EV
                             </Badge>
                           )}
                           {spot.hasSecurityCamera && (
@@ -302,21 +302,15 @@ export default function Home() {
                               Kamera
                             </Badge>
                           )}
-                          {spot.is24Hours && (
-                            <Badge variant="outline" className="text-xs">
-                              <Clock className="w-3 h-3 mr-1" />
-                              24/7
-                            </Badge>
-                          )}
                         </div>
 
                         {/* Price */}
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-2xl font-bold text-accent">
+                            <span className="text-xl font-bold text-accent">
                               {spot.pricePerHour}
                             </span>
-                            <span className="text-muted-foreground ml-1">
+                            <span className="text-muted-foreground text-xs ml-1">
                               {spot.currency}/sat
                             </span>
                           </div>
