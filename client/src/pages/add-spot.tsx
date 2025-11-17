@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe } from "lucide-react";
+import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -21,6 +22,8 @@ import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { PRICING_PLANS, type SubscriptionType } from "@shared/pricing";
+import type { User } from "@shared/schema";
 
 const SERBIAN_CITIES = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
@@ -171,6 +174,27 @@ export default function AddSpot() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [language, setLanguage] = useState<"sr" | "en">("sr");
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('monthly');
+  
+  // Check if user has already used free trial
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    enabled: isAuthenticated,
+  });
+  
+  // Determine available plans based on trial eligibility
+  const availablePlans = user?.hasUsedFreeTrial 
+    ? PRICING_PLANS.filter(p => !p.isTrial)
+    : PRICING_PLANS;
+  
+  // Set default plan based on trial eligibility
+  useEffect(() => {
+    if (user && !user.hasUsedFreeTrial) {
+      setSelectedPlan('trial');
+    } else if (user && user.hasUsedFreeTrial) {
+      setSelectedPlan('monthly');
+    }
+  }, [user]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -215,7 +239,7 @@ export default function AddSpot() {
   const t = translations[language];
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
+    mutationFn: async (data: z.infer<typeof formSchema> & { subscriptionType: SubscriptionType }) => {
       return await apiRequest("POST", "/api/parking-spots", data);
     },
     onSuccess: (data) => {
@@ -259,7 +283,11 @@ export default function AddSpot() {
       return;
     }
     
-    mutation.mutate(values);
+    // Add selected subscription plan to the request
+    mutation.mutate({
+      ...values,
+      subscriptionType: selectedPlan,
+    });
   };
 
   return (
@@ -620,17 +648,90 @@ export default function AddSpot() {
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="p-4 bg-accent/10 border border-accent rounded-md">
-                  <p className="text-sm text-muted-foreground mb-1">
-                    💳 {t.subscriptionPrice}
-                  </p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {t.subscriptionAmount}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t.subscriptionDuration}
-                  </p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-foreground">
+                    {language === 'sr' ? 'Izaberite Plan' : 'Choose Your Plan'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {availablePlans.map((plan) => (
+                      <Card
+                        key={plan.id}
+                        className={`p-4 cursor-pointer transition-all hover-elevate ${
+                          selectedPlan === plan.id
+                            ? 'border-accent border-2 bg-accent/5'
+                            : 'border-card-border'
+                        }`}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        data-testid={`card-plan-${plan.id}`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-foreground">
+                                {language === 'sr' ? plan.name : plan.nameEn}
+                              </h4>
+                              {plan.popular && (
+                                <Badge className="bg-accent text-xs">
+                                  {language === 'sr' ? 'Najpopularnije' : 'Most Popular'}
+                                </Badge>
+                              )}
+                              {plan.isTrial && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                                  {language === 'sr' ? 'Besplatno' : 'Free'}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-2xl font-bold text-accent">
+                                {plan.price.toLocaleString('sr-RS')} RSD
+                              </span>
+                              {!plan.isTrial && (
+                                <span className="text-xs text-muted-foreground">
+                                  / {plan.duration} {language === 'sr' ? 'dana' : 'days'}
+                                </span>
+                              )}
+                            </div>
+                            {plan.savings > 0 && !plan.isTrial && (
+                              <p className="text-xs text-accent mt-1">
+                                💰 {language === 'sr' ? 'Ušteda' : 'Save'} {plan.savings}% ({Math.round(plan.pricePerMonth).toLocaleString('sr-RS')} RSD/{language === 'sr' ? 'mesec' : 'month'})
+                              </p>
+                            )}
+                            {plan.isTrial && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                ✨ {language === 'sr' ? '14 dana besplatno za nove korisnike' : '14 days free for new users'}
+                              </p>
+                            )}
+                          </div>
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            selectedPlan === plan.id
+                              ? 'border-accent bg-accent'
+                              : 'border-muted-foreground'
+                          }`}>
+                            {selectedPlan === plan.id && (
+                              <Check className="w-4 h-4 text-white" />
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  {selectedPlan && (
+                    <div className="mt-3 p-3 bg-muted/20 rounded-md">
+                      <p className="text-sm text-muted-foreground">
+                        📅 {language === 'sr' ? 'Vaše parking mesto će biti aktivno do:' : 'Your parking spot will be active until:'}{' '}
+                        <span className="font-semibold text-foreground">
+                          {new Date(Date.now() + (PRICING_PLANS.find(p => p.id === selectedPlan)?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString('sr-RS', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Button

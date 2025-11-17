@@ -120,32 +120,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const { subscriptionType, ...spotData } = req.body;
       
-      // TODO: Enable payment check when ready to launch
-      // TEMPORARILY DISABLED FOR TESTING - Enable this when ready to activate paid subscriptions
-      /*
-      // Check if in free trial period
-      const freeTrialPeriod = await storage.getActiveFreeTrialPeriod();
-      const isInFreeTrial = freeTrialPeriod ? new Date() <= new Date(freeTrialPeriod.endDate) : false;
-
-      if (!isInFreeTrial) {
-        return res.status(402).json({ 
-          message: "Payment required",
-          requiresPayment: true 
-        });
+      // Import pricing config
+      const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
+      
+      // Get the selected plan
+      const plan = getPlanById(subscriptionType || 'monthly');
+      if (!plan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
       }
-      */
-
-      // Validate request body
-      const validatedData = insertParkingSpotSchema.parse(req.body);
       
-      // Calculate subscription expiry (30 days from now)
-      const subscriptionExpiresAt = new Date();
-      subscriptionExpiresAt.setDate(subscriptionExpiresAt.getDate() + 30);
+      // Check if user is trying to use trial
+      if (plan.isTrial) {
+        // Get user to check if they've already used trial
+        const user = await storage.getUser(userId);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+        
+        if (user.hasUsedFreeTrial) {
+          return res.status(403).json({ 
+            message: "Već ste iskoristili besplatni probni period. Molimo izaberite plaćeni plan.",
+            alreadyUsedTrial: true
+          });
+        }
+        
+        // Mark user as having used free trial
+        await storage.updateUser(userId, { hasUsedFreeTrial: true });
+      } else {
+        // For paid plans, payment is currently not enforced (for testing)
+        // TODO: When Stripe is configured, redirect to payment flow here
+        console.log(`User selected paid plan: ${plan.id} (${plan.price} RSD)`);
+      }
+
+      // Validate spot data
+      const validatedData = insertParkingSpotSchema.parse(spotData);
+      
+      // Calculate subscription expiry based on selected plan
+      const subscriptionExpiresAt = calculateExpiryDate(plan.id);
 
       const spot = await storage.createParkingSpot({
         ...validatedData,
         ownerId: userId,
+        subscriptionType: plan.id,
         subscriptionExpiresAt: subscriptionExpiresAt,
       } as any);
       

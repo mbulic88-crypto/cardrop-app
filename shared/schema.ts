@@ -34,6 +34,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   phoneNumber: varchar("phone_number"),
+  hasUsedFreeTrial: boolean("has_used_free_trial").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -61,6 +62,7 @@ export const parkingSpots = pgTable("parking_spots", {
   phone: varchar("phone", { length: 50 }).notNull().default(''),
   paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer, card_monri
   contactEmail: varchar("contact_email", { length: 255 }).notNull(),
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('trial'), // trial, monthly, half_yearly, yearly
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
