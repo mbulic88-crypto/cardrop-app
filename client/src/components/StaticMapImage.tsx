@@ -1,6 +1,6 @@
 interface StaticMapImageProps {
-  latitude: number;
-  longitude: number;
+  latitude: number | string;
+  longitude: number | string;
   width?: number;
   height?: number;
   zoom?: number;
@@ -15,7 +15,11 @@ export function StaticMapImage({
 }: StaticMapImageProps) {
   const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
   
-  const mapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${width}&height=${height}&center=lonlat:${longitude},${latitude}&zoom=${zoom}&marker=lonlat:${longitude},${latitude};color:%2352B788;size:medium&apiKey=${apiKey}`;
+  // Convert string to number if needed
+  const lat = typeof latitude === 'string' ? parseFloat(latitude) : latitude;
+  const lon = typeof longitude === 'string' ? parseFloat(longitude) : longitude;
+  
+  const mapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${width}&height=${height}&center=lonlat:${lon},${lat}&zoom=${zoom}&marker=lonlat:${lon},${lat};color:%2352B788;size:medium&apiKey=${apiKey}`;
 
   return (
     <img
