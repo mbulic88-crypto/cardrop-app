@@ -12,6 +12,8 @@ import AddSpot from "@/pages/add-spot";
 import MyBookings from "@/pages/my-bookings";
 import Payment from "@/pages/payment";
 import Transactions from "@/pages/transactions";
+import Dashboard from "@/pages/dashboard";
+import EditSpot from "@/pages/edit-spot";
 
 function Router() {
   return (
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/home" component={Home} />
       <Route path="/spot/:id" component={SpotDetail} />
       <Route path="/add-spot" component={AddSpot} />
+      <Route path="/edit-spot/:id" component={EditSpot} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/payment/:bookingId" component={Payment} />

@@ -163,6 +163,20 @@ export default function Home() {
                   <span className="hidden sm:inline">Početna</span>
                 </Button>
               </Link>
+
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3"
+                    data-testid="button-account"
+                  >
+                    <HomeIcon className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Nalog</span>
+                  </Button>
+                </Link>
+              ) : null}
             </div>
           </div>
 

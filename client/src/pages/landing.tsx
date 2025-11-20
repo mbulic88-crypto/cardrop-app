@@ -95,15 +95,37 @@ export default function Landing() {
               <span className="text-xl font-bold text-foreground">ParkIN</span>
             </Link>
 
-            <Button
-              variant="outline"
-              data-testid="button-language"
-              onClick={toggleLanguage}
-              className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
-            >
-              <Globe className="w-4 h-4 mr-2" />
-              <span>{t.langButton}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              {isAuthenticated ? (
+                <Link href="/dashboard">
+                  <Button
+                    variant="outline"
+                    data-testid="button-account"
+                    className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+                  >
+                    Moj Nalog
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="outline"
+                  data-testid="button-login"
+                  onClick={() => setShowLoginDialog(true)}
+                  className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+                >
+                  Prijavi se
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                data-testid="button-language"
+                onClick={toggleLanguage}
+                className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                <span>{t.langButton}</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>

@@ -527,6 +527,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // My spots route
+  app.get('/api/parking-spots/my-spots', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const spots = await storage.getUserParkingSpots(userId);
+      res.json(spots);
+    } catch (error) {
+      console.error("Error fetching user parking spots:", error);
+      res.status(500).json({ message: "Greška pri učitavanju parking mesta" });
+    }
+  });
+
+  // Update parking spot
+  app.put('/api/parking-spots/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const spot = await storage.getParkingSpot(req.params.id);
+      
+      if (!spot) {
+        return res.status(404).json({ message: "Parking mesto nije pronađeno" });
+      }
+      
+      if (spot.ownerId !== userId) {
+        return res.status(403).json({ message: "Nemate dozvolu za izmenu ovog mesta" });
+      }
+      
+      const validatedData = insertParkingSpotSchema.omit({ subscriptionType: true } as any).parse(req.body);
+      const updated = await storage.updateParkingSpot(req.params.id, validatedData);
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error updating parking spot:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
+      res.status(500).json({ message: "Greška pri ažuriranju parking mesta" });
+    }
+  });
+
+  // Delete parking spot
+  app.delete('/api/parking-spots/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const spot = await storage.getParkingSpot(req.params.id);
+      
+      if (!spot) {
+        return res.status(404).json({ message: "Parking mesto nije pronađeno" });
+      }
+      
+      if (spot.ownerId !== userId) {
+        return res.status(403).json({ message: "Nemate dozvolu za brisanje ovog mesta" });
+      }
+      
+      await storage.updateParkingSpot(req.params.id, { isActive: false } as any);
+      res.json({ message: "Parking mesto je izbrisano" });
+    } catch (error) {
+      console.error("Error deleting parking spot:", error);
+      res.status(500).json({ message: "Greška pri brisanju parking mesta" });
+    }
+  });
+
+  // Update user profile
+  app.put('/api/users/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName, phoneNumber } = req.body;
+      
+      const updated = await storage.updateUser(userId, { 
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        phoneNumber: phoneNumber || undefined,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Greška pri ažuriranju profila" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
