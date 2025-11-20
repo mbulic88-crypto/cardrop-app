@@ -42,6 +42,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // My spots route - MUST be before /:id to avoid matching "my-spots" as an ID
+  app.get('/api/parking-spots/my-spots', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const spots = await storage.getUserParkingSpots(userId);
+      res.json(spots);
+    } catch (error) {
+      console.error("Error fetching user parking spots:", error);
+      res.status(500).json({ message: "Greška pri učitavanju parking mesta" });
+    }
+  });
+
   app.get('/api/parking-spots/:id', async (req, res) => {
     try {
       const spot = await storage.getParkingSpot(req.params.id);
@@ -524,18 +536,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking review eligibility:", error);
       res.status(500).json({ message: "Greška pri proveri mogućnosti recenzije" });
-    }
-  });
-
-  // My spots route
-  app.get('/api/parking-spots/my-spots', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const spots = await storage.getUserParkingSpots(userId);
-      res.json(spots);
-    } catch (error) {
-      console.error("Error fetching user parking spots:", error);
-      res.status(500).json({ message: "Greška pri učitavanju parking mesta" });
     }
   });
 

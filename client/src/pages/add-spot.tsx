@@ -242,6 +242,8 @@ export default function AddSpot() {
         title: "Uspešno Dodato",
         description: "Sada možete dodati slike parking mesta ili kliknite Završi.",
       });
+      // Invalidate my-spots cache so dashboard refreshes
+      queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/my-spots"] });
       // Scroll to the image upload section
       setTimeout(() => {
         window.scrollTo({
