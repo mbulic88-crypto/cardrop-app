@@ -221,8 +221,70 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Featured Locations Section */}
+      {/* Testimonials Section */}
       <div className="py-16 px-4 max-w-7xl mx-auto bg-card/30">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+          {language === "sr" ? "Šta Kažu Naši Korisnici" : "What Our Users Say"}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Testimonial 1 - Extra Income */}
+          <Card className="p-6 hover-elevate">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <span className="text-xl font-bold text-accent">M</span>
+              </div>
+              <div>
+                <p className="font-semibold text-card-foreground">Marko P.</p>
+                <p className="text-sm text-muted-foreground">Beograd</p>
+              </div>
+            </div>
+            <p className="text-card-foreground/90 italic">
+              {language === "sr" 
+                ? "\"Moje parking mesto je stajalo prazno 10 sati dnevno dok sam na poslu. Sada zarađujem 15.000 dinara mesečno bez ikakve muke.\""
+                : "\"My parking spot was empty 10 hours a day while I was at work. Now I earn 15,000 dinars a month without any effort.\""}
+            </p>
+          </Card>
+
+          {/* Testimonial 2 - Parking Problem Solved */}
+          <Card className="p-6 hover-elevate">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <span className="text-xl font-bold text-accent">A</span>
+              </div>
+              <div>
+                <p className="font-semibold text-card-foreground">Ana S.</p>
+                <p className="text-sm text-muted-foreground">Novi Sad</p>
+              </div>
+            </div>
+            <p className="text-card-foreground/90 italic">
+              {language === "sr" 
+                ? "\"Više ne gubim 30 minuta tražeći parking u centru. Rezervišem unapred i znam tačno gde ću da parkiram.\""
+                : "\"I no longer waste 30 minutes looking for parking downtown. I book in advance and know exactly where to park.\""}
+            </p>
+          </Card>
+
+          {/* Testimonial 3 - Unused Space Monetized */}
+          <Card className="p-6 hover-elevate">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                <span className="text-xl font-bold text-accent">N</span>
+              </div>
+              <div>
+                <p className="font-semibold text-card-foreground">Nenad K.</p>
+                <p className="text-sm text-muted-foreground">Niš</p>
+              </div>
+            </div>
+            <p className="text-card-foreground/90 italic">
+              {language === "sr" 
+                ? "\"Imam garažu koju nisam koristio godinama. ParkIN mi je pomogao da je pretvorim u izvor prihoda. Odlična platforma!\""
+                : "\"I had a garage I hadn't used in years. ParkIN helped me turn it into an income source. Great platform!\""}
+            </p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Featured Locations Section */}
+      <div className="py-16 px-4 max-w-7xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
           {t.popularLocations}
         </h2>
