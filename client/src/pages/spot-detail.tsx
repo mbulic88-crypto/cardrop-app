@@ -89,6 +89,45 @@ export default function SpotDetail() {
     },
   });
 
+  const messageMutation = useMutation({
+    mutationFn: async (data: { receiverId: string; spotId: string; content: string }) => {
+      return await apiRequest("POST", "/api/messages", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Poruka Poslata",
+        description: "Vlasnik će dobiti obaveštenje o vašoj poruci.",
+      });
+      setMessageContent("");
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        setLoginRedirectAction("message");
+        setShowLoginDialog(true);
+        return;
+      }
+      toast({
+        title: "Greška",
+        description: "Nije moguće poslati poruku. Pokušajte ponovo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSendMessage = () => {
+    if (!spot || !messageContent.trim()) return;
+    if (!isAuthenticated) {
+      setLoginRedirectAction("message");
+      setShowLoginDialog(true);
+      return;
+    }
+    messageMutation.mutate({
+      receiverId: spot.ownerId,
+      spotId: spot.id,
+      content: messageContent.trim(),
+    });
+  };
+
   const calculateTotalPrice = () => {
     if (!spot || !selectedDate || !startTime || !endTime) return 0;
     
@@ -334,6 +373,33 @@ export default function SpotDetail() {
               </Card>
             )}
 
+            {/* Send Message to Owner */}
+            {owner && (
+              <Card className="p-6">
+                <h2 className="text-xl font-semibold mb-4 text-card-foreground flex items-center gap-2">
+                  <Send className="w-5 h-5" />
+                  Pošalji Poruku Vlasniku
+                </h2>
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Napišite poruku vlasniku parking mesta..."
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
+                    className="min-h-[100px]"
+                    data-testid="textarea-message"
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!messageContent.trim() || messageMutation.isPending}
+                    className="w-full"
+                    data-testid="button-send-message"
+                  >
+                    {messageMutation.isPending ? "Slanje..." : "Pošalji Poruku"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
             {/* Reviews Section */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-6">
@@ -482,7 +548,9 @@ export default function SpotDetail() {
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
-        message="Za rezervaciju parking mesta potrebna je prijava na nalog."
+        message={loginRedirectAction === "message" 
+          ? "Za slanje poruke vlasniku potrebna je prijava na nalog."
+          : "Za rezervaciju parking mesta potrebna je prijava na nalog."}
         redirectPath={`/spot/${spotId}`}
       />
     </div>
