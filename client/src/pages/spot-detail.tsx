@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
-import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare, Phone, CreditCard } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare, Phone, CreditCard, Send } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -29,6 +30,8 @@ export default function SpotDetail() {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [loginRedirectAction, setLoginRedirectAction] = useState<"booking" | "message">("booking");
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],

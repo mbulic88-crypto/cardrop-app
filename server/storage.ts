@@ -4,6 +4,7 @@ import {
   bookings,
   reviews,
   freeTrialPeriod,
+  messages,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -13,9 +14,11 @@ import {
   type Review,
   type InsertReview,
   type FreeTrialPeriod,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -46,6 +49,11 @@ export interface IStorage {
 
   // Free trial period operations
   getActiveFreeTrialPeriod(): Promise<FreeTrialPeriod | undefined>;
+  
+  // Messages operations
+  createMessage(message: InsertMessage & { senderId: string }): Promise<Message>;
+  getUserMessages(userId: string): Promise<Message[]>;
+  markMessageAsRead(messageId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -222,6 +230,30 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(freeTrialPeriod.createdAt))
       .limit(1);
     return period;
+  }
+
+  // Messages operations
+  async createMessage(messageData: InsertMessage & { senderId: string }): Promise<Message> {
+    const [message] = await db
+      .insert(messages)
+      .values(messageData)
+      .returning();
+    return message;
+  }
+
+  async getUserMessages(userId: string): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async markMessageAsRead(messageId: string): Promise<void> {
+    await db
+      .update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, messageId));
   }
 }
 

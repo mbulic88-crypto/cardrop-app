@@ -7,17 +7,19 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User, ParkingSpot } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut } from "lucide-react";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff } from "lucide-react";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
 import Transactions from "./transactions";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 const profileSchema = z.object({
   firstName: z.string().optional(),
@@ -29,6 +31,23 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+
+  const handlePushToggle = async () => {
+    if (isSubscribed) {
+      const success = await unsubscribe();
+      if (success) {
+        toast({ title: "Obaveštenja isključena", description: "Nećete više primati push obaveštenja" });
+      }
+    } else {
+      const success = await subscribe();
+      if (success) {
+        toast({ title: "Obaveštenja uključena", description: "Primaćete obaveštenja o novim porukama i rezervacijama" });
+      } else {
+        toast({ title: "Greška", description: "Nije moguće uključiti obaveštenja. Proverite dozvole u pretraživaču.", variant: "destructive" });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -269,6 +288,31 @@ export default function Dashboard() {
                         <strong>Probni Period:</strong> {user?.hasUsedFreeTrial ? "Već iskorišćen" : "Dostupan"}
                       </p>
                     </div>
+
+                    {pushSupported && (
+                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {isSubscribed ? (
+                            <Bell className="w-5 h-5 text-accent" />
+                          ) : (
+                            <BellOff className="w-5 h-5 text-muted-foreground" />
+                          )}
+                          <div>
+                            <p className="font-medium text-foreground">Push Obaveštenja</p>
+                            <p className="text-sm text-muted-foreground">
+                              {isSubscribed ? "Primate obaveštenja" : "Obaveštenja su isključena"}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={isSubscribed}
+                          onCheckedChange={handlePushToggle}
+                          disabled={pushLoading}
+                          data-testid="switch-push-notifications"
+                        />
+                      </div>
+                    )}
+
                     <Button
                       type="submit"
                       className="w-full"

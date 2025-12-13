@@ -2,11 +2,11 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema } from "@shared/schema";
+import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema } from "@shared/schema";
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import Stripe from "stripe";
-import { saveSubscription, removeSubscription } from "./push";
+import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 
 // Initialize Stripe - will be used when API keys are provided
 let stripe: Stripe | null = null;
@@ -644,6 +644,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing push subscription:", error);
       res.status(500).json({ message: "Failed to remove subscription" });
+    }
+  });
+
+  // Messages routes
+  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertMessageSchema.parse(req.body);
+      
+      const message = await storage.createMessage({
+        ...validatedData,
+        senderId: userId,
+      });
+
+      // Get sender info for notification
+      const sender = await storage.getUser(userId);
+      const senderName = sender?.firstName || sender?.email || 'Korisnik';
+
+      // Get spot info if available
+      let spotTitle = 'parking mesto';
+      if (validatedData.spotId) {
+        const spot = await storage.getParkingSpot(validatedData.spotId);
+        if (spot) spotTitle = spot.title;
+      }
+
+      // Send push notification to receiver
+      await sendPushToUser(validatedData.receiverId, {
+        title: 'Nova poruka - ParkIN',
+        body: `${senderName} vam je poslao poruku u vezi: ${spotTitle}`,
+        url: '/dashboard?tab=messages',
+        tag: 'new-message',
+      });
+
+      res.status(201).json(message);
+    } catch (error: any) {
+      console.error("Error sending message:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
+      res.status(500).json({ message: "Greška pri slanju poruke" });
+    }
+  });
+
+  app.get('/api/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messages = await storage.getUserMessages(userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Greška pri učitavanju poruka" });
+    }
+  });
+
+  app.put('/api/messages/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.markMessageAsRead(req.params.id);
+      res.json({ message: "Poruka označena kao pročitana" });
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Greška" });
     }
   });
 

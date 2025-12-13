@@ -235,3 +235,41 @@ export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions
 
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+
+// Messages table for user-to-user communication
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  receiverId: varchar("receiver_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  spotId: varchar("spot_id").references(() => parkingSpots.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+  }),
+  receiver: one(users, {
+    fields: [messages.receiverId],
+    references: [users.id],
+  }),
+  spot: one(parkingSpots, {
+    fields: [messages.spotId],
+    references: [parkingSpots.id],
+  }),
+}));
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  senderId: true,
+  isRead: true,
+  createdAt: true,
+}).extend({
+  content: z.string().min(1, "Poruka ne može biti prazna").max(1000, "Poruka može imati maksimalno 1000 karaktera"),
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
