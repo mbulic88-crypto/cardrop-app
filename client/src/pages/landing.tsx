@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Clock, Shield, Zap, Globe } from "lucide-react";
+import { MapPin, Clock, Shield, Zap, Globe, Download } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
+import { usePWA } from "@/hooks/use-pwa";
 
 const translations = {
   sr: {
@@ -29,7 +30,8 @@ const translations = {
     ctaSubtitle: "Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.",
     termsButton: "Uslovi Korišćenja",
     footerText: "© 2024 ParkIN Srbija. Sva prava zadržana.",
-    langButton: "ENG"
+    langButton: "ENG",
+    installApp: "Instaliraj Aplikaciju"
   },
   en: {
     heroTitle: "Find or Share a Parking Spot",
@@ -51,7 +53,8 @@ const translations = {
     ctaSubtitle: "Earn by sharing your parking space with other drivers. Simple, secure, profitable.",
     termsButton: "Terms of Use",
     footerText: "© 2024 ParkIN Serbia. All rights reserved.",
-    langButton: "SRP"
+    langButton: "SRP",
+    installApp: "Install App"
   }
 };
 
@@ -60,6 +63,7 @@ export default function Landing() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const { isInstallable, installApp } = usePWA();
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -174,6 +178,21 @@ export default function Landing() {
               {t.listSpotButton}
             </Button>
           </div>
+          
+          {isInstallable && (
+            <div className="mt-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={installApp}
+                className="text-foreground/70 hover:text-foreground"
+                data-testid="button-install-app"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {t.installApp}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
