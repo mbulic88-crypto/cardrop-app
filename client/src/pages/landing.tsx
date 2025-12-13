@@ -149,17 +149,17 @@ export default function Landing() {
         </div>
         
         {/* Hero Content */}
-        <div className="relative z-20 text-center px-4 max-w-4xl mx-auto pt-20">
-          <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-24 pb-8">
+          <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-6 md:mb-8">
             ParkIN
           </h1>
-          <p className="text-2xl md:text-3xl text-foreground/90 mb-4 max-w-2xl mx-auto">
+          <p className="text-xl md:text-3xl text-foreground/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed">
             {t.heroTitle}
           </p>
-          <p className="text-lg md:text-xl text-foreground/80 mb-8 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-foreground/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
             {t.heroSubtitle}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link href="/home">
               <Button 
                 size="lg" 
@@ -179,29 +179,27 @@ export default function Landing() {
             </Button>
           </div>
           
-          {isInstallable && (
-            <div className="mt-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={installApp}
-                className="text-foreground/70 hover:text-foreground"
-                data-testid="button-install-app"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {t.installApp}
-              </Button>
-            </div>
-          )}
+          <div className="mt-8">
+            <Button
+              variant="outline"
+              size="default"
+              onClick={installApp}
+              className="bg-accent/20 border-accent text-foreground hover:bg-accent/40"
+              data-testid="button-install-app"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              {t.installApp}
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* How It Works Section */}
-      <div className="py-16 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+      <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto">
+        <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
           {t.howItWorks}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <Card className="p-6 hover-elevate bg-primary border-primary-border">
             <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
               <MapPin className="w-6 h-6 text-primary-foreground" />
@@ -241,11 +239,11 @@ export default function Landing() {
       </div>
 
       {/* Testimonials Section */}
-      <div className="py-16 px-4 max-w-7xl mx-auto bg-card/30">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+      <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto bg-card/30">
+        <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
           {language === "sr" ? "Šta Kažu Naši Korisnici" : "What Our Users Say"}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {/* Testimonial 1 - Extra Income */}
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
@@ -303,11 +301,11 @@ export default function Landing() {
       </div>
 
       {/* Featured Locations Section */}
-      <div className="py-16 px-4 max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
+      <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto">
+        <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
           {t.popularLocations}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
             { name: "Beograd", nameEn: "Belgrade" },
             { name: "Novi Sad", nameEn: "Novi Sad" },
@@ -326,30 +324,30 @@ export default function Landing() {
       </div>
 
       {/* Trust Section */}
-      <div className="py-16 px-4 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div className="py-16 md:py-20 px-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-3 gap-4 md:gap-8 text-center">
           <div>
-            <div className="text-4xl font-bold text-accent mb-2">150+</div>
-            <p className="text-muted-foreground">{t.parkingSpots}</p>
+            <div className="text-2xl md:text-4xl font-bold text-accent mb-2">150+</div>
+            <p className="text-xs md:text-base text-muted-foreground">{t.parkingSpots}</p>
           </div>
           <div>
-            <div className="text-4xl font-bold text-accent mb-2">500+</div>
-            <p className="text-muted-foreground">{t.users}</p>
+            <div className="text-2xl md:text-4xl font-bold text-accent mb-2">500+</div>
+            <p className="text-xs md:text-base text-muted-foreground">{t.users}</p>
           </div>
           <div>
-            <div className="text-4xl font-bold text-accent mb-2">2000+</div>
-            <p className="text-muted-foreground">{t.successfulBookings}</p>
+            <div className="text-2xl md:text-4xl font-bold text-accent mb-2">2000+</div>
+            <p className="text-xs md:text-base text-muted-foreground">{t.successfulBookings}</p>
           </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="py-16 px-4 bg-primary/10">
+      <div className="py-20 md:py-24 px-6 bg-primary/10">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold mb-6 text-foreground">
             {t.ctaTitle}
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-base md:text-lg text-muted-foreground mb-8 leading-relaxed">
             {t.ctaSubtitle}
           </p>
           <Button 
