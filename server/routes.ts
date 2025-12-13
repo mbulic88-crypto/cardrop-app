@@ -6,6 +6,7 @@ import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema } from
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import Stripe from "stripe";
+import { saveSubscription, removeSubscription } from "./push";
 
 // Initialize Stripe - will be used when API keys are provided
 let stripe: Stripe | null = null;
@@ -604,6 +605,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user profile:", error);
       res.status(500).json({ message: "Greška pri ažuriranju profila" });
+    }
+  });
+
+  // Push notification subscription routes
+  app.post('/api/push/subscribe', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { subscription } = req.body;
+      
+      if (!subscription || !subscription.endpoint || !subscription.keys) {
+        return res.status(400).json({ message: "Invalid subscription data" });
+      }
+
+      const success = await saveSubscription(userId, subscription);
+      if (success) {
+        res.json({ message: "Subscription saved successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to save subscription" });
+      }
+    } catch (error) {
+      console.error("Error saving push subscription:", error);
+      res.status(500).json({ message: "Failed to save subscription" });
+    }
+  });
+
+  app.post('/api/push/unsubscribe', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { endpoint } = req.body;
+      
+      const success = await removeSubscription(userId, endpoint);
+      if (success) {
+        res.json({ message: "Subscription removed successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to remove subscription" });
+      }
+    } catch (error) {
+      console.error("Error removing push subscription:", error);
+      res.status(500).json({ message: "Failed to remove subscription" });
     }
   });
 
