@@ -261,12 +261,6 @@ export default function Home() {
                 Moje Rezervacije
               </Button>
             </Link>
-            <Link href="/transactions">
-              <Button variant="outline" data-testid="link-transactions">
-                <Shield className="w-4 h-4 mr-2" />
-                Transakcije
-              </Button>
-            </Link>
             <Link href="/add-spot">
               <Button data-testid="link-add-spot">
                 <Zap className="w-4 h-4 mr-2" />
@@ -276,8 +270,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* View Mode Toggle for Mobile */}
-        <div className="md:hidden mb-4 flex gap-2">
+        {/* View Mode Toggle */}
+        <div className="mb-4 flex gap-2 max-w-xs">
           <Button
             variant={viewMode === "list" ? "default" : "outline"}
             onClick={() => setViewMode("list")}
