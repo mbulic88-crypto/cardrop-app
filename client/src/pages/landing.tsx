@@ -13,8 +13,8 @@ const translations = {
   sr: {
     heroTitle: "Pronađite ili Podelite Parking Mesto",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
-    findSpotButton: "Pronađite Vaše Mesto",
-    listSpotButton: "Iznajmite Vaše Mesto",
+    findSpotButton: "Pronađite Vaše Parking Mesto",
+    listSpotButton: "Iznajmite Vaše Parking Mesto",
     howItWorks: "Kako Funkcioniše",
     step1Title: "1. Pronađite Parking",
     step1Desc: "Pretražite dostupna parking mesta na mapi prema lokaciji, ceni i vremenskom periodu.",
@@ -36,8 +36,8 @@ const translations = {
   en: {
     heroTitle: "Find or Share a Parking Spot",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
-    findSpotButton: "Find Your Spot",
-    listSpotButton: "List Your Spot",
+    findSpotButton: "Find Your Parking Spot",
+    listSpotButton: "List Your Parking Spot",
     howItWorks: "How It Works",
     step1Title: "1. Find Parking",
     step1Desc: "Search available parking spots on the map by location, price, and time period.",
@@ -149,7 +149,7 @@ export default function Landing() {
         </div>
         
         {/* Hero Content */}
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-24 pb-8">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-32 md:pt-40 pb-8">
           <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-6 md:mb-8">
             ParkIN
           </h1>
