@@ -135,7 +135,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <div className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
+      <div className="relative min-h-[85vh] flex items-start justify-center overflow-hidden">
         {/* Dark overlay for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background z-10" />
         
@@ -149,7 +149,7 @@ export default function Landing() {
         </div>
         
         {/* Hero Content */}
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-32 md:pt-40 pb-8">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-24 md:pt-32 pb-8 mt-16 md:mt-20">
           <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-6 md:mb-8">
             ParkIN
           </h1>
