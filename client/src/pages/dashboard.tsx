@@ -17,7 +17,6 @@ import type { User, ParkingSpot } from "@shared/schema";
 import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff } from "lucide-react";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
-import Transactions from "./transactions";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
@@ -112,6 +111,7 @@ export default function Dashboard() {
         description: "Parking mesto je izbrisano",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/my-spots"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
     },
     onError: () => {
       toast({
@@ -121,6 +121,20 @@ export default function Dashboard() {
       });
     },
   });
+
+  // Calculate total earnings from manual bookings in localStorage
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  useEffect(() => {
+    const saved = localStorage.getItem("parkin-manual-bookings");
+    if (saved) {
+      const bookings = JSON.parse(saved);
+      const total = bookings.reduce((sum: number, booking: { price: string }) => {
+        const priceNum = parseFloat(booking.price) || 0;
+        return sum + priceNum;
+      }, 0);
+      setTotalEarnings(total);
+    }
+  }, []);
 
   if (isLoading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">Učitavanje...</div>;
@@ -157,9 +171,18 @@ export default function Dashboard() {
           <TabsList className="mb-8" data-testid="dashboard-tabs">
             <TabsTrigger value="spots" data-testid="tab-my-spots">Moja Parking Mesta</TabsTrigger>
             <TabsTrigger value="bookings" data-testid="tab-bookings">Moje Rezervacije</TabsTrigger>
-            <TabsTrigger value="transactions" data-testid="tab-transactions">Transakcije</TabsTrigger>
             <TabsTrigger value="profile" data-testid="tab-profile">Profil</TabsTrigger>
           </TabsList>
+
+          {/* Ukupna zarada */}
+          <Card className="p-4 mb-6 bg-accent/10 border-accent/30">
+            <div className="flex items-center justify-between">
+              <span className="text-foreground font-medium">Ukupna Zarada iz Rezervacija:</span>
+              <span className="text-2xl font-bold text-accent" data-testid="text-total-earnings">
+                {totalEarnings.toLocaleString('sr-RS')} RSD
+              </span>
+            </div>
+          </Card>
 
           {/* Moja Parking Mesta */}
           <TabsContent value="spots" className="space-y-6">
@@ -224,11 +247,6 @@ export default function Dashboard() {
           {/* Moje Rezervacije */}
           <TabsContent value="bookings">
             <MyBookings />
-          </TabsContent>
-
-          {/* Transakcije */}
-          <TabsContent value="transactions">
-            <Transactions />
           </TabsContent>
 
           {/* Profil */}
