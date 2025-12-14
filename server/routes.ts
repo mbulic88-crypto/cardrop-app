@@ -708,6 +708,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware
+  const isAdmin = async (req: any, res: any, next: any) => {
+    const userId = req.user?.claims?.sub;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) return res.status(403).json({ message: "Forbidden - Admin only" });
+    next();
+  };
+
+  // Admin routes
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ message: "User deleted" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  app.get('/api/admin/parking-spots', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const spots = await storage.getAllParkingSpotsAdmin();
+      res.json(spots);
+    } catch (error) {
+      console.error("Error fetching all parking spots:", error);
+      res.status(500).json({ message: "Failed to fetch parking spots" });
+    }
+  });
+
+  app.delete('/api/admin/parking-spots/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteParkingSpotAdmin(req.params.id);
+      res.json({ message: "Parking spot deleted" });
+    } catch (error) {
+      console.error("Error deleting parking spot:", error);
+      res.status(500).json({ message: "Failed to delete parking spot" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

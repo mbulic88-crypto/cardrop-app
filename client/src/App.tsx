@@ -14,6 +14,7 @@ import Payment from "@/pages/payment";
 import Transactions from "@/pages/transactions";
 import Dashboard from "@/pages/dashboard";
 import EditSpot from "@/pages/edit-spot";
+import Admin from "@/pages/admin";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/payment/:bookingId" component={Payment} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );

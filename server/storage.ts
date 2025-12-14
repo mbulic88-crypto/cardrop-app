@@ -54,6 +54,12 @@ export interface IStorage {
   createMessage(message: InsertMessage & { senderId: string }): Promise<Message>;
   getUserMessages(userId: string): Promise<Message[]>;
   markMessageAsRead(messageId: string): Promise<void>;
+  
+  // Admin operations
+  getAllUsers(): Promise<User[]>;
+  deleteUser(id: string): Promise<void>;
+  getAllParkingSpotsAdmin(): Promise<ParkingSpot[]>;
+  deleteParkingSpotAdmin(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -254,6 +260,23 @@ export class DatabaseStorage implements IStorage {
       .update(messages)
       .set({ isRead: true })
       .where(eq(messages.id, messageId));
+  }
+
+  // Admin operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getAllParkingSpotsAdmin(): Promise<ParkingSpot[]> {
+    return await db.select().from(parkingSpots).orderBy(desc(parkingSpots.createdAt));
+  }
+
+  async deleteParkingSpotAdmin(id: string): Promise<void> {
+    await db.delete(parkingSpots).where(eq(parkingSpots.id, id));
   }
 }
 
