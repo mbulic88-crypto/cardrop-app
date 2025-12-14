@@ -30,7 +30,7 @@ const formSchema = z.object({
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
   pricePerHour: z.string().min(1, "Cena je obavezna"),
   currency: z.string().default("RSD"),
-  paymentType: z.enum(['cash', 'bank_transfer', 'card_monri']),
+  paymentType: z.enum(['cash', 'bank_transfer']),
   spotType: z.string().min(1, "Tip mesta je obavezan"),
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
@@ -289,7 +289,6 @@ export default function EditSpot() {
                         <SelectContent>
                           <SelectItem value="cash">Keš</SelectItem>
                           <SelectItem value="bank_transfer">Preko računa</SelectItem>
-                          <SelectItem value="card_monri">Kartično</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

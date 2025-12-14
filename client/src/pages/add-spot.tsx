@@ -63,7 +63,6 @@ const translations = {
     paymentType: "Tip Plaćanja",
     paymentCash: "Keš",
     paymentBankTransfer: "Preko računa",
-    paymentCard: "Kartično (Monri)",
     spotType: "Tip Parking Mesta",
     spotUncovered: "Otvoreno",
     spotCovered: "Pokriveno",
@@ -119,7 +118,6 @@ const translations = {
     paymentType: "Payment Type",
     paymentCash: "Cash",
     paymentBankTransfer: "Bank Transfer",
-    paymentCard: "Card (Monri)",
     spotType: "Parking Spot Type",
     spotUncovered: "Uncovered",
     spotCovered: "Covered",
@@ -157,7 +155,7 @@ const formSchema = z.object({
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
   pricePerHour: z.string().min(1, "Cena je obavezna"),
   currency: z.string().default("RSD"),
-  paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
+  paymentType: z.enum(['cash', 'bank_transfer'], {
     errorMap: () => ({ message: "Tip plaćanja mora biti izabran" })
   }),
   spotType: z.string().min(1, "Tip mesta je obavezan"),
@@ -549,7 +547,6 @@ export default function AddSpot() {
                       <SelectContent>
                         <SelectItem value="cash">{t.paymentCash}</SelectItem>
                         <SelectItem value="bank_transfer">{t.paymentBankTransfer}</SelectItem>
-                        <SelectItem value="card_monri">{t.paymentCard}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
