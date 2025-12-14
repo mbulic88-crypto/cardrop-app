@@ -149,7 +149,7 @@ export default function Landing() {
         </div>
         
         {/* Hero Content */}
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-24 md:pt-32 pb-8 mt-16 md:mt-20">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-20 md:pt-28 pb-8 mt-20 md:mt-24">
           <h1 className="text-4xl md:text-7xl font-bold text-foreground mb-6 md:mb-8">
             ParkIN
           </h1>
