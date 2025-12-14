@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, useLocation } from "wouter";
+import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, ArrowLeft, Zap, Camera, Clock, Shield, User, Home as HomeIcon, Globe, Star, MessageSquare, Phone, CreditCard, Send } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
-import type { ParkingSpot, User as UserType, Booking, Review } from "@shared/schema";
+import type { ParkingSpot, User as UserType, Review } from "@shared/schema";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
@@ -27,11 +27,8 @@ export default function SpotDetail() {
   const { isAuthenticated } = useAuth();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [messageContent, setMessageContent] = useState("");
-  const [loginRedirectAction, setLoginRedirectAction] = useState<"booking" | "message">("booking");
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -52,43 +49,6 @@ export default function SpotDetail() {
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
-  const [, setLocation] = useLocation();
-
-  const bookingMutation = useMutation({
-    mutationFn: async (bookingData: any) => {
-      return await apiRequest("POST", "/api/bookings", bookingData);
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Rezervacija Poslata",
-        description: "Preusmeravanje na plaćanje...",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
-      // Redirect to payment page
-      setTimeout(() => {
-        setLocation(`/payment/${data.id}`);
-      }, 500);
-    },
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Greška",
-        description: "Došlo je do greške prilikom rezervacije. Pokušajte ponovo.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const messageMutation = useMutation({
     mutationFn: async (data: { receiverId: string; spotId: string; content: string }) => {
       return await apiRequest("POST", "/api/messages", data);
@@ -102,7 +62,6 @@ export default function SpotDetail() {
     },
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
-        setLoginRedirectAction("message");
         setShowLoginDialog(true);
         return;
       }
@@ -117,7 +76,6 @@ export default function SpotDetail() {
   const handleSendMessage = () => {
     if (!spot || !messageContent.trim()) return;
     if (!isAuthenticated) {
-      setLoginRedirectAction("message");
       setShowLoginDialog(true);
       return;
     }
@@ -125,51 +83,6 @@ export default function SpotDetail() {
       receiverId: spot.ownerId,
       spotId: spot.id,
       content: messageContent.trim(),
-    });
-  };
-
-  const calculateTotalPrice = () => {
-    if (!spot || !selectedDate || !startTime || !endTime) return 0;
-    
-    const start = new Date(selectedDate);
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    start.setHours(startHour, startMin);
-    
-    const end = new Date(selectedDate);
-    const [endHour, endMin] = endTime.split(":").map(Number);
-    end.setHours(endHour, endMin);
-    
-    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    return hours * parseFloat(spot.pricePerHour);
-  };
-
-  const handleBooking = () => {
-    if (!spot || !selectedDate || !startTime || !endTime) return;
-    
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      setShowLoginDialog(true);
-      return;
-    }
-    
-    const start = new Date(selectedDate);
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    start.setHours(startHour, startMin);
-    
-    const end = new Date(selectedDate);
-    const [endHour, endMin] = endTime.split(":").map(Number);
-    end.setHours(endHour, endMin);
-    
-    const totalPrice = calculateTotalPrice();
-    
-    bookingMutation.mutate({
-      spotId: spot.id,
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
-      totalPrice: totalPrice.toFixed(2),
-      currency: spot.currency,
-      status: "pending",
-      paymentStatus: "pending",
     });
   };
 
@@ -205,8 +118,6 @@ export default function SpotDetail() {
       </div>
     );
   }
-
-  const totalPrice = calculateTotalPrice();
 
   return (
     <div className="min-h-screen bg-background">
@@ -319,44 +230,16 @@ export default function SpotDetail() {
               </p>
             </Card>
 
-            {/* Payment & Contact Info */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4 text-card-foreground">Plaćanje i Kontakt</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CreditCard className="w-5 h-5 text-accent mt-0.5" />
-                  <div>
-                    <p className="font-medium text-card-foreground">Tip Plaćanja</p>
-                    <p className="text-muted-foreground" data-testid="text-payment-type">
-                      {spot.paymentType === 'cash' && 'Keš'}
-                      {spot.paymentType === 'bank_transfer' && 'Preko računa - kontaktirajte vlasnika'}
-                      {spot.paymentType === 'card_monri' && 'Kartično (Monri)'}
-                    </p>
-                  </div>
-                </div>
-                {spot.phone && (
-                  <div className="flex items-start gap-3">
-                    <Phone className="w-5 h-5 text-accent mt-0.5" />
-                    <div>
-                      <p className="font-medium text-card-foreground">Kontakt Telefon</p>
-                      <a 
-                        href={`tel:${spot.phone}`} 
-                        className="text-accent hover:underline"
-                        data-testid="link-phone"
-                      >
-                        {spot.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Owner Info */}
+            {/* Kontakt Vlasnika - Combined Section */}
             {owner && (
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-4 text-card-foreground">Vlasnik</h2>
-                <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold mb-2 text-card-foreground">Kontakt Vlasnika</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Kontaktirajte vlasnika za rezervaciju ovog parking mesta
+                </p>
+                
+                {/* Owner info with avatar */}
+                <div className="flex items-center gap-4 mb-4">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={owner.profileImageUrl || undefined} />
                     <AvatarFallback>
@@ -369,6 +252,30 @@ export default function SpotDetail() {
                     </p>
                     <p className="text-sm text-muted-foreground">{owner.email}</p>
                   </div>
+                </div>
+                
+                {/* Phone */}
+                {spot.phone && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <Phone className="w-5 h-5 text-accent" />
+                    <a 
+                      href={`tel:${spot.phone}`} 
+                      className="text-accent hover:underline font-medium"
+                      data-testid="link-phone"
+                    >
+                      {spot.phone}
+                    </a>
+                  </div>
+                )}
+                
+                {/* Payment type */}
+                <div className="flex items-center gap-3">
+                  <CreditCard className="w-5 h-5 text-accent" />
+                  <span className="text-muted-foreground" data-testid="text-payment-type">
+                    Tip plaćanja: {spot.paymentType === 'cash' && 'Keš'}
+                    {spot.paymentType === 'bank_transfer' && 'Preko računa'}
+                    {spot.paymentType === 'card_monri' && 'Kartično'}
+                  </span>
                 </div>
               </Card>
             )}
@@ -461,7 +368,7 @@ export default function SpotDetail() {
             </Card>
           </div>
 
-          {/* Right Column - Booking Widget */}
+          {/* Right Column - Price & Availability */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Card className="p-6">
               <div className="mb-6">
@@ -471,73 +378,21 @@ export default function SpotDetail() {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-foreground">
-                    Datum
-                  </label>
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
-                    className="rounded-md border"
-                    data-testid="calendar-booking-date"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block text-foreground">
-                      Početak
-                    </label>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-                      data-testid="input-start-time"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block text-foreground">
-                      Kraj
-                    </label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-                      data-testid="input-end-time"
-                    />
-                  </div>
-                </div>
-
-                {totalPrice > 0 && (
-                  <div className="pt-4 border-t border-border">
-                    <div className="flex justify-between mb-2">
-                      <span className="text-muted-foreground">Ukupno:</span>
-                      <span className="text-xl font-bold text-accent" data-testid="text-total-price">
-                        {totalPrice.toFixed(2)} {spot.currency}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleBooking}
-                  disabled={!selectedDate || !startTime || !endTime || bookingMutation.isPending}
-                  data-testid="button-book-now"
-                >
-                  {bookingMutation.isPending ? "Rezervisanje..." : "Rezerviši Sada"}
-                </Button>
-
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4" />
-                  <span>Sigurno plaćanje preko Monri</span>
-                </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block text-foreground">
+                  Dostupnost
+                </label>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  disabled={(date) => date < new Date()}
+                  className="rounded-md border"
+                  data-testid="calendar-availability"
+                />
+                <p className="text-sm text-muted-foreground mt-3 text-center">
+                  Kalendar prikazuje dostupnost parking mesta
+                </p>
               </div>
             </Card>
           </div>
@@ -548,9 +403,7 @@ export default function SpotDetail() {
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
-        message={loginRedirectAction === "message" 
-          ? "Za slanje poruke vlasniku potrebna je prijava na nalog."
-          : "Za rezervaciju parking mesta potrebna je prijava na nalog."}
+        message="Za slanje poruke vlasniku potrebna je prijava na nalog."
         redirectPath={`/spot/${spotId}`}
       />
     </div>
