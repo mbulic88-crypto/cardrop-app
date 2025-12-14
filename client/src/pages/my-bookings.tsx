@@ -1,210 +1,73 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar, Clock, MapPin, AlertCircle, Home as HomeIcon, Globe, Star, MessageSquare } from "lucide-react";
-import type { Booking, ParkingSpot, Review } from "@shared/schema";
-import { Link, useLocation } from "wouter";
-import { format } from "date-fns";
-import { sr } from "date-fns/locale";
-import ReviewDialog from "@/components/ReviewDialog";
-import { useAuth } from "@/hooks/useAuth";
-import LoginRequiredDialog from "@/components/LoginRequiredDialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar, Clock, MapPin, Trash2, Plus, Home as HomeIcon, Bookmark } from "lucide-react";
+import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
+interface ManualBooking {
+  id: string;
+  parkingName: string;
+  date: string;
+  time: string;
+  price: string;
+  createdAt: string;
+}
+
 export default function MyBookings() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const [, setLocation] = useLocation();
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [bookings, setBookings] = useState<ManualBooking[]>([]);
+  const [parkingName, setParkingName] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [price, setPrice] = useState("");
 
+  // Load bookings from localStorage on mount
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      setShowLoginDialog(true);
+    const saved = localStorage.getItem("parkin-manual-bookings");
+    if (saved) {
+      setBookings(JSON.parse(saved));
     }
-  }, [isAuthenticated, authLoading]);
+  }, []);
 
-  const { data: bookings = [], isLoading } = useQuery<Booking[]>({
-    queryKey: ["/api/bookings"],
-    enabled: isAuthenticated,
-  });
+  // Save bookings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("parkin-manual-bookings", JSON.stringify(bookings));
+  }, [bookings]);
 
-  const upcomingBookings = bookings.filter((b) => {
-    const endTime = new Date(b.endTime);
-    return endTime >= new Date() && b.status !== "cancelled";
-  });
+  const handleAddBooking = () => {
+    if (!parkingName.trim()) return;
 
-  const pastBookings = bookings.filter((b) => {
-    const endTime = new Date(b.endTime);
-    return endTime < new Date() || b.status === "cancelled";
-  });
+    const newBooking: ManualBooking = {
+      id: Date.now().toString(),
+      parkingName: parkingName.trim(),
+      date: date || "Nije uneto",
+      time: time || "Nije uneto",
+      price: price || "Nije uneto",
+      createdAt: new Date().toISOString(),
+    };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return <Badge className="bg-accent">Potvrđeno</Badge>;
-      case "pending":
-        return <Badge variant="outline">Na Čekanju</Badge>;
-      case "completed":
-        return <Badge variant="secondary">Završeno</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Otkazano</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    setBookings([newBooking, ...bookings]);
+    setParkingName("");
+    setDate("");
+    setTime("");
+    setPrice("");
   };
 
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <Badge className="bg-accent">Plaćeno</Badge>;
-      case "pending":
-        return <Badge variant="outline">Čeka Plaćanje</Badge>;
-      case "refunded":
-        return <Badge variant="secondary">Refundirano</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const BookingCard = ({ booking, isPast }: { booking: Booking; isPast: boolean }) => {
-    const [showReviewDialog, setShowReviewDialog] = useState(false);
-    
-    const { data: spot } = useQuery<ParkingSpot>({
-      queryKey: ["/api/parking-spots", booking.spotId],
-    });
-
-    const { data: existingReview } = useQuery<Review | null>({
-      queryKey: ["/api/reviews/booking", booking.id],
-      enabled: isPast && booking.paymentStatus === "paid",
-    });
-
-    const { data: canReviewData } = useQuery<{ canReview: boolean }>({
-      queryKey: ["/api/bookings", booking.id, "can-review"],
-      enabled: isPast && booking.paymentStatus === "paid" && !existingReview,
-    });
-
-    const canReview = canReviewData?.canReview && !existingReview;
-    const hasReview = !!existingReview;
-
-    return (
-      <Card className="p-6 hover-elevate" data-testid={`card-booking-${booking.id}`}>
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Image */}
-          <div className="w-full md:w-48 aspect-video md:aspect-square rounded-lg overflow-hidden bg-muted flex-shrink-0">
-            {spot?.imageUrls && spot.imageUrls.length > 0 ? (
-              <img
-                src={spot.imageUrls[0]}
-                alt={spot.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <MapPin className="w-12 h-12 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-
-          {/* Details */}
-          <div className="flex-1">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="text-xl font-semibold mb-1 text-card-foreground">
-                  {spot?.title || "Loading..."}
-                </h3>
-                <div className="flex items-center text-muted-foreground text-sm">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  <span>{spot?.address}</span>
-                </div>
-              </div>
-              {getStatusBadge(booking.status)}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div className="flex items-center text-sm">
-                <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                <span className="text-card-foreground">
-                  {format(new Date(booking.startTime), "dd MMM yyyy", { locale: sr })}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <Clock className="w-4 h-4 mr-2 text-muted-foreground" />
-                <span className="text-card-foreground">
-                  {format(new Date(booking.startTime), "HH:mm")} - {format(new Date(booking.endTime), "HH:mm")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3 border-t border-card-border">
-              <div>
-                <div className="text-2xl font-bold text-accent mb-1">
-                  {booking.totalPrice} {booking.currency}
-                </div>
-                {getPaymentStatusBadge(booking.paymentStatus)}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {spot && (
-                  <Link href={`/spot/${spot.id}`}>
-                    <Button variant="outline" data-testid={`button-view-spot-${booking.id}`}>
-                      Pogledaj Mesto
-                    </Button>
-                  </Link>
-                )}
-                {canReview && (
-                  <Button
-                    onClick={() => setShowReviewDialog(true)}
-                    className="bg-accent hover:bg-accent/90"
-                    data-testid={`button-review-${booking.id}`}
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    Ostavi Recenziju
-                  </Button>
-                )}
-                {hasReview && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    Recenzija Poslata
-                  </Badge>
-                )}
-              </div>
-            </div>
-            
-            {/* Review Dialog */}
-            {spot && (
-              <ReviewDialog
-                open={showReviewDialog}
-                onClose={() => setShowReviewDialog(false)}
-                bookingId={booking.id}
-                spotTitle={spot.title}
-              />
-            )}
-          </div>
-        </div>
-      </Card>
-    );
+  const handleDeleteBooking = (id: string) => {
+    setBookings(bookings.filter((b) => b.id !== id));
   };
 
   return (
-    <>
-      <LoginRequiredDialog
-        open={showLoginDialog}
-        onClose={() => {
-          setShowLoginDialog(false);
-          setLocation("/");
-        }}
-        message="Za pregled rezervacija potrebna je prijava na nalog."
-        redirectPath="/my-bookings"
-      />
-      
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
           <div className="flex items-center justify-between gap-1 xs:gap-2">
             <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
-              <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
+              <img src={parkInLogo} alt="Parkin" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
+              <span className="text-xl font-bold text-foreground hidden sm:inline">Parkin</span>
             </Link>
 
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
@@ -219,95 +82,142 @@ export default function MyBookings() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        {/* Title and Instructions */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-foreground">Moje Rezervacije</h1>
-          <p className="text-muted-foreground">
-            Pregled svih vaših rezervacija parking mesta
-          </p>
+          <div className="flex items-center gap-3 mb-4">
+            <Bookmark className="w-8 h-8 text-accent" />
+            <h1 className="text-3xl font-bold text-foreground">Moje Rezervacije</h1>
+          </div>
+          <Card className="p-4 bg-accent/10 border-accent/30">
+            <p className="text-card-foreground">
+              Zabeležite vašu rezervaciju da je ne zaboravite! Ovde možete ručno upisati informacije o parking mestu koje ste rezervisali - naziv parkinga, vreme i cenu. Sve rezervacije ostaju sačuvane kao vaš lični podsetnik.
+            </p>
+          </Card>
         </div>
 
-        <Tabs defaultValue="upcoming" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-              Nadolazeće ({upcomingBookings.length})
-            </TabsTrigger>
-            <TabsTrigger value="past" data-testid="tab-past">
-              Prošle ({pastBookings.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Add Booking Form */}
+        <Card className="p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-card-foreground flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Dodaj Novu Rezervaciju
+          </h2>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="parkingName" className="text-foreground">Naziv Parkinga *</Label>
+              <Input
+                id="parkingName"
+                placeholder="npr. Parking kod Terazija"
+                value={parkingName}
+                onChange={(e) => setParkingName(e.target.value)}
+                className="mt-1"
+                data-testid="input-parking-name"
+              />
+            </div>
 
-          <TabsContent value="upcoming" className="space-y-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-6 animate-pulse">
-                    <div className="flex gap-6">
-                      <div className="w-48 h-48 bg-muted rounded-lg" />
-                      <div className="flex-1 space-y-3">
-                        <div className="h-6 bg-muted rounded w-3/4" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                        <div className="h-4 bg-muted rounded w-1/3" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="date" className="text-foreground">Datum</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="mt-1"
+                  data-testid="input-date"
+                />
+              </div>
+              <div>
+                <Label htmlFor="time" className="text-foreground">Vreme</Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className="mt-1"
+                  data-testid="input-time"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="price" className="text-foreground">Cena (RSD)</Label>
+              <Input
+                id="price"
+                placeholder="npr. 500"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="mt-1"
+                data-testid="input-price"
+              />
+            </div>
+
+            <Button 
+              onClick={handleAddBooking}
+              disabled={!parkingName.trim()}
+              className="w-full"
+              data-testid="button-add-booking"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Sačuvaj Rezervaciju
+            </Button>
+          </div>
+        </Card>
+
+        {/* Bookings List */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-foreground">
+            Vaše Rezervacije ({bookings.length})
+          </h2>
+
+          {bookings.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                Još nemate sačuvanih rezervacija. Dodajte svoju prvu rezervaciju iznad.
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {bookings.map((booking) => (
+                <Card key={booking.id} className="p-4" data-testid={`card-booking-${booking.id}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-card-foreground flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-accent" />
+                        {booking.parkingName}
+                      </h3>
+                      <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          <span>Datum: {booking.date}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          <span>Vreme: {booking.time}</span>
+                        </div>
+                        <div className="text-accent font-medium">
+                          Cena: {booking.price} {booking.price !== "Nije uneto" ? "RSD" : ""}
+                        </div>
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            ) : upcomingBookings.length === 0 ? (
-              <Card className="p-12 text-center">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">
-                  Nema Nadolazećih Rezervacija
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Pronađite parking mesto i napravite rezervaciju
-                </p>
-                <Link href="/home">
-                  <Button>Pretražite Parking Mesta</Button>
-                </Link>
-              </Card>
-            ) : (
-              upcomingBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} isPast={false} />
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="past" className="space-y-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2].map((i) => (
-                  <Card key={i} className="p-6 animate-pulse">
-                    <div className="flex gap-6">
-                      <div className="w-48 h-48 bg-muted rounded-lg" />
-                      <div className="flex-1 space-y-3">
-                        <div className="h-6 bg-muted rounded w-3/4" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                        <div className="h-4 bg-muted rounded w-1/3" />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : pastBookings.length === 0 ? (
-              <Card className="p-12 text-center">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2 text-card-foreground">
-                  Nema Prošlih Rezervacija
-                </h3>
-                <p className="text-muted-foreground">
-                  Vaše prošle rezervacije će se pojaviti ovde
-                </p>
-              </Card>
-            ) : (
-              pastBookings.map((booking) => (
-                <BookingCard key={booking.id} booking={booking} isPast={true} />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteBooking(booking.id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      data-testid={`button-delete-${booking.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
-    </>
   );
 }
