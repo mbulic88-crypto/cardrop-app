@@ -1,23 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { MapView } from "@/components/MapView";
 import { StaticMapImage } from "@/components/StaticMapImage";
 import { NearbyParkingMap } from "@/components/NearbyParkingMap";
 import { geocodeAddress, calculateDistance } from "@/lib/geocoding";
+import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
-const serbianCities = [
-  "Svi Gradovi",
+const defaultCities = [
   "Beograd",
   "Novi Sad",
   "Niš",
@@ -37,6 +39,7 @@ const serbianCities = [
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCity, setSelectedCity] = useState("Svi Gradovi");
   const [showFilters, setShowFilters] = useState(false);
@@ -45,10 +48,42 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [geocodedLocation, setGeocodedLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [nearbySpots, setNearbySpots] = useState<Array<ParkingSpot & { distance: number }>>([]);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [loginRedirectPath, setLoginRedirectPath] = useState("/home");
+  
+  // Feature filters
+  const [filterEvCharging, setFilterEvCharging] = useState(false);
+  const [filterCamera, setFilterCamera] = useState(false);
+  const [filter24Hours, setFilter24Hours] = useState(false);
 
   const { data: spots = [], isLoading } = useQuery<ParkingSpot[]>({
     queryKey: ["/api/parking-spots"],
   });
+
+  // Dynamic cities based on spots
+  const availableCities = useMemo(() => {
+    const citiesFromSpots: string[] = [];
+    spots.forEach(spot => {
+      if (spot.city && spot.city !== "Ostalo" && !citiesFromSpots.includes(spot.city)) {
+        citiesFromSpots.push(spot.city);
+      } else if (spot.address) {
+        // Try to extract city from address
+        defaultCities.forEach(city => {
+          if (spot.address.toLowerCase().includes(city.toLowerCase()) && !citiesFromSpots.includes(city)) {
+            citiesFromSpots.push(city);
+          }
+        });
+      }
+    });
+    // Merge with default cities, deduplicate and sort
+    const allCities = [...defaultCities];
+    citiesFromSpots.forEach(city => {
+      if (!allCities.includes(city)) {
+        allCities.push(city);
+      }
+    });
+    return ["Svi Gradovi", ...allCities.sort()];
+  }, [spots]);
 
   const filteredSpots = spots.filter((spot) => {
     const matchesLocation = !searchLocation || 
@@ -56,15 +91,31 @@ export default function Home() {
       spot.title.toLowerCase().includes(searchLocation.toLowerCase());
     
     const matchesCity = selectedCity === "Svi Gradovi" ||
-      spot.address.toLowerCase().includes(selectedCity.toLowerCase());
+      spot.address.toLowerCase().includes(selectedCity.toLowerCase()) ||
+      (spot.city && spot.city.toLowerCase() === selectedCity.toLowerCase());
     
     const price = parseFloat(spot.pricePerHour);
     const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
     
     const matchesType = spotType === "all" || spot.spotType === spotType;
     
-    return matchesLocation && matchesCity && matchesPrice && matchesType && spot.isActive;
+    // Feature filters
+    const matchesEvCharging = !filterEvCharging || spot.hasEvCharging;
+    const matchesCamera = !filterCamera || spot.hasSecurityCamera;
+    const matches24Hours = !filter24Hours || spot.is24Hours;
+    
+    return matchesLocation && matchesCity && matchesPrice && matchesType && 
+           matchesEvCharging && matchesCamera && matches24Hours && spot.isActive;
   });
+
+  const handleProtectedAction = (path: string) => {
+    if (isAuthenticated) {
+      setLocation(path);
+    } else {
+      setLoginRedirectPath(path);
+      setShowLoginDialog(true);
+    }
+  };
 
   // Geocode search location when no results found
   useEffect(() => {
@@ -134,7 +185,7 @@ export default function Home() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {serbianCities.map((city) => (
+                  {availableCities.map((city) => (
                     <SelectItem key={city} value={city}>
                       {city}
                     </SelectItem>
@@ -237,6 +288,51 @@ export default function Home() {
                   />
                 </div>
               </div>
+
+              {/* Feature Filters */}
+              <div className="pt-4 border-t border-border">
+                <label className="text-sm font-medium mb-3 block text-foreground">
+                  Dodatne Opcije
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="filter-ev"
+                      checked={filterEvCharging}
+                      onCheckedChange={setFilterEvCharging}
+                      data-testid="switch-filter-ev"
+                    />
+                    <Label htmlFor="filter-ev" className="flex items-center gap-1 text-sm cursor-pointer">
+                      <Zap className="w-4 h-4 text-accent" />
+                      EV Punjač
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="filter-camera"
+                      checked={filterCamera}
+                      onCheckedChange={setFilterCamera}
+                      data-testid="switch-filter-camera"
+                    />
+                    <Label htmlFor="filter-camera" className="flex items-center gap-1 text-sm cursor-pointer">
+                      <Camera className="w-4 h-4 text-accent" />
+                      Kamera
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="filter-24h"
+                      checked={filter24Hours}
+                      onCheckedChange={setFilter24Hours}
+                      data-testid="switch-filter-24h"
+                    />
+                    <Label htmlFor="filter-24h" className="flex items-center gap-1 text-sm cursor-pointer">
+                      <Clock className="w-4 h-4 text-accent" />
+                      24/7
+                    </Label>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -255,18 +351,21 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href="/my-bookings">
-              <Button variant="outline" data-testid="link-my-bookings">
-                <Calendar className="w-4 h-4 mr-2" />
-                Moje Rezervacije
-              </Button>
-            </Link>
-            <Link href="/add-spot">
-              <Button data-testid="link-add-spot">
-                <Zap className="w-4 h-4 mr-2" />
-                Dodaj Mesto
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              onClick={() => handleProtectedAction("/my-bookings")}
+              data-testid="link-my-bookings"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Moje Rezervacije
+            </Button>
+            <Button 
+              onClick={() => handleProtectedAction("/add-spot")}
+              data-testid="link-add-spot"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Dodaj Mesto
+            </Button>
           </div>
         </div>
 
@@ -493,6 +592,14 @@ export default function Home() {
           </>
         )}
       </div>
+
+      {/* Login Required Dialog */}
+      <LoginRequiredDialog
+        open={showLoginDialog}
+        onClose={() => setShowLoginDialog(false)}
+        message="Za ovu funkciju potrebna je prijava na nalog."
+        redirectPath={loginRedirectPath}
+      />
     </div>
   );
 }
