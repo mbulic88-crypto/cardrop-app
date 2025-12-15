@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
 import { StaticMapImage } from "@/components/StaticMapImage";
 import { NearbyParkingMap } from "@/components/NearbyParkingMap";
@@ -39,7 +39,6 @@ const defaultCities = [
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCity, setSelectedCity] = useState("Svi Gradovi");
   const [showFilters, setShowFilters] = useState(false);
@@ -110,7 +109,7 @@ export default function Home() {
 
   const handleProtectedAction = (path: string) => {
     if (isAuthenticated) {
-      setLocation(path);
+      window.location.href = path;
     } else {
       setLoginRedirectPath(path);
       setShowLoginDialog(true);
