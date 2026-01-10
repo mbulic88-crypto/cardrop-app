@@ -98,16 +98,17 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-white">CarDrop</span>
+              <span className="text-xl font-bold text-white hidden sm:inline">CarDrop</span>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {isAuthenticated ? (
                 <Link href="/dashboard">
                   <Button
                     variant="outline"
+                    size="sm"
                     data-testid="button-account"
-                    className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
+                    className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
                   >
                     Moj Nalog
                   </Button>
@@ -115,21 +116,24 @@ export default function Landing() {
               ) : (
                 <Button
                   variant="outline"
+                  size="sm"
                   data-testid="button-login"
                   onClick={() => setShowLoginDialog(true)}
-                  className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
+                  className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
                 >
                   Prijavi se
                 </Button>
               )}
               <Button
                 variant="outline"
+                size="sm"
                 data-testid="button-language"
                 onClick={toggleLanguage}
-                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
               >
-                <Globe className="w-4 h-4 mr-2" />
-                <span>{t.langButton}</span>
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{t.langButton}</span>
+                <span className="sm:hidden">{language === "sr" ? "EN" : "SR"}</span>
               </Button>
               <Button
                 variant="outline"
