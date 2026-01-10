@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Clock, Shield, Zap, Globe, Download } from "lucide-react";
+import { MapPin, Clock, Shield, Zap, Globe, Download, Sun, Moon } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { useTheme } from "next-themes";
 
 const translations = {
   sr: {
@@ -65,6 +65,7 @@ export default function Landing() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { isInstallable, installApp } = usePWA();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -97,7 +98,7 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-foreground">CarDrop</span>
+              <span className="text-xl font-bold text-white">CarDrop</span>
             </Link>
 
             <div className="flex items-center gap-2">
@@ -106,7 +107,7 @@ export default function Landing() {
                   <Button
                     variant="outline"
                     data-testid="button-account"
-                    className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+                    className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
                   >
                     Moj Nalog
                   </Button>
@@ -116,7 +117,7 @@ export default function Landing() {
                   variant="outline"
                   data-testid="button-login"
                   onClick={() => setShowLoginDialog(true)}
-                  className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+                  className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
                 >
                   Prijavi se
                 </Button>
@@ -125,12 +126,21 @@ export default function Landing() {
                 variant="outline"
                 data-testid="button-language"
                 onClick={toggleLanguage}
-                className="bg-background/20 backdrop-blur-sm border-foreground/20 text-foreground hover:bg-background/30"
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
               >
                 <Globe className="w-4 h-4 mr-2" />
                 <span>{t.langButton}</span>
               </Button>
-              <ThemeToggle />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
+                data-testid="button-theme-toggle"
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
             </div>
           </div>
         </div>
@@ -152,13 +162,13 @@ export default function Landing() {
         
         {/* Hero Content */}
         <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-20 md:pt-28 pb-8 mt-20 md:mt-24">
-          <h1 className="text-5xl md:text-8xl font-bold text-foreground mb-6 md:mb-8">
+          <h1 className="text-5xl md:text-8xl font-bold text-white mb-6 md:mb-8">
             CarDrop
           </h1>
-          <p className="text-xl md:text-3xl text-foreground/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-3xl text-white/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed">
             {t.heroTitle}
           </p>
-          <p className="text-base md:text-xl text-foreground/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-xl text-white/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
             {t.heroSubtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
@@ -186,7 +196,7 @@ export default function Landing() {
               variant="outline"
               size="default"
               onClick={installApp}
-              className="bg-accent/20 border-accent text-foreground hover:bg-accent/40"
+              className="bg-accent/20 border-accent text-white hover:bg-accent/40"
               data-testid="button-install-app"
             >
               <Download className="w-5 h-5 mr-2" />
