@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* LIGHT MODE - WhatsApp cream theme */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -14,61 +14,62 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 158 11% 20%;
+  /* WhatsApp cream colors */
+  --background: 30 33% 91%; /* #ECE5DD - WhatsApp cream */
 
-  --foreground: 158 29% 92%;
+  --foreground: 220 9% 20%; /* Dark text for light mode */
 
-  --border: 0 0% 88%;
+  --border: 30 20% 82%;
 
-  --card: 158 11% 24%;
+  --card: 30 33% 95%; /* Slightly lighter cream for cards */
 
-  --card-foreground: 158 29% 92%;
+  --card-foreground: 220 9% 20%;
 
-  --card-border: 158 11% 20%;
+  --card-border: 30 20% 85%;
 
-  --sidebar: 158 11% 21%;
+  --sidebar: 30 33% 88%;
 
-  --sidebar-foreground: 158 29% 92%;
+  --sidebar-foreground: 220 9% 20%;
 
-  --sidebar-border: 158 11% 24%;
+  --sidebar-border: 30 20% 80%;
 
   --sidebar-primary: 158 52% 35%;
 
-  --sidebar-primary-foreground: 158 29% 92%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 158 52% 55%;
+  --sidebar-accent: 158 52% 45%;
 
-  --sidebar-accent-foreground: 158 29% 92%;
+  --sidebar-accent-foreground: 0 0% 100%;
 
   --sidebar-ring: 158 40% 35%;
 
-  --popover: 158 11% 23%;
+  --popover: 30 33% 95%;
 
-  --popover-foreground: 158 29% 92%;
+  --popover-foreground: 220 9% 20%;
 
-  --popover-border: 158 11% 26%;
+  --popover-border: 30 20% 82%;
 
-  --primary: 158 52% 35%;
+  --primary: 158 52% 35%; /* Green accent */
 
-  --primary-foreground: 158 29% 92%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 158 34% 35%;
+  --secondary: 158 34% 40%;
 
-  --secondary-foreground: 158 29% 92%;
+  --secondary-foreground: 0 0% 100%;
 
-  --muted: 158 11% 25%;
+  --muted: 30 20% 85%;
 
-  --muted-foreground: 158 29% 70%;
+  --muted-foreground: 220 9% 45%;
 
-  --accent: 158 52% 55%;
+  --accent: 158 52% 45%;
 
-  --accent-foreground: 158 29% 92%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 72% 51%;
 
   --destructive-foreground: 0 0% 98%;
 
-  --input: 158 11% 28%;
+  --input: 30 20% 85%;
   --ring: 158 40% 35%;
   --chart-1: 158 52% 20%;
   --chart-2: 158 40% 35%;
@@ -122,6 +123,7 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* DARK MODE - Default */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
@@ -132,23 +134,23 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 210 6% 14%;
+  --background: 210 6% 12%; /* Dark background */
 
-  --foreground: 158 29% 92%;
+  --foreground: 158 29% 92%; /* Light text */
 
   --border: 158 11% 22%;
 
-  --card: 158 11% 20%;
+  --card: 158 11% 16%;
 
   --card-foreground: 158 29% 92%;
 
-  --card-border: 158 11% 25%;
+  --card-border: 158 11% 22%;
 
-  --sidebar: 158 11% 21%;
+  --sidebar: 158 11% 14%;
 
   --sidebar-foreground: 158 29% 92%;
 
-  --sidebar-border: 158 11% 24%;
+  --sidebar-border: 158 11% 20%;
 
   --sidebar-primary: 158 52% 35%;
 
@@ -160,13 +162,13 @@
 
   --sidebar-ring: 158 40% 35%;
 
-  --popover: 158 11% 23%;
+  --popover: 158 11% 18%;
 
   --popover-foreground: 158 29% 92%;
 
-  --popover-border: 158 11% 26%;
+  --popover-border: 158 11% 24%;
 
-  --primary: 158 52% 35%;
+  --primary: 158 52% 40%;
 
   --primary-foreground: 158 29% 92%;
 
@@ -174,9 +176,9 @@
 
   --secondary-foreground: 158 29% 92%;
 
-  --muted: 158 11% 25%;
+  --muted: 158 11% 20%;
 
-  --muted-foreground: 158 29% 70%;
+  --muted-foreground: 158 29% 65%;
 
   --accent: 158 52% 55%;
 
@@ -186,7 +188,7 @@
 
   --destructive-foreground: 0 0% 98%;
 
-  --input: 158 11% 28%;
+  --input: 158 11% 22%;
   --ring: 158 40% 35%;
   --chart-1: 158 52% 20%;
   --chart-2: 158 40% 35%;
@@ -360,9 +362,9 @@ div[class*="geoapify-autocomplete-items"] {
   width: 100% !important;
   margin-top: 0.25rem !important;
   border-radius: calc(var(--radius) - 2px) !important;
-  border: 1px solid #40916C !important;
-  background-color: #343A40 !important;
-  background: #343A40 !important;
+  border: 1px solid hsl(var(--primary)) !important;
+  background-color: hsl(var(--card)) !important;
+  background: hsl(var(--card)) !important;
   box-shadow: var(--shadow-md) !important;
   max-height: 300px !important;
   overflow-y: auto !important;
@@ -374,19 +376,19 @@ div[class*="geoapify-autocomplete-items"] div,
 div[class*="geoapify-autocomplete-items"] > div {
   padding: 0.625rem 0.75rem !important;
   cursor: pointer !important;
-  color: #F8F9FA !important;
+  color: hsl(var(--foreground)) !important;
   font-size: 0.875rem !important;
-  border-bottom: 1px solid rgba(64, 145, 108, 0.3) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
   transition: background-color 0.2s !important;
-  background-color: #343A40 !important;
-  background: #343A40 !important;
+  background-color: hsl(var(--card)) !important;
+  background: hsl(var(--card)) !important;
 }
 
 .geoapify-autocomplete-items div *,
 .geoapify-autocomplete-items > div *,
 div[class*="geoapify-autocomplete-items"] div *,
 div[class*="geoapify-autocomplete-items"] > div * {
-  color: #F8F9FA !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .geoapify-autocomplete-items div:last-child {
@@ -397,16 +399,16 @@ div[class*="geoapify-autocomplete-items"] > div * {
 .geoapify-autocomplete-items .active,
 div[class*="geoapify-autocomplete-items"] div:hover,
 div[class*="geoapify-autocomplete-items"] .active {
-  background-color: #52B788 !important;
-  background: #52B788 !important;
-  color: #F8F9FA !important;
+  background-color: hsl(var(--accent)) !important;
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
 }
 
 .geoapify-autocomplete-items div:hover *,
 .geoapify-autocomplete-items .active *,
 div[class*="geoapify-autocomplete-items"] div:hover *,
 div[class*="geoapify-autocomplete-items"] .active * {
-  color: #F8F9FA !important;
+  color: hsl(var(--accent-foreground)) !important;
 }
 
 .geoapify-close-button {
