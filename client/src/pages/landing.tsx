@@ -29,7 +29,7 @@ const translations = {
     ctaTitle: "Imate Neiskorišćeno Parking Mesto?",
     ctaSubtitle: "Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.",
     termsButton: "Uslovi Korišćenja",
-    footerText: "© 2024 ParkIN Srbija. Sva prava zadržana.",
+    footerText: "© 2024 CarDrop Srbija. Sva prava zadržana.",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju"
   },
@@ -52,7 +52,7 @@ const translations = {
     ctaTitle: "Have an Unused Parking Spot?",
     ctaSubtitle: "Earn by sharing your parking space with other drivers. Simple, secure, profitable.",
     termsButton: "Terms of Use",
-    footerText: "© 2024 ParkIN Serbia. All rights reserved.",
+    footerText: "© 2024 CarDrop Serbia. All rights reserved.",
     langButton: "SRP",
     installApp: "Install App"
   }
@@ -95,8 +95,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-foreground">ParkIN</span>
+              <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
+              <span className="text-xl font-bold text-foreground">CarDrop</span>
             </Link>
 
             <div className="flex items-center gap-2">
@@ -293,8 +293,8 @@ export default function Landing() {
             </div>
             <p className="text-card-foreground/90 italic">
               {language === "sr" 
-                ? "\"Imam garažu koju nisam koristio godinama. ParkIN mi je pomogao da je pretvorim u izvor prihoda. Odlična platforma!\""
-                : "\"I had a garage I hadn't used in years. ParkIN helped me turn it into an income source. Great platform!\""}
+                ? "\"Imam garažu koju nisam koristio godinama. CarDrop mi je pomogao da je pretvorim u izvor prihoda. Odlična platforma!\""
+                : "\"I had a garage I hadn't used in years. CarDrop helped me turn it into an income source. Great platform!\""}
             </p>
           </Card>
         </div>

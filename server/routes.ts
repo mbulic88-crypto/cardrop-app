@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: userId,
           subscriptionType: "monthly",
         },
-        description: `ParkIN - Pretplata za parking mesto: ${validatedData.title}`,
+        description: `CarDrop - Pretplata za parking mesto: ${validatedData.title}`,
       });
 
       res.json({
@@ -671,7 +671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send push notification to receiver
       await sendPushToUser(validatedData.receiverId, {
-        title: 'Nova poruka - ParkIN',
+        title: 'Nova poruka - CarDrop',
         body: `${senderName} vam je poslao poruku u vezi: ${spotTitle}`,
         url: '/dashboard?tab=messages',
         tag: 'new-message',

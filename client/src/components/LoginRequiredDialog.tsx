@@ -32,8 +32,8 @@ export default function LoginRequiredDialog({
       <DialogContent className="sm:max-w-md" data-testid="dialog-login-required">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <img src={parkInLogo} alt="ParkIN" className="w-12 h-12 rounded-lg" />
-            <DialogTitle className="text-2xl">ParkIN</DialogTitle>
+            <img src={parkInLogo} alt="CarDrop" className="w-12 h-12 rounded-lg" />
+            <DialogTitle className="text-2xl">CarDrop</DialogTitle>
           </div>
           <DialogDescription className="text-base pt-2">
             {message}

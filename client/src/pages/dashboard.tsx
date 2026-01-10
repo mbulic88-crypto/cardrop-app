@@ -151,8 +151,8 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/home" className="flex items-center gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-foreground">ParkIN</span>
+              <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
+              <span className="text-xl font-bold text-foreground">CarDrop</span>
             </Link>
             <a href="/api/logout">
               <Button variant="outline" size="sm" data-testid="button-logout">

@@ -12,8 +12,8 @@ export default function Terms() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
-              <img src={parkInLogo} alt="ParkIN" className="w-8 h-8 rounded-lg" />
-              <span className="text-2xl font-bold">ParkIN</span>
+              <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
+              <span className="text-2xl font-bold">CarDrop</span>
             </div>
           </Link>
         </div>
@@ -42,7 +42,7 @@ export default function Terms() {
                     Važno Obaveštenje - Odricanje Odgovornosti
                   </h3>
                   <p className="text-sm text-foreground/80">
-                    <strong>ParkIN platforma i vlasnik sajta nisu odgovorni</strong> za bilo kakve probleme, 
+                    <strong>CarDrop platforma i vlasnik sajta nisu odgovorni</strong> za bilo kakve probleme, 
                     štete ili nezadovoljstva koja mogu nastati u vezi sa parking mestom. Ovo uključuje, ali nije 
                     ograničeno na:
                   </p>
@@ -56,7 +56,7 @@ export default function Terms() {
                   </ul>
                   <p className="mt-3 text-sm text-foreground/80">
                     Sve transakcije i dogovori su direktno između vlasnika parking mesta i iznajmljivača. 
-                    ParkIN je samo platforma koja omogućava povezivanje korisnika.
+                    CarDrop je samo platforma koja omogućava povezivanje korisnika.
                   </p>
                 </div>
               </div>
@@ -66,7 +66,7 @@ export default function Terms() {
             <div>
               <h3 className="text-xl font-semibold mb-3">1. Prihvatanje Uslova</h3>
               <p className="text-muted-foreground">
-                Korišćenjem ParkIN platforme, prihvatate sve uslove korišćenja navedene u ovom dokumentu. 
+                Korišćenjem CarDrop platforme, prihvatate sve uslove korišćenja navedene u ovom dokumentu. 
                 Ako se ne slažete sa ovim uslovima, molimo vas da ne koristite našu platformu.
               </p>
             </div>
@@ -74,7 +74,7 @@ export default function Terms() {
             <div>
               <h3 className="text-xl font-semibold mb-3">2. Odgovornost Korisnika</h3>
               <p className="text-muted-foreground mb-3">
-                Kao korisnik ParkIN platforme, vi ste odgovorni za:
+                Kao korisnik CarDrop platforme, vi ste odgovorni za:
               </p>
               <ul className="space-y-2 text-muted-foreground list-disc list-inside">
                 <li>Tačnost svih informacija koje navedete</li>
@@ -113,9 +113,9 @@ export default function Terms() {
             <div>
               <h3 className="text-xl font-semibold mb-3">5. Plaćanja i Povraćaj Novca</h3>
               <p className="text-muted-foreground">
-                Sva plaćanja se obrađuju putem Monri platnog sistema. ParkIN zadržava pravo provizije 
+                Sva plaćanja se obrađuju putem Monri platnog sistema. CarDrop zadržava pravo provizije 
                 na svaku transakciju. Politike povraćaja novca se određuju direktno između vlasnika i 
-                iznajmljivača, i ParkIN ne učestvuje u procesu povraćaja novca.
+                iznajmljivača, i CarDrop ne učestvuje u procesu povraćaja novca.
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export default function Terms() {
               <h3 className="text-xl font-semibold mb-3">6. Sistem Ocenjivanja</h3>
               <p className="text-muted-foreground">
                 Korisnici mogu ocenjivati i ostavljati recenzije nakon završene transakcije. 
-                Recenzije moraju biti istinite i konstruktivne. ParkIN zadržava pravo da ukloni 
+                Recenzije moraju biti istinite i konstruktivne. CarDrop zadržava pravo da ukloni 
                 neodgovarajuće ili uvredljive recenzije.
               </p>
             </div>

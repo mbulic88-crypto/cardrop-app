@@ -1,6 +1,6 @@
 {
-  "name": "ParkIN - Parking u Srbiji",
-  "short_name": "ParkIN",
+  "name": "CarDrop - Parking u Srbiji",
+  "short_name": "CarDrop",
   "description": "Pronađite i iznajmite parking mesta u Srbiji. Brza i sigurna rezervacija.",
   "start_url": "/",
   "display": "standalone",

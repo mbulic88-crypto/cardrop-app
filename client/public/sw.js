@@ -32,7 +32,7 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil(
-      self.registration.showNotification(data.title || 'ParkIN', options)
+      self.registration.showNotification(data.title || 'CarDrop', options)
     );
   } catch (error) {
     console.error('Error showing notification:', error);

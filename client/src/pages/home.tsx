@@ -174,8 +174,8 @@ export default function Home() {
           {/* Top Row: Logo, City Filter, Filters Button */}
           <div className="flex items-center justify-between gap-1 xs:gap-2 mb-3">
             <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
-              <img src={parkInLogo} alt="ParkIN" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
-              <span className="text-xl font-bold text-foreground hidden sm:inline">ParkIN</span>
+              <img src={parkInLogo} alt="CarDrop" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
+              <span className="text-xl font-bold text-foreground hidden sm:inline">CarDrop</span>
             </Link>
 
             <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2">
