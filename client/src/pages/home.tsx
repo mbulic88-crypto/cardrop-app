@@ -18,6 +18,7 @@ import { NearbyParkingMap } from "@/components/NearbyParkingMap";
 import { geocodeAddress, calculateDistance } from "@/lib/geocoding";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const defaultCities = [
   "Beograd",
@@ -227,6 +228,7 @@ export default function Home() {
                   </Button>
                 </Link>
               ) : null}
+              <ThemeToggle />
             </div>
           </div>
 

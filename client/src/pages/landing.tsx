@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const translations = {
   sr: {
@@ -129,6 +130,7 @@ export default function Landing() {
                 <Globe className="w-4 h-4 mr-2" />
                 <span>{t.langButton}</span>
               </Button>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -151,7 +153,7 @@ export default function Landing() {
         {/* Hero Content */}
         <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-20 md:pt-28 pb-8 mt-20 md:mt-24">
           <h1 className="text-5xl md:text-8xl font-bold text-foreground mb-6 md:mb-8">
-            Parkin
+            CarDrop
           </h1>
           <p className="text-xl md:text-3xl text-foreground/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed">
             {t.heroTitle}
