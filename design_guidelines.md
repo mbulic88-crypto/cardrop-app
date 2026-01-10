@@ -1,4 +1,4 @@
-# Design Guidelines: Parking Space Sharing Platform - Novi Sad
+# Design Guidelines: CarDrop - Parking Space Sharing Platform
 
 ## Design Approach
 **Reference-Based Approach**: Inspired by Airbnb's clean listing interface and SpotHero's parking marketplace, focusing on intuitive map-based search and simple booking flows. This is a visual-rich, experience-focused platform where trust and ease-of-use drive conversions.
@@ -8,22 +8,31 @@
 2. **Efficiency**: Quick search-to-booking flow optimized for mobile users
 3. **Localization**: Serbian language throughout with local payment methods
 4. **Accessibility**: High contrast design for outdoor mobile usage
+5. **Theme Flexibility**: Dark mode default with WhatsApp-inspired light mode option
 
 ## Color System
 
-**Primary Palette** (Provided by user):
-- Primary: `#1B4332` (forest green) - CTAs, active states, key interactions
-- Secondary: `#40916C` (medium green) - hover states, secondary actions
-- Accent: `#52B788` (bright green) - success states, highlights, availability indicators
-- Background: `#212529` (charcoal black) - main background
-- Surface: `#343A40` (dark grey) - cards, elevated components
-- Text: `#F8F9FA` (off-white) - primary text
+**Dual Theme Design**:
+
+### Dark Mode (Default)
+- Background: `#1e1e1e` (dark charcoal)
+- Card/Surface: `#2a2a2a` (elevated dark)
+- Text: Light/off-white for contrast
+- Primary: `#40916C` (forest green) - CTAs, active states
+- Accent: `#52B788` (bright green) - success states, highlights
+
+### Light Mode (WhatsApp Cream Theme)
+- Background: `#ECE5DD` (WhatsApp cream/beige)
+- Card/Surface: Slightly lighter cream for elevation
+- Text: Dark gray for contrast
+- Primary: `#40916C` (forest green) - CTAs, active states
+- Accent: `#52B788` (bright green) - success states, highlights
 
 **Functional Colors**:
-- Success: `#52B788` (use accent green)
-- Warning: `45 93% 47%` (amber for limited availability)
-- Error: `0 72% 51%` (red for unavailable/errors)
-- Info: `#40916C` (use secondary green)
+- Success: `#52B788` (accent green)
+- Warning: Amber for limited availability
+- Error: Red for unavailable/errors
+- Info: `#40916C` (primary green)
 
 ## Typography
 
@@ -63,93 +72,80 @@
 ## Component Library
 
 ### Navigation
-- **Header**: Sticky dark surface (`#343A40`) with logo, search bar, user menu
-- Search bar: Prominent with location autocomplete, date picker, price filter
-- Mobile: Hamburger menu, bottom navigation for key actions (Search, Bookings, Profile)
+- **Header**: Sticky with theme-aware background, logo, search bar, user menu, theme toggle
+- Search bar: Prominent with location autocomplete, filters
+- Mobile: Bottom navigation for key actions (Search, Bookings, Profile)
+
+### Theme Toggle
+- Located in header for easy access
+- Sun/Moon icons with smooth transition
+- Persists user preference via next-themes
 
 ### Cards (Parking Listings)
-- Background: `#343A40` surface color
+- Background: Theme-aware card background
 - Border radius: `rounded-lg` (8px)
-- Hover: Lift with `shadow-xl`, subtle scale (1.02)
+- Hover: Lift with shadow, subtle scale (1.02)
 - Image: 16:9 aspect ratio, `rounded-t-lg`, lazy loaded
 - Content padding: `p-4`
-- Layout: Image → Location/Title → Price → Availability badge
+- Layout: Image -> Location/Title -> Price -> Availability badge
 
 ### Map Integration
-- **Interactive Map**: Mapbox GL with custom dark theme
-- Markers: Green (`#52B788`) pins for available, grey for unavailable
-- Cluster markers: Show count with `#1B4332` background
+- **Interactive Map**: Leaflet with theme-aware styling
+- Markers: Green pins for available, grey for unavailable
+- Cluster markers: Show count with primary background
 - Info cards: Pop up on marker click with image, price, quick book button
 
 ### Buttons
-- **Primary CTA**: `bg-[#1B4332]` with `hover:bg-[#40916C]`, white text, `rounded-lg`, `px-8 py-3`
-- **Secondary**: `border-2 border-[#40916C]` with transparent background, green text
-- **Outline on Images**: Blurred background (`backdrop-blur-md bg-white/10`), no custom hover states
-- **Icon Buttons**: 40px × 40px touch targets, centered icons from Heroicons
+- **Primary CTA**: Primary green background with white text, `rounded-lg`, `px-8 py-3`
+- **Secondary**: Border with transparent background, green text
+- **Outline on Images**: Blurred background (`backdrop-blur-md`), no custom hover states
+- **Icon Buttons**: 40px x 40px touch targets, centered icons from Lucide
 
 ### Forms
-- **Input Fields**: Dark surface (`#343A40`) background, `border border-[#40916C]/30`, `rounded-lg`, `px-4 py-3`
-- **Focus State**: `ring-2 ring-[#52B788]` with border color change
-- **Labels**: 14px Inter Medium, `#F8F9FA`, positioned above inputs
-- **Validation**: Error text in red below field, success checkmark in `#52B788`
+- **Input Fields**: Theme-aware background, subtle border, `rounded-lg`, `px-4 py-3`
+- **Focus State**: Ring with accent color
+- **Labels**: 14px Inter Medium, positioned above inputs
+- **Validation**: Error text in red below field, success checkmark in accent color
 
 ### Data Display
-- **Pricing**: Large, bold green (`#52B788`) with "RSD/sat" or "BAM/sat" suffix
-- **Availability Calendar**: Grid with available days in `#52B788`, booked in grey, selected with `#1B4332` background
-- **Stats/Metrics**: White text on dark cards with green accent borders
+- **Pricing**: Large, bold green with "RSD/sat" suffix
+- **Availability Calendar**: Grid with available days in accent, booked in muted
+- **Stats/Metrics**: Theme-aware text with green accent borders
 
 ### Modals & Overlays
-- **Booking Modal**: Full-screen mobile, centered card desktop, `#343A40` background
-- **Backdrop**: `bg-black/80` with blur
-- **Payment Form**: Monri-styled inputs matching platform design
-- **Confirmation**: Success icon with `#52B788` checkmark, booking details
+- **Booking Modal**: Full-screen mobile, centered card desktop, theme-aware background
+- **Backdrop**: Dark with blur
+- **Confirmation**: Success icon with accent checkmark, booking details
 
 ## Key Pages Structure
 
 ### Landing/Home Page
-- **Hero**: Full-width image of Novi Sad parking (Trg Slobode/Liberty Square), 70vh height, overlay with search box centered
+- **Hero**: Full-width image with dark overlay, search box centered
 - **How It Works**: 3-column grid (mobile stacked) with icons, titles, descriptions
-- **Featured Locations**: Popular areas (Centar, Liman, Grbavica) with pricing preview
-- **Trust Section**: Stats (listings, users, successful bookings) in green highlights
+- **Featured Locations**: Popular Serbian cities with pricing preview
+- **Trust Section**: Stats (listings, users, bookings) in green highlights
 - **CTA Footer**: Prominent "List Your Spot" call-to-action
 
 ### Search/Browse Page
 - **Map-List Split**: 60% map (fixed right), 40% scrollable listings (left) on desktop
-- **Filters Bar**: Sticky top bar with location, date range, price slider, spot type
+- **Filters Bar**: Sticky top bar with city, price slider, spot type, EV charging, camera, 24/7
 - **Mobile**: Tab toggle between map and list view
-- **Results Count**: Display with sort options (price, distance, rating)
+- **Results Count**: Display with sort options
 
 ### Listing Detail Page
-- **Photo Gallery**: Hero image with thumbnail strip, full-screen lightbox on click
+- **Photo Gallery**: Hero image with thumbnail strip
 - **Info Panel**: Fixed right sidebar (desktop) with price, book button, owner details
 - **Details Section**: Location map, amenities icons, description, reviews
-- **Booking Widget**: Date selector, duration, total price calculation, "Reserve" CTA
+- **Booking Widget**: Date selector, total price, "Reserve" CTA
 
 ### User Dashboard
 - **Sidebar Navigation**: My Bookings, My Spots, Earnings, Profile
-- **Active Bookings**: Card grid with status badges, upcoming highlighted in green
-- **Listing Management**: Add/edit spots with photo upload, pricing, availability calendar
-
-## Images
-
-**Hero Section**: Yes - large hero image required
-- **Home Hero**: Panoramic photo of Novi Sad city center parking area or Liberty Square, 1920×700px minimum, with subtle dark gradient overlay for text readability
-- **Listing Images**: 800×600px minimum, showing actual parking spot, surrounding area, entrance
-- **Category Icons**: Heroicons for covered/uncovered, EV charging, security features
-- **Trust Badges**: Monri Payments logo, verified user checkmarks
-
-## Animations
-
-**Minimal, Purposeful Animations**:
-- Card hover: Smooth lift (`transition-all duration-200`)
-- Button states: Scale feedback (`active:scale-95`)
-- Modal entry: Fade + slide up (`animate-fade-in`)
-- Map markers: Bounce on new results
-- **No**: Auto-playing carousels, parallax scrolling, complex scroll-triggered animations
+- **Active Bookings**: Card grid with status badges
+- **Listing Management**: Add/edit spots with photo upload, pricing, availability
 
 ## Serbian Localization
-- All UI text in Serbian Cyrillic or Latin (user preference toggle)
-- Currency: RSD (Serbian Dinar) or BAM (Convertible Mark) based on location
+- All UI text in Serbian
+- Currency: RSD (Serbian Dinar)
 - Date format: DD.MM.YYYY
 - Time: 24-hour format
-- Payment: Monri Payments (Payten) branding and flow
+- Payment: Cash and bank transfer options
