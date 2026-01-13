@@ -37,12 +37,25 @@ The platform features a dual-theme design with green accent colors:
 ### Feature Specifications
 *   **User Management**: Registration, authentication, and profile management. Users have `hasUsedFreeTrial` flag to track trial eligibility.
 *   **Listing Management**: Owners can list parking spots with location, time slots, pricing (RSD/BAM), contact phone, payment type, spot type, and features. Includes secure image upload. City field is optional with 17 options (16 major Serbian cities + "Ostalo" for other locations).
-*   **Subscription Pricing System**: Four subscription tiers for parking spot listings:
-    - **Free Trial**: 14 days, 0 RSD (one-time only, tracked per user via `hasUsedFreeTrial`)
-    - **Monthly**: 30 days, 1,000 RSD
-    - **Half-Yearly**: 180 days, 5,000 RSD (17% savings)
-    - **Yearly**: 365 days, 9,000 RSD (25% savings)
-    Interactive pricing cards show all options with automatic selection based on trial eligibility. Each parking spot has `subscriptionType` and `subscriptionExpiresAt` fields.
+*   **Category System**: 5 parking categories with emoji map markers:
+    - 🏠 Private Parking & Garages (private)
+    - 🏢 Companies (company) - requires company name, PIB (tax ID), and number of spots
+    - 🚚 Truck Stops (truck_stop)
+    - 👥 Residential Communities (residential)
+    - 🚗 Car Lots (car_lot)
+*   **Subscription Pricing System**: Category-based pricing with auto-renewal option:
+    - **Private/Residential/Car Lot/Truck Stop**:
+        - Free Trial: 14 days, 0 RSD (one-time only, tracked per user)
+        - Monthly: 30 days, 1,000 RSD
+        - Half-Yearly: 180 days, 5,000 RSD (17% savings)
+        - Yearly: 365 days, 9,000 RSD (25% savings)
+    - **Companies**:
+        - Basic Monthly: 30 days, 3,000 RSD (up to 5 spots, 3 photos/spot)
+        - Premium Monthly: 30 days, 6,000 RSD (unlimited spots/photos)
+        - Basic Half-Yearly: 180 days, 15,000 RSD (17% savings)
+        - Premium Half-Yearly: 180 days, 30,000 RSD (17% savings)
+    - Auto-renewal toggle available for automatic subscription renewal
+    Each parking spot has `subscriptionType`, `subscriptionExpiresAt`, `autoRenewal`, and `category` fields.
 *   **Search & Discovery**: Interactive map-based search with filters for location (city), availability, price, spot type, EV charging, security camera, and 24/7 availability.
 *   **Booking System**: Secure booking flow with calendar selection and real-time availability.
 *   **Payment Processing**: Payment methods limited to cash and bank transfer only (card payments removed).
