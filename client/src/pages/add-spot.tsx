@@ -96,6 +96,15 @@ const translations = {
     numberOfSpotsDescription: "Koliko parking mesta iznajmljujete",
     autoRenewal: "Automatska Pretplata",
     autoRenewalDescription: "Automatski produžite pretplatu kada istekne",
+    // Truck stop specific
+    truckPageTitle: "Oglasite Vaše Stajalište za Kamione",
+    truckPageSubtitle: "Popunite informacije o vašem stajalištu i počnite da zarađujete",
+    pricePerDay: "Cena po Danu",
+    pricePerDayPlaceholder: "1000",
+    pricePerDayDescription: "Cena po danu parkiranja",
+    truckPib: "PIB Firme",
+    truckPibPlaceholder: "123456789",
+    truckPibDescription: "Poreski identifikacioni broj (opciono)",
   },
   en: {
     pageTitle: "Add Parking Spot",
@@ -161,6 +170,15 @@ const translations = {
     numberOfSpotsDescription: "How many parking spots are you renting out",
     autoRenewal: "Auto Renewal",
     autoRenewalDescription: "Automatically renew subscription when it expires",
+    // Truck stop specific
+    truckPageTitle: "Advertise Your Truck Stop",
+    truckPageSubtitle: "Fill in information about your truck stop and start earning",
+    pricePerDay: "Price per Day",
+    pricePerDayPlaceholder: "1000",
+    pricePerDayDescription: "Price per day of parking",
+    truckPib: "Company Tax ID (PIB)",
+    truckPibPlaceholder: "123456789",
+    truckPibDescription: "Tax identification number (optional)",
   }
 };
 
@@ -204,6 +222,7 @@ export default function AddSpot() {
   const urlParams = new URLSearchParams(searchString);
   const category = (urlParams.get('category') || 'private') as CategoryType;
   const isCompany = category === 'company';
+  const isTruckStop = category === 'truck_stop';
   
   // Check if user has already used free trial
   const { data: user } = useQuery<User>({
@@ -218,8 +237,14 @@ export default function AddSpot() {
   
   // Set default plan based on category
   useEffect(() => {
-    setSelectedPlan(isCompany ? 'company_basic' : 'free');
-  }, [isCompany]);
+    if (isCompany) {
+      setSelectedPlan('company_basic');
+    } else if (isTruckStop) {
+      setSelectedPlan('truck_basic_monthly');
+    } else {
+      setSelectedPlan('free');
+    }
+  }, [isCompany, isTruckStop]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -359,10 +384,10 @@ export default function AddSpot() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 text-foreground">
-            {t.pageTitle}
+            {isTruckStop ? t.truckPageTitle : t.pageTitle}
           </h1>
           <p className="text-muted-foreground">
-            {t.pageSubtitle}
+            {isTruckStop ? t.truckPageSubtitle : t.pageSubtitle}
           </p>
         </div>
 
@@ -551,18 +576,38 @@ export default function AddSpot() {
                 </>
               )}
 
+              {/* Truck Stop specific fields */}
+              {isTruckStop && (
+                <FormField
+                  control={form.control}
+                  name="pib"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t.truckPib}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t.truckPibPlaceholder} {...field} data-testid="input-truck-pib" />
+                      </FormControl>
+                      <FormDescription>
+                        {t.truckPibDescription}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="pricePerHour"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.price}</FormLabel>
+                      <FormLabel>{isTruckStop ? t.pricePerDay : t.price}</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder={t.pricePlaceholder} {...field} data-testid="input-price" />
+                        <Input type="number" step="0.01" placeholder={isTruckStop ? t.pricePerDayPlaceholder : t.pricePlaceholder} {...field} data-testid="input-price" />
                       </FormControl>
                       <FormDescription>
-                        {t.priceDescription}
+                        {isTruckStop ? t.pricePerDayDescription : t.priceDescription}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
