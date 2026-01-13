@@ -43,19 +43,22 @@ The platform features a dual-theme design with green accent colors:
     - 🚚 Truck Stops (truck_stop)
     - 👥 Residential Communities (residential)
     - 🚗 Car Lots (car_lot)
-*   **Subscription Pricing System**: Category-based pricing with auto-renewal option:
-    - **Private/Residential/Car Lot/Truck Stop**:
-        - Free Trial: 14 days, 0 RSD (one-time only, tracked per user)
-        - Monthly: 30 days, 1,000 RSD
-        - Half-Yearly: 180 days, 5,000 RSD (17% savings)
-        - Yearly: 365 days, 9,000 RSD (25% savings)
-    - **Companies**:
+*   **Subscription Pricing System**: Category-based tiered pricing with Basic and Premium options:
+    - **Private/Residential/Car Lot/Truck Stop** - Basic Plans:
+        - Free: Unlimited duration, 0 RSD (basic listing, no premium features)
+    - **Private/Residential/Car Lot/Truck Stop** - Premium Plans (with golden styling and top placement):
+        - Monthly Premium: 30 days, 1,000 RSD
+        - Half-Yearly Premium: 180 days, 5,000 RSD (17% savings)
+        - Yearly Premium: 365 days, 9,000 RSD (25% savings)
+    - **Companies** - Basic Plans:
         - Basic Monthly: 30 days, 3,000 RSD (up to 5 spots, 3 photos/spot)
-        - Premium Monthly: 30 days, 6,000 RSD (unlimited spots/photos)
         - Basic Half-Yearly: 180 days, 15,000 RSD (17% savings)
+    - **Companies** - Premium Plans:
+        - Premium Monthly: 30 days, 6,000 RSD (unlimited spots/photos)
         - Premium Half-Yearly: 180 days, 30,000 RSD (17% savings)
+    - **Premium Benefits**: Golden border on map pin and list cards, top position in search results, increased visibility
     - Auto-renewal toggle available for automatic subscription renewal
-    Each parking spot has `subscriptionType`, `subscriptionExpiresAt`, `autoRenewal`, and `category` fields.
+    - Each parking spot has `subscriptionType`, `subscriptionExpiresAt`, `autoRenewal`, `category`, and `isPremium` fields.
 *   **Search & Discovery**: Interactive map-based search with filters for location (city), availability, price, spot type, EV charging, security camera, and 24/7 availability.
 *   **Booking System**: Secure booking flow with calendar selection and real-time availability.
 *   **Payment Processing**: Payment methods limited to cash and bank transfer only (card payments removed).
@@ -69,7 +72,7 @@ The platform features a dual-theme design with green accent colors:
 *   **Data Validation**: Zod schemas are used for robust data validation on both frontend and backend, handling type conversions for dates and other complex data.
 *   **Error Handling**: Comprehensive error handling, including specific responses for unique constraint violations (e.g., duplicate reviews), trial already used (403), and invalid subscription plans (400).
 *   **Geographic Scope**: Designed for Serbia, with city-based filtering and popular destination features.
-*   **Subscription Logic**: Backend validates trial eligibility by checking `hasUsedFreeTrial` flag, calculates expiry dates using `shared/pricing.ts` helper functions, and tracks subscription type per parking spot.
+*   **Subscription Logic**: Backend validates plan selection, calculates expiry dates using `shared/pricing.ts` helper functions (null for free plans), and tracks subscription type and isPremium flag per parking spot. Premium spots get golden styling on map markers, list cards, and appear first in search results.
 
 ## External Dependencies
 *   **Monri Payments (Payten)**: API v2 (REST/JSON) for secure payment processing.
