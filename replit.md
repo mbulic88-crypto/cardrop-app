@@ -40,16 +40,24 @@ The platform features a dual-theme design with green accent colors:
 *   **Category System**: 5 parking categories with emoji map markers:
     - 🏠 Private Parking & Garages (private)
     - 🏢 Companies (company) - requires company name, PIB (tax ID), and number of spots
-    - 🚚 Truck Stops (truck_stop)
+    - 🚚 Truck Stops (truck_stop) - custom UI with daily pricing, optional PIB field, unique pricing
     - 👥 Residential Communities (residential)
     - 🚗 Car Lots (car_lot)
 *   **Subscription Pricing System**: Category-based tiered pricing with Basic and Premium options:
-    - **Private/Residential/Car Lot/Truck Stop** - Basic Plans:
+    - **Private/Residential/Car Lot** - Basic Plans:
         - Free: Unlimited duration, 0 RSD (basic listing, no premium features)
-    - **Private/Residential/Car Lot/Truck Stop** - Premium Plans (with golden styling and top placement):
+    - **Private/Residential/Car Lot** - Premium Plans (with golden styling and top placement):
         - Monthly Premium: 30 days, 1,000 RSD
         - Half-Yearly Premium: 180 days, 5,000 RSD (17% savings)
         - Yearly Premium: 365 days, 9,000 RSD (25% savings)
+    - **Truck Stops** - Basic Plans:
+        - Basic Monthly: 30 days, 5,000 RSD
+        - Basic Half-Yearly: 180 days, 25,000 RSD (17% savings)
+        - Basic Yearly: 365 days, 40,000 RSD (33% savings)
+    - **Truck Stops** - Premium Plans:
+        - Premium Monthly: 30 days, 10,000 RSD
+        - Premium Half-Yearly: 180 days, 50,000 RSD (17% savings)
+        - Premium Yearly: 365 days, 80,000 RSD (33% savings)
     - **Companies** - Basic Plans:
         - Basic Monthly: 30 days, 3,000 RSD (up to 5 spots, 3 photos/spot)
         - Basic Half-Yearly: 180 days, 15,000 RSD (17% savings)
