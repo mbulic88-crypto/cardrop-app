@@ -288,9 +288,9 @@ export default function Landing() {
                       {/* Inner circle for icon background */}
                       <circle cx="24" cy="22" r="14" fill="hsl(var(--primary-foreground) / 0.15)" />
                     </svg>
-                    {/* Icon positioned inside the pin */}
+                    {/* Icon positioned inside the pin - filled style like real map icons */}
                     <div className="absolute top-3 md:top-4 left-1/2 -translate-x-1/2">
-                      <item.icon className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground" strokeWidth={1.5} />
+                      <item.icon className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground fill-primary-foreground/30" strokeWidth={2.5} />
                     </div>
                   </div>
                   <span className="text-sm md:text-base font-medium text-foreground leading-tight">{item.label}</span>
