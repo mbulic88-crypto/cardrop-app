@@ -260,13 +260,13 @@ export default function Landing() {
               {t.whoCanRent}
             </h3>
             <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-              {/* Map Pin Marker Component - Professional Style */}
+              {/* Map Pin Marker Component with Emoji */}
               {[
-                { icon: Home, label: t.categoryPrivate },
-                { icon: Building2, label: t.categoryCompany },
-                { icon: Truck, label: t.categoryTruck },
-                { icon: Users, label: t.categoryResidential },
-                { icon: Car, label: t.categoryCarLot },
+                { emoji: "🏠", label: t.categoryPrivate },
+                { emoji: "🏢", label: t.categoryCompany },
+                { emoji: "🚚", label: t.categoryTruck },
+                { emoji: "👥", label: t.categoryResidential },
+                { emoji: "🚗", label: t.categoryCarLot },
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center text-center group w-28 md:w-32">
                   {/* Google Maps Style Pin */}
@@ -285,12 +285,12 @@ export default function Landing() {
                         stroke="hsl(var(--primary-foreground) / 0.3)"
                         strokeWidth="1"
                       />
-                      {/* Inner circle for icon background */}
-                      <circle cx="24" cy="22" r="14" fill="hsl(var(--primary-foreground) / 0.15)" />
+                      {/* Inner circle for emoji background */}
+                      <circle cx="24" cy="22" r="14" fill="white" />
                     </svg>
-                    {/* Icon positioned inside the pin - filled realistic style */}
-                    <div className="absolute top-3 md:top-4 left-1/2 -translate-x-1/2">
-                      <item.icon className="w-6 h-6 md:w-7 md:h-7 text-white" fill="white" strokeWidth={1.5} />
+                    {/* Emoji positioned inside the pin */}
+                    <div className="absolute top-2 md:top-2.5 left-1/2 -translate-x-1/2">
+                      <span className="text-xl md:text-2xl">{item.emoji}</span>
                     </div>
                   </div>
                   <span className="text-sm md:text-base font-medium text-foreground leading-tight">{item.label}</span>
