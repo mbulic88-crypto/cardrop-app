@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Globe } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -15,11 +15,14 @@ const translations = {
     langButton: "ENG",
     categoryPrivate: "Privatni Parkinzi i Garaže",
     categoryCompany: "Firme",
-    categoryTruck: "Stajalista za Kamione",
+    categoryTruck: "Stajališta za Kamione",
     categoryResidential: "Stambene Zajednice",
     categoryCarLot: "Auto Placevi",
-    continueButton: "Nastavi",
-    selectCategory: "Izaberite kategoriju da nastavite",
+    descPrivate: "Ako ste vlasnik privatnog parking mesta, garaže ili mesta za parkiranje, ovo je za vas!",
+    descCompany: "Za kompanije, hotele, restorane i poslovne objekte koji imaju višak parking mesta - dodatna zarada!",
+    descTruck: "Oglasite svoje stajalište i popunite prazna mesta!",
+    descResidential: "Veliki parkinzi i garaže stambenih zajednica - iskoristite vaše mogućnosti maksimalno!",
+    descCarLot: "Ako se nađe neko prazno mesto, pretvorite ga u pare - oglasite se na našoj platformi!",
     loginRequired: "Za dodavanje parking mesta potrebna je prijava na nalog.",
   },
   en: {
@@ -32,23 +35,25 @@ const translations = {
     categoryTruck: "Truck Stops",
     categoryResidential: "Residential Communities",
     categoryCarLot: "Car Lots",
-    continueButton: "Continue",
-    selectCategory: "Select a category to continue",
+    descPrivate: "If you own a private parking spot, garage or parking space, this is for you!",
+    descCompany: "For companies, hotels, restaurants and businesses with extra parking spaces - extra income!",
+    descTruck: "Advertise your truck stop and fill empty spots!",
+    descResidential: "Large parking lots and garages of residential communities - maximize your potential!",
+    descCarLot: "If you have an empty spot, turn it into cash - advertise on our platform!",
     loginRequired: "Login is required to add a parking spot.",
   }
 };
 
 const categories = [
-  { id: "private", emoji: "🏠", labelKey: "categoryPrivate" as const },
-  { id: "company", emoji: "🏢", labelKey: "categoryCompany" as const },
-  { id: "truck", emoji: "🚚", labelKey: "categoryTruck" as const },
-  { id: "residential", emoji: "👥", labelKey: "categoryResidential" as const },
-  { id: "carlot", emoji: "🚗", labelKey: "categoryCarLot" as const },
+  { id: "private", emoji: "🏠", labelKey: "categoryPrivate" as const, descKey: "descPrivate" as const },
+  { id: "company", emoji: "🏢", labelKey: "categoryCompany" as const, descKey: "descCompany" as const },
+  { id: "truck_stop", emoji: "🚚", labelKey: "categoryTruck" as const, descKey: "descTruck" as const },
+  { id: "residential", emoji: "👥", labelKey: "categoryResidential" as const, descKey: "descResidential" as const },
+  { id: "car_lot", emoji: "🚗", labelKey: "categoryCarLot" as const, descKey: "descCarLot" as const },
 ];
 
 export default function SelectCategory() {
   const [language, setLanguage] = useState<"sr" | "en">("sr");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -72,10 +77,8 @@ export default function SelectCategory() {
     localStorage.setItem("parkin-language", newLanguage);
   };
 
-  const handleContinue = () => {
-    if (selectedCategory) {
-      setLocation(`/add-spot?category=${selectedCategory}`);
-    }
+  const handleCategoryClick = (categoryId: string) => {
+    setLocation(`/add-spot?category=${categoryId}`);
   };
 
   const t = translations[language];
@@ -127,16 +130,12 @@ export default function SelectCategory() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {categories.map((category) => (
             <Card
               key={category.id}
-              className={`p-6 cursor-pointer transition-all hover-elevate ${
-                selectedCategory === category.id
-                  ? "ring-2 ring-primary bg-primary/10"
-                  : ""
-              }`}
-              onClick={() => setSelectedCategory(category.id)}
+              className="p-6 cursor-pointer transition-all hover-elevate hover:ring-2 hover:ring-primary"
+              onClick={() => handleCategoryClick(category.id)}
               data-testid={`card-category-${category.id}`}
             >
               <div className="flex flex-col items-center text-center gap-4">
@@ -160,27 +159,17 @@ export default function SelectCategory() {
                     <span className="text-2xl">{category.emoji}</span>
                   </div>
                 </div>
-                <span className="font-semibold text-foreground">
-                  {t[category.labelKey]}
-                </span>
+                <div className="space-y-2">
+                  <span className="font-semibold text-foreground block">
+                    {t[category.labelKey]}
+                  </span>
+                  <p className="text-sm text-muted-foreground">
+                    {t[category.descKey]}
+                  </p>
+                </div>
               </div>
             </Card>
           ))}
-        </div>
-
-        <div className="flex flex-col items-center gap-4">
-          {!selectedCategory && (
-            <p className="text-muted-foreground text-sm">{t.selectCategory}</p>
-          )}
-          <Button
-            size="lg"
-            className="px-12"
-            disabled={!selectedCategory}
-            onClick={handleContinue}
-            data-testid="button-continue"
-          >
-            {t.continueButton}
-          </Button>
         </div>
       </main>
     </div>
