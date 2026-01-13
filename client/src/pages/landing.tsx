@@ -122,7 +122,7 @@ export default function Landing() {
     if (!isAuthenticated) {
       setShowLoginDialog(true);
     } else {
-      setLocation("/add-spot");
+      setLocation("/select-category");
     }
   };
 
