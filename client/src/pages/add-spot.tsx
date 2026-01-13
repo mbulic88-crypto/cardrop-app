@@ -16,13 +16,13 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
-import { PRICING_PLANS, type SubscriptionType } from "@shared/pricing";
+import { getPlansByCategory, type SubscriptionType, type CategoryType } from "@shared/pricing";
 import type { User } from "@shared/schema";
 
 const SERBIAN_CITIES = [
@@ -86,6 +86,16 @@ const translations = {
     successTitle: "Uspešno Dodato",
     successDescription: "Sada možete dodati slike parking mesta ili kliknite Završi.",
     loginRequired: "Za dodavanje parking mesta potrebna je prijava na nalog.",
+    // Company specific
+    companyName: "Ime Firme",
+    companyNamePlaceholder: "npr. Parking DOO",
+    pib: "PIB",
+    pibPlaceholder: "123456789",
+    numberOfSpots: "Broj Parking Mesta",
+    numberOfSpotsPlaceholder: "5",
+    numberOfSpotsDescription: "Koliko parking mesta iznajmljujete",
+    autoRenewal: "Automatska Pretplata",
+    autoRenewalDescription: "Automatski produžite pretplatu kada istekne",
   },
   en: {
     pageTitle: "Add Parking Spot",
@@ -141,6 +151,16 @@ const translations = {
     successTitle: "Successfully Added",
     successDescription: "You can now add images of the parking spot or click Finish.",
     loginRequired: "Login is required to add a parking spot.",
+    // Company specific
+    companyName: "Company Name",
+    companyNamePlaceholder: "e.g. Parking Ltd",
+    pib: "Tax ID (PIB)",
+    pibPlaceholder: "123456789",
+    numberOfSpots: "Number of Parking Spots",
+    numberOfSpotsPlaceholder: "5",
+    numberOfSpotsDescription: "How many parking spots are you renting out",
+    autoRenewal: "Auto Renewal",
+    autoRenewalDescription: "Automatically renew subscription when it expires",
   }
 };
 
@@ -162,17 +182,28 @@ const formSchema = z.object({
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
   is24Hours: z.boolean().default(true),
+  // Company specific fields
+  companyName: z.string().optional(),
+  pib: z.string().optional(),
+  numberOfSpots: z.string().optional(),
+  autoRenewal: z.boolean().default(false),
 });
 
 export default function AddSpot() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   const [spotId, setSpotId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [language, setLanguage] = useState<"sr" | "en">("sr");
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('monthly');
+  
+  // Get category from URL params
+  const urlParams = new URLSearchParams(searchString);
+  const category = (urlParams.get('category') || 'private') as CategoryType;
+  const isCompany = category === 'company';
   
   // Check if user has already used free trial
   const { data: user } = useQuery<User>({
@@ -180,19 +211,22 @@ export default function AddSpot() {
     enabled: isAuthenticated,
   });
   
+  // Get pricing plans based on category
+  const categoryPlans = getPlansByCategory(category);
+  
   // Determine available plans based on trial eligibility
   const availablePlans = user?.hasUsedFreeTrial 
-    ? PRICING_PLANS.filter(p => !p.isTrial)
-    : PRICING_PLANS;
+    ? categoryPlans.filter(p => !p.isTrial)
+    : categoryPlans;
   
-  // Set default plan based on trial eligibility
+  // Set default plan based on trial eligibility and category
   useEffect(() => {
     if (user && !user.hasUsedFreeTrial) {
       setSelectedPlan('trial');
     } else if (user && user.hasUsedFreeTrial) {
-      setSelectedPlan('monthly');
+      setSelectedPlan(isCompany ? 'company_basic' : 'monthly');
     }
-  }, [user]);
+  }, [user, isCompany]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -212,6 +246,10 @@ export default function AddSpot() {
       hasEvCharging: false,
       hasSecurityCamera: false,
       is24Hours: true,
+      companyName: "",
+      pib: "",
+      numberOfSpots: "",
+      autoRenewal: false,
     },
   });
 
@@ -231,7 +269,7 @@ export default function AddSpot() {
   const t = translations[language];
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema> & { subscriptionType: SubscriptionType }) => {
+    mutationFn: async (data: z.infer<typeof formSchema> & { subscriptionType: SubscriptionType; category: CategoryType }) => {
       return await apiRequest("POST", "/api/parking-spots", data);
     },
     onSuccess: (data) => {
@@ -277,11 +315,13 @@ export default function AddSpot() {
       return;
     }
     
-    // Add selected subscription plan to the request
+    // Add selected subscription plan and category to the request
     mutation.mutate({
       ...values,
       subscriptionType: selectedPlan,
-    });
+      category: category,
+      numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
+    } as any);
   };
 
   return (
@@ -457,39 +497,61 @@ export default function AddSpot() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.latitude}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.0001" {...field} data-testid="input-latitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Hidden lat/lng fields - auto-populated by address autocomplete */}
+              <input type="hidden" {...form.register('latitude')} />
+              <input type="hidden" {...form.register('longitude')} />
 
-                <FormField
-                  control={form.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.longitude}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.0001" {...field} data-testid="input-longitude" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {/* Company specific fields */}
+              {isCompany && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t.companyName}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t.companyNamePlaceholder} {...field} data-testid="input-company-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              <FormDescription className="text-sm text-muted-foreground -mt-4">
-                {t.coordinatesDescription}
-              </FormDescription>
+                    <FormField
+                      control={form.control}
+                      name="pib"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t.pib}</FormLabel>
+                          <FormControl>
+                            <Input placeholder={t.pibPlaceholder} {...field} data-testid="input-pib" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="numberOfSpots"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.numberOfSpots}</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder={t.numberOfSpotsPlaceholder} {...field} data-testid="input-number-of-spots" />
+                        </FormControl>
+                        <FormDescription>
+                          {t.numberOfSpotsDescription}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField
@@ -639,6 +701,26 @@ export default function AddSpot() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="autoRenewal"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between">
+                      <div>
+                        <FormLabel>{t.autoRenewal}</FormLabel>
+                        <FormDescription>{t.autoRenewalDescription}</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="switch-auto-renewal"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">
@@ -714,9 +796,9 @@ export default function AddSpot() {
                   {selectedPlan && (
                     <div className="mt-3 p-3 bg-muted/20 rounded-md">
                       <p className="text-sm text-muted-foreground">
-                        📅 {language === 'sr' ? 'Vaše parking mesto će biti aktivno do:' : 'Your parking spot will be active until:'}{' '}
+                        {language === 'sr' ? 'Vaše parking mesto će biti aktivno do:' : 'Your parking spot will be active until:'}{' '}
                         <span className="font-semibold text-foreground">
-                          {new Date(Date.now() + (PRICING_PLANS.find(p => p.id === selectedPlan)?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString('sr-RS', {
+                          {new Date(Date.now() + (categoryPlans.find((p: any) => p.id === selectedPlan)?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString('sr-RS', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric'

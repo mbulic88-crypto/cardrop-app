@@ -47,6 +47,7 @@ export type User = typeof users.$inferSelect;
 export const parkingSpots = pgTable("parking_spots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   ownerId: varchar("owner_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  category: varchar("category", { length: 50 }).notNull().default('private'), // private, company, truck, residential, carlot
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description").notNull(),
   address: text("address").notNull(),
@@ -63,8 +64,14 @@ export const parkingSpots = pgTable("parking_spots", {
   phone: varchar("phone", { length: 50 }).notNull().default(''),
   paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer, card_monri
   contactEmail: varchar("contact_email", { length: 255 }).notNull(),
-  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('trial'), // trial, monthly, half_yearly, yearly
+  // Company specific fields
+  companyName: varchar("company_name", { length: 255 }),
+  pib: varchar("pib", { length: 20 }),
+  numberOfSpots: integer("number_of_spots"),
+  // Subscription fields
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('trial'), // trial, monthly, half_yearly, yearly + company plans
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  autoRenewal: boolean("auto_renewal").notNull().default(false),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -89,11 +96,16 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     updatedAt: true,
   })
   .extend({
+    category: z.enum(['private', 'company', 'truck', 'residential', 'carlot']).default('private'),
     phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
     paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
       errorMap: () => ({ message: "Tip plaćanja mora biti: Keš, Preko računa, ili Kartično" })
     }),
     contactEmail: z.string().email("Unesite validnu email adresu"),
+    companyName: z.string().optional(),
+    pib: z.string().optional(),
+    numberOfSpots: z.number().optional(),
+    autoRenewal: z.boolean().default(false),
   });
 
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;

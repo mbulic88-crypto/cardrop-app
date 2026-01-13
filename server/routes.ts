@@ -133,18 +133,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { subscriptionType, ...spotData } = req.body;
+      const { subscriptionType, category, ...spotData } = req.body;
       
       console.log('=== POST /api/parking-spots ===');
       console.log('userId:', userId);
       console.log('subscriptionType:', subscriptionType);
+      console.log('category:', category);
       console.log('spotData:', JSON.stringify(spotData).substring(0, 200));
       
       // Import pricing config
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
       
-      // Get the selected plan
-      const plan = getPlanById(subscriptionType || 'monthly');
+      // Get the selected plan based on category
+      const plan = getPlanById(subscriptionType || 'monthly', category || 'private');
       console.log('Selected plan:', plan?.id, plan?.name);
       if (!plan) {
         console.error('Invalid subscription plan:', subscriptionType);
@@ -191,6 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
         ...validatedData,
+        category: category || 'private',
         ownerId: userId,
         subscriptionType: plan.id,
         subscriptionExpiresAt: subscriptionExpiresAt,
