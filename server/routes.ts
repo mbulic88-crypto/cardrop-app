@@ -133,51 +133,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { subscriptionType, category, ...spotData } = req.body;
+      const { subscriptionType, category, isPremium, ...spotData } = req.body;
       
       console.log('=== POST /api/parking-spots ===');
       console.log('userId:', userId);
       console.log('subscriptionType:', subscriptionType);
       console.log('category:', category);
+      console.log('isPremium:', isPremium);
       console.log('spotData:', JSON.stringify(spotData).substring(0, 200));
       
       // Import pricing config
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
       
       // Get the selected plan based on category
-      const plan = getPlanById(subscriptionType || 'monthly', category || 'private');
+      const plan = getPlanById(subscriptionType || 'free', category || 'private');
       console.log('Selected plan:', plan?.id, plan?.name);
       if (!plan) {
         console.error('Invalid subscription plan:', subscriptionType);
         return res.status(400).json({ message: "Invalid subscription plan" });
       }
       
-      // Check if user is trying to use trial
-      if (plan.isTrial) {
-        console.log('User is trying to use trial plan');
-        // Get user to check if they've already used trial
-        const user = await storage.getUser(userId);
-        console.log('User data:', user ? `id=${user.id}, hasUsedFreeTrial=${user.hasUsedFreeTrial}` : 'null');
-        if (!user) {
-          console.error('User not found:', userId);
-          return res.status(404).json({ message: "User not found" });
-        }
-        
-        if (user.hasUsedFreeTrial) {
-          console.log('User already used trial');
-          return res.status(403).json({ 
-            message: "Već ste iskoristili besplatni probni period. Molimo izaberite plaćeni plan.",
-            alreadyUsedTrial: true
-          });
-        }
-        
-        console.log('Marking user as having used trial');
-        // Mark user as having used free trial
-        await storage.updateUser(userId, { hasUsedFreeTrial: true });
+      // Log plan info
+      if (plan.isFree) {
+        console.log('User selected free plan');
+      } else if (plan.isPremium) {
+        console.log(`User selected premium plan: ${plan.id} (${plan.price} RSD)`);
       } else {
-        // For paid plans, payment is currently not enforced (for testing)
-        // TODO: When Stripe is configured, redirect to payment flow here
-        console.log(`User selected paid plan: ${plan.id} (${plan.price} RSD)`);
+        console.log(`User selected basic plan: ${plan.id} (${plan.price} RSD)`);
       }
 
       // Validate spot data
@@ -185,9 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertParkingSpotSchema.parse(spotData);
       console.log('Validation successful');
       
-      // Calculate subscription expiry based on selected plan
+      // Calculate subscription expiry based on selected plan (null for free plans)
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
-      console.log('Subscription expires at:', subscriptionExpiresAt.toISOString());
+      console.log('Subscription expires at:', subscriptionExpiresAt ? subscriptionExpiresAt.toISOString() : 'Never (free plan)');
 
       console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
@@ -196,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownerId: userId,
         subscriptionType: plan.id,
         subscriptionExpiresAt: subscriptionExpiresAt,
+        isPremium: plan.isPremium || false,
       } as any);
       
       console.log('Parking spot created successfully:', spot.id);
