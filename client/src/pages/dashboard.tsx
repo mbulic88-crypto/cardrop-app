@@ -14,7 +14,8 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User, ParkingSpot } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff } from "lucide-react";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -203,12 +204,28 @@ export default function Dashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {mySpots.map((spot) => (
-                  <Card key={spot.id} className="p-4 hover-elevate" data-testid={`spot-card-${spot.id}`}>
+                  <Card 
+                    key={spot.id} 
+                    className={`p-4 hover-elevate relative ${
+                      spot.isPremium 
+                        ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
+                        : ''
+                    }`} 
+                    data-testid={`spot-card-${spot.id}`}
+                  >
+                    {spot.isPremium && (
+                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
                     {spot.imageUrls && spot.imageUrls[0] && (
                       <img
                         src={spot.imageUrls[0]}
                         alt={spot.title}
-                        className="w-full h-32 object-cover rounded-lg mb-4"
+                        className={`w-full h-32 object-cover rounded-lg mb-4 ${
+                          spot.isPremium ? 'ring-2 ring-yellow-500/30' : ''
+                        }`}
                       />
                     )}
                     <h3 className="font-semibold text-lg mb-2 text-card-foreground">{spot.title}</h3>
@@ -219,7 +236,12 @@ export default function Dashboard() {
                     <div className="mb-4 text-sm">
                       <p className="text-foreground font-semibold">{spot.pricePerHour} {spot.currency}/h</p>
                       <p className="text-muted-foreground text-xs">
-                        {spot.subscriptionType === 'trial' ? 'Trial' : `Ističe: ${new Date(spot.subscriptionExpiresAt || '').toLocaleDateString('sr-RS')}`}
+                        {spot.subscriptionType === 'free' 
+                          ? 'Besplatni plan - Neograničeno' 
+                          : spot.subscriptionExpiresAt 
+                            ? `Ističe: ${new Date(spot.subscriptionExpiresAt).toLocaleDateString('sr-RS')}`
+                            : 'Aktivan'
+                        }
                       </p>
                     </div>
                     <div className="flex gap-2">

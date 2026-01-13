@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe } from "lucide-react";
+import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
@@ -106,6 +106,11 @@ export default function Home() {
     
     return matchesLocation && matchesCity && matchesPrice && matchesType && 
            matchesEvCharging && matchesCamera && matches24Hours && spot.isActive;
+  }).sort((a, b) => {
+    // Premium spots always appear first
+    if (a.isPremium && !b.isPremium) return -1;
+    if (!a.isPremium && b.isPremium) return 1;
+    return 0;
   });
 
   const handleProtectedAction = (path: string) => {
@@ -435,9 +440,28 @@ export default function Home() {
                       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {nearbySpots.map((spot) => (
                           <Link key={spot.id} href={`/spot/${spot.id}`}>
-                            <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-nearby-spot-${spot.id}`}>
+                            <Card 
+                              className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
+                                spot.isPremium 
+                                  ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
+                                  : ''
+                              }`}
+                              data-testid={`card-nearby-spot-${spot.id}`}
+                            >
+                              {/* Premium Badge */}
+                              {spot.isPremium && (
+                                <div className="absolute top-2 left-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Premium
+                                  </Badge>
+                                </div>
+                              )}
+                              
                               {/* Static Map Preview */}
-                              <div className="aspect-video bg-muted relative">
+                              <div className={`aspect-video bg-muted relative ${
+                                spot.isPremium ? 'ring-2 ring-yellow-500/30 ring-inset' : ''
+                              }`}>
                                 {spot.latitude && spot.longitude ? (
                                   <StaticMapImage
                                     latitude={spot.latitude}
@@ -493,7 +517,7 @@ export default function Home() {
                                 {/* Price */}
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <span className="text-xl font-bold text-accent">
+                                    <span className={`text-xl font-bold ${spot.isPremium ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`}>
                                       {spot.pricePerHour}
                                     </span>
                                     <span className="text-muted-foreground text-xs ml-1">
@@ -524,9 +548,28 @@ export default function Home() {
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredSpots.map((spot) => (
                   <Link key={spot.id} href={`/spot/${spot.id}`}>
-                    <Card className="overflow-hidden hover-elevate cursor-pointer h-full" data-testid={`card-spot-${spot.id}`}>
+                    <Card 
+                      className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
+                        spot.isPremium 
+                          ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
+                          : ''
+                      }`} 
+                      data-testid={`card-spot-${spot.id}`}
+                    >
+                      {/* Premium Badge */}
+                      {spot.isPremium && (
+                        <div className="absolute top-2 left-2 z-20">
+                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0 text-xs">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Premium
+                          </Badge>
+                        </div>
+                      )}
+                      
                       {/* Static Map Preview */}
-                      <div className="aspect-video bg-muted relative">
+                      <div className={`aspect-video bg-muted relative ${
+                        spot.isPremium ? 'ring-2 ring-yellow-500/30 ring-inset' : ''
+                      }`}>
                         {spot.latitude && spot.longitude ? (
                           <StaticMapImage
                             latitude={spot.latitude}
@@ -576,7 +619,7 @@ export default function Home() {
                         {/* Price */}
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-xl font-bold text-accent">
+                            <span className={`text-xl font-bold ${spot.isPremium ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`}>
                               {spot.pricePerHour}
                             </span>
                             <span className="text-muted-foreground text-xs ml-1">
