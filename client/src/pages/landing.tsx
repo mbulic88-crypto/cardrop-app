@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, CheckCircle2 } from "lucide-react";
+import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
@@ -42,6 +42,11 @@ const translations = {
     whoCanRent: "Ko Može Da Iznajmi Parking",
     whoCanReserve: "Ko Može Da Rezerviše Parking",
     everyoneWhoNeeds: "Svi Kojima Je Potreban Parking",
+    reserveDescription: "Bilo da vam treba parking na sat vremena dok ste u restoranu, na dan dok obavljate poslove u gradu, ili na mesec dana - CarDrop vam omogućava fleksibilnu rezervaciju po vašoj meri.",
+    shortTerm: "Kratkoročno",
+    shortTermDesc: "Restoran, šoping, sastanak, poseta lekaru",
+    longTerm: "Dugoročno", 
+    longTermDesc: "Nedelja, mesec, sezona - po povoljnijim cenama",
     categoryPrivate: "Privatni Parkinzi i Garaže",
     categoryCompany: "Firme",
     categoryTruck: "Stajalista za Kamione",
@@ -79,6 +84,11 @@ const translations = {
     whoCanRent: "Who Can Rent Out Parking",
     whoCanReserve: "Who Can Reserve Parking",
     everyoneWhoNeeds: "Everyone Who Needs Parking",
+    reserveDescription: "Whether you need parking for an hour while dining, for a day while running errands, or for a month - CarDrop offers flexible reservations tailored to your needs.",
+    shortTerm: "Short-Term",
+    shortTermDesc: "Restaurant, shopping, meeting, doctor visit",
+    longTerm: "Long-Term",
+    longTermDesc: "Week, month, season - at better rates",
     categoryPrivate: "Private Parking & Garages",
     categoryCompany: "Companies",
     categoryTruck: "Truck Stops",
@@ -238,95 +248,92 @@ export default function Landing() {
       </div>
 
       {/* Who Is This For Section */}
-      <div className="py-20 md:py-24 px-6 bg-card/50">
+      <div className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold text-center mb-16 md:mb-20 text-foreground">
             {t.whoIsThisFor}
           </h2>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16">
-            {/* Who Can Rent Out */}
-            <div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-8 text-foreground text-center lg:text-left">
-                {t.whoCanRent}
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                {/* Private Parking */}
-                <div className="flex flex-col items-center text-center group">
-                  <div className="relative mb-3">
-                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
-                      <Home className="w-8 h-8 text-primary-foreground" />
+          {/* Who Can Rent Out */}
+          <div className="mb-20">
+            <h3 className="text-xl md:text-2xl font-semibold mb-10 text-foreground text-center">
+              {t.whoCanRent}
+            </h3>
+            <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+              {/* Map Pin Marker Component - Professional Style */}
+              {[
+                { icon: Home, label: t.categoryPrivate },
+                { icon: Building2, label: t.categoryCompany },
+                { icon: Truck, label: t.categoryTruck },
+                { icon: Users, label: t.categoryResidential },
+                { icon: Car, label: t.categoryCarLot },
+              ].map((item, index) => (
+                <div key={index} className="flex flex-col items-center text-center group w-28 md:w-32">
+                  {/* Google Maps Style Pin */}
+                  <div className="relative mb-4">
+                    <svg viewBox="0 0 48 64" className="w-14 h-[72px] md:w-16 md:h-20 drop-shadow-lg group-hover:scale-105 transition-transform">
+                      <defs>
+                        <linearGradient id={`pinGradient${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" />
+                          <stop offset="100%" stopColor="hsl(var(--primary) / 0.8)" />
+                        </linearGradient>
+                      </defs>
+                      {/* Pin shape */}
+                      <path 
+                        d="M24 0C10.745 0 0 10.745 0 24c0 18 24 40 24 40s24-22 24-40C48 10.745 37.255 0 24 0z" 
+                        fill={`url(#pinGradient${index})`}
+                        stroke="hsl(var(--primary-foreground) / 0.3)"
+                        strokeWidth="1"
+                      />
+                      {/* Inner circle for icon background */}
+                      <circle cx="24" cy="22" r="14" fill="hsl(var(--primary-foreground) / 0.15)" />
+                    </svg>
+                    {/* Icon positioned inside the pin */}
+                    <div className="absolute top-3 md:top-4 left-1/2 -translate-x-1/2">
+                      <item.icon className="w-6 h-6 md:w-7 md:h-7 text-primary-foreground" strokeWidth={1.5} />
                     </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
                   </div>
-                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryPrivate}</span>
+                  <span className="text-sm md:text-base font-medium text-foreground leading-tight">{item.label}</span>
                 </div>
-
-                {/* Companies */}
-                <div className="flex flex-col items-center text-center group">
-                  <div className="relative mb-3">
-                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
-                      <Building2 className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryCompany}</span>
-                </div>
-
-                {/* Truck Stops */}
-                <div className="flex flex-col items-center text-center group">
-                  <div className="relative mb-3">
-                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
-                      <Truck className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryTruck}</span>
-                </div>
-
-                {/* Residential Communities */}
-                <div className="flex flex-col items-center text-center group">
-                  <div className="relative mb-3">
-                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
-                      <Users className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryResidential}</span>
-                </div>
-
-                {/* Car Lots */}
-                <div className="flex flex-col items-center text-center group">
-                  <div className="relative mb-3">
-                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
-                      <Car className="w-8 h-8 text-primary-foreground" />
-                    </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryCarLot}</span>
-                </div>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* Who Can Reserve */}
-            <div className="flex flex-col items-center lg:items-start justify-center">
-              <h3 className="text-xl md:text-2xl font-semibold mb-8 text-foreground text-center lg:text-left">
-                {t.whoCanReserve}
-              </h3>
-              <Card className="p-8 bg-accent/10 border-accent/30 w-full max-w-md">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div className="w-20 h-24 bg-accent rounded-t-full rounded-b-lg flex items-start justify-center pt-4 shadow-lg">
-                      <CheckCircle2 className="w-10 h-10 text-white" />
-                    </div>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-accent rotate-45" />
+          {/* Divider */}
+          <div className="w-full h-px bg-border mb-20" />
+
+          {/* Who Can Reserve */}
+          <div>
+            <h3 className="text-xl md:text-2xl font-semibold mb-6 text-foreground text-center">
+              {t.whoCanReserve}
+            </h3>
+            <p className="text-center text-lg md:text-xl font-bold text-accent mb-8">
+              {t.everyoneWhoNeeds}
+            </p>
+            <p className="text-center text-muted-foreground max-w-3xl mx-auto mb-12 text-base md:text-lg leading-relaxed">
+              {t.reserveDescription}
+            </p>
+            
+            {/* Short-term and Long-term options */}
+            <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-12 max-w-4xl mx-auto">
+              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-accent" />
                   </div>
-                  <div>
-                    <p className="text-xl md:text-2xl font-bold text-accent">
-                      {t.everyoneWhoNeeds}
-                    </p>
-                  </div>
+                  <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.shortTerm}</h4>
                 </div>
+                <p className="text-muted-foreground">{t.shortTermDesc}</p>
+              </Card>
+              
+              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                    <CalendarDays className="w-6 h-6 text-accent" />
+                  </div>
+                  <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.longTerm}</h4>
+                </div>
+                <p className="text-muted-foreground">{t.longTermDesc}</p>
               </Card>
             </div>
           </div>
