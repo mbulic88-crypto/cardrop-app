@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle } from "lucide-react";
+import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, CheckCircle2 } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
@@ -36,7 +36,17 @@ const translations = {
     termsButton: "Uslovi Korišćenja",
     footerText: "© 2024 CarDrop Srbija. Sva prava zadržana.",
     langButton: "ENG",
-    installApp: "Instaliraj Aplikaciju"
+    installApp: "Instaliraj Aplikaciju",
+    // Who is this for section
+    whoIsThisFor: "Za Koga Je Ovo",
+    whoCanRent: "Ko Može Da Iznajmi Parking",
+    whoCanReserve: "Ko Može Da Rezerviše Parking",
+    everyoneWhoNeeds: "Svi Kojima Je Potreban Parking",
+    categoryPrivate: "Privatni Parkinzi i Garaže",
+    categoryCompany: "Firme",
+    categoryTruck: "Stajalista za Kamione",
+    categoryResidential: "Stambene Zajednice",
+    categoryCarLot: "Auto Placevi"
   },
   en: {
     heroTitle: "Find or Share a Parking Spot or Garage",
@@ -63,7 +73,17 @@ const translations = {
     termsButton: "Terms of Use",
     footerText: "© 2024 CarDrop Serbia. All rights reserved.",
     langButton: "SRP",
-    installApp: "Install App"
+    installApp: "Install App",
+    // Who is this for section
+    whoIsThisFor: "Who Is This For",
+    whoCanRent: "Who Can Rent Out Parking",
+    whoCanReserve: "Who Can Reserve Parking",
+    everyoneWhoNeeds: "Everyone Who Needs Parking",
+    categoryPrivate: "Private Parking & Garages",
+    categoryCompany: "Companies",
+    categoryTruck: "Truck Stops",
+    categoryResidential: "Residential Communities",
+    categoryCarLot: "Car Lots"
   }
 };
 
@@ -203,17 +223,112 @@ export default function Landing() {
             </Button>
           </div>
           
-          <div className="mt-8">
+          <div className="mt-10">
             <Button
-              variant="outline"
-              size="default"
+              size="lg"
               onClick={installApp}
-              className="bg-accent/20 border-accent text-white hover:bg-accent/40"
+              className="bg-accent hover:bg-accent/90 text-white border-2 border-white/20 shadow-lg shadow-accent/30 text-lg px-10 py-6 font-semibold animate-pulse hover:animate-none"
               data-testid="button-install-app"
             >
-              <Download className="w-5 h-5 mr-2" />
+              <Download className="w-6 h-6 mr-3" />
               {t.installApp}
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Who Is This For Section */}
+      <div className="py-20 md:py-24 px-6 bg-card/50">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-foreground">
+            {t.whoIsThisFor}
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16">
+            {/* Who Can Rent Out */}
+            <div>
+              <h3 className="text-xl md:text-2xl font-semibold mb-8 text-foreground text-center lg:text-left">
+                {t.whoCanRent}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                {/* Private Parking */}
+                <div className="flex flex-col items-center text-center group">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
+                      <Home className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryPrivate}</span>
+                </div>
+
+                {/* Companies */}
+                <div className="flex flex-col items-center text-center group">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
+                      <Building2 className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryCompany}</span>
+                </div>
+
+                {/* Truck Stops */}
+                <div className="flex flex-col items-center text-center group">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
+                      <Truck className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryTruck}</span>
+                </div>
+
+                {/* Residential Communities */}
+                <div className="flex flex-col items-center text-center group">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
+                      <Users className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryResidential}</span>
+                </div>
+
+                {/* Car Lots */}
+                <div className="flex flex-col items-center text-center group">
+                  <div className="relative mb-3">
+                    <div className="w-16 h-20 bg-primary rounded-t-full rounded-b-lg flex items-start justify-center pt-3 shadow-lg group-hover:scale-105 transition-transform">
+                      <Car className="w-8 h-8 text-primary-foreground" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rotate-45" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground leading-tight">{t.categoryCarLot}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Who Can Reserve */}
+            <div className="flex flex-col items-center lg:items-start justify-center">
+              <h3 className="text-xl md:text-2xl font-semibold mb-8 text-foreground text-center lg:text-left">
+                {t.whoCanReserve}
+              </h3>
+              <Card className="p-8 bg-accent/10 border-accent/30 w-full max-w-md">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-20 h-24 bg-accent rounded-t-full rounded-b-lg flex items-start justify-center pt-4 shadow-lg">
+                      <CheckCircle2 className="w-10 h-10 text-white" />
+                    </div>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 bg-accent rotate-45" />
+                  </div>
+                  <div>
+                    <p className="text-xl md:text-2xl font-bold text-accent">
+                      {t.everyoneWhoNeeds}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
