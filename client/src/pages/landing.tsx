@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Clock, Shield, Zap, Globe, Download, Sun, Moon } from "lucide-react";
+import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle } from "lucide-react";
 import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
@@ -17,12 +17,16 @@ const translations = {
     findSpotButton: "Pronađite Vaše Parking Mesto",
     listSpotButton: "Iznajmite Vaše Parking Mesto",
     howItWorks: "Kako Funkcioniše",
-    step1Title: "1. Pronađite Parking",
-    step1Desc: "Pretražite dostupna parking mesta na mapi prema lokaciji, ceni i vremenskom periodu.",
-    step2Title: "2. Rezervišite Brzo",
-    step2Desc: "Izaberite željene datume i vreme, rezervišite trenutno i sigurno platite preko Monri sistema.",
-    step3Title: "3. Parkirajte Bezbrižno",
-    step3Desc: "Dobijte potvrdu rezervacije i upute kako doći do parking mesta. Sve sigurno i zaštićeno.",
+    // How to rent out
+    rentOutTitle: "Kako Iznajmiti Parking",
+    rentOutStep1: "Izaberite dugme \"Iznajmite Vaše Parking Mesto\"",
+    rentOutStep2: "Izaberite kategoriju",
+    rentOutStep3: "Popunite informacije o parkingu",
+    // How to reserve
+    reserveTitle: "Kako Rezervisati Parking",
+    reserveStep1: "Izaberite \"Pronađite Parking Mesto\"",
+    reserveStep2: "Pronađite parking mesto koje vam odgovara",
+    reserveStep3: "Kontaktirajte vlasnika oko dogovora",
     popularLocations: "Popularne Destinacije",
     parkingSpots: "Parking Mesta",
     users: "Korisnika",
@@ -40,12 +44,16 @@ const translations = {
     findSpotButton: "Find Your Parking Spot",
     listSpotButton: "List Your Parking Spot",
     howItWorks: "How It Works",
-    step1Title: "1. Find Parking",
-    step1Desc: "Search available parking spots on the map by location, price, and time period.",
-    step2Title: "2. Book Quickly",
-    step2Desc: "Choose your desired dates and times, book instantly, and pay securely through Monri.",
-    step3Title: "3. Park Worry-Free",
-    step3Desc: "Get booking confirmation and directions to the parking spot. Everything safe and secure.",
+    // How to rent out
+    rentOutTitle: "How to Rent Out Parking",
+    rentOutStep1: "Click \"List Your Parking Spot\" button",
+    rentOutStep2: "Choose a category",
+    rentOutStep3: "Fill in parking information",
+    // How to reserve
+    reserveTitle: "How to Reserve Parking",
+    reserveStep1: "Click \"Find Your Parking Spot\"",
+    reserveStep2: "Find a parking spot that suits you",
+    reserveStep3: "Contact the owner to make arrangements",
     popularLocations: "Popular Destinations",
     parkingSpots: "Parking Spots",
     users: "Users",
@@ -215,42 +223,63 @@ export default function Landing() {
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
           {t.howItWorks}
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          <Card className="p-6 hover-elevate bg-primary border-primary-border">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {/* How to Rent Out Parking */}
+          <Card 
+            className="p-6 hover-elevate bg-primary border-primary-border cursor-pointer"
+            onClick={handleListSpotClick}
+            data-testid="card-how-to-rent"
+          >
             <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
-              <MapPin className="w-6 h-6 text-primary-foreground" />
+              <PlusCircle className="w-6 h-6 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
-              {t.step1Title}
+            <h3 className="text-xl font-semibold mb-4 text-primary-foreground">
+              {t.rentOutTitle}
             </h3>
-            <p className="text-primary-foreground/80">
-              {t.step1Desc}
-            </p>
+            <ul className="space-y-3 text-primary-foreground/80">
+              <li className="flex items-start gap-2">
+                <span className="font-semibold text-accent">1.</span>
+                <span>{t.rentOutStep1}</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-semibold text-accent">2.</span>
+                <span>{t.rentOutStep2}</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-semibold text-accent">3.</span>
+                <span>{t.rentOutStep3}</span>
+              </li>
+            </ul>
           </Card>
 
-          <Card className="p-6 hover-elevate bg-primary border-primary-border">
-            <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
-              <Clock className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
-              {t.step2Title}
-            </h3>
-            <p className="text-primary-foreground/80">
-              {t.step2Desc}
-            </p>
-          </Card>
-
-          <Card className="p-6 hover-elevate bg-primary border-primary-border">
-            <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3 text-primary-foreground">
-              {t.step3Title}
-            </h3>
-            <p className="text-primary-foreground/80">
-              {t.step3Desc}
-            </p>
-          </Card>
+          {/* How to Reserve Parking */}
+          <Link href="/home">
+            <Card 
+              className="p-6 hover-elevate bg-primary border-primary-border cursor-pointer h-full"
+              data-testid="card-how-to-reserve"
+            >
+              <div className="w-12 h-12 rounded-lg bg-accent/30 flex items-center justify-center mb-4">
+                <Search className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-primary-foreground">
+                {t.reserveTitle}
+              </h3>
+              <ul className="space-y-3 text-primary-foreground/80">
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-accent">1.</span>
+                  <span>{t.reserveStep1}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-accent">2.</span>
+                  <span>{t.reserveStep2}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="font-semibold text-accent">3.</span>
+                  <span>{t.reserveStep3}</span>
+                </li>
+              </ul>
+            </Card>
+          </Link>
         </div>
       </div>
 
