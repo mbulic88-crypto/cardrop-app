@@ -1,6 +1,6 @@
 // Pricing plans for parking spot listings
 
-export type SubscriptionType = 'free' | 'premium_monthly' | 'premium_half_yearly' | 'premium_yearly' | 'company_basic' | 'company_premium' | 'company_basic_half_yearly' | 'company_premium_half_yearly';
+export type SubscriptionType = 'free' | 'premium_monthly' | 'premium_half_yearly' | 'premium_yearly' | 'company_basic' | 'company_premium' | 'company_basic_half_yearly' | 'company_premium_half_yearly' | 'truck_basic_monthly' | 'truck_basic_half_yearly' | 'truck_basic_yearly' | 'truck_premium_monthly' | 'truck_premium_half_yearly' | 'truck_premium_yearly';
 
 export type CategoryType = 'private' | 'company' | 'truck_stop' | 'residential' | 'car_lot';
 
@@ -15,7 +15,7 @@ export interface PricingPlan {
   popular?: boolean;
   isFree?: boolean;
   isPremium: boolean; // whether this is a premium plan
-  category: 'private' | 'company'; // which category this plan applies to
+  category: 'private' | 'company' | 'truck_stop'; // which category this plan applies to
   description?: string;
   descriptionEn?: string;
   maxSpots?: number; // for company plans
@@ -157,12 +157,89 @@ export const COMPANY_PRICING_PLANS: PricingPlan[] = [
   },
 ];
 
+// Truck Stop pricing plans (higher pricing tier)
+export const TRUCK_STOP_PRICING_PLANS: PricingPlan[] = [
+  // Basic plans
+  {
+    id: 'truck_basic_monthly',
+    name: 'Osnovni 1 Mesec',
+    nameEn: 'Basic 1 Month',
+    duration: 30,
+    price: 5000,
+    pricePerMonth: 5000,
+    savings: 0,
+    isPremium: false,
+    category: 'truck_stop',
+  },
+  {
+    id: 'truck_basic_half_yearly',
+    name: 'Osnovni 6 Meseci',
+    nameEn: 'Basic 6 Months',
+    duration: 180,
+    price: 25000,
+    pricePerMonth: 4166.67,
+    savings: 17,
+    isPremium: false,
+    category: 'truck_stop',
+  },
+  {
+    id: 'truck_basic_yearly',
+    name: 'Osnovni 12 Meseci',
+    nameEn: 'Basic 12 Months',
+    duration: 365,
+    price: 40000,
+    pricePerMonth: 3333.33,
+    savings: 33,
+    popular: true,
+    isPremium: false,
+    category: 'truck_stop',
+  },
+  // Premium plans
+  {
+    id: 'truck_premium_monthly',
+    name: 'Premium 1 Mesec',
+    nameEn: 'Premium 1 Month',
+    duration: 30,
+    price: 10000,
+    pricePerMonth: 10000,
+    savings: 0,
+    isPremium: true,
+    category: 'truck_stop',
+  },
+  {
+    id: 'truck_premium_half_yearly',
+    name: 'Premium 6 Meseci',
+    nameEn: 'Premium 6 Months',
+    duration: 180,
+    price: 50000,
+    pricePerMonth: 8333.33,
+    savings: 17,
+    isPremium: true,
+    category: 'truck_stop',
+  },
+  {
+    id: 'truck_premium_yearly',
+    name: 'Premium 12 Meseci',
+    nameEn: 'Premium 12 Months',
+    duration: 365,
+    price: 80000,
+    pricePerMonth: 6666.67,
+    savings: 33,
+    popular: true,
+    isPremium: true,
+    category: 'truck_stop',
+  },
+];
+
 // Combined for backward compatibility
 export const PRICING_PLANS: PricingPlan[] = [...PRIVATE_PRICING_PLANS];
 
 export function getPlansByCategory(category: CategoryType): PricingPlan[] {
   if (category === 'company') {
     return COMPANY_PRICING_PLANS;
+  }
+  if (category === 'truck_stop') {
+    return TRUCK_STOP_PRICING_PLANS;
   }
   return PRIVATE_PRICING_PLANS;
 }
