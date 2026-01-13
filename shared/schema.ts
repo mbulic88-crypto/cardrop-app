@@ -69,9 +69,10 @@ export const parkingSpots = pgTable("parking_spots", {
   pib: varchar("pib", { length: 20 }),
   numberOfSpots: integer("number_of_spots"),
   // Subscription fields
-  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('trial'), // trial, monthly, half_yearly, yearly + company plans
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('free'), // free, premium_monthly, premium_half_yearly, premium_yearly + company plans
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
   autoRenewal: boolean("auto_renewal").notNull().default(false),
+  isPremium: boolean("is_premium").notNull().default(false),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -106,6 +107,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     pib: z.string().optional(),
     numberOfSpots: z.number().optional(),
     autoRenewal: z.boolean().default(false),
+    isPremium: z.boolean().default(false),
   });
 
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;
