@@ -68,6 +68,10 @@ export const parkingSpots = pgTable("parking_spots", {
   companyName: varchar("company_name", { length: 255 }),
   pib: varchar("pib", { length: 20 }),
   numberOfSpots: integer("number_of_spots"),
+  // Residential specific fields
+  contactPerson: varchar("contact_person", { length: 255 }),
+  // Pricing type for all categories (daily/monthly)
+  pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // daily, monthly
   // Subscription fields
   subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('free'), // free, premium_monthly, premium_half_yearly, premium_yearly + company plans
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
@@ -106,6 +110,8 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     companyName: z.string().optional(),
     pib: z.string().optional(),
     numberOfSpots: z.number().optional(),
+    contactPerson: z.string().optional(),
+    pricingType: z.enum(['daily', 'monthly']).default('daily'),
     autoRenewal: z.boolean().default(false),
     isPremium: z.boolean().default(false),
   });
