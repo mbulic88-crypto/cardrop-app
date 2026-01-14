@@ -105,6 +105,23 @@ const translations = {
     truckPib: "PIB Firme",
     truckPibPlaceholder: "123456789",
     truckPibDescription: "Poreski identifikacioni broj (opciono)",
+    // Residential specific
+    residentialPageTitle: "Oglasite Parking Stambene Zajednice",
+    residentialPageSubtitle: "Popunite informacije o parkingu vaše stambene zajednice",
+    contactPerson: "Kontakt Osoba",
+    contactPersonPlaceholder: "Ime i prezime",
+    contactPersonDescription: "Osoba za kontakt u stambenoj zajednici",
+    residentialPib: "PIB (opciono)",
+    residentialPibPlaceholder: "123456789",
+    residentialPibDescription: "Poreski identifikacioni broj stambene zajednice",
+    // Pricing type for all categories
+    pricingType: "Tip Cene",
+    pricingTypeDescription: "Izaberite kako naplaćujete parkiranje",
+    pricingDaily: "Po Danu",
+    pricingMonthly: "Po Mesecu",
+    pricePerMonth: "Cena po Mesecu",
+    pricePerMonthPlaceholder: "5000",
+    pricePerMonthDescription: "Mesečna cena parkiranja",
   },
   en: {
     pageTitle: "Add Parking Spot",
@@ -179,6 +196,23 @@ const translations = {
     truckPib: "Company Tax ID (PIB)",
     truckPibPlaceholder: "123456789",
     truckPibDescription: "Tax identification number (optional)",
+    // Residential specific
+    residentialPageTitle: "Advertise Residential Community Parking",
+    residentialPageSubtitle: "Fill in information about your residential parking",
+    contactPerson: "Contact Person",
+    contactPersonPlaceholder: "Full name",
+    contactPersonDescription: "Contact person in the residential community",
+    residentialPib: "Tax ID (optional)",
+    residentialPibPlaceholder: "123456789",
+    residentialPibDescription: "Tax identification number of the community",
+    // Pricing type for all categories
+    pricingType: "Pricing Type",
+    pricingTypeDescription: "Choose how you charge for parking",
+    pricingDaily: "Per Day",
+    pricingMonthly: "Per Month",
+    pricePerMonth: "Price per Month",
+    pricePerMonthPlaceholder: "5000",
+    pricePerMonthDescription: "Monthly parking price",
   }
 };
 
@@ -204,6 +238,10 @@ const formSchema = z.object({
   companyName: z.string().optional(),
   pib: z.string().optional(),
   numberOfSpots: z.string().optional(),
+  // Residential specific fields
+  contactPerson: z.string().optional(),
+  // Pricing type for all categories
+  pricingType: z.enum(['daily', 'monthly']).default('daily'),
   autoRenewal: z.boolean().default(false),
 });
 
@@ -223,6 +261,7 @@ export default function AddSpot() {
   const category = (urlParams.get('category') || 'private') as CategoryType;
   const isCompany = category === 'company';
   const isTruckStop = category === 'truck_stop';
+  const isResidential = category === 'residential';
   
   // Check if user has already used free trial
   const { data: user } = useQuery<User>({
@@ -267,12 +306,16 @@ export default function AddSpot() {
       companyName: "",
       pib: "",
       numberOfSpots: "1",
+      contactPerson: "",
+      pricingType: "daily",
       autoRenewal: false,
     },
   });
 
   // Watch numberOfSpots for calculating max images
   const watchedNumberOfSpots = form.watch("numberOfSpots");
+  // Watch pricingType for dynamic price label
+  const watchedPricingType = form.watch("pricingType");
   
   // Calculate max images based on plan and number of spots
   const getMaxImages = () => {
@@ -405,10 +448,10 @@ export default function AddSpot() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2 text-foreground">
-            {isTruckStop ? t.truckPageTitle : t.pageTitle}
+            {isTruckStop ? t.truckPageTitle : isResidential ? t.residentialPageTitle : t.pageTitle}
           </h1>
           <p className="text-muted-foreground">
-            {isTruckStop ? t.truckPageSubtitle : t.pageSubtitle}
+            {isTruckStop ? t.truckPageSubtitle : isResidential ? t.residentialPageSubtitle : t.pageSubtitle}
           </p>
         </div>
 
@@ -628,22 +671,105 @@ export default function AddSpot() {
                 />
               )}
 
+              {/* Residential specific fields */}
+              {isResidential && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="contactPerson"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.contactPerson}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t.contactPersonPlaceholder} {...field} data-testid="input-contact-person" />
+                        </FormControl>
+                        <FormDescription>
+                          {t.contactPersonDescription}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="pib"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.residentialPib}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={t.residentialPibPlaceholder} {...field} data-testid="input-residential-pib" />
+                        </FormControl>
+                        <FormDescription>
+                          {t.residentialPibDescription}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Pricing Type - for all categories */}
+              <FormField
+                control={form.control}
+                name="pricingType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.pricingType}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-pricing-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="daily">{t.pricingDaily}</SelectItem>
+                        <SelectItem value="monthly">{t.pricingMonthly}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {t.pricingTypeDescription}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="pricePerHour"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{isTruckStop ? t.pricePerDay : t.price}</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" placeholder={isTruckStop ? t.pricePerDayPlaceholder : t.pricePlaceholder} {...field} data-testid="input-price" />
-                      </FormControl>
-                      <FormDescription>
-                        {isTruckStop ? t.pricePerDayDescription : t.priceDescription}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Determine price label based on pricingType
+                    const getPriceLabel = () => {
+                      if (isTruckStop) return t.pricePerDay;
+                      if (watchedPricingType === 'monthly') return t.pricePerMonth;
+                      return t.pricePerDay;
+                    };
+                    const getPricePlaceholder = () => {
+                      if (isTruckStop) return t.pricePerDayPlaceholder;
+                      if (watchedPricingType === 'monthly') return t.pricePerMonthPlaceholder;
+                      return t.pricePerDayPlaceholder;
+                    };
+                    const getPriceDescription = () => {
+                      if (isTruckStop) return t.pricePerDayDescription;
+                      if (watchedPricingType === 'monthly') return t.pricePerMonthDescription;
+                      return t.pricePerDayDescription;
+                    };
+                    return (
+                      <FormItem>
+                        <FormLabel>{getPriceLabel()}</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder={getPricePlaceholder()} {...field} data-testid="input-price" />
+                        </FormControl>
+                        <FormDescription>
+                          {getPriceDescription()}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
