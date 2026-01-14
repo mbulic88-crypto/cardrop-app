@@ -39,10 +39,11 @@ The platform features a dual-theme design with green accent colors:
 *   **Listing Management**: Owners can list parking spots with location, time slots, pricing (RSD/BAM), contact phone, payment type, spot type, and features. Includes secure image upload. City field is optional with 17 options (16 major Serbian cities + "Ostalo" for other locations).
 *   **Category System**: 5 parking categories with emoji map markers:
     - 🏠 Private Parking & Garages (private)
-    - 🏢 Companies (company) - requires company name, PIB (tax ID), and number of spots
+    - 🏢 Companies (company) - requires company name, PIB (tax ID), and number of spots (dropdown 1-5). Basic plans: 3 photos per spot limit.
     - 🚚 Truck Stops (truck_stop) - custom UI with daily pricing, optional PIB field, unique pricing
-    - 👥 Residential Communities (residential)
+    - 👥 Residential Communities (residential) - requires contact person name, optional PIB field
     - 🚗 Car Lots (car_lot)
+*   **Pricing Type**: All categories support flexible pricing options (daily or monthly). Price label dynamically updates based on selection.
 *   **Subscription Pricing System**: Category-based tiered pricing with Basic and Premium options:
     - **Private/Residential/Car Lot** - Basic Plans:
         - Free: Unlimited duration, 0 RSD (basic listing, no premium features)
