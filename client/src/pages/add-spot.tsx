@@ -266,10 +266,31 @@ export default function AddSpot() {
       is24Hours: true,
       companyName: "",
       pib: "",
-      numberOfSpots: "",
+      numberOfSpots: "1",
       autoRenewal: false,
     },
   });
+
+  // Watch numberOfSpots for calculating max images
+  const watchedNumberOfSpots = form.watch("numberOfSpots");
+  
+  // Calculate max images based on plan and number of spots
+  const getMaxImages = () => {
+    if (!isCompany) return 5; // Default 5 for non-company
+    
+    const selectedPlanData = categoryPlans.find(p => p.id === selectedPlan);
+    const isBasicCompanyPlan = selectedPlanData && !selectedPlanData.isPremium;
+    
+    if (isBasicCompanyPlan) {
+      const numSpots = parseInt(watchedNumberOfSpots || "1", 10);
+      return numSpots * 3; // 3 images per spot for basic plans
+    }
+    
+    return 15; // Unlimited (high number) for premium plans
+  };
+  
+  const maxImages = getMaxImages();
+  const canUploadMore = uploadedImages.length < maxImages;
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -968,7 +989,11 @@ export default function AddSpot() {
               {t.imageUploadTitle}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {t.imageUploadDescription}
+              {isCompany && !categoryPlans.find(p => p.id === selectedPlan)?.isPremium 
+                ? (language === 'sr' 
+                    ? `Dodajte do ${maxImages} slika (${watchedNumberOfSpots || 1} parking mesta × 3 slike). Preostalo: ${Math.max(0, maxImages - uploadedImages.length)}`
+                    : `Add up to ${maxImages} images (${watchedNumberOfSpots || 1} spots × 3 images). Remaining: ${Math.max(0, maxImages - uploadedImages.length)}`)
+                : t.imageUploadDescription}
             </p>
             
             {uploadedImages.length > 0 && (
@@ -985,34 +1010,41 @@ export default function AddSpot() {
             )}
 
             <div className="flex gap-4">
-              <ObjectUploader
-                maxNumberOfFiles={1}
-                maxFileSize={10485760}
-                onGetUploadParameters={async () => {
-                  const response = await apiRequest("POST", "/api/objects/upload", {});
-                  return {
-                    method: "PUT" as const,
-                    url: response.uploadURL,
-                  };
-                }}
-                onComplete={async (result) => {
-                  const uploadURL = result.successful?.[0]?.uploadURL;
-                  if (uploadURL && spotId) {
-                    const response = await apiRequest("PUT", `/api/parking-spots/${spotId}/images`, {
-                      imageURL: uploadURL,
-                    });
-                    setUploadedImages(response.imageUrls);
-                    toast({
-                      title: t.successTitle,
-                      description: t.successDescription,
-                    });
-                  }
-                }}
-                buttonClassName="flex-1"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {t.uploadButton}
-              </ObjectUploader>
+              {canUploadMore ? (
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={10485760}
+                  onGetUploadParameters={async () => {
+                    const response = await apiRequest("POST", "/api/objects/upload", {});
+                    return {
+                      method: "PUT" as const,
+                      url: response.uploadURL,
+                    };
+                  }}
+                  onComplete={async (result) => {
+                    const uploadURL = result.successful?.[0]?.uploadURL;
+                    if (uploadURL && spotId) {
+                      const response = await apiRequest("PUT", `/api/parking-spots/${spotId}/images`, {
+                        imageURL: uploadURL,
+                      });
+                      setUploadedImages(response.imageUrls);
+                      toast({
+                        title: t.successTitle,
+                        description: t.successDescription,
+                      });
+                    }
+                  }}
+                  buttonClassName="flex-1"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {t.uploadButton}
+                </ObjectUploader>
+              ) : (
+                <Button variant="outline" disabled className="flex-1">
+                  <Upload className="w-4 h-4 mr-2" />
+                  {language === 'sr' ? 'Dostignut limit slika' : 'Image limit reached'}
+                </Button>
+              )}
 
               <Button 
                 onClick={() => {
