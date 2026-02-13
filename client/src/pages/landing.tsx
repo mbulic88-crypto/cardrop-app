@@ -10,12 +10,70 @@ import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
 import { useTheme } from "next-themes";
 
+function PhoneMockup() {
+  return (
+    <div className="relative w-[140px] h-[260px] md:w-[180px] md:h-[340px] rounded-[24px] md:rounded-[28px] border-[3px] md:border-4 border-white/80 bg-[#e8e0d4] shadow-2xl overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 md:w-20 h-4 md:h-5 bg-white/80 rounded-b-lg z-10" />
+      <div className="w-full h-full relative">
+        <svg viewBox="0 0 180 340" className="w-full h-full">
+          <rect width="180" height="340" fill="#e8e0d4" />
+          <rect x="10" y="40" width="50" height="8" rx="2" fill="#c4b8a8" opacity="0.6" />
+          <rect x="10" y="52" width="30" height="6" rx="2" fill="#c4b8a8" opacity="0.4" />
+
+          <line x1="0" y1="80" x2="180" y2="80" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
+          <line x1="0" y1="160" x2="180" y2="160" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
+          <line x1="0" y1="240" x2="180" y2="240" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
+          <line x1="60" y1="0" x2="60" y2="340" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
+          <line x1="120" y1="0" x2="120" y2="340" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
+
+          <rect x="20" y="100" width="60" height="40" rx="3" fill="#d4c8b8" opacity="0.5" />
+          <rect x="100" y="180" width="50" height="30" rx="3" fill="#d4c8b8" opacity="0.5" />
+          <rect x="40" y="250" width="70" height="35" rx="3" fill="#d4c8b8" opacity="0.5" />
+
+          <g transform="translate(45, 85)">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#40916C" />
+            <circle cx="12" cy="11" r="5" fill="white" />
+            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#40916C">P</text>
+          </g>
+
+          <g transform="translate(120, 140)">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#52B788" />
+            <circle cx="12" cy="11" r="5" fill="white" />
+            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#52B788">P</text>
+          </g>
+
+          <g transform="translate(70, 200)">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#40916C" />
+            <circle cx="12" cy="11" r="5" fill="white" />
+            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#40916C">P</text>
+          </g>
+
+          <g transform="translate(25, 220)">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 6 8 14 8 14s8-8 8-14C16 3.58 12.42 0 8 0z" fill="#FFD700" stroke="#B8860B" strokeWidth="0.5" />
+            <circle cx="8" cy="7.5" r="3.5" fill="white" />
+            <text x="8" y="9.5" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#B8860B">P</text>
+          </g>
+
+          <g transform="translate(130, 260)">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 6 8 14 8 14s8-8 8-14C16 3.58 12.42 0 8 0z" fill="#52B788" />
+            <circle cx="8" cy="7.5" r="3.5" fill="white" />
+            <text x="8" y="9.5" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#52B788">P</text>
+          </g>
+
+          <rect x="15" y="290" width="150" height="30" rx="8" fill="#40916C" />
+          <text x="90" y="309" textAnchor="middle" fontSize="10" fontWeight="bold" fill="white">CarDrop</text>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 const translations = {
   sr: {
-    heroTitle: "Pronađite ili Podelite Parking Mesto ili Garažu",
+    heroTitle: "Pronađite ili Iznajmite Parking Mesto",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
-    findSpotButton: "Pronađite Vaše Parking Mesto",
-    listSpotButton: "Iznajmite Vaše Parking Mesto",
+    findSpotButton: "Pronađite Parking Mesto",
+    listSpotButton: "Iznajmite Parking Mesto",
     howItWorks: "Kako Funkcioniše",
     rentOutTitle: "Kako Iznajmiti Parking",
     rentOutStep1: "Izaberite dugme \"Iznajmite Vaše Parking Mesto\"",
@@ -32,7 +90,7 @@ const translations = {
     ctaTitle: "Imate Neiskorišćeno Parking Mesto?",
     ctaSubtitle: "Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.",
     termsButton: "Uslovi Korišćenja",
-    footerText: "© 2024 CarDrop Srbija. Sva prava zadržana.",
+    footerText: "\u00a9 2024 CarDrop Srbija. Sva prava zadržana.",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
     whoIsThisFor: "Za Koga Je Ovo",
@@ -54,12 +112,15 @@ const translations = {
     menuMyAccount: "Moj Nalog",
     menuLogin: "Prijavi Se",
     menuTerms: "Uslovi Korišćenja",
+    menuLanguage: "English",
+    menuDarkMode: "Tamni Režim",
+    menuLightMode: "Svetli Režim",
   },
   en: {
-    heroTitle: "Find or Share a Parking Spot or Garage",
+    heroTitle: "Find or List a Parking Spot",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
-    findSpotButton: "Find Your Parking Spot",
-    listSpotButton: "List Your Parking Spot",
+    findSpotButton: "Find Parking Spot",
+    listSpotButton: "List Parking Spot",
     howItWorks: "How It Works",
     rentOutTitle: "How to Rent Out Parking",
     rentOutStep1: "Click \"List Your Parking Spot\" button",
@@ -76,7 +137,7 @@ const translations = {
     ctaTitle: "Have an Unused Parking Spot?",
     ctaSubtitle: "Earn by sharing your parking space with other drivers. Simple, secure, profitable.",
     termsButton: "Terms of Use",
-    footerText: "© 2024 CarDrop Serbia. All rights reserved.",
+    footerText: "\u00a9 2024 CarDrop Serbia. All rights reserved.",
     langButton: "SRP",
     installApp: "Install App",
     whoIsThisFor: "Who Is This For",
@@ -98,6 +159,9 @@ const translations = {
     menuMyAccount: "My Account",
     menuLogin: "Log In",
     menuTerms: "Terms of Use",
+    menuLanguage: "Srpski",
+    menuDarkMode: "Dark Mode",
+    menuLightMode: "Light Mode",
   }
 };
 
@@ -148,7 +212,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Hamburger Left, Logo Center, Controls Right */}
+      {/* Header - Hamburger Left, Logo Center */}
       <header className="absolute top-0 left-0 right-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-2">
@@ -164,7 +228,6 @@ export default function Landing() {
                 {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
 
-              {/* Dropdown Menu */}
               {menuOpen && (
                 <div className="absolute top-12 left-0 w-64 bg-card border border-border rounded-md shadow-lg z-50">
                   <nav className="py-2">
@@ -206,6 +269,29 @@ export default function Landing() {
                         <span className="text-card-foreground font-medium">{t.menuTerms}</span>
                       </div>
                     </Link>
+                    <div className="h-px bg-border mx-4 my-1" />
+                    <div
+                      onClick={() => { toggleLanguage(); setMenuOpen(false); }}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-language"
+                    >
+                      <Globe className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuLanguage}</span>
+                    </div>
+                    <div
+                      onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setMenuOpen(false); }}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-theme"
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="w-5 h-5 text-accent" />
+                      ) : (
+                        <Moon className="w-5 h-5 text-accent" />
+                      )}
+                      <span className="text-card-foreground font-medium">
+                        {theme === "dark" ? t.menuLightMode : t.menuDarkMode}
+                      </span>
+                    </div>
                   </nav>
                 </div>
               )}
@@ -214,103 +300,74 @@ export default function Landing() {
             {/* Center: Logo */}
             <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-white">CarDrop</span>
+              <span className="text-xl font-bold text-white drop-shadow-lg">CarDrop</span>
             </Link>
 
-            {/* Right: Language + Theme */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="button-language"
-                onClick={toggleLanguage}
-                className="bg-black/30 backdrop-blur-sm border-white/30 text-white text-xs sm:text-sm"
-              >
-                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                <span className="hidden sm:inline">{t.langButton}</span>
-                <span className="sm:hidden">{language === "sr" ? "EN" : "SR"}</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="bg-black/30 backdrop-blur-sm border-white/30 text-white"
-                data-testid="button-theme-toggle"
-              >
-                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              </Button>
-            </div>
+            {/* Right: empty spacer for balance */}
+            <div className="w-9" />
           </div>
         </div>
       </header>
 
-      {/* Hero Section - Full Screen */}
-      <div className="relative h-[100vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Dark wash gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10" />
-        
-        {/* Hero Background Image */}
-        <div className="absolute inset-0">
+      {/* Hero Section - Image on top, content below */}
+      <div className="relative">
+        {/* Hero Image Area */}
+        <div className="relative h-[50vh] min-h-[320px] md:h-[55vh] md:min-h-[400px] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60 z-10" />
           <img 
             src={heroImage} 
             alt="Woman driving a car" 
             className="w-full h-full object-cover"
           />
-        </div>
-        
-        {/* Hero Content */}
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-8xl font-bold text-white mb-6 md:mb-8 drop-shadow-lg">
-            CarDrop
-          </h1>
-          <p className="text-xl md:text-3xl text-white/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-            {t.heroTitle}
-          </p>
-          <p className="text-base md:text-xl text-white/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-            {t.heroSubtitle}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
-            <Link href="/home">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-6 w-full sm:w-auto shadow-lg"
-                data-testid="button-find-spot-hero"
-              >
-                <Search className="w-5 h-5 mr-2" />
-                {t.findSpotButton}
-              </Button>
-            </Link>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="text-lg px-8 py-6 w-full sm:w-auto bg-black/30 backdrop-blur-sm border-white/40 text-white shadow-lg"
-              data-testid="button-list-spot-hero"
-              onClick={handleListSpotClick}
-            >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              {t.listSpotButton}
-            </Button>
-          </div>
-          
-          <div className="mt-8">
-            <Button
-              size="lg"
-              onClick={installApp}
-              variant="outline"
-              className="bg-accent/90 backdrop-blur-sm border-accent text-white shadow-lg text-base px-8 py-5 font-semibold"
-              data-testid="button-install-app"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              {t.installApp}
-            </Button>
+          {/* Phone Mockup overlaid on hero image - bottom right */}
+          <div className="absolute bottom-[-40px] right-4 md:right-12 lg:right-24 z-20 transform rotate-[-5deg]">
+            <PhoneMockup />
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-          <div className="w-6 h-10 rounded-full border-2 border-white/50 flex items-start justify-center p-1">
-            <div className="w-1.5 h-3 bg-white/70 rounded-full" />
+        {/* Content Below Image */}
+        <div className="relative z-10 bg-background px-6 pt-14 md:pt-16 pb-10 md:pb-14">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-5 leading-tight">
+              {t.heroTitle}
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+              {t.heroSubtitle}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/home">
+                <Button 
+                  size="lg" 
+                  className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
+                  data-testid="button-find-spot-hero"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  {t.findSpotButton}
+                </Button>
+              </Link>
+              <Button 
+                size="lg" 
+                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
+                data-testid="button-list-spot-hero"
+                onClick={handleListSpotClick}
+              >
+                <PlusCircle className="w-5 h-5 mr-2" />
+                {t.listSpotButton}
+              </Button>
+            </div>
+            
+            <div className="mt-6 md:mt-8">
+              <Button
+                size="lg"
+                onClick={installApp}
+                variant="outline"
+                className="text-base px-6 md:px-8 py-5 font-semibold"
+                data-testid="button-install-app"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                {t.installApp}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -322,7 +379,6 @@ export default function Landing() {
             {t.whoIsThisFor}
           </h2>
           
-          {/* Who Can Rent Out */}
           <div className="mb-20">
             <h3 className="text-xl md:text-2xl font-semibold mb-10 text-foreground text-center">
               {t.whoCanRent}
@@ -364,7 +420,6 @@ export default function Landing() {
 
           <div className="w-full h-px bg-border mb-20" />
 
-          {/* Who Can Reserve */}
           <div>
             <h3 className="text-xl md:text-2xl font-semibold mb-6 text-foreground text-center">
               {t.whoCanReserve}
