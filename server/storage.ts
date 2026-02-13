@@ -5,6 +5,7 @@ import {
   reviews,
   freeTrialPeriod,
   messages,
+  salesListings,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -16,6 +17,8 @@ import {
   type FreeTrialPeriod,
   type Message,
   type InsertMessage,
+  type SalesListing,
+  type InsertSalesListing,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, or } from "drizzle-orm";
@@ -55,6 +58,14 @@ export interface IStorage {
   getUserMessages(userId: string): Promise<Message[]>;
   markMessageAsRead(messageId: string): Promise<void>;
   
+  // Sales listings operations
+  getAllSalesListings(): Promise<SalesListing[]>;
+  getSalesListing(id: string): Promise<SalesListing | undefined>;
+  getUserSalesListings(sellerId: string): Promise<SalesListing[]>;
+  createSalesListing(listing: InsertSalesListing & { sellerId: string }): Promise<SalesListing>;
+  updateSalesListing(id: string, listing: Partial<InsertSalesListing>): Promise<SalesListing | undefined>;
+  deleteSalesListing(id: string): Promise<void>;
+
   // Admin operations
   getAllUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
@@ -260,6 +271,41 @@ export class DatabaseStorage implements IStorage {
       .update(messages)
       .set({ isRead: true })
       .where(eq(messages.id, messageId));
+  }
+
+  // Sales listings operations
+  async getAllSalesListings(): Promise<SalesListing[]> {
+    return await db.select().from(salesListings).where(eq(salesListings.isActive, true)).orderBy(desc(salesListings.createdAt));
+  }
+
+  async getSalesListing(id: string): Promise<SalesListing | undefined> {
+    const [listing] = await db.select().from(salesListings).where(eq(salesListings.id, id));
+    return listing;
+  }
+
+  async getUserSalesListings(sellerId: string): Promise<SalesListing[]> {
+    return await db.select().from(salesListings).where(eq(salesListings.sellerId, sellerId)).orderBy(desc(salesListings.createdAt));
+  }
+
+  async createSalesListing(listingData: InsertSalesListing & { sellerId: string }): Promise<SalesListing> {
+    const [listing] = await db
+      .insert(salesListings)
+      .values(listingData)
+      .returning();
+    return listing;
+  }
+
+  async updateSalesListing(id: string, listingData: Partial<InsertSalesListing>): Promise<SalesListing | undefined> {
+    const [listing] = await db
+      .update(salesListings)
+      .set({ ...listingData, updatedAt: new Date() })
+      .where(eq(salesListings.id, id))
+      .returning();
+    return listing;
+  }
+
+  async deleteSalesListing(id: string): Promise<void> {
+    await db.delete(salesListings).where(eq(salesListings.id, id));
   }
 
   // Admin operations

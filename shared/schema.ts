@@ -294,3 +294,56 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Sales listings table - for selling parking spots/garages
+export const salesListings = pgTable("sales_listings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sellerId: varchar("seller_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 255 }).notNull(),
+  price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+  area: decimal("area", { precision: 10, scale: 2 }).notNull(), // square meters
+  description: text("description"),
+  advertiserType: varchar("advertiser_type", { length: 50 }).notNull(), // owner, agency, company
+  propertyType: varchar("property_type", { length: 50 }).notNull(), // garage, open_parking, closed_parking, truck_parking, building_garage, warehouse_parking, other
+  address: text("address").notNull(),
+  city: varchar("city", { length: 100 }),
+  condition: varchar("condition", { length: 50 }).notNull().default('used'), // new, used, renovated
+  phone: varchar("phone", { length: 50 }).notNull(),
+  numberOfSpots: integer("number_of_spots"),
+  features: text("features").array().notNull().default(sql`ARRAY[]::text[]`), // electricity, water, heating, camera, ramp, remote_control
+  imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const salesListingsRelations = relations(salesListings, ({ one }) => ({
+  seller: one(users, {
+    fields: [salesListings.sellerId],
+    references: [users.id],
+  }),
+}));
+
+export const insertSalesListingSchema = createInsertSchema(salesListings)
+  .omit({
+    id: true,
+    sellerId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    title: z.string().min(3, "Naslov mora imati najmanje 3 karaktera").max(255, "Naslov može imati maksimalno 255 karaktera"),
+    price: z.string().or(z.number()).transform(v => String(v)),
+    area: z.string().or(z.number()).transform(v => String(v)),
+    advertiserType: z.enum(['owner', 'agency', 'company']),
+    propertyType: z.enum(['garage', 'open_parking', 'closed_parking', 'truck_parking', 'building_garage', 'warehouse_parking', 'other']),
+    condition: z.enum(['new', 'used', 'renovated']).default('used'),
+    phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera"),
+    description: z.string().optional(),
+    numberOfSpots: z.number().optional(),
+    features: z.array(z.string()).default([]),
+    imageUrls: z.array(z.string()).default([]),
+  });
+
+export type InsertSalesListing = z.infer<typeof insertSalesListingSchema>;
+export type SalesListing = typeof salesListings.$inferSelect;

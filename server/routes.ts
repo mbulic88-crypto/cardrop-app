@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema } from "@shared/schema";
+import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import Stripe from "stripe";
@@ -740,6 +740,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting parking spot:", error);
       res.status(500).json({ message: "Failed to delete parking spot" });
+    }
+  });
+
+  // Sales listings routes
+  app.get('/api/sales-listings', async (req, res) => {
+    try {
+      const listings = await storage.getAllSalesListings();
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching sales listings:", error);
+      res.status(500).json({ message: "Failed to fetch sales listings" });
+    }
+  });
+
+  app.get('/api/sales-listings/my-listings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const listings = await storage.getUserSalesListings(userId);
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching user sales listings:", error);
+      res.status(500).json({ message: "Failed to fetch your sales listings" });
+    }
+  });
+
+  app.get('/api/sales-listings/:id', async (req, res) => {
+    try {
+      const listing = await storage.getSalesListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "Sales listing not found" });
+      }
+      res.json(listing);
+    } catch (error) {
+      console.error("Error fetching sales listing:", error);
+      res.status(500).json({ message: "Failed to fetch sales listing" });
+    }
+  });
+
+  app.post('/api/sales-listings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validatedData = insertSalesListingSchema.parse(req.body);
+      const listing = await storage.createSalesListing({ ...validatedData, sellerId: userId });
+      res.status(201).json(listing);
+    } catch (error: any) {
+      console.error("Error creating sales listing:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create sales listing" });
+    }
+  });
+
+  app.patch('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const listing = await storage.getSalesListing(req.params.id);
+      if (!listing) return res.status(404).json({ message: "Listing not found" });
+      if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
+      const updated = await storage.updateSalesListing(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating sales listing:", error);
+      res.status(500).json({ message: "Failed to update sales listing" });
+    }
+  });
+
+  app.delete('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const listing = await storage.getSalesListing(req.params.id);
+      if (!listing) return res.status(404).json({ message: "Listing not found" });
+      if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
+      await storage.deleteSalesListing(req.params.id);
+      res.json({ message: "Listing deleted" });
+    } catch (error) {
+      console.error("Error deleting sales listing:", error);
+      res.status(500).json({ message: "Failed to delete sales listing" });
     }
   });
 
