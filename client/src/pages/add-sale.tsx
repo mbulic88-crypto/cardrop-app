@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { ArrowLeft, Home as HomeIcon, Globe, Upload } from "lucide-react";
+import { ArrowLeft, Home as HomeIcon, Globe, Upload, Check, Sparkles } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -21,6 +21,7 @@ import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { insertSalesListingSchema } from "@shared/schema";
+import { PRICING_PLANS, getPlanById, getMaxPhotos, type SubscriptionType } from "@shared/pricing";
 
 const SERBIAN_CITIES = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
@@ -179,6 +180,7 @@ export default function AddSale() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [language, setLanguage] = useState<"sr" | "en">("sr");
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -275,6 +277,8 @@ export default function AddSale() {
       area: values.area,
       numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
       imageUrls: uploadedImages,
+      subscriptionType: selectedPlan,
+      isPremium: selectedPlan === 'silver' || selectedPlan === 'gold',
     });
   };
 
@@ -598,6 +602,130 @@ export default function AddSale() {
                 )}
               />
 
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {language === 'sr' ? 'Izaberite Plan' : 'Choose Your Plan'}
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {PRICING_PLANS.map((plan) => {
+                    const isSelected = selectedPlan === plan.id;
+                    const isSilver = plan.tier === 'silver';
+                    const isGold = plan.tier === 'gold';
+                    
+                    let borderClass = 'border-card-border';
+                    let bgClass = '';
+                    let headerBg = '';
+                    let priceColor = 'text-accent';
+                    let checkBorder = 'border-muted-foreground';
+                    let checkBg = '';
+                    let checkIcon = 'text-white';
+                    
+                    if (isSilver) {
+                      borderClass = isSelected ? 'border-[#A8A9AD] ring-2 ring-[#A8A9AD]/50' : 'border-[#A8A9AD]/40';
+                      bgClass = isSelected ? 'bg-gradient-to-b from-[#C0C0C0]/10 to-[#A8A9AD]/5' : '';
+                      headerBg = 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]';
+                      priceColor = 'text-[#71706E] dark:text-[#C0C0C0]';
+                      checkBorder = 'border-[#A8A9AD]';
+                      checkBg = isSelected ? 'bg-gradient-to-r from-[#C0C0C0] to-[#A8A9AD]' : '';
+                      checkIcon = 'text-white';
+                    } else if (isGold) {
+                      borderClass = isSelected ? 'border-[#DAA520] ring-2 ring-[#DAA520]/50' : 'border-[#DAA520]/40';
+                      bgClass = isSelected ? 'bg-gradient-to-b from-[#FFD700]/10 to-[#DAA520]/5' : '';
+                      headerBg = 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]';
+                      priceColor = 'text-[#B8860B] dark:text-[#FFD700]';
+                      checkBorder = 'border-[#DAA520]';
+                      checkBg = isSelected ? 'bg-gradient-to-r from-[#FFD700] to-[#DAA520]' : '';
+                      checkIcon = 'text-yellow-950';
+                    } else {
+                      borderClass = isSelected ? 'border-accent border-2' : 'border-card-border';
+                      bgClass = isSelected ? 'bg-accent/5' : '';
+                      checkBorder = isSelected ? 'border-accent' : 'border-muted-foreground';
+                      checkBg = isSelected ? 'bg-accent' : '';
+                    }
+                    
+                    return (
+                      <Card
+                        key={plan.id}
+                        className={`cursor-pointer transition-all hover-elevate border-2 overflow-visible ${borderClass} ${bgClass}`}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        data-testid={`card-plan-${plan.id}`}
+                      >
+                        {(isSilver || isGold) && (
+                          <div className={`px-4 py-2 rounded-t-md ${headerBg}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white tracking-wide">
+                                {language === 'sr' ? plan.badgeSr : plan.badgeEn}
+                              </span>
+                              <Sparkles className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-foreground text-lg">
+                                {language === 'sr' ? plan.name : plan.nameEn}
+                              </h4>
+                              <div className="flex items-baseline gap-1 mt-1">
+                                <span className={`text-2xl font-bold ${priceColor}`}>
+                                  {plan.price === 0 ? (language === 'sr' ? 'Besplatno' : 'Free') : `${plan.price.toLocaleString('sr-RS')} RSD`}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {language === 'sr' 
+                                  ? `${plan.totalVisibilityDays} dana vidljivosti`
+                                  : `${plan.totalVisibilityDays} days visibility`}
+                              </p>
+                            </div>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${checkBorder} ${checkBg}`}>
+                              {isSelected && (
+                                <Check className={`w-4 h-4 ${checkIcon}`} />
+                              )}
+                            </div>
+                          </div>
+                          
+                          <ul className="space-y-1.5 mt-3">
+                            {plan.benefits.map((benefit, idx) => (
+                              <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${isSilver ? 'text-[#A8A9AD]' : isGold ? 'text-[#DAA520]' : 'text-accent'}`} />
+                                <span>{language === 'sr' ? benefit.sr : benefit.en}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+                
+                {selectedPlan && (
+                  <div className={`p-3 rounded-md ${
+                    selectedPlan === 'gold'
+                      ? 'bg-[#FFD700]/10 border border-[#DAA520]/30'
+                      : selectedPlan === 'silver'
+                        ? 'bg-[#C0C0C0]/10 border border-[#A8A9AD]/30'
+                        : 'bg-muted/20'
+                  }`}>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'sr' ? 'Vaš oglas će biti aktivan' : 'Your listing will be active for'}{' '}
+                      <span className="font-semibold text-foreground">
+                        {getPlanById(selectedPlan)?.totalVisibilityDays} {language === 'sr' ? 'dana' : 'days'}
+                      </span>
+                      {selectedPlan !== 'standard' && (
+                        <>
+                          {' '}({language === 'sr' 
+                            ? `${getPlanById(selectedPlan)?.activeDays} dana ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} + ${(getPlanById(selectedPlan)?.totalVisibilityDays || 0) - (getPlanById(selectedPlan)?.activeDays || 0)} dana Standard`
+                            : `${getPlanById(selectedPlan)?.activeDays} days ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} + ${(getPlanById(selectedPlan)?.totalVisibilityDays || 0) - (getPlanById(selectedPlan)?.activeDays || 0)} days Standard`
+                          })
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {!listingId && (
                 <Button
                   type="submit"
@@ -629,9 +757,9 @@ export default function AddSale() {
                 </div>
               )}
 
-              {uploadedImages.length < 5 && (
+              {uploadedImages.length < getMaxPhotos(selectedPlan) && (
                 <ObjectUploader
-                  maxNumberOfFiles={5 - uploadedImages.length}
+                  maxNumberOfFiles={getMaxPhotos(selectedPlan) - uploadedImages.length}
                   onGetUploadParameters={async () => {
                     const result = await apiRequest("POST", "/api/object-storage/upload-url", {
                       prefix: `.private/sales/${listingId}`,
