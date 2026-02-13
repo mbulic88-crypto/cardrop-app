@@ -1,282 +1,125 @@
-// Pricing plans for parking spot listings
-
-export type SubscriptionType = 'free' | 'premium_monthly' | 'premium_half_yearly' | 'premium_yearly' | 'company_basic' | 'company_premium' | 'company_basic_half_yearly' | 'company_premium_half_yearly' | 'truck_basic_monthly' | 'truck_basic_half_yearly' | 'truck_basic_yearly' | 'truck_premium_monthly' | 'truck_premium_half_yearly' | 'truck_premium_yearly';
+export type SubscriptionType = 'standard' | 'silver' | 'gold';
 
 export type CategoryType = 'private' | 'company' | 'truck_stop' | 'residential' | 'car_lot';
+
+export interface PlanBenefit {
+  sr: string;
+  en: string;
+}
 
 export interface PricingPlan {
   id: SubscriptionType;
   name: string;
   nameEn: string;
-  duration: number; // in days
-  price: number; // in RSD
-  pricePerMonth: number; // calculated for comparison
-  savings: number; // percentage savings compared to monthly
-  popular?: boolean;
-  isFree?: boolean;
-  isPremium: boolean; // whether this is a premium plan
-  category: 'private' | 'company' | 'truck_stop'; // which category this plan applies to
-  description?: string;
-  descriptionEn?: string;
-  maxSpots?: number; // for company plans
-  maxPhotosPerSpot?: number; // for company plans
+  price: number;
+  activeDays: number;
+  totalVisibilityDays: number;
+  maxPhotos: number;
+  benefits: PlanBenefit[];
+  tier: 'standard' | 'silver' | 'gold';
+  stripePriceId?: string;
+  badgeSr?: string;
+  badgeEn?: string;
 }
 
-// Premium benefits (shown in UI)
-export const PREMIUM_BENEFITS = {
-  sr: [
-    'Zlatan okvir na mapi i u listi',
-    'Parking prikazan na vrhu liste',
-    'Veća vidljivost i više pregleda',
-  ],
-  en: [
-    'Golden border on map and list',
-    'Parking shown at top of list',
-    'More visibility and views',
-  ],
-};
-
-// Private/Individual pricing plans
-export const PRIVATE_PRICING_PLANS: PricingPlan[] = [
-  // Basic plans
+export const PRICING_PLANS: PricingPlan[] = [
   {
-    id: 'free',
-    name: 'Besplatno',
-    nameEn: 'Free',
-    duration: -1, // unlimited
+    id: 'standard',
+    name: 'Standard',
+    nameEn: 'Standard',
     price: 0,
-    pricePerMonth: 0,
-    savings: 0,
-    isFree: true,
-    isPremium: false,
-    category: 'private',
-    description: 'Osnovna postavka parkinga',
-    descriptionEn: 'Basic parking listing',
-  },
-  // Premium plans
-  {
-    id: 'premium_monthly',
-    name: 'Premium 1 Mesec',
-    nameEn: 'Premium 1 Month',
-    duration: 30,
-    price: 1000,
-    pricePerMonth: 1000,
-    savings: 0,
-    isPremium: true,
-    category: 'private',
+    activeDays: 60,
+    totalVisibilityDays: 60,
+    maxPhotos: 2,
+    tier: 'standard',
+    benefits: [
+      { sr: '1 aktivno parking mesto', en: '1 active parking spot' },
+      { sr: 'Do 2 fotografije', en: 'Up to 2 photos' },
+      { sr: 'Prikaz na mapi', en: 'Shown on map' },
+      { sr: 'Kontakt informacije', en: 'Contact information' },
+      { sr: 'Vidljivost 60 dana', en: '60 days visibility' },
+    ],
   },
   {
-    id: 'premium_half_yearly',
-    name: 'Premium 6 Meseci',
-    nameEn: 'Premium 6 Months',
-    duration: 180,
-    price: 5000,
-    pricePerMonth: 833.33,
-    savings: 17,
-    popular: true,
-    isPremium: true,
-    category: 'private',
+    id: 'silver',
+    name: 'Silver',
+    nameEn: 'Silver',
+    price: 800,
+    activeDays: 30,
+    totalVisibilityDays: 60,
+    maxPhotos: 3,
+    tier: 'silver',
+    stripePriceId: '',
+    badgeSr: 'Istaknuto',
+    badgeEn: 'Featured',
+    benefits: [
+      { sr: '1 aktivno parking mesto', en: '1 active parking spot' },
+      { sr: 'Do 3 fotografije', en: 'Up to 3 photos' },
+      { sr: 'Srebrno označen pin na mapi', en: 'Silver map pin' },
+      { sr: 'Oznaku „Istaknuto"', en: '"Featured" badge' },
+      { sr: 'Bolja vidljivost u odnosu na Standard', en: 'Better visibility than Standard' },
+      { sr: 'Prikaz iznad Standard oglasa u pretrazi', en: 'Shown above Standard listings' },
+      { sr: 'Ukupno 60 dana vidljivosti (30 dana Silver + 30 dana Standard)', en: '60 days total (30 days Silver + 30 days Standard)' },
+    ],
   },
   {
-    id: 'premium_yearly',
-    name: 'Premium 12 Meseci',
-    nameEn: 'Premium 12 Months',
-    duration: 365,
-    price: 9000,
-    pricePerMonth: 750,
-    savings: 25,
-    isPremium: true,
-    category: 'private',
+    id: 'gold',
+    name: 'Gold',
+    nameEn: 'Gold',
+    price: 1200,
+    activeDays: 30,
+    totalVisibilityDays: 60,
+    maxPhotos: 5,
+    tier: 'gold',
+    stripePriceId: '',
+    badgeSr: 'Top lokacija',
+    badgeEn: 'Top location',
+    benefits: [
+      { sr: '1 aktivno parking mesto', en: '1 active parking spot' },
+      { sr: 'Do 5 fotografija', en: 'Up to 5 photos' },
+      { sr: 'Zlatno označen pin na mapi', en: 'Gold map pin' },
+      { sr: 'Oznaku „Top lokacija"', en: '"Top location" badge' },
+      { sr: 'Najvišu poziciju u pretrazi (iznad Silver i Standard)', en: 'Highest search position (above Silver and Standard)' },
+      { sr: 'Reklamiranje na društvenim mrežama i u email kampanjama', en: 'Social media and email campaign promotion' },
+      { sr: 'Ukupno 60 dana vidljivosti (30 dana Gold + 30 dana Standard)', en: '60 days total (30 days Gold + 30 days Standard)' },
+    ],
   },
 ];
 
-// Company pricing plans
-export const COMPANY_PRICING_PLANS: PricingPlan[] = [
-  // Basic plans
-  {
-    id: 'company_basic',
-    name: 'Osnovni Mesečno',
-    nameEn: 'Basic Monthly',
-    duration: 30,
-    price: 3000,
-    pricePerMonth: 3000,
-    savings: 0,
-    isPremium: false,
-    category: 'company',
-    description: 'Do 5 parking mesta, 3 slike po mestu',
-    descriptionEn: 'Up to 5 parking spots, 3 photos per spot',
-    maxSpots: 5,
-    maxPhotosPerSpot: 3,
-  },
-  {
-    id: 'company_basic_half_yearly',
-    name: 'Osnovni 6 Meseci',
-    nameEn: 'Basic 6 Months',
-    duration: 180,
-    price: 15000,
-    pricePerMonth: 2500,
-    savings: 17,
-    isPremium: false,
-    category: 'company',
-    description: 'Do 5 parking mesta, 3 slike po mestu',
-    descriptionEn: 'Up to 5 parking spots, 3 photos per spot',
-    maxSpots: 5,
-    maxPhotosPerSpot: 3,
-  },
-  // Premium plans
-  {
-    id: 'company_premium',
-    name: 'Premium Mesečno',
-    nameEn: 'Premium Monthly',
-    duration: 30,
-    price: 6000,
-    pricePerMonth: 6000,
-    savings: 0,
-    popular: true,
-    isPremium: true,
-    category: 'company',
-    description: 'Neograničen broj mesta i slika',
-    descriptionEn: 'Unlimited spots and photos',
-    maxSpots: -1,
-    maxPhotosPerSpot: -1,
-  },
-  {
-    id: 'company_premium_half_yearly',
-    name: 'Premium 6 Meseci',
-    nameEn: 'Premium 6 Months',
-    duration: 180,
-    price: 30000,
-    pricePerMonth: 5000,
-    savings: 17,
-    isPremium: true,
-    category: 'company',
-    description: 'Neograničen broj mesta i slika',
-    descriptionEn: 'Unlimited spots and photos',
-    maxSpots: -1,
-    maxPhotosPerSpot: -1,
-  },
-];
-
-// Truck Stop pricing plans (higher pricing tier)
-export const TRUCK_STOP_PRICING_PLANS: PricingPlan[] = [
-  // Basic plans
-  {
-    id: 'truck_basic_monthly',
-    name: 'Osnovni 1 Mesec',
-    nameEn: 'Basic 1 Month',
-    duration: 30,
-    price: 5000,
-    pricePerMonth: 5000,
-    savings: 0,
-    isPremium: false,
-    category: 'truck_stop',
-  },
-  {
-    id: 'truck_basic_half_yearly',
-    name: 'Osnovni 6 Meseci',
-    nameEn: 'Basic 6 Months',
-    duration: 180,
-    price: 25000,
-    pricePerMonth: 4166.67,
-    savings: 17,
-    isPremium: false,
-    category: 'truck_stop',
-  },
-  {
-    id: 'truck_basic_yearly',
-    name: 'Osnovni 12 Meseci',
-    nameEn: 'Basic 12 Months',
-    duration: 365,
-    price: 40000,
-    pricePerMonth: 3333.33,
-    savings: 33,
-    popular: true,
-    isPremium: false,
-    category: 'truck_stop',
-  },
-  // Premium plans
-  {
-    id: 'truck_premium_monthly',
-    name: 'Premium 1 Mesec',
-    nameEn: 'Premium 1 Month',
-    duration: 30,
-    price: 10000,
-    pricePerMonth: 10000,
-    savings: 0,
-    isPremium: true,
-    category: 'truck_stop',
-  },
-  {
-    id: 'truck_premium_half_yearly',
-    name: 'Premium 6 Meseci',
-    nameEn: 'Premium 6 Months',
-    duration: 180,
-    price: 50000,
-    pricePerMonth: 8333.33,
-    savings: 17,
-    isPremium: true,
-    category: 'truck_stop',
-  },
-  {
-    id: 'truck_premium_yearly',
-    name: 'Premium 12 Meseci',
-    nameEn: 'Premium 12 Months',
-    duration: 365,
-    price: 80000,
-    pricePerMonth: 6666.67,
-    savings: 33,
-    popular: true,
-    isPremium: true,
-    category: 'truck_stop',
-  },
-];
-
-// Combined for backward compatibility
-export const PRICING_PLANS: PricingPlan[] = [...PRIVATE_PRICING_PLANS];
-
-export function getPlansByCategory(category: CategoryType): PricingPlan[] {
-  if (category === 'company') {
-    return COMPANY_PRICING_PLANS;
-  }
-  if (category === 'truck_stop') {
-    return TRUCK_STOP_PRICING_PLANS;
-  }
-  return PRIVATE_PRICING_PLANS;
+export function getPlanById(id: SubscriptionType): PricingPlan | undefined {
+  return PRICING_PLANS.find(plan => plan.id === id);
 }
 
-export function getPlanById(id: SubscriptionType, category: CategoryType = 'private'): PricingPlan | undefined {
-  const plans = getPlansByCategory(category);
-  return plans.find(plan => plan.id === id);
+export function getPlansByCategory(_category: CategoryType): PricingPlan[] {
+  return PRICING_PLANS;
 }
 
 export function calculateExpiryDate(planId: SubscriptionType, startDate: Date = new Date()): Date | null {
   const plan = getPlanById(planId);
   if (!plan) throw new Error(`Invalid plan ID: ${planId}`);
-  
-  // Free plans have no expiry
-  if (plan.duration === -1) {
-    return null;
-  }
-  
+
   const expiryDate = new Date(startDate);
-  expiryDate.setDate(expiryDate.getDate() + plan.duration);
+  expiryDate.setDate(expiryDate.getDate() + plan.totalVisibilityDays);
   return expiryDate;
 }
 
-// Helper to get basic and premium plans separately
-export function getBasicPlans(category: CategoryType): PricingPlan[] {
-  return getPlansByCategory(category).filter(p => !p.isPremium);
+export function getMaxPhotos(planId: SubscriptionType): number {
+  const plan = getPlanById(planId);
+  if (!plan) return 2;
+  return plan.maxPhotos;
 }
 
-export function getPremiumPlans(category: CategoryType): PricingPlan[] {
-  return getPlansByCategory(category).filter(p => p.isPremium);
-}
-
-// Stripe amount in smallest currency unit (para for RSD)
 export function getStripeAmount(planId: SubscriptionType): number {
   const plan = getPlanById(planId);
   if (!plan) throw new Error(`Invalid plan ID: ${planId}`);
-  
-  // Convert RSD to para (1 RSD = 100 para)
   return plan.price * 100;
+}
+
+export function getSortPriority(planId: SubscriptionType): number {
+  switch (planId) {
+    case 'gold': return 3;
+    case 'silver': return 2;
+    case 'standard': return 1;
+    default: return 0;
+  }
 }

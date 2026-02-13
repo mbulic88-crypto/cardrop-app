@@ -75,11 +75,12 @@ export const parkingSpots = pgTable("parking_spots", {
   // Pricing type for all categories (daily/monthly)
   pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // daily, monthly
   // Subscription fields
-  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('free'), // free, premium_monthly, premium_half_yearly, premium_yearly + company plans
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('standard'), // standard, silver, gold
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
   autoRenewal: boolean("auto_renewal").notNull().default(false),
   isPremium: boolean("is_premium").notNull().default(false),
   stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
+  stripeSessionId: varchar("stripe_session_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -115,6 +116,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     numberOfSpots: z.number().optional(),
     contactPerson: z.string().optional(),
     pricingType: z.enum(['daily', 'monthly']).default('daily'),
+    subscriptionType: z.enum(['standard', 'silver', 'gold']).default('standard'),
     autoRenewal: z.boolean().default(false),
     isPremium: z.boolean().default(false),
   });
@@ -315,6 +317,10 @@ export const salesListings = pgTable("sales_listings", {
   numberOfSpots: integer("number_of_spots"),
   features: text("features").array().notNull().default(sql`ARRAY[]::text[]`), // electricity, water, heating, camera, ramp, remote_control
   imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
+  subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('standard'), // standard, silver, gold
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  isPremium: boolean("is_premium").notNull().default(false),
+  stripeSessionId: varchar("stripe_session_id", { length: 255 }),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -331,6 +337,8 @@ export const insertSalesListingSchema = createInsertSchema(salesListings)
   .omit({
     id: true,
     sellerId: true,
+    subscriptionExpiresAt: true,
+    stripeSessionId: true,
     createdAt: true,
     updatedAt: true,
   })
@@ -346,6 +354,8 @@ export const insertSalesListingSchema = createInsertSchema(salesListings)
     numberOfSpots: z.number().optional(),
     features: z.array(z.string()).default([]),
     imageUrls: z.array(z.string()).default([]),
+    subscriptionType: z.enum(['standard', 'silver', 'gold']).default('standard'),
+    isPremium: z.boolean().default(false),
   });
 
 export type InsertSalesListing = z.infer<typeof insertSalesListingSchema>;

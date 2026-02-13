@@ -142,34 +142,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('isPremium:', isPremium);
       console.log('spotData:', JSON.stringify(spotData).substring(0, 200));
       
-      // Import pricing config
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
       
-      // Get the selected plan based on category
-      const plan = getPlanById(subscriptionType || 'free', category || 'private');
+      const planId = subscriptionType || 'standard';
+      const plan = getPlanById(planId);
       console.log('Selected plan:', plan?.id, plan?.name);
       if (!plan) {
         console.error('Invalid subscription plan:', subscriptionType);
         return res.status(400).json({ message: "Invalid subscription plan" });
       }
       
-      // Log plan info
-      if (plan.isFree) {
-        console.log('User selected free plan');
-      } else if (plan.isPremium) {
-        console.log(`User selected premium plan: ${plan.id} (${plan.price} RSD)`);
-      } else {
-        console.log(`User selected basic plan: ${plan.id} (${plan.price} RSD)`);
-      }
+      console.log(`User selected ${plan.tier} plan: ${plan.id} (${plan.price} RSD)`);
 
-      // Validate spot data
       console.log('Validating spot data...');
       const validatedData = insertParkingSpotSchema.parse(spotData);
       console.log('Validation successful');
       
-      // Calculate subscription expiry based on selected plan (null for free plans)
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
-      console.log('Subscription expires at:', subscriptionExpiresAt ? subscriptionExpiresAt.toISOString() : 'Never (free plan)');
+      console.log('Subscription expires at:', subscriptionExpiresAt?.toISOString());
 
       console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
@@ -178,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ownerId: userId,
         subscriptionType: plan.id,
         subscriptionExpiresAt: subscriptionExpiresAt,
-        isPremium: plan.isPremium || false,
+        isPremium: plan.tier === 'gold' || plan.tier === 'silver',
       } as any);
       
       console.log('Parking spot created successfully:', spot.id);
@@ -781,8 +771,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/sales-listings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertSalesListingSchema.parse(req.body);
-      const listing = await storage.createSalesListing({ ...validatedData, sellerId: userId });
+      const { subscriptionType: subType, ...listingData } = req.body;
+      const validatedData = insertSalesListingSchema.parse(listingData);
+      
+      const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
+      const plan = getPlanById(subType || 'standard');
+      const subscriptionExpiresAt = plan ? calculateExpiryDate(plan.id) : calculateExpiryDate('standard');
+      
+      const listing = await storage.createSalesListing({
+        ...validatedData,
+        sellerId: userId,
+        subscriptionType: plan?.id || 'standard',
+        subscriptionExpiresAt,
+        isPremium: plan ? (plan.tier === 'gold' || plan.tier === 'silver') : false,
+      } as any);
       res.status(201).json(listing);
     } catch (error: any) {
       console.error("Error creating sales listing:", error);
