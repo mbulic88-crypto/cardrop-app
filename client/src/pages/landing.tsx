@@ -13,7 +13,7 @@ import { useTheme } from "next-themes";
 
 const translations = {
   sr: {
-    heroTitle: "Pronađite ili Iznajmite Parking Mesto",
+    heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
     findSpotButton: "Pronađite Parking Mesto",
     listSpotButton: "Iznajmite Parking Mesto",
@@ -61,7 +61,7 @@ const translations = {
     menuLightMode: "Svetli Režim",
   },
   en: {
-    heroTitle: "Find or List a Parking Spot",
+    heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
     findSpotButton: "Find Parking Spot",
     listSpotButton: "List Parking Spot",
