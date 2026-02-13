@@ -114,6 +114,11 @@ const translations = {
     residentialPib: "PIB (opciono)",
     residentialPibPlaceholder: "123456789",
     residentialPibDescription: "Poreski identifikacioni broj stambene zajednice",
+    // Advertiser type for all categories
+    advertiserType: "Oglašivač",
+    advertiserOwner: "Vlasnik",
+    advertiserAgency: "Agencija",
+    advertiserCompany: "Kompanija",
     // Pricing type for all categories
     pricingType: "Tip Cene",
     pricingTypeDescription: "Izaberite kako naplaćujete parkiranje",
@@ -205,6 +210,11 @@ const translations = {
     residentialPib: "Tax ID (optional)",
     residentialPibPlaceholder: "123456789",
     residentialPibDescription: "Tax identification number of the community",
+    // Advertiser type for all categories
+    advertiserType: "Advertiser",
+    advertiserOwner: "Owner",
+    advertiserAgency: "Agency",
+    advertiserCompany: "Company",
     // Pricing type for all categories
     pricingType: "Pricing Type",
     pricingTypeDescription: "Choose how you charge for parking",
@@ -234,6 +244,8 @@ const formSchema = z.object({
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
   is24Hours: z.boolean().default(true),
+  // Advertiser type for all categories
+  advertiserType: z.enum(['owner', 'agency', 'company']).default('owner'),
   // Company specific fields
   companyName: z.string().optional(),
   pib: z.string().optional(),
@@ -303,6 +315,7 @@ export default function AddSpot() {
       hasEvCharging: false,
       hasSecurityCamera: false,
       is24Hours: true,
+      advertiserType: "owner",
       companyName: "",
       pib: "",
       numberOfSpots: "1",
@@ -810,6 +823,29 @@ export default function AddSpot() {
                       <SelectContent>
                         <SelectItem value="cash">{t.paymentCash}</SelectItem>
                         <SelectItem value="bank_transfer">{t.paymentBankTransfer}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="advertiserType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t.advertiserType}</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-advertiser-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="owner">{t.advertiserOwner}</SelectItem>
+                        <SelectItem value="agency">{t.advertiserAgency}</SelectItem>
+                        <SelectItem value="company">{t.advertiserCompany}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
