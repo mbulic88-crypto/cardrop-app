@@ -22,7 +22,7 @@ import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
-import { getPlansByCategory, getBasicPlans, getPremiumPlans, PREMIUM_BENEFITS, type SubscriptionType, type CategoryType } from "@shared/pricing";
+import { PRICING_PLANS, getPlanById, getMaxPhotos, type SubscriptionType, type CategoryType } from "@shared/pricing";
 import type { User } from "@shared/schema";
 
 const SERBIAN_CITIES = [
@@ -266,7 +266,7 @@ export default function AddSpot() {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [language, setLanguage] = useState<"sr" | "en">("sr");
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('free');
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
   
   // Get category from URL params
   const urlParams = new URLSearchParams(searchString);
@@ -281,21 +281,6 @@ export default function AddSpot() {
     enabled: isAuthenticated,
   });
   
-  // Get pricing plans based on category - separated into basic and premium
-  const categoryPlans = getPlansByCategory(category);
-  const basicPlans = getBasicPlans(category);
-  const premiumPlans = getPremiumPlans(category);
-  
-  // Set default plan based on category
-  useEffect(() => {
-    if (isCompany) {
-      setSelectedPlan('company_basic');
-    } else if (isTruckStop) {
-      setSelectedPlan('truck_basic_monthly');
-    } else {
-      setSelectedPlan('free');
-    }
-  }, [isCompany, isTruckStop]);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -330,19 +315,8 @@ export default function AddSpot() {
   // Watch pricingType for dynamic price label
   const watchedPricingType = form.watch("pricingType");
   
-  // Calculate max images based on plan and number of spots
   const getMaxImages = () => {
-    if (!isCompany) return 5; // Default 5 for non-company
-    
-    const selectedPlanData = categoryPlans.find(p => p.id === selectedPlan);
-    const isBasicCompanyPlan = selectedPlanData && !selectedPlanData.isPremium;
-    
-    if (isBasicCompanyPlan) {
-      const numSpots = parseInt(watchedNumberOfSpots || "1", 10);
-      return numSpots * 3; // 3 images per spot for basic plans
-    }
-    
-    return 15; // Unlimited (high number) for premium plans
+    return getMaxPhotos(selectedPlan);
   };
   
   const maxImages = getMaxImages();
@@ -410,9 +384,7 @@ export default function AddSpot() {
       return;
     }
     
-    // Check if selected plan is premium
-    const selectedPlanData = categoryPlans.find(p => p.id === selectedPlan);
-    const isPremium = selectedPlanData?.isPremium || false;
+    const isPremium = selectedPlan === 'silver' || selectedPlan === 'gold';
     
     // Add selected subscription plan and category to the request
     mutation.mutate({
@@ -965,168 +937,120 @@ export default function AddSpot() {
                   {language === 'sr' ? 'Izaberite Plan' : 'Choose Your Plan'}
                 </h3>
                 
-                {/* Basic Plans Section */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    {language === 'sr' ? 'Osnovni Paketi' : 'Basic Plans'}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {basicPlans.map((plan) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {PRICING_PLANS.map((plan) => {
+                    const isSelected = selectedPlan === plan.id;
+                    const isSilver = plan.tier === 'silver';
+                    const isGold = plan.tier === 'gold';
+                    
+                    let borderClass = 'border-card-border';
+                    let bgClass = '';
+                    let headerBg = '';
+                    let priceColor = 'text-accent';
+                    let checkBorder = 'border-muted-foreground';
+                    let checkBg = '';
+                    let checkIcon = 'text-white';
+                    
+                    if (isSilver) {
+                      borderClass = isSelected ? 'border-[#A8A9AD] ring-2 ring-[#A8A9AD]/50' : 'border-[#A8A9AD]/40';
+                      bgClass = isSelected ? 'bg-gradient-to-b from-[#C0C0C0]/10 to-[#A8A9AD]/5' : '';
+                      headerBg = 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]';
+                      priceColor = 'text-[#71706E] dark:text-[#C0C0C0]';
+                      checkBorder = 'border-[#A8A9AD]';
+                      checkBg = isSelected ? 'bg-gradient-to-r from-[#C0C0C0] to-[#A8A9AD]' : '';
+                      checkIcon = 'text-white';
+                    } else if (isGold) {
+                      borderClass = isSelected ? 'border-[#DAA520] ring-2 ring-[#DAA520]/50' : 'border-[#DAA520]/40';
+                      bgClass = isSelected ? 'bg-gradient-to-b from-[#FFD700]/10 to-[#DAA520]/5' : '';
+                      headerBg = 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]';
+                      priceColor = 'text-[#B8860B] dark:text-[#FFD700]';
+                      checkBorder = 'border-[#DAA520]';
+                      checkBg = isSelected ? 'bg-gradient-to-r from-[#FFD700] to-[#DAA520]' : '';
+                      checkIcon = 'text-yellow-950';
+                    } else {
+                      borderClass = isSelected ? 'border-accent border-2' : 'border-card-border';
+                      bgClass = isSelected ? 'bg-accent/5' : '';
+                      checkBorder = isSelected ? 'border-accent' : 'border-muted-foreground';
+                      checkBg = isSelected ? 'bg-accent' : '';
+                    }
+                    
+                    return (
                       <Card
                         key={plan.id}
-                        className={`p-4 cursor-pointer transition-all hover-elevate ${
-                          selectedPlan === plan.id
-                            ? 'border-accent border-2 bg-accent/5'
-                            : 'border-card-border'
-                        }`}
+                        className={`cursor-pointer transition-all hover-elevate border-2 overflow-visible ${borderClass} ${bgClass}`}
                         onClick={() => setSelectedPlan(plan.id)}
                         data-testid={`card-plan-${plan.id}`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-foreground mb-1">
-                              {language === 'sr' ? plan.name : plan.nameEn}
-                            </h4>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-accent">
-                                {plan.price === 0 ? (language === 'sr' ? 'Besplatno' : 'Free') : `${plan.price.toLocaleString('sr-RS')} RSD`}
+                        {(isSilver || isGold) && (
+                          <div className={`px-4 py-2 rounded-t-md ${headerBg}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-white tracking-wide">
+                                {isSilver ? (plan.badgeSr && language === 'sr' ? plan.badgeSr : plan.badgeEn) : (plan.badgeSr && language === 'sr' ? plan.badgeSr : plan.badgeEn)}
                               </span>
-                              {plan.duration > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  / {plan.duration} {language === 'sr' ? 'dana' : 'days'}
-                                </span>
-                              )}
+                              <Sparkles className="w-4 h-4 text-white" />
                             </div>
-                            {plan.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {language === 'sr' ? plan.description : plan.descriptionEn}
-                              </p>
-                            )}
-                            {plan.savings > 0 && (
-                              <p className="text-xs text-accent mt-1">
-                                {language === 'sr' ? 'Ušteda' : 'Save'} {plan.savings}%
-                              </p>
-                            )}
                           </div>
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            selectedPlan === plan.id
-                              ? 'border-accent bg-accent'
-                              : 'border-muted-foreground'
-                          }`}>
-                            {selectedPlan === plan.id && (
-                              <Check className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Premium Plans Section - with golden styling */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-yellow-500" />
-                    <h4 className="text-sm font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wide">
-                      {language === 'sr' ? 'Premium Paketi' : 'Premium Plans'}
-                    </h4>
-                  </div>
-                  
-                  {/* Premium Benefits Banner */}
-                  <div className="p-4 rounded-lg bg-gradient-to-r from-yellow-500/10 to-amber-500/10 border-2 border-yellow-500/30">
-                    <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2">
-                      {language === 'sr' ? 'Premium Benefiti:' : 'Premium Benefits:'}
-                    </p>
-                    <ul className="space-y-1">
-                      {PREMIUM_BENEFITS[language].map((benefit, idx) => (
-                        <li key={idx} className="text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
-                          <Check className="w-4 h-4" />
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {premiumPlans.map((plan) => (
-                      <Card
-                        key={plan.id}
-                        className={`p-4 cursor-pointer transition-all hover-elevate border-2 ${
-                          selectedPlan === plan.id
-                            ? 'border-yellow-500 bg-yellow-500/10 ring-2 ring-yellow-500/50'
-                            : 'border-yellow-500/30 hover:border-yellow-500/60'
-                        }`}
-                        onClick={() => setSelectedPlan(plan.id)}
-                        data-testid={`card-plan-${plan.id}`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-foreground">
+                        )}
+                        
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-semibold text-foreground text-lg">
                                 {language === 'sr' ? plan.name : plan.nameEn}
                               </h4>
-                              {plan.popular && (
-                                <Badge className="bg-yellow-500 text-yellow-950 text-xs">
-                                  {language === 'sr' ? 'Najpopularnije' : 'Most Popular'}
-                                </Badge>
+                              <div className="flex items-baseline gap-1 mt-1">
+                                <span className={`text-2xl font-bold ${priceColor}`}>
+                                  {plan.price === 0 ? (language === 'sr' ? 'Besplatno' : 'Free') : `${plan.price.toLocaleString('sr-RS')} RSD`}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {language === 'sr' 
+                                  ? `${plan.totalVisibilityDays} dana vidljivosti`
+                                  : `${plan.totalVisibilityDays} days visibility`}
+                              </p>
+                            </div>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${checkBorder} ${checkBg}`}>
+                              {isSelected && (
+                                <Check className={`w-4 h-4 ${checkIcon}`} />
                               )}
                             </div>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                {plan.price.toLocaleString('sr-RS')} RSD
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                / {plan.duration} {language === 'sr' ? 'dana' : 'days'}
-                              </span>
-                            </div>
-                            {plan.description && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {language === 'sr' ? plan.description : plan.descriptionEn}
-                              </p>
-                            )}
-                            {plan.savings > 0 && (
-                              <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                                {language === 'sr' ? 'Ušteda' : 'Save'} {plan.savings}% ({Math.round(plan.pricePerMonth).toLocaleString('sr-RS')} RSD/{language === 'sr' ? 'mesec' : 'month'})
-                              </p>
-                            )}
                           </div>
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            selectedPlan === plan.id
-                              ? 'border-yellow-500 bg-yellow-500'
-                              : 'border-yellow-500/50'
-                          }`}>
-                            {selectedPlan === plan.id && (
-                              <Check className="w-4 h-4 text-yellow-950" />
-                            )}
-                          </div>
+                          
+                          <ul className="space-y-1.5 mt-3">
+                            {plan.benefits.map((benefit, idx) => (
+                              <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${isSilver ? 'text-[#A8A9AD]' : isGold ? 'text-[#DAA520]' : 'text-accent'}`} />
+                                <span>{language === 'sr' ? benefit.sr : benefit.en}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </Card>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
                 
-                {/* Plan summary */}
                 {selectedPlan && (
                   <div className={`p-3 rounded-md ${
-                    categoryPlans.find(p => p.id === selectedPlan)?.isPremium
-                      ? 'bg-yellow-500/10 border border-yellow-500/30'
-                      : 'bg-muted/20'
+                    selectedPlan === 'gold'
+                      ? 'bg-[#FFD700]/10 border border-[#DAA520]/30'
+                      : selectedPlan === 'silver'
+                        ? 'bg-[#C0C0C0]/10 border border-[#A8A9AD]/30'
+                        : 'bg-muted/20'
                   }`}>
                     <p className="text-sm text-muted-foreground">
-                      {categoryPlans.find(p => p.id === selectedPlan)?.duration === -1 
-                        ? (language === 'sr' ? 'Vaše parking mesto će biti aktivno neograničeno.' : 'Your parking spot will be active indefinitely.')
-                        : (
-                          <>
-                            {language === 'sr' ? 'Vaše parking mesto će biti aktivno do:' : 'Your parking spot will be active until:'}{' '}
-                            <span className="font-semibold text-foreground">
-                              {new Date(Date.now() + (categoryPlans.find((p: any) => p.id === selectedPlan)?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString('sr-RS', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </>
-                        )}
+                      {language === 'sr' ? 'Vaše parking mesto će biti aktivno' : 'Your parking spot will be active for'}{' '}
+                      <span className="font-semibold text-foreground">
+                        {getPlanById(selectedPlan)?.totalVisibilityDays} {language === 'sr' ? 'dana' : 'days'}
+                      </span>
+                      {selectedPlan !== 'standard' && (
+                        <>
+                          {' '}({language === 'sr' 
+                            ? `${getPlanById(selectedPlan)?.activeDays} dana ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} + ${(getPlanById(selectedPlan)?.totalVisibilityDays || 0) - (getPlanById(selectedPlan)?.activeDays || 0)} dana Standard`
+                            : `${getPlanById(selectedPlan)?.activeDays} days ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} + ${(getPlanById(selectedPlan)?.totalVisibilityDays || 0) - (getPlanById(selectedPlan)?.activeDays || 0)} days Standard`
+                          })
+                        </>
+                      )}
                     </p>
                   </div>
                 )}
@@ -1151,7 +1075,7 @@ export default function AddSpot() {
               {t.imageUploadTitle}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {isCompany && !categoryPlans.find(p => p.id === selectedPlan)?.isPremium 
+              {isCompany && selectedPlan === 'standard'
                 ? (language === 'sr' 
                     ? `Dodajte do ${maxImages} slika (${watchedNumberOfSpots || 1} parking mesta × 3 slike). Preostalo: ${Math.max(0, maxImages - uploadedImages.length)}`
                     : `Add up to ${maxImages} images (${watchedNumberOfSpots || 1} spots × 3 images). Remaining: ${Math.max(0, maxImages - uploadedImages.length)}`)
