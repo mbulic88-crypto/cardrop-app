@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays } from "lucide-react";
-import parkingImage from "@assets/stock_images/smartphone_mobile_ap_ab467bff.jpg";
+import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText } from "lucide-react";
+import heroImage from "@assets/hero-female-driver_2.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
@@ -17,12 +17,10 @@ const translations = {
     findSpotButton: "Pronađite Vaše Parking Mesto",
     listSpotButton: "Iznajmite Vaše Parking Mesto",
     howItWorks: "Kako Funkcioniše",
-    // How to rent out
     rentOutTitle: "Kako Iznajmiti Parking",
     rentOutStep1: "Izaberite dugme \"Iznajmite Vaše Parking Mesto\"",
     rentOutStep2: "Izaberite kategoriju",
     rentOutStep3: "Popunite informacije o parkingu",
-    // How to reserve
     reserveTitle: "Kako Rezervisati Parking",
     reserveStep1: "Izaberite \"Pronađite Parking Mesto\"",
     reserveStep2: "Pronađite parking mesto koje vam odgovara",
@@ -37,7 +35,6 @@ const translations = {
     footerText: "© 2024 CarDrop Srbija. Sva prava zadržana.",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
-    // Who is this for section
     whoIsThisFor: "Za Koga Je Ovo",
     whoCanRent: "Ko Može Da Iznajmi Parking",
     whoCanReserve: "Ko Može Da Rezerviše Parking",
@@ -51,7 +48,12 @@ const translations = {
     categoryCompany: "Firme",
     categoryTruck: "Stajalista za Kamione",
     categoryResidential: "Stambene Zajednice",
-    categoryCarLot: "Auto Placevi"
+    categoryCarLot: "Auto Placevi",
+    menuFindParking: "Pronađi Parking",
+    menuListParking: "Iznajmi Parking",
+    menuMyAccount: "Moj Nalog",
+    menuLogin: "Prijavi Se",
+    menuTerms: "Uslovi Korišćenja",
   },
   en: {
     heroTitle: "Find or Share a Parking Spot or Garage",
@@ -59,12 +61,10 @@ const translations = {
     findSpotButton: "Find Your Parking Spot",
     listSpotButton: "List Your Parking Spot",
     howItWorks: "How It Works",
-    // How to rent out
     rentOutTitle: "How to Rent Out Parking",
     rentOutStep1: "Click \"List Your Parking Spot\" button",
     rentOutStep2: "Choose a category",
     rentOutStep3: "Fill in parking information",
-    // How to reserve
     reserveTitle: "How to Reserve Parking",
     reserveStep1: "Click \"Find Your Parking Spot\"",
     reserveStep2: "Find a parking spot that suits you",
@@ -79,7 +79,6 @@ const translations = {
     footerText: "© 2024 CarDrop Serbia. All rights reserved.",
     langButton: "SRP",
     installApp: "Install App",
-    // Who is this for section
     whoIsThisFor: "Who Is This For",
     whoCanRent: "Who Can Rent Out Parking",
     whoCanReserve: "Who Can Reserve Parking",
@@ -93,17 +92,24 @@ const translations = {
     categoryCompany: "Companies",
     categoryTruck: "Truck Stops",
     categoryResidential: "Residential Communities",
-    categoryCarLot: "Car Lots"
+    categoryCarLot: "Car Lots",
+    menuFindParking: "Find Parking",
+    menuListParking: "List Parking",
+    menuMyAccount: "My Account",
+    menuLogin: "Log In",
+    menuTerms: "Terms of Use",
   }
 };
 
 export default function Landing() {
   const [language, setLanguage] = useState<"sr" | "en">("sr");
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { isInstallable, installApp } = usePWA();
   const { theme, setTheme } = useTheme();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -111,6 +117,18 @@ export default function Landing() {
       setLanguage(savedLanguage);
     }
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   const toggleLanguage = () => {
     const newLanguage = language === "sr" ? "en" : "sr";
@@ -130,46 +148,85 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-30 bg-transparent">
+      {/* Header - Hamburger Left, Logo Center, Controls Right */}
+      <header className="absolute top-0 left-0 right-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: Hamburger Menu */}
+            <div className="relative" ref={menuRef}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white"
+                data-testid="button-hamburger-menu"
+              >
+                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+
+              {/* Dropdown Menu */}
+              {menuOpen && (
+                <div className="absolute top-12 left-0 w-64 bg-card border border-border rounded-md shadow-lg z-50">
+                  <nav className="py-2">
+                    <Link href="/home" onClick={() => setMenuOpen(false)}>
+                      <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-find-parking">
+                        <Search className="w-5 h-5 text-accent" />
+                        <span className="text-card-foreground font-medium">{t.menuFindParking}</span>
+                      </div>
+                    </Link>
+                    <div
+                      onClick={() => { setMenuOpen(false); handleListSpotClick(); }}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-list-parking"
+                    >
+                      <PlusCircle className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuListParking}</span>
+                    </div>
+                    <div className="h-px bg-border mx-4 my-1" />
+                    {isAuthenticated ? (
+                      <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                        <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-my-account">
+                          <LayoutDashboard className="w-5 h-5 text-accent" />
+                          <span className="text-card-foreground font-medium">{t.menuMyAccount}</span>
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        onClick={() => { setMenuOpen(false); setShowLoginDialog(true); }}
+                        className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                        data-testid="menu-login"
+                      >
+                        <LogIn className="w-5 h-5 text-accent" />
+                        <span className="text-card-foreground font-medium">{t.menuLogin}</span>
+                      </div>
+                    )}
+                    <Link href="/terms" onClick={() => setMenuOpen(false)}>
+                      <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-terms">
+                        <FileText className="w-5 h-5 text-accent" />
+                        <span className="text-card-foreground font-medium">{t.menuTerms}</span>
+                      </div>
+                    </Link>
+                  </nav>
+                </div>
+              )}
+            </div>
+
+            {/* Center: Logo */}
+            <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-white hidden sm:inline">CarDrop</span>
+              <span className="text-xl font-bold text-white">CarDrop</span>
             </Link>
 
+            {/* Right: Language + Theme */}
             <div className="flex items-center gap-1 sm:gap-2">
-              {isAuthenticated ? (
-                <Link href="/dashboard">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    data-testid="button-account"
-                    className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
-                  >
-                    Moj Nalog
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid="button-login"
-                  onClick={() => setShowLoginDialog(true)}
-                  className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
-                >
-                  Prijavi se
-                </Button>
-              )}
               <Button
                 variant="outline"
                 size="sm"
                 data-testid="button-language"
                 onClick={toggleLanguage}
-                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50 text-xs sm:text-sm"
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white text-xs sm:text-sm"
               >
-                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                 <span className="hidden sm:inline">{t.langButton}</span>
                 <span className="sm:hidden">{language === "sr" ? "EN" : "SR"}</span>
               </Button>
@@ -177,7 +234,7 @@ export default function Landing() {
                 variant="outline"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="bg-black/30 backdrop-blur-sm border-white/30 text-white hover:bg-black/50"
+                className="bg-black/30 backdrop-blur-sm border-white/30 text-white"
                 data-testid="button-theme-toggle"
               >
                 <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
@@ -188,61 +245,72 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="relative min-h-[85vh] flex items-start justify-center overflow-hidden">
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-background z-10" />
+      {/* Hero Section - Full Screen */}
+      <div className="relative h-[100vh] min-h-[600px] flex items-center justify-center overflow-hidden">
+        {/* Dark wash gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80 z-10" />
         
         {/* Hero Background Image */}
         <div className="absolute inset-0">
           <img 
-            src={parkingImage} 
-            alt="Parking lot" 
+            src={heroImage} 
+            alt="Woman driving a car" 
             className="w-full h-full object-cover"
           />
         </div>
         
         {/* Hero Content */}
-        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto pt-20 md:pt-28 pb-8 mt-20 md:mt-24">
-          <h1 className="text-5xl md:text-8xl font-bold text-white mb-6 md:mb-8">
+        <div className="relative z-20 text-center px-6 max-w-4xl mx-auto">
+          <h1 className="text-5xl md:text-8xl font-bold text-white mb-6 md:mb-8 drop-shadow-lg">
             CarDrop
           </h1>
-          <p className="text-xl md:text-3xl text-white/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-3xl text-white/90 mb-4 md:mb-6 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
             {t.heroTitle}
           </p>
-          <p className="text-base md:text-xl text-white/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-xl text-white/80 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
             {t.heroSubtitle}
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
             <Link href="/home">
               <Button 
                 size="lg" 
-                className="text-lg px-8 py-6 w-full sm:w-auto"
+                className="text-lg px-8 py-6 w-full sm:w-auto shadow-lg"
                 data-testid="button-find-spot-hero"
               >
+                <Search className="w-5 h-5 mr-2" />
                 {t.findSpotButton}
               </Button>
             </Link>
             <Button 
               size="lg" 
-              className="text-lg px-8 py-6 w-full sm:w-auto"
+              variant="outline"
+              className="text-lg px-8 py-6 w-full sm:w-auto bg-black/30 backdrop-blur-sm border-white/40 text-white shadow-lg"
               data-testid="button-list-spot-hero"
               onClick={handleListSpotClick}
             >
+              <PlusCircle className="w-5 h-5 mr-2" />
               {t.listSpotButton}
             </Button>
           </div>
           
-          <div className="mt-10">
+          <div className="mt-8">
             <Button
               size="lg"
               onClick={installApp}
-              className="bg-accent hover:bg-accent/90 text-white border-2 border-white/20 shadow-lg shadow-accent/30 text-lg px-10 py-6 font-semibold animate-pulse hover:animate-none"
+              variant="outline"
+              className="bg-accent/90 backdrop-blur-sm border-accent text-white shadow-lg text-base px-8 py-5 font-semibold"
               data-testid="button-install-app"
             >
-              <Download className="w-6 h-6 mr-3" />
+              <Download className="w-5 h-5 mr-2" />
               {t.installApp}
             </Button>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 animate-bounce">
+          <div className="w-6 h-10 rounded-full border-2 border-white/50 flex items-start justify-center p-1">
+            <div className="w-1.5 h-3 bg-white/70 rounded-full" />
           </div>
         </div>
       </div>
@@ -260,16 +328,14 @@ export default function Landing() {
               {t.whoCanRent}
             </h3>
             <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-              {/* Map Pin Marker Component with Emoji */}
               {[
-                { emoji: "🏠", label: t.categoryPrivate },
-                { emoji: "🏢", label: t.categoryCompany },
-                { emoji: "🚚", label: t.categoryTruck },
-                { emoji: "👥", label: t.categoryResidential },
-                { emoji: "🚗", label: t.categoryCarLot },
+                { icon: Home, label: t.categoryPrivate },
+                { icon: Building2, label: t.categoryCompany },
+                { icon: Truck, label: t.categoryTruck },
+                { icon: Users, label: t.categoryResidential },
+                { icon: Car, label: t.categoryCarLot },
               ].map((item, index) => (
                 <div key={index} className="flex flex-col items-center text-center group w-28 md:w-32">
-                  {/* Google Maps Style Pin */}
                   <div className="relative mb-4">
                     <svg viewBox="0 0 48 64" className="w-14 h-[72px] md:w-16 md:h-20 drop-shadow-lg group-hover:scale-105 transition-transform">
                       <defs>
@@ -278,19 +344,16 @@ export default function Landing() {
                           <stop offset="100%" stopColor="hsl(var(--primary) / 0.8)" />
                         </linearGradient>
                       </defs>
-                      {/* Pin shape */}
                       <path 
                         d="M24 0C10.745 0 0 10.745 0 24c0 18 24 40 24 40s24-22 24-40C48 10.745 37.255 0 24 0z" 
                         fill={`url(#pinGradient${index})`}
                         stroke="hsl(var(--primary-foreground) / 0.3)"
                         strokeWidth="1"
                       />
-                      {/* Inner circle for emoji background */}
                       <circle cx="24" cy="22" r="14" fill="white" />
                     </svg>
-                    {/* Emoji positioned inside the pin */}
-                    <div className="absolute top-2 md:top-2.5 left-1/2 -translate-x-1/2">
-                      <span className="text-xl md:text-2xl">{item.emoji}</span>
+                    <div className="absolute top-2 md:top-2.5 left-1/2 -translate-x-1/2 flex items-center justify-center w-7 h-7 md:w-8 md:h-8">
+                      <item.icon className="w-5 h-5 md:w-6 md:h-6 text-[hsl(var(--primary))]" />
                     </div>
                   </div>
                   <span className="text-sm md:text-base font-medium text-foreground leading-tight">{item.label}</span>
@@ -299,7 +362,6 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Divider */}
           <div className="w-full h-px bg-border mb-20" />
 
           {/* Who Can Reserve */}
@@ -314,7 +376,6 @@ export default function Landing() {
               {t.reserveDescription}
             </p>
             
-            {/* Short-term and Long-term options */}
             <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-12 max-w-4xl mx-auto">
               <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate">
                 <div className="flex items-center gap-4 mb-4">
@@ -346,7 +407,6 @@ export default function Landing() {
           {t.howItWorks}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {/* How to Rent Out Parking */}
           <Card 
             className="p-6 hover-elevate bg-primary border-primary-border cursor-pointer"
             onClick={handleListSpotClick}
@@ -374,7 +434,6 @@ export default function Landing() {
             </ul>
           </Card>
 
-          {/* How to Reserve Parking */}
           <Link href="/home">
             <Card 
               className="p-6 hover-elevate bg-primary border-primary-border cursor-pointer h-full"
@@ -411,7 +470,6 @@ export default function Landing() {
           {language === "sr" ? "Šta Kažu Naši Korisnici" : "What Our Users Say"}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {/* Testimonial 1 - Extra Income */}
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
@@ -429,7 +487,6 @@ export default function Landing() {
             </p>
           </Card>
 
-          {/* Testimonial 2 - Parking Problem Solved */}
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
@@ -447,7 +504,6 @@ export default function Landing() {
             </p>
           </Card>
 
-          {/* Testimonial 3 - Unused Space Monetized */}
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
