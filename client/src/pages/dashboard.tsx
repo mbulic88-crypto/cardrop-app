@@ -13,8 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { User, ParkingSpot } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles } from "lucide-react";
+import type { User, ParkingSpot, SalesListing } from "@shared/schema";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
@@ -62,6 +62,11 @@ export default function Dashboard() {
 
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({
     queryKey: ["/api/parking-spots/my-spots"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: mySalesListings = [] } = useQuery<SalesListing[]>({
+    queryKey: ["/api/sales-listings/my-listings"],
     enabled: isAuthenticated,
   });
 
@@ -123,6 +128,26 @@ export default function Dashboard() {
     },
   });
 
+  const deleteSaleListingMutation = useMutation({
+    mutationFn: (listingId: string) =>
+      apiRequest("DELETE", `/api/sales-listings/${listingId}`, {}),
+    onSuccess: () => {
+      toast({
+        title: "Uspešno",
+        description: "Oglas prodaje je izbrisan",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/sales-listings/my-listings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sales-listings"] });
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Nije moguće obrisati oglas",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Calculate total earnings from manual bookings in localStorage
   const [totalEarnings, setTotalEarnings] = useState(0);
   useEffect(() => {
@@ -171,6 +196,7 @@ export default function Dashboard() {
         <Tabs defaultValue="spots" className="w-full">
           <TabsList className="mb-8" data-testid="dashboard-tabs">
             <TabsTrigger value="spots" data-testid="tab-my-spots">Moja Parking Mesta</TabsTrigger>
+            <TabsTrigger value="sales" data-testid="tab-my-sales">Moji Oglasi Prodaje</TabsTrigger>
             <TabsTrigger value="bookings" data-testid="tab-bookings">Moje Rezervacije</TabsTrigger>
             <TabsTrigger value="profile" data-testid="tab-profile">Profil</TabsTrigger>
           </TabsList>
@@ -262,6 +288,90 @@ export default function Dashboard() {
                     </div>
                   </Card>
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Moji Oglasi Prodaje */}
+          <TabsContent value="sales" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold text-foreground">Moji Oglasi Prodaje</h2>
+              <Link href="/add-sale">
+                <Button data-testid="button-add-sale">Dodaj Novi Oglas</Button>
+              </Link>
+            </div>
+
+            {mySalesListings.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground mb-4">Nemate aktivnih oglasa prodaje</p>
+                <Link href="/add-sale">
+                  <Button data-testid="button-add-first-sale">Oglasi Prodaju</Button>
+                </Link>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {mySalesListings.map((listing) => {
+                  const priceNum = parseFloat(listing.price);
+                  const areaNum = parseFloat(listing.area);
+                  const pricePerSqm = areaNum > 0 ? Math.round(priceNum / areaNum) : 0;
+                  const propertyTypeLabels: Record<string, string> = {
+                    garage: "Garaža",
+                    open_parking: "Otvoreno parking mesto",
+                    closed_parking: "Zatvoreno parking mesto",
+                    truck_parking: "Parking za kamione",
+                    building_garage: "Garažno mesto u zgradi",
+                    warehouse_parking: "Magacinski prostor",
+                    other: "Ostalo",
+                  };
+                  return (
+                    <Card key={listing.id} className="p-4 hover-elevate" data-testid={`sale-card-${listing.id}`}>
+                      {listing.imageUrls && listing.imageUrls[0] && (
+                        <img
+                          src={listing.imageUrls[0]}
+                          alt={listing.title}
+                          className="w-full h-32 object-cover rounded-lg mb-4"
+                        />
+                      )}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Tag className="w-4 h-4 text-accent" />
+                        <Badge variant="secondary">{propertyTypeLabels[listing.propertyType] || listing.propertyType}</Badge>
+                      </div>
+                      <h3 className="font-semibold text-lg mb-2 text-card-foreground">{listing.title}</h3>
+                      <div className="flex items-start gap-2 mb-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span className="truncate">{listing.address}</span>
+                      </div>
+                      <div className="mb-2 text-sm">
+                        <p className="text-foreground font-semibold text-lg">{priceNum.toLocaleString('sr-RS')} RSD</p>
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Ruler className="w-3 h-3" />
+                            {areaNum} m²
+                          </span>
+                          <span>{pricePerSqm.toLocaleString('sr-RS')} RSD/m²</span>
+                        </div>
+                      </div>
+                      {listing.phone && (
+                        <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                          <Phone className="w-3 h-3" />
+                          <span>{listing.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => deleteSaleListingMutation.mutate(listing.id)}
+                          data-testid={`button-delete-sale-${listing.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Obriši
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
