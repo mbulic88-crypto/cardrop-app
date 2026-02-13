@@ -107,10 +107,10 @@ export default function Home() {
     return matchesLocation && matchesCity && matchesPrice && matchesType && 
            matchesEvCharging && matchesCamera && matches24Hours && spot.isActive;
   }).sort((a, b) => {
-    // Premium spots always appear first
-    if (a.isPremium && !b.isPremium) return -1;
-    if (!a.isPremium && b.isPremium) return 1;
-    return 0;
+    const tierOrder = { gold: 3, silver: 2, standard: 1 };
+    const aTier = tierOrder[(a.subscriptionType as keyof typeof tierOrder)] || 1;
+    const bTier = tierOrder[(b.subscriptionType as keyof typeof tierOrder)] || 1;
+    return bTier - aTier;
   });
 
   const handleProtectedAction = (path: string) => {
@@ -442,25 +442,35 @@ export default function Home() {
                           <Link key={spot.id} href={`/spot/${spot.id}`}>
                             <Card 
                               className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
-                                spot.isPremium 
-                                  ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
-                                  : ''
+                                spot.subscriptionType === 'gold'
+                                  ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                                  : spot.subscriptionType === 'silver'
+                                    ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                    : ''
                               }`}
                               data-testid={`card-nearby-spot-${spot.id}`}
                             >
-                              {/* Premium Badge */}
-                              {spot.isPremium && (
+                              {spot.subscriptionType === 'gold' && (
                                 <div className="absolute top-2 left-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0 text-xs">
+                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
                                     <Sparkles className="w-3 h-3 mr-1" />
-                                    Premium
+                                    Top lokacija
+                                  </Badge>
+                                </div>
+                              )}
+                              {spot.subscriptionType === 'silver' && (
+                                <div className="absolute top-2 left-2 z-20">
+                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Istaknuto
                                   </Badge>
                                 </div>
                               )}
                               
-                              {/* Static Map Preview */}
                               <div className={`aspect-video bg-muted relative ${
-                                spot.isPremium ? 'ring-2 ring-yellow-500/30 ring-inset' : ''
+                                spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
+                                : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
+                                : ''
                               }`}>
                                 {spot.latitude && spot.longitude ? (
                                   <StaticMapImage
@@ -517,7 +527,7 @@ export default function Home() {
                                 {/* Price */}
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <span className={`text-xl font-bold ${spot.isPremium ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`}>
+                                    <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
                                       {spot.pricePerHour}
                                     </span>
                                     <span className="text-muted-foreground text-xs ml-1">
@@ -550,25 +560,35 @@ export default function Home() {
                   <Link key={spot.id} href={`/spot/${spot.id}`}>
                     <Card 
                       className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
-                        spot.isPremium 
-                          ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
-                          : ''
+                        spot.subscriptionType === 'gold'
+                          ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                          : spot.subscriptionType === 'silver'
+                            ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                            : ''
                       }`} 
                       data-testid={`card-spot-${spot.id}`}
                     >
-                      {/* Premium Badge */}
-                      {spot.isPremium && (
+                      {spot.subscriptionType === 'gold' && (
                         <div className="absolute top-2 left-2 z-20">
-                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0 text-xs">
+                          <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
                             <Sparkles className="w-3 h-3 mr-1" />
-                            Premium
+                            Top lokacija
+                          </Badge>
+                        </div>
+                      )}
+                      {spot.subscriptionType === 'silver' && (
+                        <div className="absolute top-2 left-2 z-20">
+                          <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Istaknuto
                           </Badge>
                         </div>
                       )}
                       
-                      {/* Static Map Preview */}
                       <div className={`aspect-video bg-muted relative ${
-                        spot.isPremium ? 'ring-2 ring-yellow-500/30 ring-inset' : ''
+                        spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
+                        : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
+                        : ''
                       }`}>
                         {spot.latitude && spot.longitude ? (
                           <StaticMapImage
@@ -619,7 +639,7 @@ export default function Home() {
                         {/* Price */}
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className={`text-xl font-bold ${spot.isPremium ? 'text-yellow-600 dark:text-yellow-400' : 'text-accent'}`}>
+                            <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
                               {spot.pricePerHour}
                             </span>
                             <span className="text-muted-foreground text-xs ml-1">

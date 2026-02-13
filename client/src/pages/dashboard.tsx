@@ -233,16 +233,24 @@ export default function Dashboard() {
                   <Card 
                     key={spot.id} 
                     className={`p-4 hover-elevate relative ${
-                      spot.isPremium 
-                        ? 'border-2 border-yellow-500 ring-2 ring-yellow-500/20' 
-                        : ''
+                      spot.subscriptionType === 'gold'
+                        ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                        : spot.subscriptionType === 'silver'
+                          ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                          : ''
                     }`} 
                     data-testid={`spot-card-${spot.id}`}
                   >
-                    {spot.isPremium && (
-                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-yellow-500 to-amber-400 text-yellow-950 border-0">
+                    {spot.subscriptionType === 'gold' && (
+                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0">
                         <Sparkles className="w-3 h-3 mr-1" />
-                        Premium
+                        Top lokacija
+                      </Badge>
+                    )}
+                    {spot.subscriptionType === 'silver' && (
+                      <Badge className="absolute top-2 right-2 bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Istaknuto
                       </Badge>
                     )}
                     {spot.imageUrls && spot.imageUrls[0] && (
@@ -250,7 +258,9 @@ export default function Dashboard() {
                         src={spot.imageUrls[0]}
                         alt={spot.title}
                         className={`w-full h-32 object-cover rounded-lg mb-4 ${
-                          spot.isPremium ? 'ring-2 ring-yellow-500/30' : ''
+                          spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30' 
+                          : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30' 
+                          : ''
                         }`}
                       />
                     )}
@@ -262,10 +272,10 @@ export default function Dashboard() {
                     <div className="mb-4 text-sm">
                       <p className="text-foreground font-semibold">{spot.pricePerHour} {spot.currency}/h</p>
                       <p className="text-muted-foreground text-xs">
-                        {spot.subscriptionType === 'free' 
-                          ? 'Besplatni plan - Neograničeno' 
+                        {spot.subscriptionType === 'standard' 
+                          ? 'Standard plan - 60 dana' 
                           : spot.subscriptionExpiresAt 
-                            ? `Ističe: ${new Date(spot.subscriptionExpiresAt).toLocaleDateString('sr-RS')}`
+                            ? `${spot.subscriptionType === 'gold' ? 'Gold' : 'Silver'} - Ističe: ${new Date(spot.subscriptionExpiresAt).toLocaleDateString('sr-RS')}`
                             : 'Aktivan'
                         }
                       </p>

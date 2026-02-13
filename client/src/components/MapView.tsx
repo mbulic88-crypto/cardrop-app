@@ -21,20 +21,38 @@ const categoryEmoji: Record<string, string> = {
   car_lot: "L",
 };
 
-// Create custom marker icon
-function createMarkerIcon(category: string, isPremium: boolean) {
+function createMarkerIcon(category: string, isPremium: boolean, subscriptionType?: string) {
   const emoji = categoryEmoji[category] || "P";
-  const bgColor = isPremium ? "#f59e0b" : "#40916C";
-  const borderColor = isPremium ? "#f59e0b" : "#40916C";
-  const shadowColor = isPremium ? "rgba(245, 158, 11, 0.4)" : "rgba(64, 145, 108, 0.3)";
-  const glowEffect = isPremium ? "0 0 12px rgba(245, 158, 11, 0.8), 0 0 20px rgba(245, 158, 11, 0.4)" : "";
+  const tier = subscriptionType || 'standard';
+  
+  let bgColor = "#40916C";
+  let borderColor = "#40916C";
+  let shadowColor = "rgba(64, 145, 108, 0.3)";
+  let glowEffect = "";
+  let animationName = "";
+  
+  if (tier === 'gold') {
+    bgColor = "linear-gradient(135deg, #DAA520, #FFD700, #B8860B)";
+    borderColor = "#DAA520";
+    shadowColor = "rgba(218, 165, 32, 0.4)";
+    glowEffect = "0 0 12px rgba(218, 165, 32, 0.8), 0 0 20px rgba(255, 215, 0, 0.4)";
+    animationName = "gold-pulse";
+  } else if (tier === 'silver') {
+    bgColor = "linear-gradient(135deg, #A8A9AD, #E8E8E8, #C0C0C0)";
+    borderColor = "#A8A9AD";
+    shadowColor = "rgba(168, 169, 173, 0.4)";
+    glowEffect = "0 0 10px rgba(192, 192, 192, 0.6), 0 0 16px rgba(168, 169, 173, 0.3)";
+    animationName = "silver-pulse";
+  }
+  
+  const isGradient = tier === 'gold' || tier === 'silver';
   
   return L.divIcon({
     html: `
       <div style="
         width: 36px;
         height: 36px;
-        background: ${bgColor};
+        ${isGradient ? `background: ${bgColor};` : `background: ${bgColor};`}
         border: 3px solid ${borderColor};
         border-radius: 50%;
         display: flex;
@@ -42,19 +60,21 @@ function createMarkerIcon(category: string, isPremium: boolean) {
         justify-content: center;
         font-size: 14px;
         font-weight: bold;
-        color: white;
+        color: ${tier === 'silver' ? '#333' : 'white'};
         box-shadow: ${isPremium ? glowEffect : `0 3px 8px ${shadowColor}`};
         transform: translate(-50%, -50%);
-        ${isPremium ? 'animation: premium-pulse 2s ease-in-out infinite;' : ''}
+        ${animationName ? `animation: ${animationName} 2s ease-in-out infinite;` : ''}
       ">
         ${emoji}
       </div>
-      <style>
-        @keyframes premium-pulse {
+      ${animationName ? `<style>
+        @keyframes ${animationName} {
           0%, 100% { box-shadow: ${glowEffect}; }
-          50% { box-shadow: 0 0 20px rgba(245, 158, 11, 1), 0 0 30px rgba(245, 158, 11, 0.6); }
+          50% { box-shadow: ${tier === 'gold' 
+            ? '0 0 20px rgba(218, 165, 32, 1), 0 0 30px rgba(255, 215, 0, 0.6)' 
+            : '0 0 16px rgba(192, 192, 192, 0.8), 0 0 24px rgba(168, 169, 173, 0.4)'}; }
         }
-      </style>
+      </style>` : ''}
     `,
     className: "custom-marker-icon",
     iconSize: [36, 36],
@@ -102,20 +122,23 @@ export function MapView({ spots }: MapViewProps) {
     spots.forEach((spot) => {
       if (!spot.latitude || !spot.longitude) return;
 
-      const icon = createMarkerIcon(spot.category || 'private', spot.isPremium || false);
+      const icon = createMarkerIcon(spot.category || 'private', spot.isPremium || false, spot.subscriptionType || 'standard');
       const marker = L.marker([parseFloat(spot.latitude), parseFloat(spot.longitude)], { icon })
         .addTo(mapRef.current!);
 
-      // Create popup content using pure DOM (no HTML strings to prevent XSS)
       const container = document.createElement('div');
       container.className = 'p-2 min-w-[200px] cursor-pointer';
       
-      // Premium badge
-      if (spot.isPremium) {
-        const premiumBadge = document.createElement('div');
-        premiumBadge.className = 'mb-2';
-        premiumBadge.innerHTML = '<span style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #451a03; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Premium</span>';
-        container.appendChild(premiumBadge);
+      if (spot.subscriptionType === 'gold') {
+        const badge = document.createElement('div');
+        badge.className = 'mb-2';
+        badge.innerHTML = '<span style="background: linear-gradient(135deg, #DAA520 0%, #FFD700 50%, #B8860B 100%); color: white; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Top lokacija</span>';
+        container.appendChild(badge);
+      } else if (spot.subscriptionType === 'silver') {
+        const badge = document.createElement('div');
+        badge.className = 'mb-2';
+        badge.innerHTML = '<span style="background: linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 50%, #A8A9AD 100%); color: #333; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Istaknuto</span>';
+        container.appendChild(badge);
       }
       
       const title = document.createElement('h3');
