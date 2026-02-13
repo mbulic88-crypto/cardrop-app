@@ -268,7 +268,7 @@ export default function Dashboard() {
 
           {/* Moje Rezervacije */}
           <TabsContent value="bookings">
-            <MyBookings />
+            <MyBookings embedded />
           </TabsContent>
 
           {/* Profil */}
