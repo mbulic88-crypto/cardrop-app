@@ -18,9 +18,10 @@ interface ManualBooking {
 
 interface MyBookingsProps {
   embedded?: boolean;
+  [key: string]: any;
 }
 
-export default function MyBookings({ embedded = false }: MyBookingsProps) {
+export default function MyBookings({ embedded = false, ...rest }: MyBookingsProps) {
   const [bookings, setBookings] = useState<ManualBooking[]>([]);
   const [parkingName, setParkingName] = useState("");
   const [date, setDate] = useState("");

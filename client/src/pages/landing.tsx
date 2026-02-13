@@ -153,6 +153,14 @@ export default function Landing() {
     }
   };
 
+  const handleSellClick = () => {
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+    } else {
+      setLocation("/add-sale");
+    }
+  };
+
   const t = translations[language];
 
   return (
@@ -306,6 +314,7 @@ export default function Landing() {
                     variant="secondary"
                     className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
                     data-testid="button-sell-hero"
+                    onClick={handleSellClick}
                   >
                     <Tag className="w-5 h-5 mr-2" />
                     {t.sellButton}

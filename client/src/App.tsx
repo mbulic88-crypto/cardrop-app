@@ -17,6 +17,7 @@ import Dashboard from "@/pages/dashboard";
 import EditSpot from "@/pages/edit-spot";
 import Admin from "@/pages/admin";
 import SelectCategory from "@/pages/select-category";
+import AddSale from "@/pages/add-sale";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/transactions" component={Transactions} />
       <Route path="/payment/:bookingId" component={Payment} />
+      <Route path="/add-sale" component={AddSale} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
