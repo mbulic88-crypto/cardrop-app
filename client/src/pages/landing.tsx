@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText } from "lucide-react";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText } from "lucide-react";
 import heroImage from "@assets/hero-female-driver_2.jpg";
+import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
@@ -9,64 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
 import { useTheme } from "next-themes";
-
-function PhoneMockup() {
-  return (
-    <div className="relative w-[140px] h-[260px] md:w-[180px] md:h-[340px] rounded-[24px] md:rounded-[28px] border-[3px] md:border-4 border-white/80 bg-[#e8e0d4] shadow-2xl overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 md:w-20 h-4 md:h-5 bg-white/80 rounded-b-lg z-10" />
-      <div className="w-full h-full relative">
-        <svg viewBox="0 0 180 340" className="w-full h-full">
-          <rect width="180" height="340" fill="#e8e0d4" />
-          <rect x="10" y="40" width="50" height="8" rx="2" fill="#c4b8a8" opacity="0.6" />
-          <rect x="10" y="52" width="30" height="6" rx="2" fill="#c4b8a8" opacity="0.4" />
-
-          <line x1="0" y1="80" x2="180" y2="80" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
-          <line x1="0" y1="160" x2="180" y2="160" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
-          <line x1="0" y1="240" x2="180" y2="240" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
-          <line x1="60" y1="0" x2="60" y2="340" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
-          <line x1="120" y1="0" x2="120" y2="340" stroke="#c4b8a8" strokeWidth="0.5" opacity="0.4" />
-
-          <rect x="20" y="100" width="60" height="40" rx="3" fill="#d4c8b8" opacity="0.5" />
-          <rect x="100" y="180" width="50" height="30" rx="3" fill="#d4c8b8" opacity="0.5" />
-          <rect x="40" y="250" width="70" height="35" rx="3" fill="#d4c8b8" opacity="0.5" />
-
-          <g transform="translate(45, 85)">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#40916C" />
-            <circle cx="12" cy="11" r="5" fill="white" />
-            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#40916C">P</text>
-          </g>
-
-          <g transform="translate(120, 140)">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#52B788" />
-            <circle cx="12" cy="11" r="5" fill="white" />
-            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#52B788">P</text>
-          </g>
-
-          <g transform="translate(70, 200)">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20C24 5.37 18.63 0 12 0z" fill="#40916C" />
-            <circle cx="12" cy="11" r="5" fill="white" />
-            <text x="12" y="13" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#40916C">P</text>
-          </g>
-
-          <g transform="translate(25, 220)">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 6 8 14 8 14s8-8 8-14C16 3.58 12.42 0 8 0z" fill="#FFD700" stroke="#B8860B" strokeWidth="0.5" />
-            <circle cx="8" cy="7.5" r="3.5" fill="white" />
-            <text x="8" y="9.5" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#B8860B">P</text>
-          </g>
-
-          <g transform="translate(130, 260)">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 6 8 14 8 14s8-8 8-14C16 3.58 12.42 0 8 0z" fill="#52B788" />
-            <circle cx="8" cy="7.5" r="3.5" fill="white" />
-            <text x="8" y="9.5" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#52B788">P</text>
-          </g>
-
-          <rect x="15" y="290" width="150" height="30" rx="8" fill="#40916C" />
-          <text x="90" y="309" textAnchor="middle" fontSize="10" fontWeight="bold" fill="white">CarDrop</text>
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 const translations = {
   sr: {
@@ -311,62 +254,73 @@ export default function Landing() {
 
       {/* Hero Section - Image on top, content below */}
       <div className="relative">
-        {/* Hero Image Area */}
+        {/* Hero Image Area - light overlay for bright sunny feel */}
         <div className="relative h-[50vh] min-h-[320px] md:h-[55vh] md:min-h-[400px] overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/20 z-10" />
           <img 
             src={heroImage} 
             alt="Woman driving a car" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover brightness-110"
           />
-          {/* Phone Mockup overlaid on hero image - bottom right */}
-          <div className="absolute bottom-[-40px] right-4 md:right-12 lg:right-24 z-20 transform rotate-[-5deg]">
-            <PhoneMockup />
-          </div>
         </div>
 
         {/* Content Below Image */}
-        <div className="relative z-10 bg-background px-6 pt-14 md:pt-16 pb-10 md:pb-14">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-5 leading-tight">
-              {t.heroTitle}
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-              {t.heroSubtitle}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/home">
-                <Button 
-                  size="lg" 
-                  className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
-                  data-testid="button-find-spot-hero"
-                >
-                  <Search className="w-5 h-5 mr-2" />
-                  {t.findSpotButton}
-                </Button>
-              </Link>
-              <Button 
-                size="lg" 
-                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
-                data-testid="button-list-spot-hero"
-                onClick={handleListSpotClick}
-              >
-                <PlusCircle className="w-5 h-5 mr-2" />
-                {t.listSpotButton}
-              </Button>
-            </div>
-            
-            <div className="mt-6 md:mt-8">
-              <Button
-                size="lg"
-                onClick={installApp}
-                variant="outline"
-                className="text-base px-6 md:px-8 py-5 font-semibold"
-                data-testid="button-install-app"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                {t.installApp}
-              </Button>
+        <div className="relative z-10 bg-background px-6 pt-10 md:pt-14 pb-10 md:pb-14">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+              {/* Left: Text and buttons */}
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-5 leading-tight">
+                  {t.heroTitle}
+                </h1>
+                <p className="text-base md:text-lg text-muted-foreground mb-8 md:mb-10 max-w-2xl leading-relaxed">
+                  {t.heroSubtitle}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                  <Link href="/home">
+                    <Button 
+                      size="lg" 
+                      className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
+                      data-testid="button-find-spot-hero"
+                    >
+                      <Search className="w-5 h-5 mr-2" />
+                      {t.findSpotButton}
+                    </Button>
+                  </Link>
+                  <Button 
+                    size="lg" 
+                    className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
+                    data-testid="button-list-spot-hero"
+                    onClick={handleListSpotClick}
+                  >
+                    <PlusCircle className="w-5 h-5 mr-2" />
+                    {t.listSpotButton}
+                  </Button>
+                </div>
+                
+                <div className="mt-6 md:mt-8">
+                  <Button
+                    size="lg"
+                    onClick={installApp}
+                    variant="outline"
+                    className="text-base px-6 md:px-8 py-5 font-semibold"
+                    data-testid="button-install-app"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    {t.installApp}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right: Phone with GPS map image */}
+              <div className="hidden md:block flex-shrink-0">
+                <img 
+                  src={phoneGpsImage} 
+                  alt="GPS navigation on phone" 
+                  className="w-[320px] h-auto rounded-md object-cover"
+                  data-testid="img-phone-gps"
+                />
+              </div>
             </div>
           </div>
         </div>
