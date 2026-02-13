@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText } from "lucide-react";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText, Tag } from "lucide-react";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -36,6 +36,7 @@ const translations = {
     footerText: "\u00a9 2024 CarDrop Srbija. Sva prava zadržana.",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
+    sellButton: "Oglasi Prodaju",
     whoIsThisFor: "Za Koga Je Ovo",
     whoCanRent: "Ko Može Da Iznajmi Parking",
     whoCanReserve: "Ko Može Da Rezerviše Parking",
@@ -83,6 +84,7 @@ const translations = {
     footerText: "\u00a9 2024 CarDrop Serbia. All rights reserved.",
     langButton: "SRP",
     installApp: "Install App",
+    sellButton: "List for Sale",
     whoIsThisFor: "Who Is This For",
     whoCanRent: "Who Can Rent Out Parking",
     whoCanReserve: "Who Can Reserve Parking",
@@ -297,13 +299,25 @@ export default function Landing() {
                     {t.listSpotButton}
                   </Button>
                 </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mt-4">
+                  <Button 
+                    size="lg" 
+                    variant="secondary"
+                    className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
+                    data-testid="button-sell-hero"
+                  >
+                    <Tag className="w-5 h-5 mr-2" />
+                    {t.sellButton}
+                  </Button>
+                </div>
                 
                 <div className="mt-6 md:mt-8">
                   <Button
                     size="lg"
                     onClick={installApp}
-                    variant="outline"
-                    className="text-base px-6 md:px-8 py-5 font-semibold"
+                    variant="secondary"
+                    className="text-base px-6 md:px-8 py-5 font-semibold border border-accent/50 bg-accent/15 text-accent"
                     data-testid="button-install-app"
                   >
                     <Download className="w-5 h-5 mr-2" />
