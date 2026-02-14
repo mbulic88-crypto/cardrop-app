@@ -197,6 +197,14 @@ export default function Landing() {
     }
   };
 
+  const scrollToSection = (id: string) => {
+    setMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const t = translations[language];
 
   return (
@@ -234,6 +242,14 @@ export default function Landing() {
                       <PlusCircle className="w-5 h-5 text-accent" />
                       <span className="text-card-foreground font-medium">{t.menuListParking}</span>
                     </div>
+                    <div
+                      onClick={() => { setMenuOpen(false); handleSellClick(); }}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-sell-listing"
+                    >
+                      <Tag className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuSellListing}</span>
+                    </div>
                     <div className="h-px bg-border mx-4 my-1" />
                     {isAuthenticated ? (
                       <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
@@ -252,12 +268,39 @@ export default function Landing() {
                         <span className="text-card-foreground font-medium">{t.menuLogin}</span>
                       </div>
                     )}
-                    <Link href="/terms" onClick={() => setMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-terms">
-                        <FileText className="w-5 h-5 text-accent" />
-                        <span className="text-card-foreground font-medium">{t.menuTerms}</span>
-                      </div>
-                    </Link>
+                    <div className="h-px bg-border mx-4 my-1" />
+                    <div
+                      onClick={() => scrollToSection('za-koga')}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-who-is-for"
+                    >
+                      <Info className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuWhoIsThisFor}</span>
+                    </div>
+                    <div
+                      onClick={() => scrollToSection('kako-funkcionise')}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-how-it-works"
+                    >
+                      <Zap className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuHowItWorks}</span>
+                    </div>
+                    <div
+                      onClick={() => scrollToSection('cenovnik')}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-pricing"
+                    >
+                      <CreditCard className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuPricing}</span>
+                    </div>
+                    <div
+                      onClick={() => scrollToSection('kontakt')}
+                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                      data-testid="menu-contact"
+                    >
+                      <Mail className="w-5 h-5 text-accent" />
+                      <span className="text-card-foreground font-medium">{t.menuContact}</span>
+                    </div>
                     <div className="h-px bg-border mx-4 my-1" />
                     <div
                       onClick={() => { toggleLanguage(); setMenuOpen(false); }}
@@ -386,7 +429,7 @@ export default function Landing() {
       </div>
 
       {/* Who Is This For Section */}
-      <div className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background">
+      <div id="za-koga" className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background scroll-mt-16">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-2xl md:text-4xl font-bold text-center mb-16 md:mb-20 text-foreground">
             {t.whoIsThisFor}
@@ -470,7 +513,7 @@ export default function Landing() {
       </div>
 
       {/* How It Works Section */}
-      <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto">
+      <div id="kako-funkcionise" className="py-20 md:py-24 px-6 max-w-7xl mx-auto scroll-mt-16">
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
           {t.howItWorks}
         </h2>
@@ -529,6 +572,131 @@ export default function Landing() {
               </ul>
             </Card>
           </Link>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div id="cenovnik" className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background scroll-mt-16">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl md:text-4xl font-bold text-center mb-4 text-foreground" data-testid="text-pricing-title">
+            {t.pricingTitle}
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 md:mb-16 max-w-2xl mx-auto">
+            {t.pricingSubtitle}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+            {PRICING_PLANS.map((plan) => {
+              const isStandard = plan.tier === 'standard';
+              const isSilver = plan.tier === 'silver';
+              const isGold = plan.tier === 'gold';
+
+              return (
+                <Card
+                  key={plan.id}
+                  className={`relative p-6 md:p-8 flex flex-col ${
+                    isGold
+                      ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                      : isSilver
+                        ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                        : 'border border-border'
+                  }`}
+                  data-testid={`card-pricing-${plan.id}`}
+                >
+                  {isGold && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 no-default-hover-elevate no-default-active-elevate">
+                        <Crown className="w-3 h-3 mr-1" />
+                        {t.pricingBestValue}
+                      </Badge>
+                    </div>
+                  )}
+                  {isSilver && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 no-default-hover-elevate no-default-active-elevate">
+                        <Star className="w-3 h-3 mr-1" />
+                        {t.pricingMostPopular}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div className="text-center mb-6 mt-2">
+                    <div className={`w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                      isGold
+                        ? 'bg-gradient-to-br from-[#DAA520] via-[#FFD700] to-[#B8860B]'
+                        : isSilver
+                          ? 'bg-gradient-to-br from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]'
+                          : 'bg-accent/20'
+                    }`}>
+                      {isGold ? (
+                        <Crown className="w-7 h-7 text-white" />
+                      ) : isSilver ? (
+                        <Star className="w-7 h-7 text-[#333]" />
+                      ) : (
+                        <Check className="w-7 h-7 text-accent" />
+                      )}
+                    </div>
+                    <h3 className={`text-2xl font-bold mb-2 ${
+                      isGold
+                        ? 'text-[#B8860B] dark:text-[#FFD700]'
+                        : isSilver
+                          ? 'text-[#71706E] dark:text-[#C0C0C0]'
+                          : 'text-foreground'
+                    }`}>
+                      {language === 'sr' ? plan.name : plan.nameEn}
+                    </h3>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className={`text-3xl md:text-4xl font-bold ${
+                        isGold
+                          ? 'text-[#B8860B] dark:text-[#FFD700]'
+                          : isSilver
+                            ? 'text-[#71706E] dark:text-[#C0C0C0]'
+                            : 'text-foreground'
+                      }`}>
+                        {plan.price === 0 ? t.pricingFree : `${plan.price} RSD`}
+                      </span>
+                    </div>
+                    {plan.price > 0 && (
+                      <p className="text-sm text-muted-foreground mt-1">{t.pricingPerListing}</p>
+                    )}
+                  </div>
+
+                  <div className="flex-1 mb-6">
+                    <ul className="space-y-3">
+                      {plan.benefits.map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                            isGold
+                              ? 'text-[#DAA520]'
+                              : isSilver
+                                ? 'text-[#A8A9AD]'
+                                : 'text-accent'
+                          }`} />
+                          <span className="text-sm text-card-foreground">
+                            {language === 'sr' ? benefit.sr : benefit.en}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <Button
+                    className={`w-full ${
+                      isGold
+                        ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
+                        : isSilver
+                          ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
+                          : ''
+                    }`}
+                    variant={isStandard ? 'outline' : 'default'}
+                    onClick={handleListSpotClick}
+                    data-testid={`button-choose-plan-${plan.id}`}
+                  >
+                    {t.pricingChoosePlan}
+                  </Button>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -650,6 +818,47 @@ export default function Landing() {
             <Zap className="w-5 h-5 mr-2" />
             {t.listSpotButton}
           </Button>
+        </div>
+      </div>
+
+      {/* Contact Section */}
+      <div id="kontakt" className="py-20 md:py-24 px-6 scroll-mt-16">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-4xl font-bold text-center mb-4 text-foreground" data-testid="text-contact-title">
+            {t.contactTitle}
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            {t.contactSubtitle}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+                <Mail className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-semibold text-card-foreground mb-2">{t.contactEmail}</h3>
+              <a href="mailto:info@cardrop.rs" className="text-accent text-sm" data-testid="link-contact-email">
+                info@cardrop.rs
+              </a>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+                <Phone className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-semibold text-card-foreground mb-2">{t.contactPhone}</h3>
+              <a href="tel:+381601234567" className="text-accent text-sm" data-testid="link-contact-phone">
+                +381 60 123 4567
+              </a>
+            </Card>
+            <Card className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-semibold text-card-foreground mb-2">{t.contactAddress}</h3>
+              <p className="text-muted-foreground text-sm" data-testid="text-contact-address">
+                {t.contactAddressValue}
+              </p>
+            </Card>
+          </div>
         </div>
       </div>
 
