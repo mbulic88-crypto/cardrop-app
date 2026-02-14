@@ -759,23 +759,24 @@ export default function AddSale() {
 
               {uploadedImages.length < getMaxPhotos(selectedPlan) && (
                 <ObjectUploader
-                  maxNumberOfFiles={getMaxPhotos(selectedPlan) - uploadedImages.length}
+                  maxNumberOfFiles={1}
+                  maxFileSize={10485760}
                   onGetUploadParameters={async () => {
-                    const result = await apiRequest("POST", "/api/object-storage/upload-url", {
-                      prefix: `.private/sales/${listingId}`,
-                    });
+                    const response = await apiRequest("POST", "/api/objects/upload", {});
                     return {
                       method: "PUT" as const,
-                      url: result.url,
+                      url: response.uploadURL,
                     };
                   }}
-                  onComplete={(result) => {
-                    const newUrls = (result.successful?.map((file) => file.uploadURL).filter(Boolean) as string[]) || [];
-                    const allUrls = [...uploadedImages, ...newUrls];
-                    setUploadedImages(allUrls);
-                    apiRequest("PATCH", `/api/sales-listings/${listingId}`, {
-                      imageUrls: allUrls,
-                    }).catch(console.error);
+                  onComplete={async (result) => {
+                    const uploadURL = result.successful?.[0]?.uploadURL;
+                    if (uploadURL && listingId) {
+                      const allUrls = [...uploadedImages, uploadURL];
+                      setUploadedImages(allUrls);
+                      await apiRequest("PATCH", `/api/sales-listings/${listingId}`, {
+                        imageUrls: allUrls,
+                      });
+                    }
                   }}
                 >
                   <Upload className="w-4 h-4 mr-2" />

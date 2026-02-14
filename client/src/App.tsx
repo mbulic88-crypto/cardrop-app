@@ -18,6 +18,7 @@ import EditSpot from "@/pages/edit-spot";
 import Admin from "@/pages/admin";
 import SelectCategory from "@/pages/select-category";
 import AddSale from "@/pages/add-sale";
+import SaleDetail from "@/pages/sale-detail";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/home" component={Home} />
       <Route path="/spot/:id" component={SpotDetail} />
+      <Route path="/sale/:id" component={SaleDetail} />
       <Route path="/select-category" component={SelectCategory} />
       <Route path="/add-spot" component={AddSpot} />
       <Route path="/edit-spot/:id" component={EditSpot} />
