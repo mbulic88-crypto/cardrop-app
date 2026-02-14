@@ -703,8 +703,14 @@ export default function Landing() {
                       {t.listSpotButton}
                     </Button>
                     <Button
-                      variant="outline"
-                      className="w-full"
+                      className={`w-full ${
+                        isGold
+                          ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
+                          : isSilver
+                            ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
+                            : ''
+                      }`}
+                      variant={isStandard ? 'outline' : 'default'}
                       onClick={handleSellClick}
                       data-testid={`button-sell-plan-${plan.id}`}
                     >
