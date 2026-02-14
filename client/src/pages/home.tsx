@@ -135,6 +135,42 @@ export default function Home() {
     return bTier - aTier;
   });
 
+  type CombinedListing = 
+    | { type: 'rental'; data: ParkingSpot }
+    | { type: 'sale'; data: SalesListing };
+
+  const combinedListings = useMemo(() => {
+    const tierOrder: Record<string, number> = { gold: 3, silver: 2, standard: 1 };
+
+    let rentalItems: CombinedListing[] = [];
+    let saleItems: CombinedListing[] = [];
+
+    if (listingMode === "all" || listingMode === "rental") {
+      rentalItems = filteredSpots.map(spot => ({ type: 'rental' as const, data: spot }));
+    }
+    if (listingMode === "all" || listingMode === "sale") {
+      saleItems = filteredSales.map(listing => ({ type: 'sale' as const, data: listing }));
+    }
+
+    const all = [...rentalItems, ...saleItems];
+
+    const hasActiveFilters = searchLocation || selectedCity !== "Svi Gradovi" || 
+      filterEvCharging || filterCamera || filter24Hours || spotType !== "all" ||
+      priceRange[0] > 0 || priceRange[1] < 500;
+
+    all.sort((a, b) => {
+      const aTier = tierOrder[a.data.subscriptionType || 'standard'] || 1;
+      const bTier = tierOrder[b.data.subscriptionType || 'standard'] || 1;
+      if (aTier !== bTier) return bTier - aTier;
+
+      const aTime = a.data.createdAt ? new Date(a.data.createdAt).getTime() : 0;
+      const bTime = b.data.createdAt ? new Date(b.data.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return all;
+  }, [filteredSpots, filteredSales, listingMode, searchLocation, selectedCity, filterEvCharging, filterCamera, filter24Hours, spotType, priceRange]);
+
   const handleProtectedAction = (path: string) => {
     if (isAuthenticated) {
       window.location.href = path;
@@ -462,95 +498,7 @@ export default function Home() {
           <MapView spots={listingMode === "sale" ? [] : filteredSpots} />
         ) : (
           <>
-            {/* Sales Listings */}
-            {(listingMode === "all" || listingMode === "sale") && filteredSales.length > 0 && (
-              <div className={listingMode === "all" ? "mb-8" : ""}>
-                {listingMode === "all" && (
-                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Tag className="w-5 h-5 text-accent" />
-                    Prodaja
-                  </h2>
-                )}
-                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredSales.map((listing) => (
-                    <Link key={listing.id} href={`/sale/${listing.id}`}>
-                      <Card
-                        className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
-                          listing.subscriptionType === 'gold'
-                            ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
-                            : listing.subscriptionType === 'silver'
-                              ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
-                              : ''
-                        }`}
-                        data-testid={`card-sale-${listing.id}`}
-                      >
-                        {listing.subscriptionType === 'gold' && (
-                          <div className="absolute top-2 left-2 z-20">
-                            <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Top
-                            </Badge>
-                          </div>
-                        )}
-                        {listing.subscriptionType === 'silver' && (
-                          <div className="absolute top-2 left-2 z-20">
-                            <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Istaknuto
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="aspect-video bg-muted relative">
-                          {listing.imageUrls && listing.imageUrls.length > 0 ? (
-                            <img src={listing.imageUrls[0]} alt={listing.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ShoppingBag className="w-12 h-12 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2 z-10">
-                            <Badge className="bg-orange-500/90 text-white border-0">
-                              Prodaja
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="p-3">
-                          <h3 className="font-semibold text-base mb-2 text-card-foreground line-clamp-1">
-                            {listing.title}
-                          </h3>
-                          <div className="flex items-center text-muted-foreground mb-3">
-                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="text-xs line-clamp-1">{listing.address}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className={`text-xl font-bold ${listing.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : listing.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
-                                {parseFloat(listing.price).toLocaleString()}
-                              </span>
-                              <span className="text-muted-foreground text-xs ml-1">EUR</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {listing.area}m²
-                            </Badge>
-                          </div>
-                        </div>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Rental Parking Spots */}
-            {(listingMode === "all" || listingMode === "rental") && (
-              <>
-                {listingMode === "all" && filteredSales.length > 0 && (
-                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <PlusCircle className="w-5 h-5 text-accent" />
-                    Iznajmljivanje
-                  </h2>
-                )}
-            {isLoading ? (
+            {(isLoading || isLoadingSales) ? (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <Card key={i} className="p-4 animate-pulse">
@@ -560,11 +508,10 @@ export default function Home() {
                   </Card>
                 ))}
               </div>
-            ) : filteredSpots.length === 0 ? (
+            ) : combinedListings.length === 0 ? (
               <>
                 {geocodedLocation && nearbySpots.length > 0 ? (
                   <div className="space-y-6">
-                    {/* Message */}
                     <Card className="p-6 text-center bg-muted/30">
                       <MapPin className="w-12 h-12 text-accent mx-auto mb-4" />
                       <h3 className="text-xl font-semibold mb-2 text-card-foreground">
@@ -575,13 +522,11 @@ export default function Home() {
                       </p>
                     </Card>
 
-                    {/* Map with nearby spots */}
                     <NearbyParkingMap
                       searchedLocation={geocodedLocation}
                       nearbySpots={nearbySpots}
                     />
 
-                    {/* Nearby spots cards */}
                     <div>
                       <h3 className="text-lg font-semibold mb-4 text-foreground">
                         Najbliža Parking Mesta
@@ -636,10 +581,9 @@ export default function Home() {
                                 )}
                                 <div className="absolute top-2 right-2 z-10">
                                   <Badge className="bg-accent/90 text-accent-foreground border-0">
-                                    {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
+                                    Iznajmljivanje
                                   </Badge>
                                 </div>
-                                {/* Distance badge */}
                                 <div className="absolute bottom-2 left-2 z-10">
                                   <Badge className="bg-card/90 text-card-foreground border border-card-border">
                                     ~{spot.distance.toFixed(1)} km
@@ -647,7 +591,6 @@ export default function Home() {
                                 </div>
                               </div>
 
-                              {/* Content */}
                               <div className="p-3">
                                 <h3 className="font-semibold text-base mb-2 text-card-foreground">
                                   {spot.title}
@@ -656,8 +599,6 @@ export default function Home() {
                                   <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
                                   <span className="text-xs line-clamp-1">{spot.address}</span>
                                 </div>
-
-                                {/* Features */}
                                 <div className="flex flex-wrap gap-1 mb-3">
                                   {spot.hasEvCharging && (
                                     <Badge variant="outline" className="text-xs">
@@ -672,8 +613,6 @@ export default function Home() {
                                     </Badge>
                                   )}
                                 </div>
-
-                                {/* Price */}
                                 <div className="flex items-center justify-between">
                                   <div>
                                     <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
@@ -705,104 +644,171 @@ export default function Home() {
               </>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredSpots.map((spot) => (
-                  <Link key={spot.id} href={`/spot/${spot.id}`}>
-                    <Card 
-                      className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
-                        spot.subscriptionType === 'gold'
-                          ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
-                          : spot.subscriptionType === 'silver'
-                            ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                {combinedListings.map((item) => {
+                  if (item.type === 'sale') {
+                    const listing = item.data as SalesListing;
+                    return (
+                      <Link key={`sale-${listing.id}`} href={`/sale/${listing.id}`}>
+                        <Card
+                          className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
+                            listing.subscriptionType === 'gold'
+                              ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                              : listing.subscriptionType === 'silver'
+                                ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                : ''
+                          }`}
+                          data-testid={`card-sale-${listing.id}`}
+                        >
+                          {listing.subscriptionType === 'gold' && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                Top
+                              </Badge>
+                            </div>
+                          )}
+                          {listing.subscriptionType === 'silver' && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                Istaknuto
+                              </Badge>
+                            </div>
+                          )}
+                          <div className="aspect-video bg-muted relative">
+                            {listing.imageUrls && listing.imageUrls.length > 0 ? (
+                              <img src={listing.imageUrls[0]} alt={listing.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 z-10">
+                              <Badge className="bg-orange-500/90 text-white border-0">
+                                Prodaja
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <h3 className="font-semibold text-base mb-2 text-card-foreground line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          <div className="flex items-center text-muted-foreground mb-3">
+                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="text-xs line-clamp-1">{listing.address}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className={`text-xl font-bold ${listing.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : listing.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                                {parseFloat(listing.price).toLocaleString()}
+                              </span>
+                              <span className="text-muted-foreground text-xs ml-1">EUR</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {listing.area}m²
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                    );
+                  } else {
+                    const spot = item.data as ParkingSpot;
+                    return (
+                      <Link key={`rental-${spot.id}`} href={`/spot/${spot.id}`}>
+                        <Card 
+                          className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
+                            spot.subscriptionType === 'gold'
+                              ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                              : spot.subscriptionType === 'silver'
+                                ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                : ''
+                          }`} 
+                          data-testid={`card-spot-${spot.id}`}
+                        >
+                          {spot.subscriptionType === 'gold' && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                Top lokacija
+                              </Badge>
+                            </div>
+                          )}
+                          {spot.subscriptionType === 'silver' && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                Istaknuto
+                              </Badge>
+                            </div>
+                          )}
+                          
+                          <div className={`aspect-video bg-muted relative ${
+                            spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
+                            : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
                             : ''
-                      }`} 
-                      data-testid={`card-spot-${spot.id}`}
-                    >
-                      {spot.subscriptionType === 'gold' && (
-                        <div className="absolute top-2 left-2 z-20">
-                          <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            Top lokacija
-                          </Badge>
-                        </div>
-                      )}
-                      {spot.subscriptionType === 'silver' && (
-                        <div className="absolute top-2 left-2 z-20">
-                          <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            Istaknuto
-                          </Badge>
-                        </div>
-                      )}
-                      
-                      <div className={`aspect-video bg-muted relative ${
-                        spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
-                        : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
-                        : ''
-                      }`}>
-                        {spot.latitude && spot.longitude ? (
-                          <StaticMapImage
-                            latitude={spot.latitude}
-                            longitude={spot.longitude}
-                            width={600}
-                            height={400}
-                            zoom={14}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <MapPin className="w-12 h-12 text-muted-foreground" />
+                          }`}>
+                            {spot.latitude && spot.longitude ? (
+                              <StaticMapImage
+                                latitude={spot.latitude}
+                                longitude={spot.longitude}
+                                width={600}
+                                height={400}
+                                zoom={14}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <MapPin className="w-12 h-12 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 z-10">
+                              <Badge className="bg-accent/90 text-accent-foreground border-0">
+                                Iznajmljivanje
+                              </Badge>
+                            </div>
                           </div>
-                        )}
-                        <div className="absolute top-2 right-2 z-10">
-                          <Badge className="bg-accent/90 text-accent-foreground border-0">
-                            {spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Nepokriveno"}
-                          </Badge>
-                        </div>
-                      </div>
 
-                      {/* Content */}
-                      <div className="p-3">
-                        <h3 className="font-semibold text-base mb-2 text-card-foreground">
-                          {spot.title}
-                        </h3>
-                        <div className="flex items-center text-muted-foreground mb-3">
-                          <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                          <span className="text-xs line-clamp-1">{spot.address}</span>
-                        </div>
+                          <div className="p-3">
+                            <h3 className="font-semibold text-base mb-2 text-card-foreground">
+                              {spot.title}
+                            </h3>
+                            <div className="flex items-center text-muted-foreground mb-3">
+                              <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                              <span className="text-xs line-clamp-1">{spot.address}</span>
+                            </div>
 
-                        {/* Features */}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {spot.hasEvCharging && (
-                            <Badge variant="outline" className="text-xs">
-                              <Zap className="w-3 h-3 mr-1" />
-                              EV
-                            </Badge>
-                          )}
-                          {spot.hasSecurityCamera && (
-                            <Badge variant="outline" className="text-xs">
-                              <Camera className="w-3 h-3 mr-1" />
-                              Kamera
-                            </Badge>
-                          )}
-                        </div>
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {spot.hasEvCharging && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Zap className="w-3 h-3 mr-1" />
+                                  EV
+                                </Badge>
+                              )}
+                              {spot.hasSecurityCamera && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Camera className="w-3 h-3 mr-1" />
+                                  Kamera
+                                </Badge>
+                              )}
+                            </div>
 
-                        {/* Price */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
-                              {spot.pricePerHour}
-                            </span>
-                            <span className="text-muted-foreground text-xs ml-1">
-                              {spot.currency}/sat
-                            </span>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                                  {spot.pricePerHour}
+                                </span>
+                                <span className="text-muted-foreground text-xs ml-1">
+                                  {spot.currency}/sat
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                        </Card>
+                      </Link>
+                    );
+                  }
+                })}
               </div>
-            )}
-              </>
             )}
           </>
         )}
