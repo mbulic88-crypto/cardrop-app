@@ -1,6 +1,5 @@
-const CACHE_NAME = 'parkin-v1';
+const CACHE_NAME = 'parkin-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg'
@@ -15,7 +14,6 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Push notification handler
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -39,7 +37,6 @@ self.addEventListener('push', (event) => {
   }
 });
 
-// Notification click handler
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -87,21 +84,19 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/') || new Response('Offline', { status: 503 });
+      })
+    );
+    return;
+  }
   
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        fetch(event.request).then((response) => {
-          if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, response);
-            });
-          }
-        });
-        return cachedResponse;
-      }
-      
-      return fetch(event.request).then((response) => {
+      const fetchPromise = fetch(event.request).then((response) => {
         if (response.ok && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -110,6 +105,8 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
+      
+      return cachedResponse || fetchPromise;
     })
   );
 });
