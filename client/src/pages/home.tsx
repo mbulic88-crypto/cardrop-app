@@ -8,9 +8,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search, SlidersHorizontal, X, Calendar, Clock, Zap, Camera, Shield, Home as HomeIcon, Globe, Sparkles } from "lucide-react";
+import { MapPin, Search, X, Calendar, Clock, Zap, Camera, Sparkles, Menu, LogIn, LayoutDashboard, Tag, PlusCircle, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import type { ParkingSpot } from "@shared/schema";
+import type { ParkingSpot, SalesListing } from "@shared/schema";
 import { Link } from "wouter";
 import { MapView } from "@/components/MapView";
 import { StaticMapImage } from "@/components/StaticMapImage";
@@ -42,7 +42,6 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCity, setSelectedCity] = useState("Svi Gradovi");
-  const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 500]);
   const [spotType, setSpotType] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -50,6 +49,8 @@ export default function Home() {
   const [nearbySpots, setNearbySpots] = useState<Array<ParkingSpot & { distance: number }>>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [loginRedirectPath, setLoginRedirectPath] = useState("/home");
+  const [showMenu, setShowMenu] = useState(false);
+  const [listingMode, setListingMode] = useState<"all" | "rental" | "sale">("all");
   
   // Feature filters
   const [filterEvCharging, setFilterEvCharging] = useState(false);
@@ -58,6 +59,10 @@ export default function Home() {
 
   const { data: spots = [], isLoading } = useQuery<ParkingSpot[]>({
     queryKey: ["/api/parking-spots"],
+  });
+
+  const { data: salesListings = [], isLoading: isLoadingSales } = useQuery<SalesListing[]>({
+    queryKey: ["/api/sales-listings"],
   });
 
   // Dynamic cities based on spots
@@ -106,6 +111,23 @@ export default function Home() {
     
     return matchesLocation && matchesCity && matchesPrice && matchesType && 
            matchesEvCharging && matchesCamera && matches24Hours && spot.isActive;
+  }).sort((a, b) => {
+    const tierOrder = { gold: 3, silver: 2, standard: 1 };
+    const aTier = tierOrder[(a.subscriptionType as keyof typeof tierOrder)] || 1;
+    const bTier = tierOrder[(b.subscriptionType as keyof typeof tierOrder)] || 1;
+    return bTier - aTier;
+  });
+
+  const filteredSales = salesListings.filter((listing) => {
+    const matchesLocation = !searchLocation ||
+      listing.address.toLowerCase().includes(searchLocation.toLowerCase()) ||
+      listing.title.toLowerCase().includes(searchLocation.toLowerCase());
+
+    const matchesCity = selectedCity === "Svi Gradovi" ||
+      listing.address.toLowerCase().includes(selectedCity.toLowerCase()) ||
+      (listing.city && listing.city.toLowerCase() === selectedCity.toLowerCase());
+
+    return matchesLocation && matchesCity && listing.isActive;
   }).sort((a, b) => {
     const tierOrder = { gold: 3, silver: 2, standard: 1 };
     const aTier = tierOrder[(a.subscriptionType as keyof typeof tierOrder)] || 1;
@@ -176,131 +198,142 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
-          {/* Top Row: Logo, City Filter, Filters Button */}
-          <div className="flex items-center justify-between gap-1 xs:gap-2 mb-3">
-            <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
-              <img src={parkInLogo} alt="CarDrop" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
-              <span className="text-xl font-bold text-foreground hidden sm:inline">CarDrop</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0" data-testid="link-landing">
+              <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
+              <span className="text-xl font-bold text-foreground">CarDrop</span>
             </Link>
 
-            <div className="flex items-center gap-0.5 xs:gap-1 sm:gap-2">
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-[75px] xs:w-[95px] sm:w-[140px] md:w-[180px] text-xs xs:text-sm px-1.5 xs:px-3" data-testid="select-city-filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCities.map((city) => (
-                    <SelectItem key={city} value={city}>
-                      {city}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowFilters(!showFilters)}
-                data-testid="button-toggle-filters"
-                className="h-8 w-8 xs:h-9 xs:w-9"
-              >
-                <SlidersHorizontal className="w-4 h-4 xs:w-5 xs:h-5" />
-              </Button>
-
-              <Link href="/" className="hidden xs:inline-block">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3"
-                  data-testid="button-home"
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+              <Input
+                placeholder="Pretražite po lokaciji..."
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                className="pl-9 pr-9 h-10"
+                data-testid="input-search-location"
+              />
+              {searchLocation && (
+                <button
+                  onClick={() => setSearchLocation("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                  data-testid="button-clear-search"
                 >
-                  <HomeIcon className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Početna</span>
-                </Button>
-              </Link>
-
-              {isAuthenticated ? (
-                <Link href="/dashboard">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3"
-                    data-testid="button-account"
-                  >
-                    <HomeIcon className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Nalog</span>
-                  </Button>
-                </Link>
-              ) : null}
-              <ThemeToggle />
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowMenu(!showMenu)}
+              data-testid="button-hamburger-menu"
+            >
+              {showMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
           </div>
+        </div>
+      </header>
 
-          {/* Search Bar Row */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-            <Input
-              placeholder="Pretražite po lokaciji ili adresi..."
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="pl-10 pr-10 h-14 !text-lg"
-              data-testid="input-search-location"
-            />
-            {searchLocation && (
-              <button
-                onClick={() => setSearchLocation("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
-                data-testid="button-clear-search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+      {/* Slide-out Menu Panel */}
+      {showMenu && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowMenu(false)}
+            data-testid="menu-backdrop"
+          />
+          <div className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-card border-l border-card-border shadow-xl z-50 overflow-y-auto" data-testid="menu-panel">
+            <div className="p-4 space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-foreground">Meni</h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowMenu(false)} data-testid="button-close-menu">
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 p-4 bg-muted/20 rounded-lg space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-foreground">
-                    Tip Parking Mesta
-                  </label>
-                  <Select value={spotType} onValueChange={setSpotType}>
-                    <SelectTrigger data-testid="select-spot-type">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Svi Tipovi</SelectItem>
-                      <SelectItem value="covered">Pokriveno</SelectItem>
-                      <SelectItem value="uncovered">Nepokriveno</SelectItem>
-                      <SelectItem value="garage">Garaža</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Listing Mode Toggle */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Tip Oglasa</label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={listingMode === "rental" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setListingMode(listingMode === "rental" ? "all" : "rental")}
+                    data-testid="button-filter-rental"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Iznajmljivanje
+                  </Button>
+                  <Button
+                    variant={listingMode === "sale" ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={() => setListingMode(listingMode === "sale" ? "all" : "sale")}
+                    data-testid="button-filter-sale"
+                  >
+                    <Tag className="w-4 h-4 mr-2" />
+                    Prodaja
+                  </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {listingMode === "all" ? "Prikazuju se svi oglasi" : listingMode === "rental" ? "Samo iznajmljivanje" : "Samo prodaja"}
+                </p>
+              </div>
 
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium mb-2 block text-foreground">
-                    Cena po Satu: {priceRange[0]} - {priceRange[1]} RSD
-                  </label>
-                  <Slider
-                    min={0}
-                    max={500}
-                    step={10}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="mt-2"
-                    data-testid="slider-price-range"
-                  />
-                </div>
+              {/* City Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Grad</label>
+                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                  <SelectTrigger data-testid="select-city-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCities.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Spot Type Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Tip Parking Mesta</label>
+                <Select value={spotType} onValueChange={setSpotType}>
+                  <SelectTrigger data-testid="select-spot-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Svi Tipovi</SelectItem>
+                    <SelectItem value="covered">Pokriveno</SelectItem>
+                    <SelectItem value="uncovered">Nepokriveno</SelectItem>
+                    <SelectItem value="garage">Garaža</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Price Range */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">
+                  Cena: {priceRange[0]} - {priceRange[1]} RSD
+                </label>
+                <Slider
+                  min={0}
+                  max={500}
+                  step={10}
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  data-testid="slider-price-range"
+                />
               </div>
 
               {/* Feature Filters */}
-              <div className="pt-4 border-t border-border">
-                <label className="text-sm font-medium mb-3 block text-foreground">
-                  Dodatne Opcije
-                </label>
-                <div className="flex flex-wrap gap-4">
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground block">Dodatne Opcije</label>
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Switch
                       id="filter-ev"
@@ -339,40 +372,69 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              <hr className="border-border" />
+
+              {/* Navigation & Account */}
+              <div className="space-y-2">
+                {isAuthenticated ? (
+                  <>
+                    <Link href="/dashboard" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="button-account">
+                        <LayoutDashboard className="w-4 h-4 mr-2" />
+                        Moj Nalog
+                      </Button>
+                    </Link>
+                    <Link href="/my-bookings" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="link-my-bookings">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Moje Rezervacije
+                      </Button>
+                    </Link>
+                    <Link href="/add-spot" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="link-add-spot">
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Dodaj Parking
+                      </Button>
+                    </Link>
+                    <Link href="/add-sale" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="link-add-sale">
+                        <Tag className="w-4 h-4 mr-2" />
+                        Oglasi Prodaju
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => { setShowMenu(false); setShowLoginDialog(true); }}
+                    data-testid="button-login"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Prijavite se
+                  </Button>
+                )}
+              </div>
+
+              {/* Theme Toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground">Tema</span>
+                <ThemeToggle />
+              </div>
             </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </>
+      )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Quick Actions */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              Izaberite Parking
-            </h1>
-            <p className="text-muted-foreground">
-              Pronađeno {filteredSpots.length} parking {filteredSpots.length === 1 ? "mesto" : "mesta"}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => handleProtectedAction("/my-bookings")}
-              data-testid="link-my-bookings"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Moje Rezervacije
-            </Button>
-            <Button 
-              onClick={() => handleProtectedAction("/add-spot")}
-              data-testid="link-add-spot"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Dodaj Mesto
-            </Button>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1" data-testid="text-page-title">
+            {listingMode === "sale" ? "Prodaja Parkinga" : listingMode === "rental" ? "Iznajmljivanje Parkinga" : "Svi Parkinzi"}
+          </h1>
+          <p className="text-muted-foreground" data-testid="text-results-count">
+            Pronađeno {listingMode === "sale" ? filteredSales.length : listingMode === "rental" ? filteredSpots.length : (filteredSpots.length + filteredSales.length)} {listingMode === "sale" ? "oglasa" : "parking mesta"}
+          </p>
         </div>
 
         {/* View Mode Toggle */}
@@ -397,10 +459,97 @@ export default function Home() {
 
         {/* Map or List View */}
         {viewMode === "map" ? (
-          <MapView spots={filteredSpots} />
+          <MapView spots={listingMode === "sale" ? [] : filteredSpots} />
         ) : (
           <>
-            {/* Parking Spots Grid */}
+            {/* Sales Listings */}
+            {(listingMode === "all" || listingMode === "sale") && filteredSales.length > 0 && (
+              <div className={listingMode === "all" ? "mb-8" : ""}>
+                {listingMode === "all" && (
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-accent" />
+                    Prodaja
+                  </h2>
+                )}
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredSales.map((listing) => (
+                    <Link key={listing.id} href={`/sale/${listing.id}`}>
+                      <Card
+                        className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
+                          listing.subscriptionType === 'gold'
+                            ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                            : listing.subscriptionType === 'silver'
+                              ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                              : ''
+                        }`}
+                        data-testid={`card-sale-${listing.id}`}
+                      >
+                        {listing.subscriptionType === 'gold' && (
+                          <div className="absolute top-2 left-2 z-20">
+                            <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              Top
+                            </Badge>
+                          </div>
+                        )}
+                        {listing.subscriptionType === 'silver' && (
+                          <div className="absolute top-2 left-2 z-20">
+                            <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              Istaknuto
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="aspect-video bg-muted relative">
+                          {listing.imageUrls && listing.imageUrls.length > 0 ? (
+                            <img src={listing.imageUrls[0]} alt={listing.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute top-2 right-2 z-10">
+                            <Badge className="bg-orange-500/90 text-white border-0">
+                              Prodaja
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="p-3">
+                          <h3 className="font-semibold text-base mb-2 text-card-foreground line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          <div className="flex items-center text-muted-foreground mb-3">
+                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="text-xs line-clamp-1">{listing.address}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className={`text-xl font-bold ${listing.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : listing.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                                {parseFloat(listing.price).toLocaleString()}
+                              </span>
+                              <span className="text-muted-foreground text-xs ml-1">EUR</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {listing.area}m²
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Rental Parking Spots */}
+            {(listingMode === "all" || listingMode === "rental") && (
+              <>
+                {listingMode === "all" && filteredSales.length > 0 && (
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <PlusCircle className="w-5 h-5 text-accent" />
+                    Iznajmljivanje
+                  </h2>
+                )}
             {isLoading ? (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -652,6 +801,8 @@ export default function Home() {
                   </Link>
                 ))}
               </div>
+            )}
+              </>
             )}
           </>
         )}
