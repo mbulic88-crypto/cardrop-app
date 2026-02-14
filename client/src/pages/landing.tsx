@@ -5,6 +5,13 @@ import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, T
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import testimonialMarko from "@assets/images/testimonial-marko.jpg";
+import testimonialAna from "@assets/images/testimonial-ana.jpg";
+import testimonialNenad from "@assets/images/testimonial-nenad.jpg";
+import cityBeogradImg from "@assets/images/city-beograd.jpg";
+import cityNoviSadImg from "@assets/images/city-novisad.jpg";
+import cityNisImg from "@assets/images/city-nis.jpg";
+import cityKragujevacImg from "@assets/images/city-kragujevac.jpg";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -679,20 +686,32 @@ export default function Landing() {
                     </ul>
                   </div>
 
-                  <Button
-                    className={`w-full ${
-                      isGold
-                        ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
-                        : isSilver
-                          ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
-                          : ''
-                    }`}
-                    variant={isStandard ? 'outline' : 'default'}
-                    onClick={handleListSpotClick}
-                    data-testid={`button-choose-plan-${plan.id}`}
-                  >
-                    {t.pricingChoosePlan}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className={`w-full ${
+                        isGold
+                          ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
+                          : isSilver
+                            ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
+                            : ''
+                      }`}
+                      variant={isStandard ? 'outline' : 'default'}
+                      onClick={handleListSpotClick}
+                      data-testid={`button-rent-plan-${plan.id}`}
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      {t.listSpotButton}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleSellClick}
+                      data-testid={`button-sell-plan-${plan.id}`}
+                    >
+                      <Tag className="w-4 h-4 mr-2" />
+                      {t.sellButton}
+                    </Button>
+                  </div>
                 </Card>
               );
             })}
@@ -708,9 +727,12 @@ export default function Landing() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-xl font-bold text-accent">M</span>
-              </div>
+              <img
+                src={testimonialMarko}
+                alt="Marko P."
+                className="w-12 h-12 rounded-full object-cover"
+                data-testid="img-testimonial-marko"
+              />
               <div>
                 <p className="font-semibold text-card-foreground">Marko P.</p>
                 <p className="text-sm text-muted-foreground">Beograd</p>
@@ -725,9 +747,12 @@ export default function Landing() {
 
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-xl font-bold text-accent">A</span>
-              </div>
+              <img
+                src={testimonialAna}
+                alt="Ana S."
+                className="w-12 h-12 rounded-full object-cover"
+                data-testid="img-testimonial-ana"
+              />
               <div>
                 <p className="font-semibold text-card-foreground">Ana S.</p>
                 <p className="text-sm text-muted-foreground">Novi Sad</p>
@@ -742,9 +767,12 @@ export default function Landing() {
 
           <Card className="p-6 hover-elevate">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-xl font-bold text-accent">N</span>
-              </div>
+              <img
+                src={testimonialNenad}
+                alt="Nenad K."
+                className="w-12 h-12 rounded-full object-cover"
+                data-testid="img-testimonial-nenad"
+              />
               <div>
                 <p className="font-semibold text-card-foreground">Nenad K.</p>
                 <p className="text-sm text-muted-foreground">Niš</p>
@@ -766,16 +794,25 @@ export default function Landing() {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {[
-            { name: "Beograd", nameEn: "Belgrade" },
-            { name: "Novi Sad", nameEn: "Novi Sad" },
-            { name: "Niš", nameEn: "Niš" },
-            { name: "Kragujevac", nameEn: "Kragujevac" }
+            { name: "Beograd", nameEn: "Belgrade", image: cityBeogradImg },
+            { name: "Novi Sad", nameEn: "Novi Sad", image: cityNoviSadImg },
+            { name: "Niš", nameEn: "Niš", image: cityNisImg },
+            { name: "Kragujevac", nameEn: "Kragujevac", image: cityKragujevacImg }
           ].map((city) => (
             <Link key={city.name} href={`/home?search=${city.name}`}>
-              <Card className="p-6 hover-elevate cursor-pointer text-center">
-                <h3 className="text-2xl font-semibold text-card-foreground">
-                  {language === "sr" ? city.name : city.nameEn}
-                </h3>
+              <Card className="hover-elevate cursor-pointer overflow-hidden">
+                <div className="relative h-32 md:h-40">
+                  <img
+                    src={city.image}
+                    alt={city.name}
+                    className="w-full h-full object-cover"
+                    data-testid={`img-city-${city.name.toLowerCase().replace(/\s/g, '-')}`}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <h3 className="absolute bottom-3 left-0 right-0 text-center text-xl md:text-2xl font-semibold text-white drop-shadow-lg">
+                    {language === "sr" ? city.name : city.nameEn}
+                  </h3>
+                </div>
               </Card>
             </Link>
           ))}
