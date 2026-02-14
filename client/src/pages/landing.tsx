@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, FileText, Tag } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star } from "lucide-react";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -10,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import { usePWA } from "@/hooks/use-pwa";
 import { useTheme } from "next-themes";
+import { PRICING_PLANS } from "@shared/pricing";
 
 const translations = {
   sr: {
@@ -53,12 +55,29 @@ const translations = {
     categoryCarLot: "Auto Placevi",
     menuFindParking: "Pronađi Parking",
     menuListParking: "Iznajmi Parking",
+    menuSellListing: "Oglasi Prodaju",
     menuMyAccount: "Moj Nalog",
     menuLogin: "Prijavi Se",
-    menuTerms: "Uslovi Korišćenja",
+    menuWhoIsThisFor: "Za Koga Je",
+    menuHowItWorks: "Kako Funkcioniše",
+    menuPricing: "Cenovnik",
+    menuContact: "Kontakt",
     menuLanguage: "English",
     menuDarkMode: "Tamni Režim",
     menuLightMode: "Svetli Režim",
+    pricingTitle: "Cenovnik",
+    pricingSubtitle: "Izaberite plan koji vam najviše odgovara. Svi planovi važe za sve kategorije parkinga i prodajne oglase.",
+    pricingPerListing: "po oglasu",
+    pricingFree: "Besplatno",
+    pricingChoosePlan: "Izaberi Plan",
+    pricingMostPopular: "Najpopularniji",
+    pricingBestValue: "Najbolja Vrednost",
+    contactTitle: "Kontaktirajte Nas",
+    contactSubtitle: "Imate pitanje ili predlog? Slobodno nas kontaktirajte.",
+    contactEmail: "Email",
+    contactPhone: "Telefon",
+    contactAddress: "Adresa",
+    contactAddressValue: "Beograd, Srbija",
   },
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
@@ -101,12 +120,29 @@ const translations = {
     categoryCarLot: "Car Lots",
     menuFindParking: "Find Parking",
     menuListParking: "List Parking",
+    menuSellListing: "List for Sale",
     menuMyAccount: "My Account",
     menuLogin: "Log In",
-    menuTerms: "Terms of Use",
+    menuWhoIsThisFor: "Who Is This For",
+    menuHowItWorks: "How It Works",
+    menuPricing: "Pricing",
+    menuContact: "Contact",
     menuLanguage: "Srpski",
     menuDarkMode: "Dark Mode",
     menuLightMode: "Light Mode",
+    pricingTitle: "Pricing",
+    pricingSubtitle: "Choose the plan that suits you best. All plans apply to every parking category and sales listings.",
+    pricingPerListing: "per listing",
+    pricingFree: "Free",
+    pricingChoosePlan: "Choose Plan",
+    pricingMostPopular: "Most Popular",
+    pricingBestValue: "Best Value",
+    contactTitle: "Contact Us",
+    contactSubtitle: "Have a question or suggestion? Feel free to contact us.",
+    contactEmail: "Email",
+    contactPhone: "Phone",
+    contactAddress: "Address",
+    contactAddressValue: "Belgrade, Serbia",
   }
 };
 
