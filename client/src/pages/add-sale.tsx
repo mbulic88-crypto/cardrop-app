@@ -771,10 +771,13 @@ export default function AddSale() {
                   onComplete={async (result) => {
                     const uploadURL = result.successful?.[0]?.uploadURL;
                     if (uploadURL && listingId) {
-                      const allUrls = [...uploadedImages, uploadURL];
-                      setUploadedImages(allUrls);
-                      await apiRequest("PATCH", `/api/sales-listings/${listingId}`, {
-                        imageUrls: allUrls,
+                      const response = await apiRequest("PUT", `/api/sales-listings/${listingId}/images`, {
+                        imageURL: uploadURL,
+                      });
+                      setUploadedImages(response.imageUrls);
+                      toast({
+                        title: language === 'sr' ? 'Uspešno' : 'Success',
+                        description: language === 'sr' ? 'Slika je uspešno uploadovana' : 'Image uploaded successfully',
                       });
                     }
                   }}

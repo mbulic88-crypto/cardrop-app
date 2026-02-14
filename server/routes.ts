@@ -795,6 +795,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/sales-listings/:id/images", isAuthenticated, async (req: any, res) => {
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
+    }
+
+    const userId = req.user.claims.sub;
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+        req.body.imageURL,
+        {
+          owner: userId,
+          visibility: "public",
+        },
+      );
+
+      const listing = await storage.getSalesListing(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ error: "Sales listing not found" });
+      }
+
+      if (listing.sellerId !== userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const updatedImages = [...(listing.imageUrls || []), objectPath];
+      await storage.updateSalesListing(req.params.id, {
+        imageUrls: updatedImages,
+      });
+
+      res.status(200).json({
+        objectPath: objectPath,
+        imageUrls: updatedImages,
+      });
+    } catch (error) {
+      console.error("Error setting sales listing image:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   app.patch('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
