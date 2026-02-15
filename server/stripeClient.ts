@@ -1,17 +1,17 @@
 import Stripe from 'stripe';
 
 function getSecretKey(): string {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = process.env.CARDROP_SK;
   if (!key) {
-    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    throw new Error('CARDROP_SK environment variable is not set');
   }
   return key;
 }
 
 function getPublishableKeyFromEnv(): string {
-  const key = process.env.STRIPE_PUBLISHABLE_KEY;
+  const key = process.env.CARDROP_PK;
   if (!key) {
-    throw new Error('STRIPE_PUBLISHABLE_KEY environment variable is not set');
+    throw new Error('CARDROP_PK environment variable is not set');
   }
   return key;
 }
