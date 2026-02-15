@@ -56,6 +56,8 @@ export default function Home() {
   const [filterEvCharging, setFilterEvCharging] = useState(false);
   const [filterCamera, setFilterCamera] = useState(false);
   const [filter24Hours, setFilter24Hours] = useState(false);
+  const [filterTier, setFilterTier] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   const { data: spots = [], isLoading } = useQuery<ParkingSpot[]>({
     queryKey: ["/api/parking-spots"],
@@ -108,9 +110,16 @@ export default function Home() {
     const matchesEvCharging = !filterEvCharging || spot.hasEvCharging;
     const matchesCamera = !filterCamera || spot.hasSecurityCamera;
     const matches24Hours = !filter24Hours || spot.is24Hours;
+
+    const matchesTier = filterTier === "all" || 
+      (filterTier === "gold" && spot.subscriptionType === "gold") ||
+      (filterTier === "silver" && spot.subscriptionType === "silver") ||
+      (filterTier === "standard" && (!spot.subscriptionType || spot.subscriptionType === "standard" || spot.subscriptionType === "trial"));
+
+    const matchesCategory = filterCategory === "all" || spot.category === filterCategory;
     
     return matchesLocation && matchesCity && matchesPrice && matchesType && 
-           matchesEvCharging && matchesCamera && matches24Hours && spot.isActive;
+           matchesEvCharging && matchesCamera && matches24Hours && matchesTier && matchesCategory && spot.isActive;
   }).sort((a, b) => {
     const tierOrder = { gold: 3, silver: 2, standard: 1 };
     const aTier = tierOrder[(a.subscriptionType as keyof typeof tierOrder)] || 1;
@@ -156,6 +165,7 @@ export default function Home() {
 
     const hasActiveFilters = searchLocation || selectedCity !== "Svi Gradovi" || 
       filterEvCharging || filterCamera || filter24Hours || spotType !== "all" ||
+      filterTier !== "all" || filterCategory !== "all" ||
       priceRange[0] > 0 || priceRange[1] < 500;
 
     all.sort((a, b) => {
@@ -169,7 +179,7 @@ export default function Home() {
     });
 
     return all;
-  }, [filteredSpots, filteredSales, listingMode, searchLocation, selectedCity, filterEvCharging, filterCamera, filter24Hours, spotType, priceRange]);
+  }, [filteredSpots, filteredSales, listingMode, searchLocation, selectedCity, filterEvCharging, filterCamera, filter24Hours, spotType, priceRange, filterTier, filterCategory]);
 
   const handleProtectedAction = (path: string) => {
     if (isAuthenticated) {
@@ -347,6 +357,40 @@ export default function Home() {
                     <SelectItem value="covered">Pokriveno</SelectItem>
                     <SelectItem value="uncovered">Nepokriveno</SelectItem>
                     <SelectItem value="garage">Garaža</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tier Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Paket</label>
+                <Select value={filterTier} onValueChange={setFilterTier}>
+                  <SelectTrigger data-testid="select-tier-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Svi Paketi</SelectItem>
+                    <SelectItem value="gold">Gold</SelectItem>
+                    <SelectItem value="silver">Silver</SelectItem>
+                    <SelectItem value="standard">Standard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Kategorija</label>
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger data-testid="select-category-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Sve Kategorije</SelectItem>
+                    <SelectItem value="private">Privatni Parking</SelectItem>
+                    <SelectItem value="company">Kompanije</SelectItem>
+                    <SelectItem value="truck">Kamionski Parkovi</SelectItem>
+                    <SelectItem value="residential">Stambene Zajednice</SelectItem>
+                    <SelectItem value="carlot">Auto-Placevi</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -537,19 +581,17 @@ export default function Home() {
                             <Card 
                               className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                                 spot.subscriptionType === 'gold'
-                                  ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                                  ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                                   : spot.subscriptionType === 'silver'
-                                    ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                    ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                     : ''
                               }`}
                               data-testid={`card-nearby-spot-${spot.id}`}
                             >
-                              <div className={`aspect-video bg-muted relative ${
-                                spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
-                                : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
-                                : ''
-                              }`}>
-                                {spot.latitude && spot.longitude ? (
+                              <div className="aspect-video bg-muted relative">
+                                {spot.imageUrls && spot.imageUrls.length > 0 ? (
+                                  <img src={spot.imageUrls[0]} alt={spot.title} className="w-full h-full object-cover" />
+                                ) : spot.latitude && spot.longitude ? (
                                   <StaticMapImage
                                     latitude={spot.latitude}
                                     longitude={spot.longitude}
@@ -587,7 +629,11 @@ export default function Home() {
                               </div>
 
                               <div className="p-3">
-                                <h3 className="font-semibold text-base mb-2 text-card-foreground">
+                                <h3 className={`font-semibold text-base mb-2 ${
+                                  spot.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
+                                  : spot.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                                  : 'text-card-foreground'
+                                }`}>
                                   {spot.title}
                                 </h3>
                                 <div className="flex items-center text-muted-foreground mb-3">
@@ -647,9 +693,9 @@ export default function Home() {
                         <Card
                           className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                             listing.subscriptionType === 'gold'
-                              ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                              ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                               : listing.subscriptionType === 'silver'
-                                ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                 : ''
                           }`}
                           data-testid={`card-sale-${listing.id}`}
@@ -683,7 +729,11 @@ export default function Home() {
                             </div>
                           </div>
                         <div className="p-3">
-                          <h3 className="font-semibold text-base mb-2 text-card-foreground line-clamp-1">
+                          <h3 className={`font-semibold text-base mb-2 line-clamp-1 ${
+                            listing.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
+                            : listing.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                            : 'text-card-foreground'
+                          }`}>
                             {listing.title}
                           </h3>
                           <div className="flex items-center text-muted-foreground mb-3">
@@ -712,19 +762,17 @@ export default function Home() {
                         <Card 
                           className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                             spot.subscriptionType === 'gold'
-                              ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                              ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                               : spot.subscriptionType === 'silver'
-                                ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                                ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                 : ''
                           }`} 
                           data-testid={`card-spot-${spot.id}`}
                         >
-                          <div className={`aspect-video bg-muted relative ${
-                            spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
-                            : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
-                            : ''
-                          }`}>
-                            {spot.latitude && spot.longitude ? (
+                          <div className="aspect-video bg-muted relative">
+                            {spot.imageUrls && spot.imageUrls.length > 0 ? (
+                              <img src={spot.imageUrls[0]} alt={spot.title} className="w-full h-full object-cover" />
+                            ) : spot.latitude && spot.longitude ? (
                               <StaticMapImage
                                 latitude={spot.latitude}
                                 longitude={spot.longitude}
@@ -757,7 +805,11 @@ export default function Home() {
                           </div>
 
                           <div className="p-3">
-                            <h3 className="font-semibold text-base mb-2 text-card-foreground">
+                            <h3 className={`font-semibold text-base mb-2 ${
+                              spot.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
+                              : spot.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                              : 'text-card-foreground'
+                            }`}>
                               {spot.title}
                             </h3>
                             <div className="flex items-center text-muted-foreground mb-3">
