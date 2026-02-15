@@ -7,6 +7,7 @@ import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
@@ -121,19 +122,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const result = await db.execute(sql`
-        SELECT pr.id as price_id, pr.unit_amount
-        FROM stripe.products p
-        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-        WHERE p.active = true AND p.metadata->>'app' = 'cardrop' AND p.metadata->>'tier' = ${tier}
-        LIMIT 1
-      `);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Price not found for this tier. Please run the seed script first." });
+      const plan = getPlanById(tier as SubscriptionType);
+      if (!plan || !plan.stripePriceId) {
+        return res.status(404).json({ message: "Price not found for this tier" });
       }
 
-      const priceId = result.rows[0].price_id as string;
+      const priceId = plan.stripePriceId;
 
       const validatedData = insertParkingSpotSchema.parse(spotData);
 
@@ -241,19 +235,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const result = await db.execute(sql`
-        SELECT pr.id as price_id, pr.unit_amount
-        FROM stripe.products p
-        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
-        WHERE p.active = true AND p.metadata->>'app' = 'cardrop' AND p.metadata->>'tier' = ${tier}
-        LIMIT 1
-      `);
-
-      if (result.rows.length === 0) {
+      const plan = getPlanById(tier as SubscriptionType);
+      if (!plan || !plan.stripePriceId) {
         return res.status(404).json({ message: "Price not found for this tier" });
       }
 
-      const priceId = result.rows[0].price_id as string;
+      const priceId = plan.stripePriceId;
 
       const validatedData = insertSalesListingSchema.parse(listingData);
 
