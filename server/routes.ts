@@ -5,16 +5,10 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import Stripe from "stripe";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
-
-// Initialize Stripe - will be used when API keys are provided
-let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-10-29.clover",
-  });
-}
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -85,48 +79,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create Stripe payment intent for parking spot subscription
-  app.post('/api/create-parking-spot-payment', isAuthenticated, async (req: any, res) => {
+  app.get('/api/stripe/publishable-key', async (_req, res) => {
     try {
-      if (!stripe) {
-        return res.status(500).json({ message: "Stripe is not configured. Please add STRIPE_SECRET_KEY." });
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      res.status(500).json({ message: "Stripe is not configured" });
+    }
+  });
+
+  app.get('/api/stripe/prices', async (_req, res) => {
+    try {
+      const result = await db.execute(sql`
+        SELECT 
+          p.id as product_id,
+          p.name as product_name,
+          p.metadata as product_metadata,
+          pr.id as price_id,
+          pr.unit_amount,
+          pr.currency
+        FROM stripe.products p
+        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true AND p.metadata->>'app' = 'cardrop'
+        ORDER BY pr.unit_amount ASC
+      `);
+      res.json({ prices: result.rows });
+    } catch (error) {
+      console.error("Error fetching Stripe prices:", error);
+      res.status(500).json({ message: "Failed to fetch prices" });
+    }
+  });
+
+  app.post('/api/stripe/create-checkout', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.user.claims.sub;
+      const { tier, spotData } = req.body;
+
+      if (!tier || (tier !== 'silver' && tier !== 'gold')) {
+        return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const { spotData } = req.body;
-      const userId = req.user.claims.sub;
+      const result = await db.execute(sql`
+        SELECT pr.id as price_id, pr.unit_amount
+        FROM stripe.products p
+        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true AND p.metadata->>'app' = 'cardrop' AND p.metadata->>'tier' = ${tier}
+        LIMIT 1
+      `);
 
-      // Validate spot data
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Price not found for this tier. Please run the seed script first." });
+      }
+
+      const priceId = result.rows[0].price_id as string;
+
       const validatedData = insertParkingSpotSchema.parse(spotData);
 
-      // Create a temporary spot record (will be activated after payment)
       const spot = await storage.createParkingSpot({
         ...validatedData,
+        category: spotData.category || 'private',
         ownerId: userId,
-        isActive: false, // Will be activated after payment
-      });
+        subscriptionType: tier,
+        isPremium: true,
+        isActive: false,
+      } as any);
 
-      // Create Stripe payment intent (1000 RSD = 1000 * 100 = 100000 dinars in smallest unit)
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: 100000, // 1000 RSD in smallest currency unit
-        currency: "rsd",
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'payment',
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
+        cancel_url: `${baseUrl}/checkout/cancel?spot_id=${spot.id}`,
         metadata: {
           spotId: spot.id,
           userId: userId,
-          subscriptionType: "monthly",
+          tier: tier,
         },
-        description: `CarDrop - Pretplata za parking mesto: ${validatedData.title}`,
       });
 
-      res.json({
-        clientSecret: paymentIntent.client_secret,
-        spotId: spot.id,
-      });
+      await storage.updateParkingSpot(spot.id, {
+        stripeSessionId: session.id,
+      } as any);
+
+      res.json({ url: session.url, spotId: spot.id });
     } catch (error: any) {
-      console.error("Error creating payment intent:", error);
+      console.error("Error creating checkout session:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Invalid spot data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create payment intent" });
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  app.post('/api/stripe/verify-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { sessionId, spotId } = req.body;
+      const userId = req.user.claims.sub;
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ message: "Payment not completed", status: session.payment_status });
+      }
+
+      if (session.metadata?.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const tier = session.metadata?.tier as 'silver' | 'gold';
+      const { calculateExpiryDate } = await import('../shared/pricing.js');
+      const subscriptionExpiresAt = calculateExpiryDate(tier);
+
+      const spot = await storage.updateParkingSpot(spotId, {
+        isActive: true,
+        subscriptionType: tier,
+        isPremium: true,
+        subscriptionExpiresAt: subscriptionExpiresAt,
+        stripeSessionId: sessionId,
+      } as any);
+
+      res.json({ success: true, spot });
+    } catch (error: any) {
+      console.error("Error verifying payment:", error);
+      res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
+  app.post('/api/stripe/cancel-spot', isAuthenticated, async (req: any, res) => {
+    try {
+      const { spotId } = req.body;
+      const userId = req.user.claims.sub;
+
+      const spot = await storage.getParkingSpot(spotId);
+      if (!spot || spot.ownerId !== userId) {
+        return res.status(404).json({ message: "Spot not found" });
+      }
+
+      if (!spot.isActive) {
+        await storage.updateParkingSpot(spotId, { isActive: false } as any);
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error cancelling spot:", error);
+      res.status(500).json({ message: "Failed to cancel" });
     }
   });
 
