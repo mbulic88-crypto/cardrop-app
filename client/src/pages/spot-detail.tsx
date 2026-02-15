@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send } from "lucide-react";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -29,6 +29,9 @@ export default function SpotDetail() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [messageContent, setMessageContent] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showOwnerContact, setShowOwnerContact] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -84,6 +87,24 @@ export default function SpotDetail() {
       spotId: spot.id,
       content: messageContent.trim(),
     });
+  };
+
+  const imageCount = spot?.imageUrls?.length || 0;
+
+  const scrollToImage = (index: number) => {
+    if (!carouselRef.current) return;
+    const newIndex = Math.max(0, Math.min(index, imageCount - 1));
+    setCurrentImageIndex(newIndex);
+    const scrollWidth = carouselRef.current.scrollWidth / imageCount;
+    carouselRef.current.scrollTo({ left: scrollWidth * newIndex, behavior: 'smooth' });
+  };
+
+  const handleCarouselScroll = () => {
+    if (!carouselRef.current || imageCount === 0) return;
+    const scrollLeft = carouselRef.current.scrollLeft;
+    const scrollWidth = carouselRef.current.scrollWidth / imageCount;
+    const newIndex = Math.round(scrollLeft / scrollWidth);
+    setCurrentImageIndex(Math.max(0, Math.min(newIndex, imageCount - 1)));
   };
 
   if (isLoading) {
@@ -143,48 +164,92 @@ export default function SpotDetail() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Location Map */}
+        {/* Image Carousel - at the top */}
         <div className="mb-8">
-          <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-            {spot.latitude && spot.longitude ? (
-              <SpotLocationMap
-                latitude={spot.latitude}
-                longitude={spot.longitude}
-                title={spot.title}
-                address={spot.address}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <MapPin className="w-24 h-24 text-muted-foreground" />
+          {spot.imageUrls && spot.imageUrls.length > 0 ? (
+            <div className="relative rounded-lg overflow-hidden bg-muted">
+              <div
+                ref={carouselRef}
+                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+                onScroll={handleCarouselScroll}
+                data-testid="image-carousel"
+              >
+                {spot.imageUrls.map((imageUrl, index) => (
+                  <div
+                    key={index}
+                    className="flex-shrink-0 w-full snap-center"
+                  >
+                    <div className="aspect-video">
+                      <img
+                        src={imageUrl}
+                        alt={`${spot.title} - Slika ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        data-testid={`img-spot-gallery-${index}`}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Image Gallery */}
-        {spot.imageUrls && spot.imageUrls.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">Galerija Slika</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {spot.imageUrls.map((imageUrl, index) => (
-                <div key={index} className="aspect-video rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={imageUrl}
-                    alt={`${spot.title} - Slika ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    data-testid={`img-spot-gallery-${index}`}
-                  />
-                </div>
-              ))}
+              {imageCount > 1 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm border-card-border"
+                    onClick={() => scrollToImage(currentImageIndex - 1)}
+                    style={{ visibility: currentImageIndex > 0 ? 'visible' : 'hidden' }}
+                    data-testid="button-carousel-prev"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm border-card-border"
+                    onClick={() => scrollToImage(currentImageIndex + 1)}
+                    style={{ visibility: currentImageIndex < imageCount - 1 ? 'visible' : 'hidden' }}
+                    data-testid="button-carousel-next"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {spot.imageUrls.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          index === currentImageIndex
+                            ? 'bg-white w-4'
+                            : 'bg-white/50'
+                        }`}
+                        onClick={() => scrollToImage(index)}
+                        data-testid={`button-carousel-dot-${index}`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-card/80 backdrop-blur-sm text-card-foreground border-card-border">
+                      {currentImageIndex + 1} / {imageCount}
+                    </Badge>
+                  </div>
+                </>
+              )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+              <MapPin className="w-24 h-24 text-muted-foreground" />
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
                 <div>
                   <h1 className="text-3xl font-bold mb-2 text-foreground" data-testid="text-spot-title">
                     {spot.title}
@@ -230,53 +295,62 @@ export default function SpotDetail() {
               </p>
             </Card>
 
-            {/* Kontakt Vlasnika - Combined Section */}
+            {/* Kontakt Vlasnika - Collapsible */}
             {owner && (
               <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-2 text-card-foreground">Kontakt Vlasnika</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Kontaktirajte vlasnika za rezervaciju ovog parking mesta
-                </p>
-                
-                {/* Owner info with avatar */}
-                <div className="flex items-center gap-4 mb-4">
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={owner.profileImageUrl || undefined} />
-                    <AvatarFallback>
-                      {owner.firstName?.[0]}{owner.lastName?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-card-foreground">
-                      {owner.firstName} {owner.lastName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{owner.email}</p>
-                  </div>
-                </div>
-                
-                {/* Phone */}
-                {spot.phone && (
-                  <div className="flex items-center gap-3 mb-3">
-                    <Phone className="w-5 h-5 text-accent" />
-                    <a 
-                      href={`tel:${spot.phone}`} 
-                      className="text-accent hover:underline font-medium"
-                      data-testid="link-phone"
-                    >
-                      {spot.phone}
-                    </a>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => setShowOwnerContact(!showOwnerContact)}
+                  data-testid="button-toggle-owner-contact"
+                >
+                  <span className="flex items-center gap-2 font-semibold">
+                    <Phone className="w-5 h-5" />
+                    Kontakt Vlasnika
+                  </span>
+                  {showOwnerContact ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </Button>
+
+                {showOwnerContact && (
+                  <div className="mt-4 space-y-4" data-testid="owner-contact-details">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={owner.profileImageUrl || undefined} />
+                        <AvatarFallback>
+                          {owner.firstName?.[0]}{owner.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-card-foreground">
+                          {owner.firstName} {owner.lastName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{owner.email}</p>
+                      </div>
+                    </div>
+                    
+                    {spot.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-accent" />
+                        <a 
+                          href={`tel:${spot.phone}`} 
+                          className="text-accent hover:underline font-medium"
+                          data-testid="link-phone"
+                        >
+                          {spot.phone}
+                        </a>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-5 h-5 text-accent" />
+                      <span className="text-muted-foreground" data-testid="text-payment-type">
+                        Tip plaćanja: {spot.paymentType === 'cash' && 'Keš'}
+                        {spot.paymentType === 'bank_transfer' && 'Preko računa'}
+                        {spot.paymentType === 'card_monri' && 'Kartično'}
+                      </span>
+                    </div>
                   </div>
                 )}
-                
-                {/* Payment type */}
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-accent" />
-                  <span className="text-muted-foreground" data-testid="text-payment-type">
-                    Tip plaćanja: {spot.paymentType === 'cash' && 'Keš'}
-                    {spot.paymentType === 'bank_transfer' && 'Preko računa'}
-                    {spot.paymentType === 'card_monri' && 'Kartično'}
-                  </span>
-                </div>
               </Card>
             )}
 
@@ -365,6 +439,28 @@ export default function SpotDetail() {
                   ))}
                 </div>
               )}
+            </Card>
+
+            {/* Location Map - at the bottom */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4 text-card-foreground flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Lokacija
+              </h2>
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                {spot.latitude && spot.longitude ? (
+                  <SpotLocationMap
+                    latitude={spot.latitude}
+                    longitude={spot.longitude}
+                    title={spot.title}
+                    address={spot.address}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <MapPin className="w-24 h-24 text-muted-foreground" />
+                  </div>
+                )}
+              </div>
             </Card>
           </div>
 
