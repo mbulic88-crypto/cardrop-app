@@ -12,6 +12,11 @@ import cityBeogradImg from "@assets/images/city-beograd.jpg";
 import cityNoviSadImg from "@assets/images/city-novisad.jpg";
 import cityNisImg from "@assets/images/city-nis.jpg";
 import cityKragujevacImg from "@assets/images/city-kragujevac.jpg";
+import categoryPrivateImg from "@assets/images/category-private.jpg";
+import categoryCompanyImg from "@assets/images/category-company.jpg";
+import categoryTruckImg from "@assets/images/category-truck.jpg";
+import categoryResidentialImg from "@assets/images/category-residential.jpg";
+import categoryCarlotImg from "@assets/images/category-carlot.jpg";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,10 +56,24 @@ const translations = {
     whoCanReserve: "Ko Može Da Rezerviše Parking",
     everyoneWhoNeeds: "Svi Kojima Je Potreban Parking",
     reserveDescription: "Bilo da vam treba parking na sat vremena dok ste u restoranu, na dan dok obavljate poslove u gradu, ili na mesec dana - CarDrop vam omogućava fleksibilnu rezervaciju po vašoj meri.",
-    shortTerm: "Kratkoročno",
-    shortTermDesc: "Restoran, šoping, sastanak, poseta lekaru",
-    longTerm: "Dugoročno", 
-    longTermDesc: "Nedelja, mesec, sezona - po povoljnijim cenama",
+    shortTerm: "Kratkoročno Parkiranje",
+    shortTermDesc: "Idealno kada vam treba parking na nekoliko sati ili dan.",
+    shortTermExamples: [
+      "Ručak u restoranu u centru grada",
+      "Šoping u tržnom centru",
+      "Poseta lekaru ili zubar",
+      "Poslovni sastanak ili intervju",
+      "Koncert, utakmica ili izlazak",
+    ],
+    longTerm: "Dugoročno Parkiranje", 
+    longTermDesc: "Zakupite mesto na duži period po povoljnijim cenama.",
+    longTermExamples: [
+      "Mesečni parking blizu posla",
+      "Studentski parking tokom semestra",
+      "Sezonski zakup za letovanje ili zimu",
+      "Parking za stanare bez sopstvene garaže",
+      "Skladištenje vozila tokom putovanja",
+    ],
     categoryPrivate: "Privatni Parkinzi i Garaže",
     categoryCompany: "Firme",
     categoryTruck: "Stajalista za Kamione",
@@ -116,10 +135,24 @@ const translations = {
     whoCanReserve: "Who Can Reserve Parking",
     everyoneWhoNeeds: "Everyone Who Needs Parking",
     reserveDescription: "Whether you need parking for an hour while dining, for a day while running errands, or for a month - CarDrop offers flexible reservations tailored to your needs.",
-    shortTerm: "Short-Term",
-    shortTermDesc: "Restaurant, shopping, meeting, doctor visit",
-    longTerm: "Long-Term",
-    longTermDesc: "Week, month, season - at better rates",
+    shortTerm: "Short-Term Parking",
+    shortTermDesc: "Perfect when you need parking for a few hours or a day.",
+    shortTermExamples: [
+      "Lunch at a downtown restaurant",
+      "Shopping at the mall",
+      "Doctor or dentist appointment",
+      "Business meeting or interview",
+      "Concert, game, or night out",
+    ],
+    longTerm: "Long-Term Parking",
+    longTermDesc: "Reserve a spot for an extended period at better rates.",
+    longTermExamples: [
+      "Monthly parking near your workplace",
+      "Student parking during the semester",
+      "Seasonal rental for summer or winter",
+      "Parking for residents without a garage",
+      "Vehicle storage while traveling",
+    ],
     categoryPrivate: "Private Parking & Garages",
     categoryCompany: "Companies",
     categoryTruck: "Truck Stops",
@@ -446,37 +479,32 @@ export default function Landing() {
             <h3 className="text-xl md:text-2xl font-semibold mb-10 text-foreground text-center">
               {t.whoCanRent}
             </h3>
-            <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
               {[
-                { icon: Home, label: t.categoryPrivate },
-                { icon: Building2, label: t.categoryCompany },
-                { icon: Truck, label: t.categoryTruck },
-                { icon: Users, label: t.categoryResidential },
-                { icon: Car, label: t.categoryCarLot },
+                { icon: Home, label: t.categoryPrivate, image: categoryPrivateImg },
+                { icon: Building2, label: t.categoryCompany, image: categoryCompanyImg },
+                { icon: Truck, label: t.categoryTruck, image: categoryTruckImg },
+                { icon: Users, label: t.categoryResidential, image: categoryResidentialImg },
+                { icon: Car, label: t.categoryCarLot, image: categoryCarlotImg },
               ].map((item, index) => (
-                <div key={index} className="flex flex-col items-center text-center group w-28 md:w-32">
-                  <div className="relative mb-4">
-                    <svg viewBox="0 0 48 64" className="w-14 h-[72px] md:w-16 md:h-20 drop-shadow-lg group-hover:scale-105 transition-transform">
-                      <defs>
-                        <linearGradient id={`pinGradient${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" />
-                          <stop offset="100%" stopColor="hsl(var(--primary) / 0.8)" />
-                        </linearGradient>
-                      </defs>
-                      <path 
-                        d="M24 0C10.745 0 0 10.745 0 24c0 18 24 40 24 40s24-22 24-40C48 10.745 37.255 0 24 0z" 
-                        fill={`url(#pinGradient${index})`}
-                        stroke="hsl(var(--primary-foreground) / 0.3)"
-                        strokeWidth="1"
-                      />
-                      <circle cx="24" cy="22" r="14" fill="white" />
-                    </svg>
-                    <div className="absolute top-2 md:top-2.5 left-1/2 -translate-x-1/2 flex items-center justify-center w-7 h-7 md:w-8 md:h-8">
-                      <item.icon className="w-5 h-5 md:w-6 md:h-6 text-[hsl(var(--primary))]" />
+                <Card key={index} className="overflow-hidden hover-elevate group cursor-default" data-testid={`card-category-${index}`}>
+                  <div className="aspect-[4/3] relative overflow-hidden">
+                    <img 
+                      src={item.image} 
+                      alt={item.label}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center flex-shrink-0">
+                          <item.icon className="w-4 h-4 text-[hsl(var(--primary))]" />
+                        </div>
+                        <span className="text-white text-xs md:text-sm font-semibold leading-tight drop-shadow-md">{item.label}</span>
+                      </div>
                     </div>
                   </div>
-                  <span className="text-sm md:text-base font-medium text-foreground leading-tight">{item.label}</span>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
@@ -494,25 +522,45 @@ export default function Landing() {
               {t.reserveDescription}
             </p>
             
-            <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-12 max-w-4xl mx-auto">
-              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate">
+            <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-8 max-w-5xl mx-auto">
+              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate" data-testid="card-short-term">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <Clock className="w-6 h-6 text-accent" />
                   </div>
-                  <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.shortTerm}</h4>
+                  <div>
+                    <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.shortTerm}</h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t.shortTermDesc}</p>
+                  </div>
                 </div>
-                <p className="text-muted-foreground">{t.shortTermDesc}</p>
+                <div className="space-y-2.5 mt-5">
+                  {t.shortTermExamples.map((example: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-foreground">{example}</span>
+                    </div>
+                  ))}
+                </div>
               </Card>
               
-              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate">
+              <Card className="flex-1 p-6 md:p-8 border-2 border-border hover-elevate" data-testid="card-long-term">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
                     <CalendarDays className="w-6 h-6 text-accent" />
                   </div>
-                  <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.longTerm}</h4>
+                  <div>
+                    <h4 className="text-lg md:text-xl font-semibold text-foreground">{t.longTerm}</h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t.longTermDesc}</p>
+                  </div>
                 </div>
-                <p className="text-muted-foreground">{t.longTermDesc}</p>
+                <div className="space-y-2.5 mt-5">
+                  {t.longTermExamples.map((example: string, i: number) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-foreground">{example}</span>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
           </div>
