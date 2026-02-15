@@ -25,61 +25,64 @@ function createMarkerIcon(category: string, isPremium: boolean, subscriptionType
   const emoji = categoryEmoji[category] || "P";
   const tier = subscriptionType || 'standard';
   
-  let bgColor = "#40916C";
-  let borderColor = "#40916C";
-  let shadowColor = "rgba(64, 145, 108, 0.3)";
+  let fillColor = "#40916C";
+  let borderColor = "#2D6A4F";
   let glowEffect = "";
   let animationName = "";
   
   if (tier === 'gold') {
-    bgColor = "linear-gradient(135deg, #DAA520, #FFD700, #B8860B)";
-    borderColor = "#DAA520";
-    shadowColor = "rgba(218, 165, 32, 0.4)";
-    glowEffect = "0 0 12px rgba(218, 165, 32, 0.8), 0 0 20px rgba(255, 215, 0, 0.4)";
+    fillColor = "#DAA520";
+    borderColor = "#B8860B";
+    glowEffect = "drop-shadow(0 0 6px rgba(218, 165, 32, 0.8)) drop-shadow(0 0 12px rgba(255, 215, 0, 0.4))";
     animationName = "gold-pulse";
   } else if (tier === 'silver') {
-    bgColor = "linear-gradient(135deg, #A8A9AD, #E8E8E8, #C0C0C0)";
-    borderColor = "#A8A9AD";
-    shadowColor = "rgba(168, 169, 173, 0.4)";
-    glowEffect = "0 0 10px rgba(192, 192, 192, 0.6), 0 0 16px rgba(168, 169, 173, 0.3)";
+    fillColor = "#A8A9AD";
+    borderColor = "#808080";
+    glowEffect = "drop-shadow(0 0 5px rgba(192, 192, 192, 0.6)) drop-shadow(0 0 10px rgba(168, 169, 173, 0.3))";
     animationName = "silver-pulse";
   }
   
-  const isGradient = tier === 'gold' || tier === 'silver';
+  const gradientId = `grad-${tier}-${Math.random().toString(36).substr(2, 5)}`;
+  
+  let gradientDef = '';
+  if (tier === 'gold') {
+    gradientDef = `<defs><linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#DAA520"/><stop offset="50%" style="stop-color:#FFD700"/><stop offset="100%" style="stop-color:#B8860B"/></linearGradient></defs>`;
+  } else if (tier === 'silver') {
+    gradientDef = `<defs><linearGradient id="${gradientId}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#C0C0C0"/><stop offset="50%" style="stop-color:#E8E8E8"/><stop offset="100%" style="stop-color:#A8A9AD"/></linearGradient></defs>`;
+  }
+  
+  const usesGradient = tier === 'gold' || tier === 'silver';
+  const pinFill = usesGradient ? `url(#${gradientId})` : fillColor;
+  const textColor = tier === 'silver' ? '#333' : 'white';
   
   return L.divIcon({
     html: `
       <div style="
-        width: 36px;
-        height: 36px;
-        ${isGradient ? `background: ${bgColor};` : `background: ${bgColor};`}
-        border: 3px solid ${borderColor};
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: bold;
-        color: ${tier === 'silver' ? '#333' : 'white'};
-        box-shadow: ${isPremium ? glowEffect : `0 3px 8px ${shadowColor}`};
-        transform: translate(-50%, -50%);
+        width: 30px;
+        height: 42px;
+        position: relative;
         ${animationName ? `animation: ${animationName} 2s ease-in-out infinite;` : ''}
+        ${isPremium && glowEffect ? `filter: ${glowEffect};` : ''}
       ">
-        ${emoji}
+        <svg viewBox="0 0 30 42" width="30" height="42" xmlns="http://www.w3.org/2000/svg">
+          ${gradientDef}
+          <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 27 15 27s15-16.5 15-27C30 6.716 23.284 0 15 0z" 
+                fill="${pinFill}" stroke="${borderColor}" stroke-width="2"/>
+          <text x="15" y="17" text-anchor="middle" dominant-baseline="central" 
+                fill="${textColor}" font-size="12" font-weight="bold">${emoji}</text>
+        </svg>
       </div>
       ${animationName ? `<style>
         @keyframes ${animationName} {
-          0%, 100% { box-shadow: ${glowEffect}; }
-          50% { box-shadow: ${tier === 'gold' 
-            ? '0 0 20px rgba(218, 165, 32, 1), 0 0 30px rgba(255, 215, 0, 0.6)' 
-            : '0 0 16px rgba(192, 192, 192, 0.8), 0 0 24px rgba(168, 169, 173, 0.4)'}; }
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
         }
       </style>` : ''}
     `,
     className: "custom-marker-icon",
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -20],
+    iconSize: [30, 42],
+    iconAnchor: [15, 42],
+    popupAnchor: [0, -42],
   });
 }
 
@@ -132,7 +135,7 @@ export function MapView({ spots }: MapViewProps) {
       if (spot.subscriptionType === 'gold') {
         const badge = document.createElement('div');
         badge.className = 'mb-2';
-        badge.innerHTML = '<span style="background: linear-gradient(135deg, #DAA520 0%, #FFD700 50%, #B8860B 100%); color: white; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Top lokacija</span>';
+        badge.innerHTML = '<span style="background: linear-gradient(135deg, #DAA520 0%, #FFD700 50%, #B8860B 100%); color: white; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase;">Top parking</span>';
         container.appendChild(badge);
       } else if (spot.subscriptionType === 'silver') {
         const badge = document.createElement('div');
