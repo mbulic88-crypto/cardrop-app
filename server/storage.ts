@@ -21,7 +21,7 @@ import {
   type InsertSalesListing,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, or } from "drizzle-orm";
+import { eq, and, gte, lte, desc, or, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -106,7 +106,14 @@ export class DatabaseStorage implements IStorage {
 
   // Parking spots operations
   async getAllParkingSpots(): Promise<ParkingSpot[]> {
-    return await db.select().from(parkingSpots).where(eq(parkingSpots.isActive, true));
+    const tierOrder = sql`CASE 
+      WHEN ${parkingSpots.subscriptionType} = 'gold' THEN 0 
+      WHEN ${parkingSpots.subscriptionType} = 'silver' THEN 1 
+      ELSE 2 
+    END`;
+    return await db.select().from(parkingSpots)
+      .where(eq(parkingSpots.isActive, true))
+      .orderBy(tierOrder, desc(parkingSpots.createdAt));
   }
 
   async getParkingSpot(id: string): Promise<ParkingSpot | undefined> {
@@ -275,7 +282,14 @@ export class DatabaseStorage implements IStorage {
 
   // Sales listings operations
   async getAllSalesListings(): Promise<SalesListing[]> {
-    return await db.select().from(salesListings).where(eq(salesListings.isActive, true)).orderBy(desc(salesListings.createdAt));
+    const tierOrder = sql`CASE 
+      WHEN ${salesListings.subscriptionType} = 'gold' THEN 0 
+      WHEN ${salesListings.subscriptionType} = 'silver' THEN 1 
+      ELSE 2 
+    END`;
+    return await db.select().from(salesListings)
+      .where(eq(salesListings.isActive, true))
+      .orderBy(tierOrder, desc(salesListings.createdAt));
   }
 
   async getSalesListing(id: string): Promise<SalesListing | undefined> {
