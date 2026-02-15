@@ -231,6 +231,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/stripe/create-sale-checkout', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.user.claims.sub;
+      const { tier, listingData } = req.body;
+
+      if (!tier || (tier !== 'silver' && tier !== 'gold')) {
+        return res.status(400).json({ message: "Invalid subscription tier" });
+      }
+
+      const result = await db.execute(sql`
+        SELECT pr.id as price_id, pr.unit_amount
+        FROM stripe.products p
+        JOIN stripe.prices pr ON pr.product = p.id AND pr.active = true
+        WHERE p.active = true AND p.metadata->>'app' = 'cardrop' AND p.metadata->>'tier' = ${tier}
+        LIMIT 1
+      `);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Price not found for this tier" });
+      }
+
+      const priceId = result.rows[0].price_id as string;
+
+      const validatedData = insertSalesListingSchema.parse(listingData);
+
+      const listing = await storage.createSalesListing({
+        ...validatedData,
+        sellerId: userId,
+        subscriptionType: tier,
+        isPremium: true,
+        isActive: false,
+      } as any);
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: 'payment',
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
+        cancel_url: `${baseUrl}/checkout/cancel?listing_id=${listing.id}`,
+        metadata: {
+          listingId: listing.id,
+          userId: userId,
+          tier: tier,
+          type: 'sale',
+        },
+      });
+
+      res.json({ url: session.url, listingId: listing.id });
+    } catch (error: any) {
+      console.error("Error creating sale checkout session:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid listing data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  app.post('/api/stripe/verify-sale-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { sessionId, listingId } = req.body;
+      const userId = req.user.claims.sub;
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ message: "Payment not completed", status: session.payment_status });
+      }
+
+      if (session.metadata?.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const tier = session.metadata?.tier as 'silver' | 'gold';
+      const { calculateExpiryDate } = await import('../shared/pricing.js');
+      const subscriptionExpiresAt = calculateExpiryDate(tier);
+
+      const listing = await storage.updateSalesListing(listingId, {
+        isActive: true,
+        subscriptionType: tier,
+        isPremium: true,
+        subscriptionExpiresAt: subscriptionExpiresAt,
+      } as any);
+
+      res.json({ success: true, listing });
+    } catch (error: any) {
+      console.error("Error verifying sale payment:", error);
+      res.status(500).json({ message: "Failed to verify payment" });
+    }
+  });
+
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

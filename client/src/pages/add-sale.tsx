@@ -265,21 +265,67 @@ export default function AddSale() {
     },
   });
 
+  const stripeMutation = useMutation({
+    mutationFn: async (data: { tier: string; listingData: any }) => {
+      return await apiRequest("POST", "/api/stripe/create-sale-checkout", data);
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Greška",
+        description: language === 'sr'
+          ? "Došlo je do greške pri kreiranju plaćanja. Pokušajte ponovo."
+          : "Error creating payment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!isAuthenticated) {
       setShowLoginDialog(true);
       return;
     }
 
-    mutation.mutate({
-      ...values,
-      price: values.price,
-      area: values.area,
-      numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
-      imageUrls: uploadedImages,
-      subscriptionType: selectedPlan,
-      isPremium: selectedPlan === 'silver' || selectedPlan === 'gold',
-    });
+    const isPremium = selectedPlan === 'silver' || selectedPlan === 'gold';
+
+    if (isPremium) {
+      const listingData = {
+        ...values,
+        price: values.price,
+        area: values.area,
+        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
+        imageUrls: uploadedImages,
+        subscriptionType: selectedPlan,
+        isPremium: true,
+      };
+      stripeMutation.mutate({ tier: selectedPlan, listingData });
+    } else {
+      mutation.mutate({
+        ...values,
+        price: values.price,
+        area: values.area,
+        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
+        imageUrls: uploadedImages,
+        subscriptionType: selectedPlan,
+        isPremium: false,
+      });
+    }
   };
 
   return (
@@ -730,10 +776,14 @@ export default function AddSale() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || stripeMutation.isPending}
                   data-testid="button-submit-sale"
                 >
-                  {mutation.isPending ? t.submittingButton : t.submitButton}
+                  {(mutation.isPending || stripeMutation.isPending)
+                    ? t.submittingButton
+                    : selectedPlan !== 'standard'
+                      ? (language === 'sr' ? `Plati i Objavi (${getPlanById(selectedPlan)?.price} RSD)` : `Pay & Publish (${getPlanById(selectedPlan)?.price} RSD)`)
+                      : t.submitButton}
                 </Button>
               )}
             </form>

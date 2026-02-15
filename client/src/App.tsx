@@ -19,6 +19,8 @@ import Admin from "@/pages/admin";
 import SelectCategory from "@/pages/select-category";
 import AddSale from "@/pages/add-sale";
 import SaleDetail from "@/pages/sale-detail";
+import CheckoutSuccess from "@/pages/checkout-success";
+import CheckoutCancel from "@/pages/checkout-cancel";
 
 function Router() {
   return (
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/transactions" component={Transactions} />
       <Route path="/payment/:bookingId" component={Payment} />
       <Route path="/add-sale" component={AddSale} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
+      <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>

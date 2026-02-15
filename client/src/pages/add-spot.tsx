@@ -347,9 +347,7 @@ export default function AddSpot() {
         title: "Uspešno Dodato",
         description: "Sada možete dodati slike parking mesta ili kliknite Završi.",
       });
-      // Invalidate my-spots cache so dashboard refreshes
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/my-spots"] });
-      // Scroll to the image upload section
       setTimeout(() => {
         window.scrollTo({
           top: document.body.scrollHeight,
@@ -377,8 +375,38 @@ export default function AddSpot() {
     },
   });
 
+  const stripeMutation = useMutation({
+    mutationFn: async (data: { tier: string; spotData: any }) => {
+      return await apiRequest("POST", "/api/stripe/create-checkout", data);
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Greška",
+        description: language === 'sr' 
+          ? "Došlo je do greške pri kreiranju plaćanja. Pokušajte ponovo." 
+          : "Error creating payment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // Check if user is authenticated before submitting
     if (!isAuthenticated) {
       setShowLoginDialog(true);
       return;
@@ -386,14 +414,24 @@ export default function AddSpot() {
     
     const isPremium = selectedPlan === 'silver' || selectedPlan === 'gold';
     
-    // Add selected subscription plan and category to the request
-    mutation.mutate({
-      ...values,
-      subscriptionType: selectedPlan,
-      category: category,
-      isPremium: isPremium,
-      numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
-    } as any);
+    if (isPremium) {
+      const spotData = {
+        ...values,
+        subscriptionType: selectedPlan,
+        category: category,
+        isPremium: true,
+        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
+      };
+      stripeMutation.mutate({ tier: selectedPlan, spotData });
+    } else {
+      mutation.mutate({
+        ...values,
+        subscriptionType: selectedPlan,
+        category: category,
+        isPremium: isPremium,
+        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
+      } as any);
+    }
   };
 
   return (
@@ -1059,10 +1097,14 @@ export default function AddSpot() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={mutation.isPending}
+                  disabled={mutation.isPending || stripeMutation.isPending}
                   data-testid="button-submit"
                 >
-                  {mutation.isPending ? t.submittingButton : t.submitButton}
+                  {(mutation.isPending || stripeMutation.isPending) 
+                    ? t.submittingButton 
+                    : selectedPlan !== 'standard'
+                      ? (language === 'sr' ? `Plati i Dodaj (${getPlanById(selectedPlan)?.price} RSD)` : `Pay & Add (${getPlanById(selectedPlan)?.price} RSD)`)
+                      : t.submitButton}
                 </Button>
               </div>
             </form>
