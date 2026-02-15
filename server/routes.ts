@@ -382,6 +382,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`User selected ${plan.tier} plan: ${plan.id} (${plan.price} RSD)`);
 
+      if (spotData.numberOfSpots) {
+        spotData.numberOfSpots = parseInt(spotData.numberOfSpots) || undefined;
+      }
       console.log('Validating spot data...');
       const validatedData = insertParkingSpotSchema.parse(spotData);
       console.log('Validation successful');
