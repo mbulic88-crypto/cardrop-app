@@ -249,7 +249,6 @@ const formSchema = z.object({
   // Company specific fields
   companyName: z.string().optional(),
   pib: z.string().optional(),
-  numberOfSpots: z.string().optional(),
   // Residential specific fields
   contactPerson: z.string().optional(),
   // Pricing type for all categories
@@ -303,7 +302,6 @@ export default function AddSpot() {
       advertiserType: "owner",
       companyName: "",
       pib: "",
-      numberOfSpots: "1",
       contactPerson: "",
       pricingType: "daily",
       autoRenewal: false,

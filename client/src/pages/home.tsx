@@ -577,7 +577,7 @@ export default function Home() {
                                       </Badge>
                                     )}
                                   </div>
-                                  <Badge className="bg-accent/90 text-accent-foreground border-0">
+                                  <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] flex-shrink-0 px-1.5 py-0.5">
                                     Iznajmljivanje
                                   </Badge>
                                 </div>
@@ -754,7 +754,7 @@ export default function Home() {
                                   </Badge>
                                 )}
                               </div>
-                              <Badge className="bg-accent/90 text-accent-foreground border-0">
+                              <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] flex-shrink-0 px-1.5 py-0.5">
                                 Iznajmljivanje
                               </Badge>
                             </div>
