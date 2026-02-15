@@ -225,6 +225,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/stripe/create-checkout-existing', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.user.claims.sub;
+      const { spotId, tier } = req.body;
+
+      if (!tier || (tier !== 'silver' && tier !== 'gold')) {
+        return res.status(400).json({ message: "Invalid subscription tier" });
+      }
+
+      const spot = await storage.getParkingSpot(spotId);
+      if (!spot || spot.ownerId !== userId) {
+        return res.status(404).json({ message: "Spot not found" });
+      }
+
+      const plan = getPlanById(tier as SubscriptionType);
+      if (!plan || !plan.stripePriceId) {
+        return res.status(404).json({ message: "Price not found for this tier" });
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        mode: 'payment',
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
+        cancel_url: `${baseUrl}/add-spot?category=${spot.category || 'private'}`,
+        metadata: {
+          spotId: spot.id,
+          userId: userId,
+          tier: tier,
+        },
+      });
+
+      await storage.updateParkingSpot(spot.id, {
+        stripeSessionId: session.id,
+      } as any);
+
+      res.json({ url: session.url, spotId: spot.id });
+    } catch (error: any) {
+      console.error("Error creating checkout for existing spot:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
   app.post('/api/stripe/create-sale-checkout', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
@@ -343,14 +389,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
       console.log('Subscription expires at:', subscriptionExpiresAt?.toISOString());
 
+      const isPremiumPlan = plan.tier === 'gold' || plan.tier === 'silver';
       console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
         ...validatedData,
         category: category || 'private',
         ownerId: userId,
         subscriptionType: plan.id,
-        subscriptionExpiresAt: subscriptionExpiresAt,
-        isPremium: plan.tier === 'gold' || plan.tier === 'silver',
+        subscriptionExpiresAt: isPremiumPlan ? null : subscriptionExpiresAt,
+        isPremium: isPremiumPlan,
+        isActive: !isPremiumPlan,
       } as any);
       
       console.log('Parking spot created successfully:', spot.id);

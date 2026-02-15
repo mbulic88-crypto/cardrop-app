@@ -310,8 +310,6 @@ export default function AddSpot() {
     },
   });
 
-  // Watch numberOfSpots for calculating max images
-  const watchedNumberOfSpots = form.watch("numberOfSpots");
   // Watch pricingType for dynamic price label
   const watchedPricingType = form.watch("pricingType");
   
@@ -376,8 +374,8 @@ export default function AddSpot() {
   });
 
   const stripeMutation = useMutation({
-    mutationFn: async (data: { tier: string; spotData: any }) => {
-      return await apiRequest("POST", "/api/stripe/create-checkout", data);
+    mutationFn: async (data: { spotId: string; tier: string }) => {
+      return await apiRequest("POST", "/api/stripe/create-checkout-existing", data);
     },
     onSuccess: (data) => {
       if (data.url) {
@@ -412,26 +410,12 @@ export default function AddSpot() {
       return;
     }
     
-    const isPremium = selectedPlan === 'silver' || selectedPlan === 'gold';
-    
-    if (isPremium) {
-      const spotData = {
-        ...values,
-        subscriptionType: selectedPlan,
-        category: category,
-        isPremium: true,
-        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
-      };
-      stripeMutation.mutate({ tier: selectedPlan, spotData });
-    } else {
-      mutation.mutate({
-        ...values,
-        subscriptionType: selectedPlan,
-        category: category,
-        isPremium: isPremium,
-        numberOfSpots: values.numberOfSpots ? parseInt(values.numberOfSpots) : undefined,
-      } as any);
-    }
+    mutation.mutate({
+      ...values,
+      subscriptionType: selectedPlan,
+      category: category,
+      isPremium: selectedPlan === 'silver' || selectedPlan === 'gold',
+    } as any);
   };
 
   return (
@@ -643,34 +627,6 @@ export default function AddSpot() {
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="numberOfSpots"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t.numberOfSpots}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || "1"}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-number-of-spots">
-                              <SelectValue placeholder={t.numberOfSpotsPlaceholder} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
-                            <SelectItem value="3">3</SelectItem>
-                            <SelectItem value="4">4</SelectItem>
-                            <SelectItem value="5">5</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          {t.numberOfSpotsDescription}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </>
               )}
 
@@ -1097,14 +1053,12 @@ export default function AddSpot() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={mutation.isPending || stripeMutation.isPending}
+                  disabled={mutation.isPending}
                   data-testid="button-submit"
                 >
-                  {(mutation.isPending || stripeMutation.isPending) 
+                  {mutation.isPending 
                     ? t.submittingButton 
-                    : selectedPlan !== 'standard'
-                      ? (language === 'sr' ? `Plati i Dodaj (${getPlanById(selectedPlan)?.price} RSD)` : `Pay & Add (${getPlanById(selectedPlan)?.price} RSD)`)
-                      : t.submitButton}
+                    : (language === 'sr' ? 'Nastavi' : 'Continue')}
                 </Button>
               </div>
             </form>
@@ -1117,11 +1071,9 @@ export default function AddSpot() {
               {t.imageUploadTitle}
             </h3>
             <p className="text-muted-foreground mb-4">
-              {isCompany && selectedPlan === 'standard'
-                ? (language === 'sr' 
-                    ? `Dodajte do ${maxImages} slika (${watchedNumberOfSpots || 1} parking mesta × 3 slike). Preostalo: ${Math.max(0, maxImages - uploadedImages.length)}`
-                    : `Add up to ${maxImages} images (${watchedNumberOfSpots || 1} spots × 3 images). Remaining: ${Math.max(0, maxImages - uploadedImages.length)}`)
-                : t.imageUploadDescription}
+              {language === 'sr' 
+                ? `Dodajte do ${maxImages} ${maxImages === 1 ? 'sliku' : maxImages < 5 ? 'slike' : 'slika'} vašeg parking mesta. Preostalo: ${Math.max(0, maxImages - uploadedImages.length)}`
+                : `Add up to ${maxImages} images of your parking spot. Remaining: ${Math.max(0, maxImages - uploadedImages.length)}`}
             </p>
             
             {uploadedImages.length > 0 && (
@@ -1137,7 +1089,7 @@ export default function AddSpot() {
               </div>
             )}
 
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
               {canUploadMore ? (
                 <ObjectUploader
                   maxNumberOfFiles={1}
@@ -1157,33 +1109,54 @@ export default function AddSpot() {
                       });
                       setUploadedImages(response.imageUrls);
                       toast({
-                        title: t.successTitle,
-                        description: t.successDescription,
+                        title: language === 'sr' ? 'Slika dodata' : 'Image added',
+                        description: language === 'sr' ? `Preostalo slika: ${Math.max(0, maxImages - (response.imageUrls?.length || 0))}` : `Remaining: ${Math.max(0, maxImages - (response.imageUrls?.length || 0))}`,
                       });
                     }
                   }}
-                  buttonClassName="flex-1"
+                  buttonClassName="w-full"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  {t.uploadButton}
+                  {t.uploadButton} ({uploadedImages.length}/{maxImages})
                 </ObjectUploader>
               ) : (
-                <Button variant="outline" disabled className="flex-1">
+                <Button variant="outline" disabled className="w-full">
                   <Upload className="w-4 h-4 mr-2" />
-                  {language === 'sr' ? 'Dostignut limit slika' : 'Image limit reached'}
+                  {language === 'sr' ? `Dostignut limit slika (${maxImages}/${maxImages})` : `Image limit reached (${maxImages}/${maxImages})`}
                 </Button>
               )}
 
-              <Button 
-                onClick={() => {
-                  queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
-                  setLocation("/home");
-                }}
-                className="flex-1"
-                data-testid="button-finish"
-              >
-                {t.finishButton}
-              </Button>
+              {(selectedPlan === 'silver' || selectedPlan === 'gold') ? (
+                <Button
+                  onClick={() => {
+                    stripeMutation.mutate({ spotId: spotId!, tier: selectedPlan });
+                  }}
+                  className={`w-full ${selectedPlan === 'gold' 
+                    ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0' 
+                    : 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'}`}
+                  size="lg"
+                  disabled={stripeMutation.isPending}
+                  data-testid="button-proceed-to-payment"
+                >
+                  {stripeMutation.isPending
+                    ? (language === 'sr' ? 'Preusmeravanje...' : 'Redirecting...')
+                    : (language === 'sr' 
+                      ? `Plati ${getPlanById(selectedPlan)?.price?.toLocaleString('sr-RS')} RSD - ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} paket`
+                      : `Pay ${getPlanById(selectedPlan)?.price?.toLocaleString()} RSD - ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} plan`)}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
+                    setLocation("/home");
+                  }}
+                  className="w-full"
+                  size="lg"
+                  data-testid="button-finish"
+                >
+                  {language === 'sr' ? 'Objavi oglas' : 'Publish listing'}
+                </Button>
+              )}
             </div>
           </Card>
         )}

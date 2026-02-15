@@ -544,23 +544,6 @@ export default function Home() {
                               }`}
                               data-testid={`card-nearby-spot-${spot.id}`}
                             >
-                              {spot.subscriptionType === 'gold' && (
-                                <div className="absolute top-2 left-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                                    <Sparkles className="w-3 h-3 mr-1" />
-                                    Top lokacija
-                                  </Badge>
-                                </div>
-                              )}
-                              {spot.subscriptionType === 'silver' && (
-                                <div className="absolute top-2 left-2 z-20">
-                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                                    <Sparkles className="w-3 h-3 mr-1" />
-                                    Istaknuto
-                                  </Badge>
-                                </div>
-                              )}
-                              
                               <div className={`aspect-video bg-muted relative ${
                                 spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
                                 : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
@@ -579,7 +562,21 @@ export default function Home() {
                                     <MapPin className="w-12 h-12 text-muted-foreground" />
                                   </div>
                                 )}
-                                <div className="absolute top-2 right-2 z-10">
+                                <div className="absolute top-2 left-2 right-2 z-20 flex justify-between items-start gap-1">
+                                  <div>
+                                    {spot.subscriptionType === 'gold' && (
+                                      <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                                        <Sparkles className="w-3 h-3 mr-1" />
+                                        Top lokacija
+                                      </Badge>
+                                    )}
+                                    {spot.subscriptionType === 'silver' && (
+                                      <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                        <Sparkles className="w-3 h-3 mr-1" />
+                                        Istaknuto
+                                      </Badge>
+                                    )}
+                                  </div>
                                   <Badge className="bg-accent/90 text-accent-foreground border-0">
                                     Iznajmljivanje
                                   </Badge>
@@ -659,22 +656,6 @@ export default function Home() {
                           }`}
                           data-testid={`card-sale-${listing.id}`}
                         >
-                          {listing.subscriptionType === 'gold' && (
-                            <div className="absolute top-2 left-2 z-20">
-                              <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Top
-                              </Badge>
-                            </div>
-                          )}
-                          {listing.subscriptionType === 'silver' && (
-                            <div className="absolute top-2 left-2 z-20">
-                              <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Istaknuto
-                              </Badge>
-                            </div>
-                          )}
                           <div className="aspect-video bg-muted relative">
                             {listing.imageUrls && listing.imageUrls.length > 0 ? (
                               <img src={listing.imageUrls[0]} alt={listing.title} className="w-full h-full object-cover" />
@@ -683,12 +664,26 @@ export default function Home() {
                                 <ShoppingBag className="w-12 h-12 text-muted-foreground" />
                               </div>
                             )}
-                            <div className="absolute top-2 right-2 z-10">
+                            <div className="absolute top-2 left-2 right-2 z-20 flex justify-between items-start gap-1">
+                              <div>
+                                {listing.subscriptionType === 'gold' && (
+                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Top
+                                  </Badge>
+                                )}
+                                {listing.subscriptionType === 'silver' && (
+                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Istaknuto
+                                  </Badge>
+                                )}
+                              </div>
                               <Badge className="bg-orange-500/90 text-white border-0">
                                 Prodaja
-                            </Badge>
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
                         <div className="p-3">
                           <h3 className="font-semibold text-base mb-2 text-card-foreground line-clamp-1">
                             {listing.title}
@@ -726,23 +721,6 @@ export default function Home() {
                           }`} 
                           data-testid={`card-spot-${spot.id}`}
                         >
-                          {spot.subscriptionType === 'gold' && (
-                            <div className="absolute top-2 left-2 z-20">
-                              <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Top lokacija
-                              </Badge>
-                            </div>
-                          )}
-                          {spot.subscriptionType === 'silver' && (
-                            <div className="absolute top-2 left-2 z-20">
-                              <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                                <Sparkles className="w-3 h-3 mr-1" />
-                                Istaknuto
-                              </Badge>
-                            </div>
-                          )}
-                          
                           <div className={`aspect-video bg-muted relative ${
                             spot.subscriptionType === 'gold' ? 'ring-2 ring-[#DAA520]/30 ring-inset' 
                             : spot.subscriptionType === 'silver' ? 'ring-2 ring-[#A8A9AD]/30 ring-inset' 
@@ -761,7 +739,21 @@ export default function Home() {
                                 <MapPin className="w-12 h-12 text-muted-foreground" />
                               </div>
                             )}
-                            <div className="absolute top-2 right-2 z-10">
+                            <div className="absolute top-2 left-2 right-2 z-20 flex justify-between items-start gap-1">
+                              <div>
+                                {spot.subscriptionType === 'gold' && (
+                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Top lokacija
+                                  </Badge>
+                                )}
+                                {spot.subscriptionType === 'silver' && (
+                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
+                                    <Sparkles className="w-3 h-3 mr-1" />
+                                    Istaknuto
+                                  </Badge>
+                                )}
+                              </div>
                               <Badge className="bg-accent/90 text-accent-foreground border-0">
                                 Iznajmljivanje
                               </Badge>
