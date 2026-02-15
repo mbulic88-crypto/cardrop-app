@@ -17,6 +17,7 @@ import categoryCompanyImg from "@assets/images/category-company.jpg";
 import categoryTruckImg from "@assets/images/category-truck.jpg";
 import categoryResidentialImg from "@assets/images/category-residential.jpg";
 import categoryCarlotImg from "@assets/images/category-carlot.jpg";
+import categorySaleImg from "@assets/images/category-sale.jpg";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,7 +76,8 @@ const translations = {
       "Skladištenje vozila tokom putovanja",
     ],
     categoryPrivate: "Privatni Parkinzi i Garaže",
-    categoryCompany: "Firme",
+    categoryCompany: "Firme i Agencije",
+    categorySale: "Prodaja Parkinga",
     categoryTruck: "Stajalista za Kamione",
     categoryResidential: "Stambene Zajednice",
     categoryCarLot: "Auto Placevi",
@@ -154,7 +156,8 @@ const translations = {
       "Vehicle storage while traveling",
     ],
     categoryPrivate: "Private Parking & Garages",
-    categoryCompany: "Companies",
+    categoryCompany: "Companies & Agencies",
+    categorySale: "Parking for Sale",
     categoryTruck: "Truck Stops",
     categoryResidential: "Residential Communities",
     categoryCarLot: "Car Lots",
@@ -234,6 +237,14 @@ export default function Landing() {
       setShowLoginDialog(true);
     } else {
       setLocation("/add-sale");
+    }
+  };
+
+  const handleProtectedAction = (path: string) => {
+    if (!isAuthenticated) {
+      setShowLoginDialog(true);
+    } else {
+      setLocation(path);
     }
   };
 
@@ -479,32 +490,40 @@ export default function Landing() {
             <h3 className="text-xl md:text-2xl font-semibold mb-10 text-foreground text-center">
               {t.whoCanRent}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
               {[
-                { icon: Home, label: t.categoryPrivate, image: categoryPrivateImg },
-                { icon: Building2, label: t.categoryCompany, image: categoryCompanyImg },
-                { icon: Truck, label: t.categoryTruck, image: categoryTruckImg },
-                { icon: Users, label: t.categoryResidential, image: categoryResidentialImg },
-                { icon: Car, label: t.categoryCarLot, image: categoryCarlotImg },
+                { icon: Home, label: t.categoryPrivate, image: categoryPrivateImg, link: "/select-category" },
+                { icon: Building2, label: t.categoryCompany, image: categoryCompanyImg, link: "/select-category" },
+                { icon: Truck, label: t.categoryTruck, image: categoryTruckImg, link: "/select-category" },
+                { icon: Users, label: t.categoryResidential, image: categoryResidentialImg, link: "/select-category" },
+                { icon: Car, label: t.categoryCarLot, image: categoryCarlotImg, link: "/select-category" },
+                { icon: Tag, label: t.categorySale, image: categorySaleImg, link: "/add-sale" },
               ].map((item, index) => (
-                <Card key={index} className="overflow-hidden hover-elevate group cursor-default" data-testid={`card-category-${index}`}>
-                  <div className="aspect-[4/3] relative overflow-hidden">
-                    <img 
-                      src={item.image} 
-                      alt={item.label}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center flex-shrink-0">
-                          <item.icon className="w-4 h-4 text-[hsl(var(--primary))]" />
+                <div 
+                  key={index} 
+                  className="cursor-pointer"
+                  onClick={() => handleProtectedAction(item.link)}
+                  data-testid={`card-category-${index}`}
+                >
+                  <Card className="overflow-hidden hover-elevate group h-full">
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      <img 
+                        src={item.image} 
+                        alt={item.label}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center flex-shrink-0">
+                            <item.icon className="w-4 h-4 text-[hsl(var(--primary))]" />
+                          </div>
+                          <span className="text-white text-xs md:text-sm font-semibold leading-tight drop-shadow-md">{item.label}</span>
                         </div>
-                        <span className="text-white text-xs md:text-sm font-semibold leading-tight drop-shadow-md">{item.label}</span>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                </div>
               ))}
             </div>
           </div>
