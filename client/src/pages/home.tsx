@@ -562,25 +562,27 @@ export default function Home() {
                                     <MapPin className="w-12 h-12 text-muted-foreground" />
                                   </div>
                                 )}
-                                <div className="absolute top-2 left-2 right-2 z-20 flex justify-between items-start gap-1">
-                                  <div>
-                                    {spot.subscriptionType === 'gold' && (
-                                      <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                                        <Sparkles className="w-3 h-3 mr-1" />
-                                        Top lokacija
-                                      </Badge>
-                                    )}
-                                    {spot.subscriptionType === 'silver' && (
-                                      <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                                        <Sparkles className="w-3 h-3 mr-1" />
-                                        Istaknuto
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] flex-shrink-0 px-1.5 py-0.5">
+                                <div className="absolute top-2 right-2 z-20">
+                                  <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] px-1.5 py-0.5">
                                     Iznajmljivanje
                                   </Badge>
                                 </div>
+                                {(spot.subscriptionType === 'gold' || spot.subscriptionType === 'silver') && (
+                                  <div className="absolute top-2 left-2 z-20">
+                                    {spot.subscriptionType === 'gold' && (
+                                      <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-[10px] px-1.5 py-0.5">
+                                        <Sparkles className="w-3 h-3 mr-0.5" />
+                                        Top
+                                      </Badge>
+                                    )}
+                                    {spot.subscriptionType === 'silver' && (
+                                      <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-[10px] px-1.5 py-0.5">
+                                        <Sparkles className="w-3 h-3 mr-0.5" />
+                                        Silver
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
                                 <div className="absolute bottom-2 left-2 z-10">
                                   <Badge className="bg-card/90 text-card-foreground border border-card-border">
                                     ~{spot.distance.toFixed(1)} km
@@ -739,25 +741,27 @@ export default function Home() {
                                 <MapPin className="w-12 h-12 text-muted-foreground" />
                               </div>
                             )}
-                            <div className="absolute top-2 left-2 right-2 z-20 flex justify-between items-start gap-1">
-                              <div>
-                                {spot.subscriptionType === 'gold' && (
-                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-xs">
-                                    <Sparkles className="w-3 h-3 mr-1" />
-                                    Top lokacija
-                                  </Badge>
-                                )}
-                                {spot.subscriptionType === 'silver' && (
-                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-xs">
-                                    <Sparkles className="w-3 h-3 mr-1" />
-                                    Istaknuto
-                                  </Badge>
-                                )}
-                              </div>
-                              <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] flex-shrink-0 px-1.5 py-0.5">
+                            <div className="absolute top-2 right-2 z-20">
+                              <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] px-1.5 py-0.5">
                                 Iznajmljivanje
                               </Badge>
                             </div>
+                            {(spot.subscriptionType === 'gold' || spot.subscriptionType === 'silver') && (
+                              <div className="absolute top-2 left-2 z-20">
+                                {spot.subscriptionType === 'gold' && (
+                                  <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 text-[10px] px-1.5 py-0.5">
+                                    <Sparkles className="w-3 h-3 mr-0.5" />
+                                    Top
+                                  </Badge>
+                                )}
+                                {spot.subscriptionType === 'silver' && (
+                                  <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 text-[10px] px-1.5 py-0.5">
+                                    <Sparkles className="w-3 h-3 mr-0.5" />
+                                    Silver
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <div className="p-3">
