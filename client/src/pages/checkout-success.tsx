@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2, Upload } from "lucide-react";
+import { CheckCircle, Loader2, Home, Eye } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 export default function CheckoutSuccess() {
@@ -84,29 +84,27 @@ export default function CheckoutSuccess() {
           <img src={parkInLogo} alt="CarDrop" className="w-12 h-12 rounded-lg mx-auto mb-4" />
         </div>
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-foreground mb-2">Plaćanje uspešno!</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          {isSale ? "Uspešno ste dodali oglas za prodaju!" : "Uspešno ste dodali parking!"}
+        </h2>
         <p className="text-muted-foreground mb-6">
           {isSale
-            ? "Vaš oglas za prodaju je aktiviran sa premium pretplatom."
-            : "Vaš parking oglas je aktiviran sa premium pretplatom. Sada možete dodati slike."}
+            ? "Vaš oglas za prodaju je sada aktivan."
+            : "Vaš parking oglas je sada aktivan i vidljiv svima."}
         </p>
         <div className="flex flex-col gap-3">
           {resultId && (
             <Link href={isSale ? `/sale/${resultId}` : `/spot/${resultId}`}>
               <Button className="w-full" data-testid="button-view-listing">
-                <Upload className="w-4 h-4 mr-2" />
-                {isSale ? "Pogledaj oglas za prodaju" : "Pogledaj oglas i dodaj slike"}
+                <Eye className="w-4 h-4 mr-2" />
+                {isSale ? "Pogledaj oglas" : "Pogledaj parking"}
               </Button>
             </Link>
           )}
-          <Link href="/dashboard">
-            <Button variant="outline" className="w-full" data-testid="button-go-dashboard">
-              Idi na kontrolnu tablu
-            </Button>
-          </Link>
           <Link href="/home">
-            <Button variant="ghost" className="w-full" data-testid="button-go-home">
-              Nazad na početnu
+            <Button variant="outline" className="w-full" data-testid="button-go-home">
+              <Home className="w-4 h-4 mr-2" />
+              Početna stranica
             </Button>
           </Link>
         </div>
