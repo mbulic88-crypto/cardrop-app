@@ -72,6 +72,7 @@ async function initStripe() {
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: false,
     crossOriginOpenerPolicy: false,
+    frameguard: false,
   }));
 
   const generalLimiter = rateLimit({
