@@ -70,6 +70,8 @@ async function initStripe() {
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false,
+    crossOriginOpenerPolicy: false,
   }));
 
   const generalLimiter = rateLimit({
