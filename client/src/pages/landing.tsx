@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star } from "lucide-react";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock } from "lucide-react";
+import { SiStripe } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -789,6 +790,21 @@ export default function Landing() {
               );
             })}
           </div>
+
+          <div className="flex flex-col items-center gap-3 mt-10" data-testid="stripe-trust-pricing">
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-card border border-border">
+              <Lock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
+              </span>
+              <SiStripe className="w-10 h-4 text-[#635BFF]" />
+            </div>
+            <p className="text-xs text-muted-foreground/70 text-center max-w-md">
+              {language === 'sr' 
+                ? 'Sva plaćanja su zaštićena SSL enkripcijom i obrađena od strane Stripe-a, vodećeg svetskog platnog procesora.'
+                : 'All payments are SSL encrypted and processed by Stripe, the world\'s leading payment processor.'}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -981,6 +997,13 @@ export default function Landing() {
                 {t.termsButton}
               </Button>
             </Link>
+          </div>
+          <div className="flex items-center justify-center gap-3 mb-4" data-testid="stripe-trust-footer">
+            <div className="flex items-center gap-1.5 text-muted-foreground/60">
+              <Shield className="w-3.5 h-3.5" />
+              <span className="text-xs">Powered by</span>
+              <SiStripe className="w-8 h-3.5 text-[#635BFF]/70" />
+            </div>
           </div>
           <p className="text-muted-foreground">{t.footerText}</p>
         </div>

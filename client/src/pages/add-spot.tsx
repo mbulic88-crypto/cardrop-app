@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles, Lock } from "lucide-react";
+import { SiStripe } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -1132,6 +1133,16 @@ export default function AddSpot() {
                         </>
                       )}
                     </p>
+                  </div>
+                )}
+
+                {selectedPlan && selectedPlan !== 'standard' && (
+                  <div className="flex items-center justify-center gap-2 py-2" data-testid="stripe-trust-addspot">
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
+                    </span>
+                    <SiStripe className="w-9 h-3.5 text-[#635BFF]" />
                   </div>
                 )}
 
