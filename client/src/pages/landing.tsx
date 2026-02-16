@@ -48,7 +48,8 @@ const translations = {
     ctaTitle: "Imate Neiskorišćeno Parking Mesto?",
     ctaSubtitle: "Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.",
     termsButton: "Uslovi Korišćenja",
-    footerText: "\u00a9 2024 CarDrop Srbija. Sva prava zadržana.",
+    privacyButton: "Politika Privatnosti",
+    footerText: "\u00a9 2025 CarDrop | Ai Me IT LLC, Albuquerque, NM, USA",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
     sellButton: "Oglasi Prodaju",
@@ -128,7 +129,8 @@ const translations = {
     ctaTitle: "Have an Unused Parking Spot?",
     ctaSubtitle: "Earn by sharing your parking space with other drivers. Simple, secure, profitable.",
     termsButton: "Terms of Use",
-    footerText: "\u00a9 2024 CarDrop Serbia. All rights reserved.",
+    privacyButton: "Privacy Policy",
+    footerText: "\u00a9 2025 CarDrop | Ai Me IT LLC, Albuquerque, NM, USA",
     langButton: "SRP",
     installApp: "Install App",
     sellButton: "List for Sale",
@@ -990,10 +992,16 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="mb-4">
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
             <Link href="/terms">
               <Button variant="ghost" className="text-muted-foreground" data-testid="link-terms">
                 {t.termsButton}
+              </Button>
+            </Link>
+            <span className="text-muted-foreground/40">|</span>
+            <Link href="/privacy-policy">
+              <Button variant="ghost" className="text-muted-foreground" data-testid="link-privacy">
+                {t.privacyButton}
               </Button>
             </Link>
           </div>
@@ -1004,7 +1012,8 @@ export default function Landing() {
               <span className="text-sm font-bold text-[#635BFF]/70 leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
             </div>
           </div>
-          <p className="text-muted-foreground">{t.footerText}</p>
+          <p className="text-sm text-muted-foreground">{t.footerText}</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">info@cardropp.app</p>
         </div>
       </footer>
 
