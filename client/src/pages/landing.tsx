@@ -102,11 +102,10 @@ const translations = {
     pricingMostPopular: "Najpopularniji",
     pricingBestValue: "Najbolja Vrednost",
     contactTitle: "Kontaktirajte Nas",
-    contactSubtitle: "Imate pitanje ili predlog? Slobodno nas kontaktirajte.",
+    contactSubtitle: "Vaše mišljenje nam je važno! Pišite nam za bilo kakvo pitanje, predlog ili ideju - zajedno pravimo bolju platformu.",
     contactEmail: "Email",
-    contactPhone: "Telefon",
-    contactAddress: "Adresa",
-    contactAddressValue: "Beograd, Srbija",
+    contactResponseTime: "Odgovaramo u roku od 24 sata",
+    contactEncouragement: "Pišite nam slobodno za sve što vam pada na pamet - svaka poruka nam pomaže da budemo bolji!",
   },
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
@@ -183,16 +182,17 @@ const translations = {
     pricingMostPopular: "Most Popular",
     pricingBestValue: "Best Value",
     contactTitle: "Contact Us",
-    contactSubtitle: "Have a question or suggestion? Feel free to contact us.",
+    contactSubtitle: "Your opinion matters! Write to us with any question, suggestion or idea - together we build a better platform.",
     contactEmail: "Email",
-    contactPhone: "Phone",
-    contactAddress: "Address",
-    contactAddressValue: "Belgrade, Serbia",
+    contactResponseTime: "We respond within 24 hours",
+    contactEncouragement: "Feel free to reach out about anything - every message helps us improve!",
   }
 };
 
 export default function Landing() {
-  const [language, setLanguage] = useState<"sr" | "en">("sr");
+  const [language, setLanguage] = useState<"sr" | "en" | "de" | "hu" | "sk" | "mk">("sr");
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -203,10 +203,22 @@ export default function Landing() {
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr") {
+    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
       setLanguage(savedLanguage);
     }
   }, []);
+
+  useEffect(() => {
+    const handleLangClickOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    if (langMenuOpen) {
+      document.addEventListener("mousedown", handleLangClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleLangClickOutside);
+  }, [langMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -220,11 +232,23 @@ export default function Landing() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuOpen]);
 
-  const toggleLanguage = () => {
-    const newLanguage = language === "sr" ? "en" : "sr";
-    setLanguage(newLanguage);
-    localStorage.setItem("parkin-language", newLanguage);
+  const languageOptions = [
+    { code: "sr" as const, label: "Srpski", flag: "🇷🇸" },
+    { code: "en" as const, label: "English", flag: "🇬🇧" },
+    { code: "de" as const, label: "Deutsch", flag: "🇩🇪" },
+    { code: "hu" as const, label: "Magyar", flag: "🇭🇺" },
+    { code: "sk" as const, label: "Slovenský", flag: "🇸🇰" },
+    { code: "mk" as const, label: "Македонски", flag: "🇲🇰" },
+  ];
+
+  const selectLanguage = (code: typeof language) => {
+    setLanguage(code);
+    localStorage.setItem("parkin-language", code);
+    setLangMenuOpen(false);
+    setMenuOpen(false);
   };
+
+  const currentLangLabel = languageOptions.find(l => l.code === language)?.label || "Srpski";
 
   const handleListSpotClick = () => {
     if (!isAuthenticated) {
@@ -258,7 +282,7 @@ export default function Landing() {
     }
   };
 
-  const t = translations[language];
+  const t = translations[language === "sr" ? "sr" : "en"];
 
   return (
     <div className="min-h-screen bg-background">
@@ -355,13 +379,30 @@ export default function Landing() {
                       <span className="text-card-foreground font-medium">{t.menuContact}</span>
                     </div>
                     <div className="h-px bg-border mx-4 my-1" />
-                    <div
-                      onClick={() => { toggleLanguage(); setMenuOpen(false); }}
-                      className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
-                      data-testid="menu-language"
-                    >
-                      <Globe className="w-5 h-5 text-accent" />
-                      <span className="text-card-foreground font-medium">{t.menuLanguage}</span>
+                    <div className="relative" ref={langMenuRef}>
+                      <div
+                        onClick={() => setLangMenuOpen(!langMenuOpen)}
+                        className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
+                        data-testid="menu-language"
+                      >
+                        <Globe className="w-5 h-5 text-accent" />
+                        <span className="text-card-foreground font-medium">{currentLangLabel}</span>
+                      </div>
+                      {langMenuOpen && (
+                        <div className="bg-card border border-border rounded-md shadow-lg ml-4 mr-4 mb-1">
+                          {languageOptions.map((lang) => (
+                            <div
+                              key={lang.code}
+                              onClick={() => selectLanguage(lang.code)}
+                              className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover-elevate ${language === lang.code ? 'bg-accent/10' : ''}`}
+                              data-testid={`lang-${lang.code}`}
+                            >
+                              <span className="text-base">{lang.flag}</span>
+                              <span className="text-card-foreground text-sm font-medium">{lang.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div
                       onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setMenuOpen(false); }}
@@ -950,42 +991,29 @@ export default function Landing() {
 
       {/* Contact Section */}
       <div id="kontakt" className="py-20 md:py-24 px-6 scroll-mt-16">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-4xl font-bold text-center mb-4 text-foreground" data-testid="text-contact-title">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 text-foreground" data-testid="text-contact-title">
             {t.contactTitle}
           </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
             {t.contactSubtitle}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-semibold text-card-foreground mb-2">{t.contactEmail}</h3>
-              <a href="mailto:info@cardrop.rs" className="text-accent text-sm" data-testid="link-contact-email">
-                info@cardrop.rs
-              </a>
-            </Card>
-            <Card className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-semibold text-card-foreground mb-2">{t.contactPhone}</h3>
-              <a href="tel:+381601234567" className="text-accent text-sm" data-testid="link-contact-phone">
-                +381 60 123 4567
-              </a>
-            </Card>
-            <Card className="p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="font-semibold text-card-foreground mb-2">{t.contactAddress}</h3>
-              <p className="text-muted-foreground text-sm" data-testid="text-contact-address">
-                {t.contactAddressValue}
-              </p>
-            </Card>
-          </div>
+          <Card className="p-8">
+            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-5">
+              <Mail className="w-8 h-8 text-accent" />
+            </div>
+            <h3 className="font-semibold text-card-foreground text-lg mb-3">{t.contactEmail}</h3>
+            <a href="mailto:info@cardrop.app" className="text-accent text-xl font-semibold" data-testid="link-contact-email">
+              info@cardrop.app
+            </a>
+            <div className="flex items-center justify-center gap-2 mt-4 text-primary">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm font-medium">{t.contactResponseTime}</span>
+            </div>
+            <p className="text-muted-foreground text-sm mt-4 max-w-md mx-auto">
+              {t.contactEncouragement}
+            </p>
+          </Card>
         </div>
       </div>
 
