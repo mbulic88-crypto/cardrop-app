@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,12 +30,12 @@ const SERBIAN_CITIES = [
 ];
 
 const FEATURES_LIST = [
-  { id: "electricity", labelSr: "Struja", labelEn: "Electricity" },
-  { id: "water", labelSr: "Voda", labelEn: "Water" },
-  { id: "heating", labelSr: "Grejanje", labelEn: "Heating" },
-  { id: "camera", labelSr: "Kamera", labelEn: "Camera" },
-  { id: "ramp", labelSr: "Rampa", labelEn: "Ramp" },
-  { id: "remote_control", labelSr: "Daljinski upravljač", labelEn: "Remote Control" },
+  { id: "electricity", labelSr: "Struja", labelEn: "Electricity", labelDe: "Strom", labelHu: "Villany", labelSk: "Elektrina", labelMk: "Струја" },
+  { id: "water", labelSr: "Voda", labelEn: "Water", labelDe: "Wasser", labelHu: "Víz", labelSk: "Voda", labelMk: "Вода" },
+  { id: "heating", labelSr: "Grejanje", labelEn: "Heating", labelDe: "Heizung", labelHu: "Fűtés", labelSk: "Kúrenie", labelMk: "Греење" },
+  { id: "camera", labelSr: "Kamera", labelEn: "Camera", labelDe: "Kamera", labelHu: "Kamera", labelSk: "Kamera", labelMk: "Камера" },
+  { id: "ramp", labelSr: "Rampa", labelEn: "Ramp", labelDe: "Rampe", labelHu: "Rámpa", labelSk: "Rampa", labelMk: "Рампа" },
+  { id: "remote_control", labelSr: "Daljinski upravljač", labelEn: "Remote Control", labelDe: "Fernbedienung", labelHu: "Távirányító", labelSk: "Diaľkový ovládač", labelMk: "Далечински управувач" },
 ];
 
 const translations = {
@@ -43,7 +43,6 @@ const translations = {
     pageTitle: "Dodajte Oglas za Prodaju",
     pageSubtitle: "Popunite informacije o vašem parking mestu ili garaži za prodaju",
     homeButton: "Početna",
-    langButton: "ENG",
     title: "Naslov",
     titlePlaceholder: "npr. Garaža u centru grada",
     price: "Cena (RSD)",
@@ -99,7 +98,6 @@ const translations = {
     pageTitle: "Add Sale Listing",
     pageSubtitle: "Fill in information about your parking spot or garage for sale",
     homeButton: "Home",
-    langButton: "SRP",
     title: "Title",
     titlePlaceholder: "e.g. Garage in city center",
     price: "Price (RSD)",
@@ -150,7 +148,227 @@ const translations = {
     loginRequired: "Login is required to publish a listing.",
     finishButton: "Finish",
     imageUploadTitle: "Add Property Images",
-  }
+  },
+  de: {
+    pageTitle: "Verkaufsanzeige hinzufügen",
+    pageSubtitle: "Füllen Sie die Informationen über Ihren Parkplatz oder Ihre Garage zum Verkauf aus",
+    homeButton: "Startseite",
+    title: "Titel",
+    titlePlaceholder: "z.B. Garage im Stadtzentrum",
+    price: "Preis (RSD)",
+    pricePlaceholder: "z.B. 1500000",
+    area: "Fläche (m²)",
+    areaPlaceholder: "z.B. 15",
+    pricePerSqm: "Preis pro m²",
+    description: "Beschreibung",
+    descriptionPlaceholder: "Detaillierte Beschreibung der Immobilie",
+    advertiserType: "Werbetreibender",
+    advertiserTypePlaceholder: "Wählen Sie den Typ des Werbetreibenden",
+    advertiserOwner: "Eigentümer",
+    advertiserAgency: "Agentur",
+    advertiserCompany: "Unternehmen",
+    propertyType: "Immobilientyp",
+    propertyTypePlaceholder: "Typ auswählen",
+    propertyGarage: "Garage",
+    propertyOpenParking: "Offener Parkplatz",
+    propertyClosedParking: "Geschlossener Parkplatz",
+    propertyTruckParking: "LKW-Parkplatz",
+    propertyBuildingGarage: "Garagenplatz im Gebäude",
+    propertyWarehouseParking: "Lager mit Parkplatz",
+    propertyOther: "Sonstiges",
+    condition: "Zustand",
+    conditionPlaceholder: "Zustand auswählen",
+    conditionNew: "Neu",
+    conditionUsed: "Gebraucht",
+    conditionRenovated: "Renoviert",
+    address: "Adresse",
+    addressPlaceholder: "Adresse eingeben",
+    addressDescription: "Verwenden Sie die Autovervollständigung für genaue Standorte",
+    city: "Stadt",
+    cityPlaceholder: "Stadt auswählen",
+    contactPhone: "Kontakttelefon",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Telefon für den Kontakt mit Käufern",
+    numberOfSpots: "Anzahl der Parkplätze",
+    numberOfSpotsPlaceholder: "z.B. 2",
+    numberOfSpotsDescription: "Optional - wie viele Parkplätze sind enthalten",
+    features: "Zusätzliche Merkmale",
+    photos: "Fotos",
+    photosDescription: "Fügen Sie bis zu 5 Bilder Ihrer Immobilie hinzu, um mehr Käufer anzulocken.",
+    uploadButton: "Bilder hinzufügen",
+    submitButton: "Anzeige veröffentlichen",
+    submittingButton: "Veröffentlichung...",
+    successTitle: "Erfolgreich veröffentlicht",
+    successDescription: "Ihre Verkaufsanzeige wurde erfolgreich veröffentlicht.",
+    loginRequired: "Zum Veröffentlichen einer Anzeige ist eine Anmeldung erforderlich.",
+    finishButton: "Fertig",
+    imageUploadTitle: "Immobilienbilder hinzufügen",
+  },
+  hu: {
+    pageTitle: "Eladási hirdetés hozzáadása",
+    pageSubtitle: "Töltse ki az eladásra kínált parkolóhelyéről vagy garázsáról szóló információkat",
+    homeButton: "Főoldal",
+    title: "Cím",
+    titlePlaceholder: "pl. Garázs a belvárosban",
+    price: "Ár (RSD)",
+    pricePlaceholder: "pl. 1500000",
+    area: "Terület (m²)",
+    areaPlaceholder: "pl. 15",
+    pricePerSqm: "Ár per m²",
+    description: "Leírás",
+    descriptionPlaceholder: "Az ingatlan részletes leírása",
+    advertiserType: "Hirdető",
+    advertiserTypePlaceholder: "Válassza ki a hirdető típusát",
+    advertiserOwner: "Tulajdonos",
+    advertiserAgency: "Ügynökség",
+    advertiserCompany: "Vállalat",
+    propertyType: "Ingatlan típusa",
+    propertyTypePlaceholder: "Típus kiválasztása",
+    propertyGarage: "Garázs",
+    propertyOpenParking: "Nyitott parkolóhely",
+    propertyClosedParking: "Zárt parkolóhely",
+    propertyTruckParking: "Kamion parkoló",
+    propertyBuildingGarage: "Garázshely épületben",
+    propertyWarehouseParking: "Raktár parkolóval",
+    propertyOther: "Egyéb",
+    condition: "Állapot",
+    conditionPlaceholder: "Állapot kiválasztása",
+    conditionNew: "Új",
+    conditionUsed: "Használt",
+    conditionRenovated: "Felújított",
+    address: "Cím",
+    addressPlaceholder: "Adja meg a címet",
+    addressDescription: "Használja az automatikus kiegészítést a pontos helyhez",
+    city: "Város",
+    cityPlaceholder: "Válasszon várost",
+    contactPhone: "Kapcsolattartó telefon",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Telefon a vevőkkel való kapcsolattartáshoz",
+    numberOfSpots: "Parkolóhelyek száma",
+    numberOfSpotsPlaceholder: "pl. 2",
+    numberOfSpotsDescription: "Opcionális - hány parkolóhely tartozik hozzá",
+    features: "További jellemzők",
+    photos: "Fotók",
+    photosDescription: "Adjon hozzá legfeljebb 5 képet az ingatlanáról, hogy több vevőt vonzzon.",
+    uploadButton: "Képek hozzáadása",
+    submitButton: "Hirdetés közzététele",
+    submittingButton: "Közzététel...",
+    successTitle: "Sikeresen közzétéve",
+    successDescription: "Eladási hirdetése sikeresen közzétéve.",
+    loginRequired: "Hirdetés közzétételéhez bejelentkezés szükséges.",
+    finishButton: "Befejezés",
+    imageUploadTitle: "Ingatlanképek hozzáadása",
+  },
+  sk: {
+    pageTitle: "Pridať inzerát na predaj",
+    pageSubtitle: "Vyplňte informácie o vašom parkovacom mieste alebo garáži na predaj",
+    homeButton: "Domov",
+    title: "Názov",
+    titlePlaceholder: "napr. Garáž v centre mesta",
+    price: "Cena (RSD)",
+    pricePlaceholder: "napr. 1500000",
+    area: "Plocha (m²)",
+    areaPlaceholder: "napr. 15",
+    pricePerSqm: "Cena za m²",
+    description: "Popis",
+    descriptionPlaceholder: "Podrobný popis nehnuteľnosti",
+    advertiserType: "Inzerent",
+    advertiserTypePlaceholder: "Vyberte typ inzerenta",
+    advertiserOwner: "Vlastník",
+    advertiserAgency: "Agentúra",
+    advertiserCompany: "Spoločnosť",
+    propertyType: "Typ nehnuteľnosti",
+    propertyTypePlaceholder: "Vyberte typ",
+    propertyGarage: "Garáž",
+    propertyOpenParking: "Otvorené parkovacie miesto",
+    propertyClosedParking: "Uzavreté parkovacie miesto",
+    propertyTruckParking: "Parkovanie pre kamióny",
+    propertyBuildingGarage: "Garážové miesto v budove",
+    propertyWarehouseParking: "Sklad s parkovaním",
+    propertyOther: "Iné",
+    condition: "Stav",
+    conditionPlaceholder: "Vyberte stav",
+    conditionNew: "Nový",
+    conditionUsed: "Použitý",
+    conditionRenovated: "Zrekonštruovaný",
+    address: "Adresa",
+    addressPlaceholder: "Zadajte adresu",
+    addressDescription: "Použite automatické dopĺňanie pre presnú polohu",
+    city: "Mesto",
+    cityPlaceholder: "Vyberte mesto",
+    contactPhone: "Kontaktný telefón",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Telefón na kontakt s kupujúcimi",
+    numberOfSpots: "Počet parkovacích miest",
+    numberOfSpotsPlaceholder: "napr. 2",
+    numberOfSpotsDescription: "Voliteľné - koľko parkovacích miest je zahrnutých",
+    features: "Ďalšie vlastnosti",
+    photos: "Fotografie",
+    photosDescription: "Pridajte až 5 obrázkov vašej nehnuteľnosti na prilákanie viac kupujúcich.",
+    uploadButton: "Pridať obrázky",
+    submitButton: "Zverejniť inzerát",
+    submittingButton: "Zverejňovanie...",
+    successTitle: "Úspešne zverejnené",
+    successDescription: "Váš inzerát na predaj bol úspešne zverejnený.",
+    loginRequired: "Na zverejnenie inzerátu je potrebné prihlásenie.",
+    finishButton: "Dokončiť",
+    imageUploadTitle: "Pridať obrázky nehnuteľnosti",
+  },
+  mk: {
+    pageTitle: "Додадете оглас за продажба",
+    pageSubtitle: "Пополнете ги информациите за вашето паркинг место или гаража за продажба",
+    homeButton: "Почетна",
+    title: "Наслов",
+    titlePlaceholder: "пр. Гаража во центарот на градот",
+    price: "Цена (RSD)",
+    pricePlaceholder: "пр. 1500000",
+    area: "Квадратура (m²)",
+    areaPlaceholder: "пр. 15",
+    pricePerSqm: "Цена по m²",
+    description: "Опис",
+    descriptionPlaceholder: "Детален опис на имотот",
+    advertiserType: "Огласувач",
+    advertiserTypePlaceholder: "Изберете тип на огласувач",
+    advertiserOwner: "Сопственик",
+    advertiserAgency: "Агенција",
+    advertiserCompany: "Фирма",
+    propertyType: "Тип на имот",
+    propertyTypePlaceholder: "Изберете тип",
+    propertyGarage: "Гаража",
+    propertyOpenParking: "Отворено паркинг место",
+    propertyClosedParking: "Затворено паркинг место",
+    propertyTruckParking: "Паркинг за камиони",
+    propertyBuildingGarage: "Гаражно место во зграда",
+    propertyWarehouseParking: "Магацински простор со паркинг",
+    propertyOther: "Друго",
+    condition: "Состојба",
+    conditionPlaceholder: "Изберете состојба",
+    conditionNew: "Ново",
+    conditionUsed: "Користено",
+    conditionRenovated: "Реновирано",
+    address: "Адреса",
+    addressPlaceholder: "Внесете адреса",
+    addressDescription: "Користете автоматско пополнување за прецизна локација",
+    city: "Град",
+    cityPlaceholder: "Изберете град",
+    contactPhone: "Контакт телефон",
+    phonePlaceholder: "+381 64 123 4567",
+    phoneDescription: "Телефон за контакт со купувачите",
+    numberOfSpots: "Број на паркинг места",
+    numberOfSpotsPlaceholder: "пр. 2",
+    numberOfSpotsDescription: "Опционално - колку паркинг места се вклучени",
+    features: "Дополнителни карактеристики",
+    photos: "Фотографии",
+    photosDescription: "Додадете до 5 слики на вашиот имот за да привлечете повеќе купувачи.",
+    uploadButton: "Додадете слики",
+    submitButton: "Објавете оглас",
+    submittingButton: "Објавување...",
+    successTitle: "Успешно објавено",
+    successDescription: "Вашиот оглас за продажба е успешно објавен.",
+    loginRequired: "За објавување оглас потребна е најава на сметка.",
+    finishButton: "Заврши",
+    imageUploadTitle: "Додадете слики на имот",
+  },
 };
 
 const formSchema = z.object({
@@ -179,7 +397,9 @@ export default function AddSale() {
   const [listingId, setListingId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [language, setLanguage] = useState<"sr" | "en">("sr");
+  const [language, setLanguage] = useState<"sr" | "en" | "de" | "hu" | "sk" | "mk">("sr");
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -214,15 +434,49 @@ export default function AddSale() {
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr") {
+    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
       setLanguage(savedLanguage);
     }
   }, []);
 
-  const toggleLanguage = () => {
-    const newLanguage = language === "sr" ? "en" : "sr";
-    setLanguage(newLanguage);
-    localStorage.setItem("parkin-language", newLanguage);
+  const selectLanguage = (code: typeof language) => {
+    setLanguage(code);
+    localStorage.setItem("parkin-language", code);
+    setLangMenuOpen(false);
+  };
+
+  useEffect(() => {
+    const handleLangClickOutside = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    if (langMenuOpen) {
+      document.addEventListener("mousedown", handleLangClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleLangClickOutside);
+  }, [langMenuOpen]);
+
+  const languageOptions = [
+    { code: "sr" as const, label: "Srpski", flag: "\u{1F1F7}\u{1F1F8}" },
+    { code: "en" as const, label: "English", flag: "\u{1F1EC}\u{1F1E7}" },
+    { code: "de" as const, label: "Deutsch", flag: "\u{1F1E9}\u{1F1EA}" },
+    { code: "hu" as const, label: "Magyar", flag: "\u{1F1ED}\u{1F1FA}" },
+    { code: "sk" as const, label: "Slovenský", flag: "\u{1F1F8}\u{1F1F0}" },
+    { code: "mk" as const, label: "Македонски", flag: "\u{1F1F2}\u{1F1F0}" },
+  ];
+  const currentLangLabel = languageOptions.find(l => l.code === language)?.label || "Srpski";
+
+  const getLabelForLanguage = (feature: typeof FEATURES_LIST[0]) => {
+    switch(language) {
+      case 'sr': return feature.labelSr;
+      case 'en': return feature.labelEn;
+      case 'de': return feature.labelDe;
+      case 'hu': return feature.labelHu;
+      case 'sk': return feature.labelSk;
+      case 'mk': return feature.labelMk;
+      default: return feature.labelSr;
+    }
   };
 
   const t = translations[language];
@@ -346,16 +600,33 @@ export default function AddSale() {
                 </Button>
               </Link>
 
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3"
-                data-testid="button-language"
-                onClick={toggleLanguage}
-              >
-                <Globe className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">{t.langButton}</span>
-              </Button>
+              <div className="relative" ref={langMenuRef}>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="flex items-center gap-1"
+                  data-testid="button-language"
+                  onClick={() => setLangMenuOpen(!langMenuOpen)}
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="hidden sm:inline">{currentLangLabel}</span>
+                </Button>
+                {langMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-md shadow-lg z-50 min-w-[160px]">
+                    {languageOptions.map((lang) => (
+                      <div
+                        key={lang.code}
+                        onClick={() => selectLanguage(lang.code)}
+                        className={`flex items-center gap-2 px-4 py-2 cursor-pointer hover-elevate ${language === lang.code ? 'bg-accent/20' : ''}`}
+                        data-testid={`lang-option-${lang.code}`}
+                      >
+                        <span>{lang.flag}</span>
+                        <span className="text-sm text-foreground">{lang.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -636,7 +907,7 @@ export default function AddSale() {
                                 />
                               </FormControl>
                               <FormLabel className="font-normal cursor-pointer">
-                                {language === "sr" ? feature.labelSr : feature.labelEn}
+                                {getLabelForLanguage(feature)}
                               </FormLabel>
                             </FormItem>
                           )}
