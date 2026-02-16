@@ -21,12 +21,14 @@ import AddSale from "@/pages/add-sale";
 import SaleDetail from "@/pages/sale-detail";
 import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
+import PrivacyPolicy from "@/pages/privacy-policy";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/terms" component={Terms} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/home" component={Home} />
       <Route path="/spot/:id" component={SpotDetail} />
       <Route path="/sale/:id" component={SaleDetail} />
