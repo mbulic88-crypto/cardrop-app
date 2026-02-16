@@ -1020,16 +1020,16 @@ export default function AddSpot() {
                     let checkIcon = 'text-white';
                     
                     if (isSilver) {
-                      borderClass = isSelected ? 'border-[#A8A9AD] ring-2 ring-[#A8A9AD]/50' : 'border-[#A8A9AD]/40';
-                      bgClass = isSelected ? 'bg-gradient-to-b from-[#C0C0C0]/10 to-[#A8A9AD]/5' : '';
+                      borderClass = isSelected ? 'border-[#A8A9AD] ring-2 ring-[#A8A9AD]/50' : 'border-[#A8A9AD]';
+                      bgClass = 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] shadow-[0_0_15px_rgba(168,169,173,0.3)]';
                       headerBg = 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]';
-                      priceColor = 'text-[#71706E] dark:text-[#C0C0C0]';
+                      priceColor = 'text-[#5A5A5A] dark:text-[#D4D4D4]';
                       checkBorder = 'border-[#A8A9AD]';
                       checkBg = isSelected ? 'bg-gradient-to-r from-[#C0C0C0] to-[#A8A9AD]' : '';
                       checkIcon = 'text-white';
                     } else if (isGold) {
-                      borderClass = isSelected ? 'border-[#DAA520] ring-2 ring-[#DAA520]/50' : 'border-[#DAA520]/40';
-                      bgClass = isSelected ? 'bg-gradient-to-b from-[#FFD700]/10 to-[#DAA520]/5' : '';
+                      borderClass = isSelected ? 'border-[#DAA520] ring-2 ring-[#DAA520]/50' : 'border-[#DAA520]';
+                      bgClass = 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] shadow-[0_0_15px_rgba(218,165,32,0.3)]';
                       headerBg = 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]';
                       priceColor = 'text-[#B8860B] dark:text-[#FFD700]';
                       checkBorder = 'border-[#DAA520]';

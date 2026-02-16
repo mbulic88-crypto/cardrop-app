@@ -669,9 +669,9 @@ export default function Landing() {
                   key={plan.id}
                   className={`relative p-6 md:p-8 flex flex-col ${
                     isGold
-                      ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
+                      ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                       : isSilver
-                        ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20'
+                        ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                         : 'border border-border'
                   }`}
                   data-testid={`card-pricing-${plan.id}`}
