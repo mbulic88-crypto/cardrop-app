@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
@@ -22,12 +22,9 @@ interface ObjectUploaderProps {
   children: ReactNode;
 }
 
-/**
- * A file upload component from object storage blueprint
- */
 export function ObjectUploader({
   maxNumberOfFiles = 1,
-  maxFileSize = 10485760, // 10MB default
+  maxFileSize = 10485760,
   onGetUploadParameters,
   onComplete,
   buttonClassName,
@@ -40,7 +37,7 @@ export function ObjectUploader({
         maxNumberOfFiles,
         maxFileSize,
       },
-      autoProceed: false,
+      autoProceed: true,
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
@@ -48,6 +45,10 @@ export function ObjectUploader({
       })
       .on("complete", (result) => {
         onComplete?.(result);
+        setTimeout(() => {
+          setShowModal(false);
+          uppy.cancelAll();
+        }, 500);
       })
   );
 
@@ -60,7 +61,10 @@ export function ObjectUploader({
       <DashboardModal
         uppy={uppy}
         open={showModal}
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => {
+          setShowModal(false);
+          uppy.cancelAll();
+        }}
         proudlyDisplayPoweredByUppy={false}
       />
     </div>

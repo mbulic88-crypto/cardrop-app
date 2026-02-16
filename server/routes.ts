@@ -569,8 +569,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object storage routes - for protected file uploading
-  app.get("/objects/:objectPath(*)", isAuthenticated, async (req: any, res) => {
+  // Object storage routes - public images accessible without auth, private require auth
+  app.get("/objects/:objectPath(*)", async (req: any, res) => {
     const userId = req.user?.claims?.sub;
     const objectStorageService = new ObjectStorageService();
     try {
@@ -638,6 +638,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error setting parking spot image:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Delete individual image from parking spot
+  app.delete("/api/parking-spots/:id/images", isAuthenticated, async (req: any, res) => {
+    const { imageUrl } = req.body;
+    if (!imageUrl) {
+      return res.status(400).json({ error: "imageUrl is required" });
+    }
+
+    const userId = req.user.claims.sub;
+
+    try {
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) {
+        return res.status(404).json({ error: "Parking spot not found" });
+      }
+
+      if (spot.ownerId !== userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const updatedImages = spot.imageUrls.filter((url: string) => url !== imageUrl);
+      await storage.updateParkingSpot(req.params.id, {
+        imageUrls: updatedImages,
+      });
+
+      res.status(200).json({
+        imageUrls: updatedImages,
+      });
+    } catch (error) {
+      console.error("Error deleting parking spot image:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

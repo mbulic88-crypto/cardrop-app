@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles, Lock, Shield } from "lucide-react";
+import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles, Lock, Shield, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -1175,12 +1175,39 @@ export default function AddSpot() {
             {uploadedImages.length > 0 && (
               <div className="mb-4 grid grid-cols-3 gap-4">
                 {uploadedImages.map((img, index) => (
-                  <img 
-                    key={index} 
-                    src={img} 
-                    alt={`Uploaded ${index + 1}`} 
-                    className="rounded-md object-cover h-32 w-full"
-                  />
+                  <div key={index} className="relative group">
+                    <img 
+                      src={img} 
+                      alt={`Uploaded ${index + 1}`} 
+                      className="rounded-md object-cover h-32 w-full"
+                    />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ opacity: 1 }}
+                      onClick={async () => {
+                        try {
+                          const response = await apiRequest("DELETE", `/api/parking-spots/${spotId}/images`, {
+                            imageUrl: img,
+                          });
+                          setUploadedImages(response.imageUrls);
+                          toast({
+                            title: language === 'sr' ? 'Slika obrisana' : 'Image removed',
+                          });
+                        } catch (error) {
+                          toast({
+                            title: language === 'sr' ? 'Greška' : 'Error',
+                            description: language === 'sr' ? 'Nije moguće obrisati sliku' : 'Could not remove image',
+                            variant: 'destructive',
+                          });
+                        }
+                      }}
+                      data-testid={`button-delete-image-${index}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 ))}
               </div>
             )}
