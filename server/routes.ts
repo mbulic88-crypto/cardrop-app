@@ -8,6 +8,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
+import { getStripePriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { sanitizeObject } from './sanitize';
@@ -123,18 +124,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const plan = getPlanById(tier as SubscriptionType);
-      if (!plan || !plan.stripePriceId) {
-        return res.status(404).json({ message: "Price not found for this tier" });
+      const category = (spotData.category || 'private') as ProductCategory;
+      const priceId = getStripePriceId(category, tier);
+      if (!priceId) {
+        return res.status(404).json({ message: "Price not found for this category and tier" });
       }
-
-      const priceId = plan.stripePriceId;
 
       const validatedData = insertParkingSpotSchema.parse(spotData);
 
       const spot = await storage.createParkingSpot({
         ...validatedData,
-        category: spotData.category || 'private',
+        category: category,
         ownerId: userId,
         subscriptionType: tier,
         isPremium: true,
@@ -153,6 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           spotId: spot.id,
           userId: userId,
           tier: tier,
+          category: category,
         },
       });
 
@@ -241,23 +242,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Spot not found" });
       }
 
-      const plan = getPlanById(tier as SubscriptionType);
-      if (!plan || !plan.stripePriceId) {
-        return res.status(404).json({ message: "Price not found for this tier" });
+      const category = (spot.category || 'private') as ProductCategory;
+      const priceId = getStripePriceId(category, tier);
+      if (!priceId) {
+        return res.status(404).json({ message: "Price not found for this category and tier" });
       }
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        line_items: [{ price: priceId, quantity: 1 }],
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
-        cancel_url: `${baseUrl}/add-spot?category=${spot.category || 'private'}`,
+        cancel_url: `${baseUrl}/add-spot?category=${category}`,
         metadata: {
           spotId: spot.id,
           userId: userId,
           tier: tier,
+          category: category,
         },
       });
 
@@ -282,12 +285,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const plan = getPlanById(tier as SubscriptionType);
-      if (!plan || !plan.stripePriceId) {
+      const priceId = getStripePriceId('sale', tier);
+      if (!priceId) {
         return res.status(404).json({ message: "Price not found for this tier" });
       }
-
-      const priceId = plan.stripePriceId;
 
       const validatedData = insertSalesListingSchema.parse(listingData);
 
@@ -311,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           listingId: listing.id,
           userId: userId,
           tier: tier,
-          type: 'sale',
+          category: 'sale',
         },
       });
 

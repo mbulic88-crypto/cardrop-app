@@ -6,6 +6,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { syncStripeProducts } from './stripeProducts';
 
 const app = express();
 
@@ -34,6 +35,8 @@ async function initStripe() {
     stripeSync.syncBackfill()
       .then(() => console.log('Stripe data synced'))
       .catch((err: any) => console.error('Error syncing Stripe data:', err));
+
+    await syncStripeProducts();
   } catch (error) {
     console.error('Failed to initialize Stripe:', error);
   }

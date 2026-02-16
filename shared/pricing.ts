@@ -17,7 +17,6 @@ export interface PricingPlan {
   maxPhotos: number;
   benefits: PlanBenefit[];
   tier: 'standard' | 'silver' | 'gold';
-  stripePriceId?: string;
   badgeSr?: string;
   badgeEn?: string;
 }
@@ -49,7 +48,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     totalVisibilityDays: 60,
     maxPhotos: 3,
     tier: 'silver',
-    stripePriceId: 'price_1T177pADaSBJzV2y71FRKhO6',
     badgeSr: 'Istaknuto',
     badgeEn: 'Featured',
     benefits: [
@@ -71,7 +69,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     totalVisibilityDays: 60,
     maxPhotos: 5,
     tier: 'gold',
-    stripePriceId: 'price_1T177pADaSBJzV2yEpYPU99A',
     badgeSr: 'Top lokacija',
     badgeEn: 'Top location',
     benefits: [
