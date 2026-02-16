@@ -483,7 +483,7 @@ export default function Home() {
                         Moje Rezervacije
                       </Button>
                     </Link>
-                    <Link href="/add-spot" onClick={() => setShowMenu(false)}>
+                    <Link href="/select-category" onClick={() => setShowMenu(false)}>
                       <Button variant="outline" className="w-full justify-start" data-testid="link-add-spot">
                         <PlusCircle className="w-4 h-4 mr-2" />
                         Dodaj Parking

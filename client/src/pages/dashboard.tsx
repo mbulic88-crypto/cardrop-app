@@ -215,7 +215,7 @@ export default function Dashboard() {
           <TabsContent value="spots" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-foreground">Moja Parking Mesta</h2>
-              <Link href="/add-spot">
+              <Link href="/select-category">
                 <Button data-testid="button-add-spot">Dodaj Novo Mesto</Button>
               </Link>
             </div>
@@ -223,7 +223,7 @@ export default function Dashboard() {
             {mySpots.length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">Nemate aktivnih parking mesta</p>
-                <Link href="/add-spot">
+                <Link href="/select-category">
                   <Button data-testid="button-add-first-spot">Dodaj Parking Mesto</Button>
                 </Link>
               </Card>
