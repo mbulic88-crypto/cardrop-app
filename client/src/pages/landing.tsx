@@ -1003,8 +1003,8 @@ export default function Landing() {
               <Mail className="w-8 h-8 text-accent" />
             </div>
             <h3 className="font-semibold text-card-foreground text-lg mb-3">{t.contactEmail}</h3>
-            <a href="mailto:info@cardrop.app" className="text-accent text-xl font-semibold" data-testid="link-contact-email">
-              info@cardrop.app
+            <a href="mailto:info@cardropp.app" className="text-accent text-xl font-semibold" data-testid="link-contact-email">
+              info@cardropp.app
             </a>
             <div className="flex items-center justify-center gap-2 mt-4 text-primary">
               <Clock className="w-4 h-4" />
