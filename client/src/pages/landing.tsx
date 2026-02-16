@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock } from "lucide-react";
-import { SiStripe } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -797,7 +796,7 @@ export default function Landing() {
               <span className="text-sm text-muted-foreground">
                 {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
               </span>
-              <SiStripe className="w-10 h-4 text-[#635BFF]" />
+              <span className="text-lg font-bold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
             </div>
             <p className="text-xs text-muted-foreground/70 text-center max-w-md">
               {language === 'sr' 
@@ -1002,7 +1001,7 @@ export default function Landing() {
             <div className="flex items-center gap-1.5 text-muted-foreground/60">
               <Shield className="w-3.5 h-3.5" />
               <span className="text-xs">Powered by</span>
-              <SiStripe className="w-8 h-3.5 text-[#635BFF]/70" />
+              <span className="text-sm font-bold text-[#635BFF]/70 leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
             </div>
           </div>
           <p className="text-muted-foreground">{t.footerText}</p>

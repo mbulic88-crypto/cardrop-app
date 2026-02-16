@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { ArrowLeft, MapPin, Upload, Home as HomeIcon, Globe, Check, Sparkles, Lock } from "lucide-react";
-import { SiStripe } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -1142,7 +1141,7 @@ export default function AddSpot() {
                     <span className="text-xs text-muted-foreground">
                       {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
                     </span>
-                    <SiStripe className="w-9 h-3.5 text-[#635BFF]" />
+                    <span className="text-base font-bold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
                   </div>
                 )}
 

@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock } from "lucide-react";
-import { SiStripe } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -365,7 +364,7 @@ export default function SpotDetail() {
                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50" data-testid="stripe-trust-spot-detail">
                       <Lock className="w-3.5 h-3.5 text-[#635BFF]" />
                       <span className="text-xs text-muted-foreground">Sigurna plaćanja preko</span>
-                      <SiStripe className="w-9 h-3.5 text-[#635BFF]" />
+                      <span className="text-base font-bold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
                     </div>
                   </div>
                 )}
