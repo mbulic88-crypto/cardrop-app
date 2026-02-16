@@ -72,6 +72,10 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   getAllParkingSpotsAdmin(): Promise<ParkingSpot[]>;
   deleteParkingSpotAdmin(id: string): Promise<void>;
+  toggleParkingSpotActive(id: string): Promise<ParkingSpot | undefined>;
+  getAllSalesListingsAdmin(): Promise<SalesListing[]>;
+  deleteSalesListingAdmin(id: string): Promise<void>;
+  toggleSalesListingActive(id: string): Promise<SalesListing | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -342,6 +346,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteParkingSpotAdmin(id: string): Promise<void> {
     await db.delete(parkingSpots).where(eq(parkingSpots.id, id));
+  }
+
+  async toggleParkingSpotActive(id: string): Promise<ParkingSpot | undefined> {
+    const [spot] = await db.select().from(parkingSpots).where(eq(parkingSpots.id, id));
+    if (!spot) return undefined;
+    const [updated] = await db.update(parkingSpots)
+      .set({ isActive: !spot.isActive })
+      .where(eq(parkingSpots.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getAllSalesListingsAdmin(): Promise<SalesListing[]> {
+    return await db.select().from(salesListings).orderBy(desc(salesListings.createdAt));
+  }
+
+  async deleteSalesListingAdmin(id: string): Promise<void> {
+    await db.delete(salesListings).where(eq(salesListings.id, id));
+  }
+
+  async toggleSalesListingActive(id: string): Promise<SalesListing | undefined> {
+    const [listing] = await db.select().from(salesListings).where(eq(salesListings.id, id));
+    if (!listing) return undefined;
+    const [updated] = await db.update(salesListings)
+      .set({ isActive: !listing.isActive })
+      .where(eq(salesListings.id, id))
+      .returning();
+    return updated;
   }
 }
 

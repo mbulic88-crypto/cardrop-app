@@ -984,6 +984,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/admin/parking-spots/:id/toggle-active', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const spot = await storage.toggleParkingSpotActive(req.params.id);
+      if (!spot) {
+        return res.status(404).json({ message: "Parking spot not found" });
+      }
+      res.json(spot);
+    } catch (error) {
+      console.error("Error toggling parking spot:", error);
+      res.status(500).json({ message: "Failed to toggle parking spot" });
+    }
+  });
+
+  app.get('/api/admin/sales-listings', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const listings = await storage.getAllSalesListingsAdmin();
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching all sales listings:", error);
+      res.status(500).json({ message: "Failed to fetch sales listings" });
+    }
+  });
+
+  app.delete('/api/admin/sales-listings/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteSalesListingAdmin(req.params.id);
+      res.json({ message: "Sales listing deleted" });
+    } catch (error) {
+      console.error("Error deleting sales listing:", error);
+      res.status(500).json({ message: "Failed to delete sales listing" });
+    }
+  });
+
+  app.patch('/api/admin/sales-listings/:id/toggle-active', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const listing = await storage.toggleSalesListingActive(req.params.id);
+      if (!listing) {
+        return res.status(404).json({ message: "Sales listing not found" });
+      }
+      res.json(listing);
+    } catch (error) {
+      console.error("Error toggling sales listing:", error);
+      res.status(500).json({ message: "Failed to toggle sales listing" });
+    }
+  });
+
   // Sales listings routes
   app.get('/api/sales-listings', async (req, res) => {
     try {
