@@ -1013,28 +1013,40 @@ export default function AddSpot() {
                     
                     let borderClass = 'border-card-border';
                     let bgClass = '';
-                    let headerBg = '';
                     let priceColor = 'text-accent';
+                    let titleColor = 'text-foreground';
+                    let subtitleColor = 'text-muted-foreground';
+                    let benefitTextColor = 'text-muted-foreground';
+                    let checkColor = 'text-accent';
                     let checkBorder = 'border-muted-foreground';
                     let checkBg = '';
                     let checkIcon = 'text-white';
+                    let badgeTextColor = 'text-white';
                     
                     if (isSilver) {
                       borderClass = isSelected ? 'border-[#A8A9AD] ring-2 ring-[#A8A9AD]/50' : 'border-[#A8A9AD]';
-                      bgClass = 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] shadow-[0_0_15px_rgba(168,169,173,0.3)]';
-                      headerBg = 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]';
-                      priceColor = 'text-[#5A5A5A] dark:text-[#D4D4D4]';
-                      checkBorder = 'border-[#A8A9AD]';
-                      checkBg = isSelected ? 'bg-gradient-to-r from-[#C0C0C0] to-[#A8A9AD]' : '';
-                      checkIcon = 'text-white';
+                      bgClass = 'bg-gradient-to-br from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]';
+                      priceColor = 'text-[#1a1a1a]';
+                      titleColor = 'text-[#1a1a1a]';
+                      subtitleColor = 'text-[#444]';
+                      benefitTextColor = 'text-[#222]';
+                      checkColor = 'text-[#333]';
+                      checkBorder = 'border-white';
+                      checkBg = isSelected ? 'bg-white' : '';
+                      checkIcon = 'text-[#555]';
+                      badgeTextColor = 'text-[#333]';
                     } else if (isGold) {
                       borderClass = isSelected ? 'border-[#DAA520] ring-2 ring-[#DAA520]/50' : 'border-[#DAA520]';
-                      bgClass = 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] shadow-[0_0_15px_rgba(218,165,32,0.3)]';
-                      headerBg = 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]';
-                      priceColor = 'text-[#B8860B] dark:text-[#FFD700]';
-                      checkBorder = 'border-[#DAA520]';
-                      checkBg = isSelected ? 'bg-gradient-to-r from-[#FFD700] to-[#DAA520]' : '';
-                      checkIcon = 'text-yellow-950';
+                      bgClass = 'bg-gradient-to-br from-[#DAA520] via-[#FFD700] to-[#B8860B] shadow-[0_0_15px_rgba(218,165,32,0.3)]';
+                      priceColor = 'text-white';
+                      titleColor = 'text-white';
+                      subtitleColor = 'text-white/70';
+                      benefitTextColor = 'text-white/90';
+                      checkColor = 'text-white';
+                      checkBorder = 'border-white';
+                      checkBg = isSelected ? 'bg-white' : '';
+                      checkIcon = 'text-[#B8860B]';
+                      badgeTextColor = 'text-white';
                     } else {
                       borderClass = isSelected ? 'border-accent border-2' : 'border-card-border';
                       bgClass = isSelected ? 'bg-accent/5' : '';
@@ -1050,12 +1062,12 @@ export default function AddSpot() {
                         data-testid={`card-plan-${plan.id}`}
                       >
                         {(isSilver || isGold) && (
-                          <div className={`px-4 py-2 rounded-t-md ${headerBg}`}>
+                          <div className="px-4 py-2 rounded-t-md bg-white/15">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-bold text-white tracking-wide">
+                              <span className={`text-sm font-bold tracking-wide ${badgeTextColor}`}>
                                 {isSilver ? (plan.badgeSr && language === 'sr' ? plan.badgeSr : plan.badgeEn) : (plan.badgeSr && language === 'sr' ? plan.badgeSr : plan.badgeEn)}
                               </span>
-                              <Sparkles className="w-4 h-4 text-white" />
+                              <Sparkles className={`w-4 h-4 ${badgeTextColor}`} />
                             </div>
                           </div>
                         )}
@@ -1063,7 +1075,7 @@ export default function AddSpot() {
                         <div className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <h4 className="font-semibold text-foreground text-lg">
+                              <h4 className={`font-semibold text-lg ${titleColor}`}>
                                 {language === 'sr' ? plan.name : plan.nameEn}
                               </h4>
                               <div className="flex items-baseline gap-1 mt-1">
@@ -1071,7 +1083,7 @@ export default function AddSpot() {
                                   {plan.price === 0 ? (language === 'sr' ? 'Besplatno' : 'Free') : `${plan.price.toLocaleString('sr-RS')} RSD`}
                                 </span>
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
+                              <p className={`text-xs mt-0.5 ${subtitleColor}`}>
                                 {language === 'sr' 
                                   ? `${plan.totalVisibilityDays} dana vidljivosti`
                                   : `${plan.totalVisibilityDays} days visibility`}
@@ -1086,8 +1098,8 @@ export default function AddSpot() {
                           
                           <ul className="space-y-1.5 mt-3">
                             {plan.benefits.map((benefit, idx) => (
-                              <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                                <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${isSilver ? 'text-[#A8A9AD]' : isGold ? 'text-[#DAA520]' : 'text-accent'}`} />
+                              <li key={idx} className={`text-sm flex items-start gap-2 ${benefitTextColor}`}>
+                                <Check className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${checkColor}`} />
                                 <span>{language === 'sr' ? benefit.sr : benefit.en}</span>
                               </li>
                             ))}
