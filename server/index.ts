@@ -1,4 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { runMigrations } from 'stripe-replit-sync';
@@ -64,6 +66,31 @@ async function initStripe() {
       }
     }
   );
+
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Previše zahteva, pokušajte ponovo za 15 minuta' },
+  });
+  app.use('/api/', generalLimiter);
+
+  const strictLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Previše zahteva, pokušajte ponovo za 15 minuta' },
+  });
+  app.use('/api/stripe/', strictLimiter);
+  app.use('/api/payments/', strictLimiter);
+  app.use('/api/push/', strictLimiter);
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));

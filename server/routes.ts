@@ -10,6 +10,7 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import { sanitizeObject } from './sanitize';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -361,39 +362,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { subscriptionType, category, isPremium, ...spotData } = req.body;
-      
-      console.log('=== POST /api/parking-spots ===');
-      console.log('userId:', userId);
-      console.log('subscriptionType:', subscriptionType);
-      console.log('category:', category);
-      console.log('isPremium:', isPremium);
-      console.log('spotData:', JSON.stringify(spotData).substring(0, 200));
+      const sanitizedBody = sanitizeObject(req.body);
+      const { subscriptionType, category, isPremium, ...spotData } = sanitizedBody;
       
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
       
       const planId = subscriptionType || 'standard';
       const plan = getPlanById(planId);
-      console.log('Selected plan:', plan?.id, plan?.name);
       if (!plan) {
         console.error('Invalid subscription plan:', subscriptionType);
         return res.status(400).json({ message: "Invalid subscription plan" });
       }
-      
-      console.log(`User selected ${plan.tier} plan: ${plan.id} (${plan.price} RSD)`);
 
       if (spotData.numberOfSpots) {
         spotData.numberOfSpots = parseInt(spotData.numberOfSpots) || undefined;
       }
-      console.log('Validating spot data...');
       const validatedData = insertParkingSpotSchema.parse(spotData);
-      console.log('Validation successful');
       
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
-      console.log('Subscription expires at:', subscriptionExpiresAt?.toISOString());
 
       const isPremiumPlan = plan.tier === 'gold' || plan.tier === 'silver';
-      console.log('Creating parking spot...');
       const spot = await storage.createParkingSpot({
         ...validatedData,
         category: category || 'private',
@@ -404,7 +392,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: !isPremiumPlan,
       } as any);
       
-      console.log('Parking spot created successfully:', spot.id);
       res.status(201).json(spot);
     } catch (error: any) {
       console.error("Error creating parking spot:", error);
@@ -550,12 +537,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         payment: mockResponse,
-        // In production, don't return these
-        debug: {
-          digest,
-          timestamp,
-          authHeader: `WP3-v2 ${authenticityToken} ${timestamp} ${digest}`,
-        }
       });
     } catch (error) {
       console.error("Error creating Monri payment:", error);
@@ -565,7 +546,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/payments/monri/callback', async (req, res) => {
     try {
-      // Handle Monri payment callback
+      // TODO: Add proper Monri signature verification in production
+      // Verify the callback authenticity using Monri's signature mechanism
       const { order_number, status, transaction_id } = req.body;
       
       // Extract booking ID from order number
@@ -664,9 +646,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/reviews', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const sanitizedBody = sanitizeObject(req.body);
       
-      // Validate request body
-      const validatedData = insertReviewSchema.parse(req.body);
+      const validatedData = insertReviewSchema.parse(sanitizedBody);
       
       // Check if user can review this booking
       const canReview = await storage.canUserReviewBooking(validatedData.bookingId, userId);
@@ -801,7 +783,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/users/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { firstName, lastName, phoneNumber } = req.body;
+      const sanitizedBody = sanitizeObject(req.body);
+      const { firstName, lastName, phoneNumber } = sanitizedBody;
       
       const updated = await storage.updateUser(userId, { 
         firstName: firstName || undefined,
@@ -859,7 +842,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const validatedData = insertMessageSchema.parse(req.body);
+      const sanitizedBody = sanitizeObject(req.body);
+      const validatedData = insertMessageSchema.parse(sanitizedBody);
       
       const message = await storage.createMessage({
         ...validatedData,
@@ -1004,7 +988,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/sales-listings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { subscriptionType: subType, ...listingData } = req.body;
+      const sanitizedBody = sanitizeObject(req.body);
+      const { subscriptionType: subType, ...listingData } = sanitizedBody;
       const validatedData = insertSalesListingSchema.parse(listingData);
       
       const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
@@ -1075,7 +1060,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const listing = await storage.getSalesListing(req.params.id);
       if (!listing) return res.status(404).json({ message: "Listing not found" });
       if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
-      const updated = await storage.updateSalesListing(req.params.id, req.body);
+      const sanitizedBody = sanitizeObject(req.body);
+      const updated = await storage.updateSalesListing(req.params.id, sanitizedBody);
       res.json(updated);
     } catch (error) {
       console.error("Error updating sales listing:", error);

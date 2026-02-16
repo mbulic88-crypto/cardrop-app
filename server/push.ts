@@ -3,12 +3,12 @@ import { db } from './db';
 import { pushSubscriptions } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY;
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails(
-    'mailto:support@parkin.rs',
+    'mailto:info@cardropp.app',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );
