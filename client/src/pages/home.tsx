@@ -581,9 +581,9 @@ export default function Home() {
                             <Card 
                               className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                                 spot.subscriptionType === 'gold'
-                                  ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
+                                  ? 'border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                                   : spot.subscriptionType === 'silver'
-                                    ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
+                                    ? 'border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                     : ''
                               }`}
                               data-testid={`card-nearby-spot-${spot.id}`}
@@ -628,27 +628,45 @@ export default function Home() {
                                 </div>
                               </div>
 
-                              <div className="p-3">
+                              <div className={`p-3 ${
+                                spot.subscriptionType === 'gold'
+                                  ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]'
+                                  : spot.subscriptionType === 'silver'
+                                    ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]'
+                                    : ''
+                              }`}>
                                 <h3 className={`font-semibold text-base mb-2 ${
-                                  spot.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
-                                  : spot.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                                  spot.subscriptionType === 'gold' ? 'text-white' 
+                                  : spot.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
                                   : 'text-card-foreground'
                                 }`}>
                                   {spot.title}
                                 </h3>
-                                <div className="flex items-center text-muted-foreground mb-3">
+                                <div className={`flex items-center mb-3 ${
+                                  spot.subscriptionType === 'gold' ? 'text-white/80' 
+                                  : spot.subscriptionType === 'silver' ? 'text-[#333]' 
+                                  : 'text-muted-foreground'
+                                }`}>
                                   <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
                                   <span className="text-xs line-clamp-1">{spot.address}</span>
                                 </div>
                                 <div className="flex flex-wrap gap-1 mb-3">
                                   {spot.hasEvCharging && (
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className={`text-xs ${
+                                      spot.subscriptionType === 'gold' ? 'border-white/40 text-white' 
+                                      : spot.subscriptionType === 'silver' ? 'border-[#555]/40 text-[#333]' 
+                                      : ''
+                                    }`}>
                                       <Zap className="w-3 h-3 mr-1" />
                                       EV
                                     </Badge>
                                   )}
                                   {spot.hasSecurityCamera && (
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className={`text-xs ${
+                                      spot.subscriptionType === 'gold' ? 'border-white/40 text-white' 
+                                      : spot.subscriptionType === 'silver' ? 'border-[#555]/40 text-[#333]' 
+                                      : ''
+                                    }`}>
                                       <Camera className="w-3 h-3 mr-1" />
                                       Kamera
                                     </Badge>
@@ -656,10 +674,18 @@ export default function Home() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                                    <span className={`text-xl font-bold ${
+                                      spot.subscriptionType === 'gold' ? 'text-white' 
+                                      : spot.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
+                                      : 'text-accent'
+                                    }`}>
                                       {spot.pricePerHour}
                                     </span>
-                                    <span className="text-muted-foreground text-xs ml-1">
+                                    <span className={`text-xs ml-1 ${
+                                      spot.subscriptionType === 'gold' ? 'text-white/70' 
+                                      : spot.subscriptionType === 'silver' ? 'text-[#444]' 
+                                      : 'text-muted-foreground'
+                                    }`}>
                                       {spot.currency}/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}
                                     </span>
                                   </div>
@@ -693,9 +719,9 @@ export default function Home() {
                         <Card
                           className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                             listing.subscriptionType === 'gold'
-                              ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
+                              ? 'border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                               : listing.subscriptionType === 'silver'
-                                ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
+                                ? 'border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                 : ''
                           }`}
                           data-testid={`card-sale-${listing.id}`}
@@ -728,26 +754,48 @@ export default function Home() {
                               </Badge>
                             </div>
                           </div>
-                        <div className="p-3">
+                        <div className={`p-3 ${
+                          listing.subscriptionType === 'gold'
+                            ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]'
+                            : listing.subscriptionType === 'silver'
+                              ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]'
+                              : ''
+                        }`}>
                           <h3 className={`font-semibold text-base mb-2 line-clamp-1 ${
-                            listing.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
-                            : listing.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                            listing.subscriptionType === 'gold' ? 'text-white' 
+                            : listing.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
                             : 'text-card-foreground'
                           }`}>
                             {listing.title}
                           </h3>
-                          <div className="flex items-center text-muted-foreground mb-3">
+                          <div className={`flex items-center mb-3 ${
+                            listing.subscriptionType === 'gold' ? 'text-white/80' 
+                            : listing.subscriptionType === 'silver' ? 'text-[#333]' 
+                            : 'text-muted-foreground'
+                          }`}>
                             <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
                             <span className="text-xs line-clamp-1">{listing.address}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <div>
-                              <span className={`text-xl font-bold ${listing.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : listing.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                              <span className={`text-xl font-bold ${
+                                listing.subscriptionType === 'gold' ? 'text-white' 
+                                : listing.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
+                                : 'text-accent'
+                              }`}>
                                 {parseFloat(listing.price).toLocaleString()}
                               </span>
-                              <span className="text-muted-foreground text-xs ml-1">EUR</span>
+                              <span className={`text-xs ml-1 ${
+                                listing.subscriptionType === 'gold' ? 'text-white/70' 
+                                : listing.subscriptionType === 'silver' ? 'text-[#444]' 
+                                : 'text-muted-foreground'
+                              }`}>EUR</span>
                             </div>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className={`text-xs ${
+                              listing.subscriptionType === 'gold' ? 'border-white/40 text-white' 
+                              : listing.subscriptionType === 'silver' ? 'border-[#555]/40 text-[#333]' 
+                              : ''
+                            }`}>
                               {listing.area}m²
                             </Badge>
                           </div>
@@ -762,9 +810,9 @@ export default function Home() {
                         <Card 
                           className={`overflow-hidden hover-elevate cursor-pointer h-full relative ${
                             spot.subscriptionType === 'gold'
-                              ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
+                              ? 'border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
                               : spot.subscriptionType === 'silver'
-                                ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
+                                ? 'border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
                                 : ''
                           }`} 
                           data-testid={`card-spot-${spot.id}`}
@@ -804,28 +852,46 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <div className="p-3">
+                          <div className={`p-3 ${
+                            spot.subscriptionType === 'gold'
+                              ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B]'
+                              : spot.subscriptionType === 'silver'
+                                ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]'
+                                : ''
+                          }`}>
                             <h3 className={`font-semibold text-base mb-2 ${
-                              spot.subscriptionType === 'gold' ? 'text-[#8B6914] dark:text-[#FFD700]' 
-                              : spot.subscriptionType === 'silver' ? 'text-[#5A5A5A] dark:text-[#D4D4D4]' 
+                              spot.subscriptionType === 'gold' ? 'text-white' 
+                              : spot.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
                               : 'text-card-foreground'
                             }`}>
                               {spot.title}
                             </h3>
-                            <div className="flex items-center text-muted-foreground mb-3">
+                            <div className={`flex items-center mb-3 ${
+                              spot.subscriptionType === 'gold' ? 'text-white/80' 
+                              : spot.subscriptionType === 'silver' ? 'text-[#333]' 
+                              : 'text-muted-foreground'
+                            }`}>
                               <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
                               <span className="text-xs line-clamp-1">{spot.address}</span>
                             </div>
 
                             <div className="flex flex-wrap gap-1 mb-3">
                               {spot.hasEvCharging && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className={`text-xs ${
+                                  spot.subscriptionType === 'gold' ? 'border-white/40 text-white' 
+                                  : spot.subscriptionType === 'silver' ? 'border-[#555]/40 text-[#333]' 
+                                  : ''
+                                }`}>
                                   <Zap className="w-3 h-3 mr-1" />
                                   EV
                                 </Badge>
                               )}
                               {spot.hasSecurityCamera && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline" className={`text-xs ${
+                                  spot.subscriptionType === 'gold' ? 'border-white/40 text-white' 
+                                  : spot.subscriptionType === 'silver' ? 'border-[#555]/40 text-[#333]' 
+                                  : ''
+                                }`}>
                                   <Camera className="w-3 h-3 mr-1" />
                                   Kamera
                                 </Badge>
@@ -834,10 +900,18 @@ export default function Home() {
 
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className={`text-xl font-bold ${spot.subscriptionType === 'gold' ? 'text-[#B8860B] dark:text-[#FFD700]' : spot.subscriptionType === 'silver' ? 'text-[#71706E] dark:text-[#C0C0C0]' : 'text-accent'}`}>
+                                <span className={`text-xl font-bold ${
+                                  spot.subscriptionType === 'gold' ? 'text-white' 
+                                  : spot.subscriptionType === 'silver' ? 'text-[#1a1a1a]' 
+                                  : 'text-accent'
+                                }`}>
                                   {spot.pricePerHour}
                                 </span>
-                                <span className="text-muted-foreground text-xs ml-1">
+                                <span className={`text-xs ml-1 ${
+                                  spot.subscriptionType === 'gold' ? 'text-white/70' 
+                                  : spot.subscriptionType === 'silver' ? 'text-[#444]' 
+                                  : 'text-muted-foreground'
+                                }`}>
                                   {spot.currency}/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}
                                 </span>
                               </div>
