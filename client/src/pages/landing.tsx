@@ -669,16 +669,16 @@ export default function Landing() {
                   key={plan.id}
                   className={`relative p-6 md:p-8 flex flex-col ${
                     isGold
-                      ? 'bg-gradient-to-br from-[#FFF8E7] via-[#FFF0C8] to-[#FFF8E7] dark:from-[#2a2000] dark:via-[#3d2e00] dark:to-[#2a2000] border-2 border-[#DAA520] shadow-[0_0_15px_rgba(218,165,32,0.3)]'
+                      ? 'bg-gradient-to-br from-[#DAA520] via-[#FFD700] to-[#B8860B] border-2 border-[#DAA520] shadow-[0_0_20px_rgba(218,165,32,0.4)]'
                       : isSilver
-                        ? 'bg-gradient-to-br from-[#F5F5F5] via-[#E8E8E8] to-[#F5F5F5] dark:from-[#2a2a2a] dark:via-[#383838] dark:to-[#2a2a2a] border-2 border-[#A8A9AD] shadow-[0_0_15px_rgba(168,169,173,0.3)]'
+                        ? 'bg-gradient-to-br from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] border-2 border-[#A8A9AD] shadow-[0_0_20px_rgba(168,169,173,0.4)]'
                         : 'border border-border'
                   }`}
                   data-testid={`card-pricing-${plan.id}`}
                 >
                   {isGold && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0 no-default-hover-elevate no-default-active-elevate">
+                      <Badge className="bg-white text-[#B8860B] border-0 font-bold no-default-hover-elevate no-default-active-elevate">
                         <Crown className="w-3 h-3 mr-1" />
                         {t.pricingBestValue}
                       </Badge>
@@ -686,7 +686,7 @@ export default function Landing() {
                   )}
                   {isSilver && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0 no-default-hover-elevate no-default-active-elevate">
+                      <Badge className="bg-white text-[#555] border-0 font-bold no-default-hover-elevate no-default-active-elevate">
                         <Star className="w-3 h-3 mr-1" />
                         {t.pricingMostPopular}
                       </Badge>
@@ -696,9 +696,9 @@ export default function Landing() {
                   <div className="text-center mb-6 mt-2">
                     <div className={`w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center ${
                       isGold
-                        ? 'bg-gradient-to-br from-[#DAA520] via-[#FFD700] to-[#B8860B]'
+                        ? 'bg-white/20'
                         : isSilver
-                          ? 'bg-gradient-to-br from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD]'
+                          ? 'bg-white/30'
                           : 'bg-accent/20'
                     }`}>
                       {isGold ? (
@@ -711,9 +711,9 @@ export default function Landing() {
                     </div>
                     <h3 className={`text-2xl font-bold mb-2 ${
                       isGold
-                        ? 'text-[#B8860B] dark:text-[#FFD700]'
+                        ? 'text-white'
                         : isSilver
-                          ? 'text-[#71706E] dark:text-[#C0C0C0]'
+                          ? 'text-[#1a1a1a]'
                           : 'text-foreground'
                     }`}>
                       {language === 'sr' ? plan.name : plan.nameEn}
@@ -721,16 +721,16 @@ export default function Landing() {
                     <div className="flex items-baseline justify-center gap-1">
                       <span className={`text-3xl md:text-4xl font-bold ${
                         isGold
-                          ? 'text-[#B8860B] dark:text-[#FFD700]'
+                          ? 'text-white'
                           : isSilver
-                            ? 'text-[#71706E] dark:text-[#C0C0C0]'
+                            ? 'text-[#1a1a1a]'
                             : 'text-foreground'
                       }`}>
                         {plan.price === 0 ? t.pricingFree : `${plan.price} RSD`}
                       </span>
                     </div>
                     {plan.price > 0 && (
-                      <p className="text-sm text-muted-foreground mt-1">{t.pricingPerListing}</p>
+                      <p className={`text-sm mt-1 ${isGold ? 'text-white/70' : isSilver ? 'text-[#444]' : 'text-muted-foreground'}`}>{t.pricingPerListing}</p>
                     )}
                   </div>
 
@@ -740,12 +740,12 @@ export default function Landing() {
                         <li key={idx} className="flex items-start gap-2">
                           <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
                             isGold
-                              ? 'text-[#DAA520]'
+                              ? 'text-white'
                               : isSilver
-                                ? 'text-[#A8A9AD]'
+                                ? 'text-[#333]'
                                 : 'text-accent'
                           }`} />
-                          <span className="text-sm text-card-foreground">
+                          <span className={`text-sm ${isGold ? 'text-white/90' : isSilver ? 'text-[#222]' : 'text-card-foreground'}`}>
                             {language === 'sr' ? benefit.sr : benefit.en}
                           </span>
                         </li>
@@ -757,9 +757,9 @@ export default function Landing() {
                     <Button
                       className={`w-full ${
                         isGold
-                          ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
+                          ? 'bg-white text-[#B8860B] border-0 hover:bg-white/90'
                           : isSilver
-                            ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
+                            ? 'bg-white text-[#555] border-0 hover:bg-white/90'
                             : ''
                       }`}
                       variant={isStandard ? 'outline' : 'default'}
@@ -772,9 +772,9 @@ export default function Landing() {
                     <Button
                       className={`w-full ${
                         isGold
-                          ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0'
+                          ? 'bg-white/20 text-white border border-white/40 hover:bg-white/30'
                           : isSilver
-                            ? 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'
+                            ? 'bg-white/30 text-[#333] border border-[#999]/40 hover:bg-white/50'
                             : ''
                       }`}
                       variant={isStandard ? 'outline' : 'default'}
