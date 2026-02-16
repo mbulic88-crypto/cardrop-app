@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
+  allowedFileTypes?: string[];
   onGetUploadParameters: () => Promise<{
     method: "PUT";
     url: string;
@@ -25,6 +26,7 @@ interface ObjectUploaderProps {
 export function ObjectUploader({
   maxNumberOfFiles = 1,
   maxFileSize = 10485760,
+  allowedFileTypes = ["image/*"],
   onGetUploadParameters,
   onComplete,
   buttonClassName,
@@ -36,6 +38,7 @@ export function ObjectUploader({
       restrictions: {
         maxNumberOfFiles,
         maxFileSize,
+        allowedFileTypes,
       },
       autoProceed: true,
     })
