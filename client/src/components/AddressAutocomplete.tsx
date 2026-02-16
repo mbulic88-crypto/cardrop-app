@@ -32,7 +32,6 @@ export function AddressAutocomplete({
     const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
     
     if (!apiKey) {
-      console.error('VITE_GEOAPIFY_API_KEY is not set');
       return;
     }
 

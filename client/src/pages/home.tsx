@@ -197,7 +197,6 @@ export default function Home() {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         
         if (!apiKey) {
-          console.error('Geoapify API key not found');
           return;
         }
 

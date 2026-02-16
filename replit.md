@@ -77,7 +77,7 @@ The platform features a dual-theme design with green accent colors:
 
 ### System Design Choices
 *   **API Design**: RESTful API endpoints for CRUD operations on parking spots, bookings, payments, and reviews.
-*   **Security**: Server-side validation for all inputs, secure handling of payment tokens, and injection prevention for review data.
+*   **Security**: Helmet middleware for security headers, rate limiting (200 req/15min general, 30 req/15min sensitive routes), input sanitization (`server/sanitize.ts`) for XSS prevention, server-side Zod validation, secure handling of payment tokens, VAPID keys properly secured (server-only, no VITE_ fallback), debug console logs removed from production code.
 *   **Data Validation**: Zod schemas are used for robust data validation on both frontend and backend, handling type conversions for dates and other complex data.
 *   **Error Handling**: Comprehensive error handling, including specific responses for unique constraint violations (e.g., duplicate reviews), trial already used (403), and invalid subscription plans (400).
 *   **Geographic Scope**: Designed for Serbia, with city-based filtering and popular destination features.
