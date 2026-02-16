@@ -771,7 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Nemate dozvolu za brisanje ovog mesta" });
       }
       
-      await storage.updateParkingSpot(req.params.id, { isActive: false } as any);
+      await storage.deleteParkingSpot(req.params.id);
       res.json({ message: "Parking mesto je izbrisano" });
     } catch (error) {
       console.error("Error deleting parking spot:", error);

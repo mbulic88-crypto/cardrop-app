@@ -35,6 +35,7 @@ export interface IStorage {
   getUserParkingSpots(ownerId: string): Promise<ParkingSpot[]>;
   createParkingSpot(spot: InsertParkingSpot & { ownerId: string }): Promise<ParkingSpot>;
   updateParkingSpot(id: string, spot: Partial<InsertParkingSpot>): Promise<ParkingSpot | undefined>;
+  deleteParkingSpot(id: string): Promise<void>;
   
   // Bookings operations
   getBooking(id: string): Promise<Booking | undefined>;
@@ -333,6 +334,10 @@ export class DatabaseStorage implements IStorage {
 
   async getAllParkingSpotsAdmin(): Promise<ParkingSpot[]> {
     return await db.select().from(parkingSpots).orderBy(desc(parkingSpots.createdAt));
+  }
+
+  async deleteParkingSpot(id: string): Promise<void> {
+    await db.delete(parkingSpots).where(eq(parkingSpots.id, id));
   }
 
   async deleteParkingSpotAdmin(id: string): Promise<void> {
