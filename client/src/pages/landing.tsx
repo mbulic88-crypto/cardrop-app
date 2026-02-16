@@ -834,14 +834,14 @@ export default function Landing() {
           </div>
 
           <div className="flex flex-col items-center gap-3 mt-10" data-testid="stripe-trust-pricing">
-            <div className="flex items-center gap-2 px-5 py-2.5 rounded-md bg-card border border-border">
-              <Lock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 px-6 py-3 rounded-md bg-card border border-border">
+              <Shield className="w-5 h-5 text-[#635BFF]" />
+              <span className="text-base text-foreground font-medium">
                 {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
               </span>
-              <span className="text-lg font-bold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
+              <span className="text-2xl font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
             </div>
-            <p className="text-xs text-muted-foreground/70 text-center max-w-md">
+            <p className="text-sm text-muted-foreground text-center max-w-md">
               {language === 'sr' 
                 ? 'Sva plaćanja su zaštićena SSL enkripcijom i obrađena od strane Stripe-a, vodećeg svetskog platnog procesora.'
                 : 'All payments are SSL encrypted and processed by Stripe, the world\'s leading payment processor.'}
@@ -1034,10 +1034,10 @@ export default function Landing() {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-3 mb-4" data-testid="stripe-trust-footer">
-            <div className="flex items-center gap-1.5 text-muted-foreground/60">
-              <Shield className="w-3.5 h-3.5" />
-              <span className="text-xs">Powered by</span>
-              <span className="text-sm font-bold text-[#635BFF]/70 leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Shield className="w-4 h-4 text-[#635BFF]" />
+              <span className="text-sm">Powered by</span>
+              <span className="text-lg font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{t.footerText}</p>

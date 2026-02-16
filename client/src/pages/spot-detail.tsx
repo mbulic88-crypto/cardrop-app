@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock } from "lucide-react";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, Shield } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -361,10 +361,10 @@ export default function SpotDetail() {
                         {spot.paymentType === 'card_monri' && 'Kartično'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50" data-testid="stripe-trust-spot-detail">
-                      <Lock className="w-3.5 h-3.5 text-[#635BFF]" />
-                      <span className="text-xs text-muted-foreground">Sigurna plaćanja preko</span>
-                      <span className="text-base font-bold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
+                    <div className="flex items-center gap-2.5 mt-2 pt-2 border-t border-border/50" data-testid="stripe-trust-spot-detail">
+                      <Shield className="w-4 h-4 text-[#635BFF]" />
+                      <span className="text-sm text-foreground font-medium">Sigurna plaćanja preko</span>
+                      <span className="text-xl font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
                     </div>
                   </div>
                 )}
