@@ -245,6 +245,18 @@ export default function SpotDetail() {
           )}
         </div>
 
+        {/* Price - prominently right below images */}
+        <div className="mb-6" data-testid="price-banner">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-accent" data-testid="text-price-main">
+              {spot.pricePerHour} {spot.currency}
+            </span>
+            <span className="text-lg text-muted-foreground">
+              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'nedelju' : spot.pricingType === 'monthly' ? 'mesec' : 'sat'}
+            </span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Details */}
           <div className="lg:col-span-2 space-y-6">
@@ -470,7 +482,7 @@ export default function SpotDetail() {
               <div className="mb-6">
                 <div className="text-3xl font-bold text-accent mb-1" data-testid="text-price">
                   {spot.pricePerHour} {spot.currency}
-                  <span className="text-base text-muted-foreground font-normal">/sat</span>
+                  <span className="text-base text-muted-foreground font-normal">/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}</span>
                 </div>
               </div>
 

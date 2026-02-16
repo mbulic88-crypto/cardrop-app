@@ -660,7 +660,7 @@ export default function Home() {
                                       {spot.pricePerHour}
                                     </span>
                                     <span className="text-muted-foreground text-xs ml-1">
-                                      {spot.currency}/sat
+                                      {spot.currency}/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}
                                     </span>
                                   </div>
                                 </div>
@@ -838,7 +838,7 @@ export default function Home() {
                                   {spot.pricePerHour}
                                 </span>
                                 <span className="text-muted-foreground text-xs ml-1">
-                                  {spot.currency}/sat
+                                  {spot.currency}/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}
                                 </span>
                               </div>
                             </div>

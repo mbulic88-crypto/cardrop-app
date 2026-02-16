@@ -119,11 +119,26 @@ const translations = {
     advertiserOwner: "Vlasnik",
     advertiserAgency: "Agencija",
     advertiserCompany: "Kompanija",
-    // Pricing type for all categories
-    pricingType: "Tip Cene",
-    pricingTypeDescription: "Izaberite kako naplaćujete parkiranje",
+    // Rental duration type
+    rentalDuration: "Tip Izdavanja",
+    rentalDurationDescription: "Izaberite da li izdajete kratkoročno ili dugoročno",
+    rentalShortTerm: "Kratkoročno",
+    rentalLongTerm: "Dugoročno",
+    pricingPeriod: "Period Naplate",
+    pricingPeriodDescription: "Izaberite period za koji naplaćujete",
+    pricingHourly: "Po Satu",
     pricingDaily: "Po Danu",
+    pricingWeekly: "Po Nedelji",
     pricingMonthly: "Po Mesecu",
+    pricePerHourLabel: "Cena po Satu",
+    pricePerHourPlaceholder: "200",
+    pricePerHourDescription: "Cena po satu parkiranja",
+    pricePerDayLabel: "Cena po Danu",
+    pricePerDayLabelPlaceholder: "1000",
+    pricePerDayLabelDescription: "Dnevna cena parkiranja",
+    pricePerWeek: "Cena po Nedelji",
+    pricePerWeekPlaceholder: "3000",
+    pricePerWeekDescription: "Nedeljnja cena parkiranja",
     pricePerMonth: "Cena po Mesecu",
     pricePerMonthPlaceholder: "5000",
     pricePerMonthDescription: "Mesečna cena parkiranja",
@@ -215,11 +230,26 @@ const translations = {
     advertiserOwner: "Owner",
     advertiserAgency: "Agency",
     advertiserCompany: "Company",
-    // Pricing type for all categories
-    pricingType: "Pricing Type",
-    pricingTypeDescription: "Choose how you charge for parking",
+    // Rental duration type
+    rentalDuration: "Rental Type",
+    rentalDurationDescription: "Choose short-term or long-term rental",
+    rentalShortTerm: "Short-term",
+    rentalLongTerm: "Long-term",
+    pricingPeriod: "Billing Period",
+    pricingPeriodDescription: "Choose the billing period",
+    pricingHourly: "Per Hour",
     pricingDaily: "Per Day",
+    pricingWeekly: "Per Week",
     pricingMonthly: "Per Month",
+    pricePerHourLabel: "Price per Hour",
+    pricePerHourPlaceholder: "200",
+    pricePerHourDescription: "Hourly parking price",
+    pricePerDayLabel: "Price per Day",
+    pricePerDayLabelPlaceholder: "1000",
+    pricePerDayLabelDescription: "Daily parking price",
+    pricePerWeek: "Price per Week",
+    pricePerWeekPlaceholder: "3000",
+    pricePerWeekDescription: "Weekly parking price",
     pricePerMonth: "Price per Month",
     pricePerMonthPlaceholder: "5000",
     pricePerMonthDescription: "Monthly parking price",
@@ -252,7 +282,7 @@ const formSchema = z.object({
   // Residential specific fields
   contactPerson: z.string().optional(),
   // Pricing type for all categories
-  pricingType: z.enum(['daily', 'monthly']).default('daily'),
+  pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily'),
   autoRenewal: z.boolean().default(false),
 });
 
@@ -266,6 +296,7 @@ export default function AddSpot() {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [language, setLanguage] = useState<"sr" | "en">("sr");
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
+  const [rentalDurationType, setRentalDurationType] = useState<'short' | 'long'>('short');
   
   // Get category from URL params
   const urlParams = new URLSearchParams(searchString);
@@ -303,7 +334,7 @@ export default function AddSpot() {
       companyName: "",
       pib: "",
       contactPerson: "",
-      pricingType: "daily",
+      pricingType: "hourly",
       autoRenewal: false,
     },
   });
@@ -687,26 +718,60 @@ export default function AddSpot() {
                 </>
               )}
 
-              {/* Pricing Type - for all categories */}
+              {/* Rental Duration Type */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">{t.rentalDuration}</label>
+                <Select 
+                  value={rentalDurationType} 
+                  onValueChange={(val: 'short' | 'long') => {
+                    setRentalDurationType(val);
+                    if (val === 'short') {
+                      form.setValue('pricingType', 'hourly');
+                    } else {
+                      form.setValue('pricingType', 'weekly');
+                    }
+                  }}
+                >
+                  <SelectTrigger data-testid="select-rental-duration">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">{t.rentalShortTerm}</SelectItem>
+                    <SelectItem value="long">{t.rentalLongTerm}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">{t.rentalDurationDescription}</p>
+              </div>
+
+              {/* Pricing Period - depends on rental duration */}
               <FormField
                 control={form.control}
                 name="pricingType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.pricingType}</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>{t.pricingPeriod}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-pricing-type">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="daily">{t.pricingDaily}</SelectItem>
-                        <SelectItem value="monthly">{t.pricingMonthly}</SelectItem>
+                        {rentalDurationType === 'short' ? (
+                          <>
+                            <SelectItem value="hourly">{t.pricingHourly}</SelectItem>
+                            <SelectItem value="daily">{t.pricingDaily}</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="weekly">{t.pricingWeekly}</SelectItem>
+                            <SelectItem value="monthly">{t.pricingMonthly}</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {t.pricingTypeDescription}
+                      {t.pricingPeriodDescription}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -718,21 +783,32 @@ export default function AddSpot() {
                   control={form.control}
                   name="pricePerHour"
                   render={({ field }) => {
-                    // Determine price label based on pricingType
                     const getPriceLabel = () => {
-                      if (isTruckStop) return t.pricePerDay;
-                      if (watchedPricingType === 'monthly') return t.pricePerMonth;
-                      return t.pricePerDay;
+                      switch (watchedPricingType) {
+                        case 'hourly': return t.pricePerHourLabel;
+                        case 'daily': return t.pricePerDayLabel;
+                        case 'weekly': return t.pricePerWeek;
+                        case 'monthly': return t.pricePerMonth;
+                        default: return t.pricePerDayLabel;
+                      }
                     };
                     const getPricePlaceholder = () => {
-                      if (isTruckStop) return t.pricePerDayPlaceholder;
-                      if (watchedPricingType === 'monthly') return t.pricePerMonthPlaceholder;
-                      return t.pricePerDayPlaceholder;
+                      switch (watchedPricingType) {
+                        case 'hourly': return t.pricePerHourPlaceholder;
+                        case 'daily': return t.pricePerDayLabelPlaceholder;
+                        case 'weekly': return t.pricePerWeekPlaceholder;
+                        case 'monthly': return t.pricePerMonthPlaceholder;
+                        default: return t.pricePerDayLabelPlaceholder;
+                      }
                     };
                     const getPriceDescription = () => {
-                      if (isTruckStop) return t.pricePerDayDescription;
-                      if (watchedPricingType === 'monthly') return t.pricePerMonthDescription;
-                      return t.pricePerDayDescription;
+                      switch (watchedPricingType) {
+                        case 'hourly': return t.pricePerHourDescription;
+                        case 'daily': return t.pricePerDayLabelDescription;
+                        case 'weekly': return t.pricePerWeekDescription;
+                        case 'monthly': return t.pricePerMonthDescription;
+                        default: return t.pricePerDayLabelDescription;
+                      }
                     };
                     return (
                       <FormItem>
