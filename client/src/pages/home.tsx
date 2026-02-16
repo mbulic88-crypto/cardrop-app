@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,7 +41,8 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
   const [searchLocation, setSearchLocation] = useState("");
   const [selectedCity, setSelectedCity] = useState("Svi Gradovi");
-  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [spotType, setSpotType] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [geocodedLocation, setGeocodedLocation] = useState<{ lat: number; lon: number } | null>(null);
@@ -102,7 +102,9 @@ export default function Home() {
       (spot.city && spot.city.toLowerCase() === selectedCity.toLowerCase());
     
     const price = parseFloat(spot.pricePerHour);
-    const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+    const minPrice = priceMin ? parseFloat(priceMin) : 0;
+    const maxPrice = priceMax ? parseFloat(priceMax) : Infinity;
+    const matchesPrice = price >= minPrice && price <= maxPrice;
     
     const matchesType = spotType === "all" || spot.spotType === spotType;
     
@@ -166,7 +168,7 @@ export default function Home() {
     const hasActiveFilters = searchLocation || selectedCity !== "Svi Gradovi" || 
       filterEvCharging || filterCamera || filter24Hours || spotType !== "all" ||
       filterTier !== "all" || filterCategory !== "all" ||
-      priceRange[0] > 0 || priceRange[1] < 500;
+      priceMin !== "" || priceMax !== "";
 
     all.sort((a, b) => {
       const aTier = tierOrder[a.data.subscriptionType || 'standard'] || 1;
@@ -179,7 +181,7 @@ export default function Home() {
     });
 
     return all;
-  }, [filteredSpots, filteredSales, listingMode, searchLocation, selectedCity, filterEvCharging, filterCamera, filter24Hours, spotType, priceRange, filterTier, filterCategory]);
+  }, [filteredSpots, filteredSales, listingMode, searchLocation, selectedCity, filterEvCharging, filterCamera, filter24Hours, spotType, priceMin, priceMax, filterTier, filterCategory]);
 
   const handleProtectedAction = (path: string) => {
     if (isAuthenticated) {
@@ -397,16 +399,27 @@ export default function Home() {
               {/* Price Range */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground block">
-                  Cena: {priceRange[0]} - {priceRange[1]} RSD
+                  Cena (RSD)
                 </label>
-                <Slider
-                  min={0}
-                  max={500}
-                  step={10}
-                  value={priceRange}
-                  onValueChange={setPriceRange}
-                  data-testid="slider-price-range"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Od"
+                    value={priceMin}
+                    onChange={(e) => setPriceMin(e.target.value)}
+                    data-testid="input-price-min"
+                    min={0}
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Do"
+                    value={priceMax}
+                    onChange={(e) => setPriceMax(e.target.value)}
+                    data-testid="input-price-max"
+                    min={0}
+                  />
+                </div>
               </div>
 
               {/* Feature Filters */}
