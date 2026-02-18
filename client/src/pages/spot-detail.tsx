@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, Shield } from "lucide-react";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, Shield, MessageCircle } from "lucide-react";
+import { SiViber, SiWhatsapp } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -19,6 +20,17 @@ import { sr } from "date-fns/locale";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
+
+function formatPhoneForMessaging(phone: string): string {
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '+381' + cleaned.substring(1);
+  }
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
+}
 
 export default function SpotDetail() {
   const [, params] = useRoute("/spot/:id");
@@ -341,15 +353,41 @@ export default function SpotDetail() {
                     </div>
                     
                     {spot.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-accent" />
-                        <a 
-                          href={`tel:${spot.phone}`} 
-                          className="text-accent hover:underline font-medium"
-                          data-testid="link-phone"
-                        >
-                          {spot.phone}
-                        </a>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Phone className="w-5 h-5 text-accent" />
+                          <a 
+                            href={`tel:${spot.phone}`} 
+                            className="text-accent hover:underline font-medium"
+                            data-testid="link-phone"
+                          >
+                            {spot.phone}
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <a
+                            href={`viber://chat?number=${encodeURIComponent(formatPhoneForMessaging(spot.phone))}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-testid="link-viber"
+                          >
+                            <Button variant="outline" size="sm">
+                              <SiViber className="w-4 h-4 mr-1.5" style={{ color: '#7360F2' }} />
+                              Viber
+                            </Button>
+                          </a>
+                          <a
+                            href={`https://wa.me/${formatPhoneForMessaging(spot.phone).replace('+', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            data-testid="link-whatsapp"
+                          >
+                            <Button variant="outline" size="sm">
+                              <SiWhatsapp className="w-4 h-4 mr-1.5" style={{ color: '#25D366' }} />
+                              WhatsApp
+                            </Button>
+                          </a>
+                        </div>
                       </div>
                     )}
                     

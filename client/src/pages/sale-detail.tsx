@@ -4,7 +4,8 @@ import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Phone, ArrowLeft, Sparkles, Maximize2, Tag, Building2, ShoppingBag, Eye, EyeOff, User, Ruler, Hash, Wrench, Zap, Droplets, Thermometer, Camera, DoorOpen, Radio } from "lucide-react";
+import { MapPin, Phone, ArrowLeft, Sparkles, Maximize2, Tag, Building2, ShoppingBag, Eye, EyeOff, User, Ruler, Hash, Wrench, Zap, Droplets, Thermometer, Camera, DoorOpen, Radio, MessageCircle } from "lucide-react";
+import { SiViber, SiWhatsapp } from "react-icons/si";
 import type { SalesListing, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -39,6 +40,17 @@ const featureConfig: Record<string, { label: string; icon: typeof Zap }> = {
   ramp: { label: "Rampa", icon: DoorOpen },
   remote_control: { label: "Daljinski", icon: Radio },
 };
+
+function formatPhoneForMessaging(phone: string): string {
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '+381' + cleaned.substring(1);
+  }
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
+}
 
 export default function SaleDetail() {
   const [, params] = useRoute("/sale/:id");
@@ -313,6 +325,32 @@ export default function SaleDetail() {
                   {listing.phone}
                 </Button>
               </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`viber://chat?number=${encodeURIComponent(formatPhoneForMessaging(listing.phone))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                  data-testid="link-viber-sale"
+                >
+                  <Button variant="outline" className="w-full">
+                    <SiViber className="w-4 h-4 mr-1.5" style={{ color: '#7360F2' }} />
+                    Viber
+                  </Button>
+                </a>
+                <a
+                  href={`https://wa.me/${formatPhoneForMessaging(listing.phone).replace('+', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                  data-testid="link-whatsapp-sale"
+                >
+                  <Button variant="outline" className="w-full">
+                    <SiWhatsapp className="w-4 h-4 mr-1.5" style={{ color: '#25D366' }} />
+                    WhatsApp
+                  </Button>
+                </a>
+              </div>
               <Button
                 variant="ghost"
                 className="w-full text-muted-foreground"
