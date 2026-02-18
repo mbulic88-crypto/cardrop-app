@@ -45,6 +45,15 @@ async function initStripe() {
 (async () => {
   await initStripe();
 
+  app.use((req, res, next) => {
+    const host = req.hostname || req.headers.host;
+    if (host && host.startsWith('www.')) {
+      const newHost = host.replace(/^www\./, '');
+      return res.redirect(301, `https://${newHost}${req.originalUrl}`);
+    }
+    next();
+  });
+
   app.post(
     '/api/stripe/webhook',
     express.raw({ type: 'application/json' }),
