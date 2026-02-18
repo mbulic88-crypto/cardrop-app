@@ -1,8 +1,9 @@
-const CACHE_NAME = 'parkin-v2';
+const CACHE_NAME = 'cardrop-v3';
 const STATIC_ASSETS = [
   '/manifest.json',
-  '/icons/icon-192x192.svg',
-  '/icons/icon-512x512.svg'
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/robots.txt'
 ];
 
 self.addEventListener('install', (event) => {
@@ -21,9 +22,9 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body || '',
-      icon: data.icon || '/icons/icon-192x192.svg',
-      badge: data.badge || '/icons/icon-192x192.svg',
-      tag: data.tag || 'parkin-notification',
+      icon: data.icon || '/icons/icon-192x192.png',
+      badge: data.badge || '/icons/icon-192x192.png',
+      tag: data.tag || 'cardrop-notification',
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
       requireInteraction: true
@@ -72,13 +73,49 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
   const url = new URL(event.request.url);
-  
+
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
         return new Response(JSON.stringify({ error: 'Offline' }), {
           status: 503,
           headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+
+  if (url.pathname.match(/\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|webp|ico)$/)) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  if (url.origin === self.location.origin && url.pathname.match(/^https?:\/\/fonts\./)) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
         });
       })
     );
@@ -93,11 +130,11 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((response) => {
-        if (response.ok && response.type === 'basic') {
+        if (response.ok) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -105,7 +142,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       });
-      
       return cachedResponse || fetchPromise;
     })
   );

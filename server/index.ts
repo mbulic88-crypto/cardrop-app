@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { registerRoutes } from "./routes";
@@ -79,6 +80,8 @@ async function initStripe() {
     }
   );
 
+  app.use(compression());
+
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
@@ -148,6 +151,15 @@ async function initStripe() {
 
     res.status(status).json({ message });
     throw err;
+  });
+
+  app.use((req, res, next) => {
+    if (req.path.match(/\.(js|css|woff2?|ttf|eot|png|jpg|jpeg|webp|svg|ico|gif)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (req.path === '/sw.js' || req.path === '/manifest.json' || req.path === '/robots.txt') {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+    next();
   });
 
   if (app.get("env") === "development") {
