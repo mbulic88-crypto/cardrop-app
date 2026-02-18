@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { sr } from "date-fns/locale";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
+import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
 function formatPhoneForMessaging(phone: string): string {
   let cleaned = phone.replace(/[\s\-\(\)]/g, '');
@@ -49,6 +50,18 @@ export default function SpotDetail() {
     queryKey: ["/api/parking-spots", spotId],
     enabled: !!spotId,
   });
+
+  useEffect(() => {
+    if (spot) {
+      trackViewContent({
+        content_name: spot.title,
+        content_category: spot.category || 'parking',
+        content_type: 'parking_spot',
+        value: spot.pricePerHour ? Number(spot.pricePerHour) : undefined,
+        currency: 'RSD',
+      });
+    }
+  }, [spot?.id]);
 
   const { data: owner } = useQuery<UserType>({
     queryKey: ["/api/users", spot?.ownerId],
@@ -325,7 +338,12 @@ export default function SpotDetail() {
                 <Button
                   variant="outline"
                   className="w-full justify-between"
-                  onClick={() => setShowOwnerContact(!showOwnerContact)}
+                  onClick={() => {
+                    if (!showOwnerContact) {
+                      trackContact({ content_name: spot.title, content_category: 'parking_spot' });
+                    }
+                    setShowOwnerContact(!showOwnerContact);
+                  }}
                   data-testid="button-toggle-owner-contact"
                 >
                   <span className="flex items-center gap-2 font-semibold">

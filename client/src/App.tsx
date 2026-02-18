@@ -1,9 +1,11 @@
-import { Switch, Route } from "wouter";
+import { useEffect } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { trackPageView } from "@/lib/metaPixel";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Terms from "@/pages/terms";
@@ -23,7 +25,15 @@ import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
 import PrivacyPolicy from "@/pages/privacy-policy";
 
+function usePageViewTracking() {
+  const [location] = useLocation();
+  useEffect(() => {
+    trackPageView(location);
+  }, [location]);
+}
+
 function Router() {
+  usePageViewTracking();
   return (
     <Switch>
       <Route path="/" component={Landing} />

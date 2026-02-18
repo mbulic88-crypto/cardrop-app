@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { SiViber, SiWhatsapp } from "react-icons/si";
 import type { SalesListing, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
 const propertyTypeLabels: Record<string, string> = {
   garage: "Garaža",
@@ -62,6 +63,18 @@ export default function SaleDetail() {
     queryKey: ["/api/sales-listings", listingId],
     enabled: !!listingId,
   });
+
+  useEffect(() => {
+    if (listing) {
+      trackViewContent({
+        content_name: listing.title,
+        content_category: 'sale',
+        content_type: 'sales_listing',
+        value: listing.price ? Number(listing.price) : undefined,
+        currency: 'RSD',
+      });
+    }
+  }, [listing?.id]);
 
   const { data: seller } = useQuery<UserType>({
     queryKey: ["/api/users", listing?.sellerId],
@@ -303,7 +316,10 @@ export default function SaleDetail() {
           {!showContact ? (
             <Button
               className="w-full"
-              onClick={() => setShowContact(true)}
+              onClick={() => {
+                trackContact({ content_name: listing?.title, content_category: 'sale' });
+                setShowContact(true);
+              }}
               data-testid="button-show-contact"
             >
               <Eye className="w-4 h-4 mr-2" />
