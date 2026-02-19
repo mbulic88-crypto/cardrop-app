@@ -70,6 +70,27 @@ export default function AuthPage() {
     }
   };
 
+  const handleFacebookLogin = async (fbResponse: any) => {
+    setLoading(true);
+    try {
+      await apiRequest("POST", "/api/auth/facebook", {
+        accessToken: fbResponse.accessToken,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
+      setLocation("/home");
+    } catch (error: any) {
+      toast({
+        title: "Facebook prijava nije uspela",
+        description: "Pokušajte ponovo ili koristite email",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async (response: any) => {
     setLoading(true);
     try {
@@ -94,6 +115,7 @@ export default function AuthPage() {
   };
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -226,6 +248,24 @@ export default function AuthPage() {
             </>
           )}
 
+          {facebookAppId && (
+            <>
+              {!googleClientId && (
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">ili</span>
+                  </div>
+                </div>
+              )}
+              <div className="mt-3">
+                <FacebookLoginButton onSuccess={handleFacebookLogin} appId={facebookAppId} />
+              </div>
+            </>
+          )}
+
           <div className="mt-5 text-center text-sm">
             {mode === "login" ? (
               <p className="text-muted-foreground">
@@ -265,6 +305,73 @@ export default function AuthPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function FacebookLoginButton({
+  onSuccess,
+  appId,
+}: {
+  onSuccess: (response: any) => void;
+  appId: string;
+}) {
+  const [sdkLoaded, setSdkLoaded] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
+
+  useState(() => {
+    (window as any).fbAsyncInit = function () {
+      (window as any).FB?.init({
+        appId: appId,
+        cookie: true,
+        xfbml: true,
+        version: "v19.0",
+      });
+      setSdkLoaded(true);
+    };
+
+    if (!(window as any).FB) {
+      const script = document.createElement("script");
+      script.src = "https://connect.facebook.net/sr_RS/sdk.js";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    } else {
+      setSdkLoaded(true);
+    }
+  });
+
+  const handleClick = () => {
+    if (!(window as any).FB) return;
+    setFbLoading(true);
+
+    (window as any).FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          onSuccess({
+            accessToken: response.authResponse.accessToken,
+            userID: response.authResponse.userID,
+          });
+        }
+        setFbLoading(false);
+      },
+      { scope: "email,public_profile" }
+    );
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="w-full"
+      onClick={handleClick}
+      disabled={!sdkLoaded || fbLoading}
+      data-testid="button-facebook-signin"
+    >
+      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+      </svg>
+      {fbLoading ? "Molimo sačekajte..." : "Prijavite se sa Facebook"}
+    </Button>
   );
 }
 
