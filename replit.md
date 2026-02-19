@@ -22,7 +22,7 @@ The platform features a dual-theme design with green accent colors:
 *   **Frontend**: React with TypeScript, Tailwind CSS, Shadcn UI.
 *   **Backend**: Express.js with TypeScript.
 *   **Database**: PostgreSQL (Neon-backed).
-*   **Authentication**: Replit Auth (OpenID Connect).
+*   **Authentication**: Custom email/password authentication with bcryptjs password hashing. Google OAuth support via google-auth-library. Session-based auth using express-session + connect-pg-simple. Auth page at `/auth` route with login/register toggle. All `req.session.userId` based (no more Replit Auth/OIDC). Google OAuth requires `VITE_GOOGLE_CLIENT_ID` env var to enable the Google Sign-In button.
 *   **Object Storage**: Replit Object Storage for image uploads with ACL security.
 *   **Mapping**: Interactive Leaflet map for spot discovery.
 *   **Theme System**: next-themes integration with dark mode as default, light mode with WhatsApp cream color scheme.
