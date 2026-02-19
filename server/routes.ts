@@ -17,12 +17,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      res.json(user);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { passwordHash, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -43,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // My spots route - MUST be before /:id to avoid matching "my-spots" as an ID
   app.get('/api/parking-spots/my-spots', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const spots = await storage.getUserParkingSpots(userId);
       res.json(spots);
     } catch (error) {
@@ -117,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/create-checkout', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { tier, spotData } = req.body;
 
       if (!tier || (tier !== 'silver' && tier !== 'gold')) {
@@ -175,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stripe = await getUncachableStripeClient();
       const { sessionId, spotId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -209,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/cancel-spot', isAuthenticated, async (req: any, res) => {
     try {
       const { spotId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
 
       const spot = await storage.getParkingSpot(spotId);
       if (!spot || spot.ownerId !== userId) {
@@ -230,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/create-checkout-existing', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { spotId, tier } = req.body;
 
       if (!tier || (tier !== 'silver' && tier !== 'gold')) {
@@ -278,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/create-sale-checkout', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { tier, listingData } = req.body;
 
       if (!tier || (tier !== 'silver' && tier !== 'gold')) {
@@ -330,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stripe = await getUncachableStripeClient();
       const { sessionId, listingId } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -362,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
       const { subscriptionType, category, isPremium, ...spotData } = sanitizedBody;
       
@@ -420,7 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bookings routes
   app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const bookings = await storage.getUserBookings(userId);
       res.json(bookings);
     } catch (error) {
@@ -444,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       
       // Validate request body
       const validatedData = insertBookingSchema.parse(req.body);
@@ -489,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payments/monri/create', isAuthenticated, async (req: any, res) => {
     try {
       const { bookingId, amount, currency } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -572,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Object storage routes - public images accessible without auth, private require auth
   app.get("/objects/:objectPath(*)", async (req: any, res) => {
-    const userId = req.user?.claims?.sub;
+    const userId = req.session?.userId;
     const objectStorageService = new ObjectStorageService();
     try {
       const objectFile = await objectStorageService.getObjectEntityFile(
@@ -606,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "imageURL is required" });
     }
 
-    const userId = req.user.claims.sub;
+    const userId = req.session.userId;
 
     try {
       const objectStorageService = new ObjectStorageService();
@@ -650,7 +653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "imageUrl is required" });
     }
 
-    const userId = req.user.claims.sub;
+    const userId = req.session.userId;
 
     try {
       const spot = await storage.getParkingSpot(req.params.id);
@@ -679,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reviews routes
   app.post('/api/reviews', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
       
       const validatedData = insertReviewSchema.parse(sanitizedBody);
@@ -755,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/bookings/:id/can-review', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const canReview = await storage.canUserReviewBooking(req.params.id, userId);
       res.json({ canReview });
     } catch (error) {
@@ -767,7 +770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update parking spot
   app.put('/api/parking-spots/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const spot = await storage.getParkingSpot(req.params.id);
       
       if (!spot) {
@@ -794,7 +797,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete parking spot
   app.delete('/api/parking-spots/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const spot = await storage.getParkingSpot(req.params.id);
       
       if (!spot) {
@@ -816,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user profile
   app.put('/api/users/profile', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
       const { firstName, lastName, phoneNumber } = sanitizedBody;
       
@@ -836,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Push notification subscription routes
   app.post('/api/push/subscribe', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { subscription } = req.body;
       
       if (!subscription || !subscription.endpoint || !subscription.keys) {
@@ -857,7 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/push/unsubscribe', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const { endpoint } = req.body;
       
       const success = await removeSubscription(userId, endpoint);
@@ -875,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Messages routes
   app.post('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
       const validatedData = insertMessageSchema.parse(sanitizedBody);
       
@@ -915,7 +918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const messages = await storage.getUserMessages(userId);
       res.json(messages);
     } catch (error) {
@@ -936,7 +939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Admin middleware
   const isAdmin = async (req: any, res: any, next: any) => {
-    const userId = req.user?.claims?.sub;
+    const userId = req.session?.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) return res.status(403).json({ message: "Forbidden - Admin only" });
@@ -1043,7 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/sales-listings/my-listings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const listings = await storage.getUserSalesListings(userId);
       res.json(listings);
     } catch (error) {
@@ -1067,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/sales-listings', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
       const { subscriptionType: subType, ...listingData } = sanitizedBody;
       const validatedData = insertSalesListingSchema.parse(listingData);
@@ -1098,7 +1101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: "imageURL is required" });
     }
 
-    const userId = req.user.claims.sub;
+    const userId = req.session.userId;
 
     try {
       const objectStorageService = new ObjectStorageService();
@@ -1136,7 +1139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const listing = await storage.getSalesListing(req.params.id);
       if (!listing) return res.status(404).json({ message: "Listing not found" });
       if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
@@ -1151,7 +1154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.userId;
       const listing = await storage.getSalesListing(req.params.id);
       if (!listing) return res.status(404).json({ message: "Listing not found" });
       if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });

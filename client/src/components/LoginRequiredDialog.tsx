@@ -7,8 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLocation } from "wouter";
 
 interface LoginRequiredDialogProps {
   open: boolean;
@@ -23,8 +24,11 @@ export default function LoginRequiredDialog({
   message = "Za ovu akciju potrebna je prijava na nalog.",
   redirectPath = "/home",
 }: LoginRequiredDialogProps) {
+  const [, setLocation] = useLocation();
+
   const handleLogin = () => {
-    window.location.href = `/api/login?redirect_uri=${redirectPath}`;
+    onClose();
+    setLocation("/auth");
   };
 
   return (
@@ -46,7 +50,7 @@ export default function LoginRequiredDialog({
             <div className="flex-1">
               <h4 className="font-semibold text-foreground mb-1">Sigurna Prijava</h4>
               <p className="text-sm text-muted-foreground">
-                Koristimo Replit Auth za brzu i bezbednu autentifikaciju. Vaši podaci su zaštićeni.
+                Prijavite se putem email-a i lozinke ili Google naloga. Vaši podaci su zaštićeni.
               </p>
             </div>
           </div>

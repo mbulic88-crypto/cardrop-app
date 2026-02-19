@@ -1,36 +1,34 @@
-import * as client from "openid-client";
-import { Strategy, type VerifyFunction } from "openid-client/passport";
-
-import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
-import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
+import bcrypt from "bcryptjs";
+import { OAuth2Client } from "google-auth-library";
 import { storage } from "./storage";
+import { z } from "zod";
 
-// Extend session type to include returnTo property
 declare module 'express-session' {
   interface SessionData {
+    userId?: string;
     returnTo?: string;
   }
 }
 
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
-}
+const googleClient = new OAuth2Client();
 
-const getOidcConfig = memoize(
-  async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
-    );
-  },
-  { maxAge: 3600 * 1000 }
-);
+const registerSchema = z.object({
+  email: z.string().email("Unesite validnu email adresu"),
+  password: z.string().min(6, "Lozinka mora imati najmanje 6 karaktera"),
+  firstName: z.string().min(1, "Ime je obavezno"),
+  lastName: z.string().min(1, "Prezime je obavezno"),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Unesite validnu email adresu"),
+  password: z.string().min(1, "Lozinka je obavezna"),
+});
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const sessionTtl = 7 * 24 * 60 * 60 * 1000;
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
@@ -53,140 +51,156 @@ export function getSession() {
   });
 }
 
-function updateUserSession(
-  user: any,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
-) {
-  user.claims = tokens.claims();
-  user.access_token = tokens.access_token;
-  user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp;
-}
-
-async function upsertUser(
-  claims: any,
-) {
-  await storage.upsertUser({
-    id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    profileImageUrl: claims["profile_image_url"],
-  });
-}
-
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
-  app.use(passport.initialize());
-  app.use(passport.session());
 
-  const config = await getOidcConfig();
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
 
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
-    verified: passport.AuthenticateCallback
-  ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
-  };
+      const existing = await storage.getUserByEmail(data.email);
+      if (existing) {
+        return res.status(409).json({ message: "Nalog sa ovim emailom već postoji" });
+      }
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
-    const strategy = new Strategy(
-      {
-        name: `replitauth:${domain}`,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
-      },
-      verify,
-    );
-    passport.use(strategy);
-  }
+      const passwordHash = await bcrypt.hash(data.password, 12);
 
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+      const user = await storage.upsertUser({
+        email: data.email,
+        passwordHash,
+        authProvider: 'local',
+        firstName: data.firstName,
+        lastName: data.lastName,
+      });
 
-  app.get("/api/login", (req, res, next) => {
-    // Save redirect_uri to session so passport can redirect after login
-    if (req.query.redirect_uri && typeof req.query.redirect_uri === 'string') {
-      req.session.returnTo = req.query.redirect_uri;
-      console.log('[AUTH] Saved redirect_uri to session:', req.query.redirect_uri);
+      req.session.userId = user.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Greška pri registraciji" });
+        }
+        const { passwordHash: _, ...safeUser } = user;
+        res.status(201).json(safeUser);
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
+      res.status(500).json({ message: "Greška pri registraciji" });
     }
-    
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
   });
 
-  app.get("/api/callback", (req, res, next) => {
-    const returnTo = req.session.returnTo;
-    console.log('[AUTH] Callback - session.returnTo:', returnTo);
-    
-    passport.authenticate(`replitauth:${req.hostname}`, (err: any, user: any) => {
-      if (err || !user) {
-        console.log('[AUTH] Callback - authentication failed:', err);
-        return res.redirect("/api/login");
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const data = loginSchema.parse(req.body);
+
+      const user = await storage.getUserByEmail(data.email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ message: "Pogrešan email ili lozinka" });
       }
-      
-      req.login(user, (loginErr) => {
-        if (loginErr) {
-          console.log('[AUTH] Callback - login error:', loginErr);
-          return res.redirect("/api/login");
+
+      const valid = await bcrypt.compare(data.password, user.passwordHash);
+      if (!valid) {
+        return res.status(401).json({ message: "Pogrešan email ili lozinka" });
+      }
+
+      req.session.userId = user.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Greška pri prijavljivanju" });
         }
-        
-        // Clear returnTo from session after using it
-        delete req.session.returnTo;
-        
-        // Redirect to the saved path or default to home
-        const redirectPath = returnTo || "/";
-        console.log('[AUTH] Callback - redirecting to:', redirectPath);
-        res.redirect(redirectPath);
+        const { passwordHash: _, ...safeUser } = user;
+        res.json(safeUser);
       });
-    })(req, res, next);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
+      res.status(500).json({ message: "Greška pri prijavljivanju" });
+    }
+  });
+
+  app.post("/api/auth/google", async (req, res) => {
+    try {
+      const { credential, clientId } = req.body;
+
+      if (!credential) {
+        return res.status(400).json({ message: "Google credential is required" });
+      }
+
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        return res.status(400).json({ message: "Invalid Google token" });
+      }
+
+      let user = await storage.getUserByEmail(payload.email);
+
+      if (user) {
+        await storage.updateUser(user.id, {
+          firstName: payload.given_name || user.firstName,
+          lastName: payload.family_name || user.lastName,
+          profileImageUrl: payload.picture || user.profileImageUrl,
+        });
+        user = (await storage.getUser(user.id))!;
+      } else {
+        user = await storage.upsertUser({
+          email: payload.email,
+          authProvider: 'google',
+          firstName: payload.given_name || '',
+          lastName: payload.family_name || '',
+          profileImageUrl: payload.picture || '',
+        });
+      }
+
+      req.session.userId = user.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Greška pri prijavljivanju" });
+        }
+        const { passwordHash: _, ...safeUser } = user!;
+        res.json(safeUser);
+      });
+    } catch (error: any) {
+      console.error("Google auth error:", error);
+      res.status(401).json({ message: "Google autentifikacija nije uspela" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Greška pri odjavljivanju" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Uspešno ste se odjavili" });
+    });
   });
 
   app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+      }
+      res.clearCookie('connect.sid');
+      res.redirect("/");
     });
   });
 }
 
-export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+export const isAuthenticated: RequestHandler = (req, res, next) => {
+  if (req.session.userId) {
     return next();
   }
-
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  return res.status(401).json({ message: "Unauthorized" });
 };

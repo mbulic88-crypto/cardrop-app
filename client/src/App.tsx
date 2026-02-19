@@ -24,6 +24,7 @@ import SaleDetail from "@/pages/sale-detail";
 import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import AuthPage from "@/pages/auth";
 
 function usePageViewTracking() {
   const [location] = useLocation();
@@ -36,6 +37,7 @@ function Router() {
   usePageViewTracking();
   return (
     <Switch>
+      <Route path="/auth" component={AuthPage} />
       <Route path="/" component={Landing} />
       <Route path="/terms" component={Terms} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

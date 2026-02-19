@@ -180,12 +180,21 @@ export default function Dashboard() {
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
               <span className="text-xl font-bold text-foreground">CarDrop</span>
             </Link>
-            <a href="/api/logout">
-              <Button variant="outline" size="sm" data-testid="button-logout">
-                <LogOut className="w-4 h-4 mr-2" />
-                Odjava
-              </Button>
-            </a>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-logout"
+              onClick={async () => {
+                try {
+                  await apiRequest("POST", "/api/auth/logout", {});
+                } catch (e) {}
+                queryClient.clear();
+                window.location.href = "/";
+              }}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Odjava
+            </Button>
           </div>
         </div>
       </header>
