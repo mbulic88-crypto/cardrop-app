@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, Shield, MessageCircle } from "lucide-react";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle } from "lucide-react";
 import { SiViber, SiWhatsapp } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -416,11 +416,6 @@ export default function SpotDetail() {
                         {spot.paymentType === 'bank_transfer' && 'Preko računa'}
                         {spot.paymentType === 'card_monri' && 'Kartično'}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-2.5 mt-2 pt-2 border-t border-border/50" data-testid="stripe-trust-spot-detail">
-                      <Shield className="w-4 h-4 text-[#635BFF]" />
-                      <span className="text-sm text-foreground font-medium">Sigurna plaćanja preko</span>
-                      <span className="text-xl font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
                     </div>
                   </div>
                 )}
