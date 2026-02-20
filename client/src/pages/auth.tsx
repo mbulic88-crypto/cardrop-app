@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -318,27 +318,39 @@ function FacebookLoginButton({
   const [sdkLoaded, setSdkLoaded] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
 
-  useState(() => {
+  useEffect(() => {
     (window as any).fbAsyncInit = function () {
       (window as any).FB?.init({
         appId: appId,
         cookie: true,
         xfbml: true,
-        version: "v19.0",
+        version: "v21.0",
       });
       setSdkLoaded(true);
     };
 
-    if (!(window as any).FB) {
-      const script = document.createElement("script");
-      script.src = "https://connect.facebook.net/sr_RS/sdk.js";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    } else {
+    if ((window as any).FB) {
+      (window as any).FB.init({
+        appId: appId,
+        cookie: true,
+        xfbml: true,
+        version: "v21.0",
+      });
       setSdkLoaded(true);
+    } else {
+      const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.src = "https://connect.facebook.net/sr_RS/sdk.js";
+        script.async = true;
+        script.defer = true;
+        script.onerror = () => {
+          console.error("Failed to load Facebook SDK");
+        };
+        document.body.appendChild(script);
+      }
     }
-  });
+  }, [appId]);
 
   const handleClick = () => {
     if (!(window as any).FB) return;
