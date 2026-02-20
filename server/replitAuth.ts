@@ -10,6 +10,7 @@ declare module 'express-session' {
   interface SessionData {
     userId?: string;
     returnTo?: string;
+    fbOAuthState?: string;
   }
 }
 
@@ -176,35 +177,77 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/auth/facebook", async (req, res) => {
-    try {
-      const { accessToken } = req.body;
+  app.get("/auth/facebook", (req, res) => {
+    const appId = process.env.VITE_FACEBOOK_APP_ID;
+    if (!appId) {
+      return res.status(500).send("Facebook auth not configured");
+    }
 
-      if (!accessToken) {
-        return res.status(400).json({ message: "Facebook access token is required" });
+    const crypto = require("crypto");
+    const state = crypto.randomBytes(16).toString("hex");
+    req.session.fbOAuthState = state;
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const redirectUri = `${protocol}://${host}/auth/facebook/callback`;
+
+    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?` +
+      new URLSearchParams({
+        client_id: appId,
+        redirect_uri: redirectUri,
+        scope: "email,public_profile",
+        state: state,
+        response_type: "code",
+      }).toString();
+
+    res.redirect(authUrl);
+  });
+
+  app.get("/auth/facebook/callback", async (req, res) => {
+    try {
+      const { code, state, error } = req.query as any;
+
+      if (error) {
+        return res.redirect("/auth?error=facebook_denied");
+      }
+
+      if (!state || state !== (req.session as any).fbOAuthState) {
+        return res.redirect("/auth?error=invalid_state");
       }
 
       const appId = process.env.VITE_FACEBOOK_APP_ID;
       const appSecret = process.env.FACEBOOK_APP_SECRET;
 
       if (!appId || !appSecret) {
-        return res.status(500).json({ message: "Facebook auth not configured" });
+        return res.redirect("/auth?error=fb_not_configured");
       }
 
-      const tokenCheckUrl = `https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=${appId}|${appSecret}`;
-      const tokenCheck = await fetch(tokenCheckUrl);
-      const tokenData = await tokenCheck.json();
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.get('host');
+      const redirectUri = `${protocol}://${host}/auth/facebook/callback`;
 
-      if (!tokenData.data?.is_valid) {
-        return res.status(401).json({ message: "Invalid Facebook token" });
+      const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?` +
+        new URLSearchParams({
+          client_id: appId,
+          client_secret: appSecret,
+          redirect_uri: redirectUri,
+          code: code,
+        }).toString();
+
+      const tokenRes = await fetch(tokenUrl);
+      const tokenData = await tokenRes.json();
+
+      if (!tokenData.access_token) {
+        console.error("Facebook token exchange failed:", tokenData);
+        return res.redirect("/auth?error=fb_token_failed");
       }
 
-      const userInfoUrl = `https://graph.facebook.com/me?fields=id,first_name,last_name,email,picture.type(large)&access_token=${accessToken}`;
+      const userInfoUrl = `https://graph.facebook.com/v21.0/me?fields=id,first_name,last_name,email,picture.type(large)&access_token=${tokenData.access_token}`;
       const userInfoRes = await fetch(userInfoUrl);
       const fbUser = await userInfoRes.json();
 
       if (!fbUser.email) {
-        return res.status(400).json({ message: "Email adresa nije dostupna sa vašeg Facebook naloga. Molimo dozvolite pristup emailu." });
+        return res.redirect("/auth?error=fb_no_email");
       }
 
       let user = await storage.getUserByEmail(fbUser.email);
@@ -230,14 +273,13 @@ export async function setupAuth(app: Express) {
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
-          return res.status(500).json({ message: "Greška pri prijavljivanju" });
+          return res.redirect("/auth?error=session_failed");
         }
-        const { passwordHash: _, ...safeUser } = user!;
-        res.json(safeUser);
+        res.redirect("/home");
       });
     } catch (error: any) {
-      console.error("Facebook auth error:", error);
-      res.status(401).json({ message: "Facebook autentifikacija nije uspela" });
+      console.error("Facebook auth callback error:", error);
+      res.redirect("/auth?error=fb_auth_failed");
     }
   });
 
