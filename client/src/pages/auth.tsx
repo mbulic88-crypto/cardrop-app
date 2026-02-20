@@ -24,6 +24,28 @@ export default function AuthPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    if (error) {
+      const messages: Record<string, string> = {
+        facebook_denied: "Facebook prijava je otkazana",
+        invalid_state: "Neuspešna verifikacija. Pokušajte ponovo.",
+        fb_not_configured: "Facebook prijava nije dostupna",
+        fb_token_failed: "Greška pri komunikaciji sa Facebook-om",
+        fb_no_email: "Email adresa nije dostupna sa vašeg Facebook naloga. Molimo dozvolite pristup emailu.",
+        fb_auth_failed: "Facebook prijava nije uspela. Pokušajte ponovo.",
+        session_failed: "Greška pri prijavljivanju. Pokušajte ponovo.",
+      };
+      toast({
+        title: "Prijava nije uspela",
+        description: messages[error] || "Došlo je do greške. Pokušajte ponovo.",
+        variant: "destructive",
+      });
+      window.history.replaceState({}, "", "/auth");
+    }
+  }, [toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -70,25 +92,8 @@ export default function AuthPage() {
     }
   };
 
-  const handleFacebookLogin = async (fbResponse: any) => {
-    setLoading(true);
-    try {
-      await apiRequest("POST", "/api/auth/facebook", {
-        accessToken: fbResponse.accessToken,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
-      setLocation("/home");
-    } catch (error: any) {
-      toast({
-        title: "Facebook prijava nije uspela",
-        description: "Pokušajte ponovo ili koristite email",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleFacebookLogin = () => {
+    window.location.href = "/auth/facebook";
   };
 
   const handleGoogleLogin = async (response: any) => {
@@ -261,7 +266,18 @@ export default function AuthPage() {
                 </div>
               )}
               <div className="mt-3">
-                <FacebookLoginButton onSuccess={handleFacebookLogin} appId={facebookAppId} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleFacebookLogin}
+                  data-testid="button-facebook-signin"
+                >
+                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                  Prijavite se sa Facebook
+                </Button>
               </div>
             </>
           )}
@@ -308,84 +324,6 @@ export default function AuthPage() {
   );
 }
 
-function FacebookLoginButton({
-  onSuccess,
-  appId,
-}: {
-  onSuccess: (response: any) => void;
-  appId: string;
-}) {
-  const [fbLoading, setFbLoading] = useState(false);
-
-  const initFBSdk = () => {
-    if ((window as any).FB) return;
-    (window as any).FB?.init({
-      appId: appId,
-      cookie: true,
-      xfbml: true,
-      version: "v21.0",
-    });
-  };
-
-  useEffect(() => {
-    (window as any).fbAsyncInit = function () {
-      (window as any).FB?.init({
-        appId: appId,
-        cookie: true,
-        xfbml: true,
-        version: "v21.0",
-      });
-    };
-
-    if (!(window as any).FB) {
-      const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
-      if (!existingScript) {
-        const script = document.createElement("script");
-        script.src = "https://connect.facebook.net/sr_RS/sdk.js";
-        script.async = true;
-        script.defer = true;
-        document.body.appendChild(script);
-      }
-    }
-  }, [appId]);
-
-  const handleClick = () => {
-    if (!(window as any).FB) {
-      initFBSdk();
-      if (!(window as any).FB) return;
-    }
-    setFbLoading(true);
-
-    (window as any).FB.login(
-      (response: any) => {
-        if (response.authResponse) {
-          onSuccess({
-            accessToken: response.authResponse.accessToken,
-            userID: response.authResponse.userID,
-          });
-        }
-        setFbLoading(false);
-      },
-      { scope: "email,public_profile" }
-    );
-  };
-
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="w-full"
-      onClick={handleClick}
-      disabled={fbLoading}
-      data-testid="button-facebook-signin"
-    >
-      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-      </svg>
-      {fbLoading ? "Molimo sačekajte..." : "Prijavite se sa Facebook"}
-    </Button>
-  );
-}
 
 function GoogleSignInButton({
   onSuccess,
