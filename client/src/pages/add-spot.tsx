@@ -880,6 +880,10 @@ export default function AddSpot() {
       setShowLoginDialog(true);
       return;
     }
+
+    if (mutation.isPending || spotId) {
+      return;
+    }
     
     mutation.mutate({
       ...values,

@@ -363,9 +363,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const recentSpotCreations = new Map<string, number>();
+
   app.post('/api/parking-spots', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
+
+      const dedupeKey = `${userId}-${req.body.title}-${req.body.category || 'private'}`;
+      const lastCreation = recentSpotCreations.get(dedupeKey);
+      const now = Date.now();
+      if (lastCreation && (now - lastCreation) < 10000) {
+        return res.status(429).json({ message: "Duplicate request detected. Please wait." });
+      }
+      recentSpotCreations.set(dedupeKey, now);
+      setTimeout(() => recentSpotCreations.delete(dedupeKey), 15000);
+
       const sanitizedBody = sanitizeObject(req.body);
       const { subscriptionType, category, isPremium, ...spotData } = sanitizedBody;
       
@@ -997,6 +1009,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling parking spot:", error);
       res.status(500).json({ message: "Failed to toggle parking spot" });
+    }
+  });
+
+  app.patch('/api/admin/parking-spots/:id/update', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { isActive, isPremium, subscriptionType } = req.body;
+      const updates: any = {};
+      if (isActive !== undefined) updates.isActive = isActive;
+      if (isPremium !== undefined) updates.isPremium = isPremium;
+      if (subscriptionType !== undefined) updates.subscriptionType = subscriptionType;
+      const spot = await storage.updateParkingSpot(req.params.id, updates);
+      if (!spot) {
+        return res.status(404).json({ message: "Parking spot not found" });
+      }
+      res.json(spot);
+    } catch (error) {
+      console.error("Error updating parking spot:", error);
+      res.status(500).json({ message: "Failed to update parking spot" });
     }
   });
 
