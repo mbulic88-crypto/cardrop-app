@@ -10,7 +10,6 @@ declare module 'express-session' {
   interface SessionData {
     userId?: string;
     returnTo?: string;
-    fbOAuthState?: string;
   }
 }
 
@@ -174,112 +173,6 @@ export async function setupAuth(app: Express) {
     } catch (error: any) {
       console.error("Google auth error:", error);
       res.status(401).json({ message: "Google autentifikacija nije uspela" });
-    }
-  });
-
-  app.get("/auth/facebook", (req, res) => {
-    const appId = process.env.VITE_FACEBOOK_APP_ID;
-    if (!appId) {
-      return res.status(500).send("Facebook auth not configured");
-    }
-
-    const crypto = require("crypto");
-    const state = crypto.randomBytes(16).toString("hex");
-    req.session.fbOAuthState = state;
-
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const host = req.get('host');
-    const redirectUri = `${protocol}://${host}/auth/facebook/callback`;
-
-    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?` +
-      new URLSearchParams({
-        client_id: appId,
-        redirect_uri: redirectUri,
-        scope: "email,public_profile",
-        state: state,
-        response_type: "code",
-      }).toString();
-
-    res.redirect(authUrl);
-  });
-
-  app.get("/auth/facebook/callback", async (req, res) => {
-    try {
-      const { code, state, error } = req.query as any;
-
-      if (error) {
-        return res.redirect("/auth?error=facebook_denied");
-      }
-
-      if (!state || state !== (req.session as any).fbOAuthState) {
-        return res.redirect("/auth?error=invalid_state");
-      }
-
-      const appId = process.env.VITE_FACEBOOK_APP_ID;
-      const appSecret = process.env.FACEBOOK_APP_SECRET;
-
-      if (!appId || !appSecret) {
-        return res.redirect("/auth?error=fb_not_configured");
-      }
-
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-      const host = req.get('host');
-      const redirectUri = `${protocol}://${host}/auth/facebook/callback`;
-
-      const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?` +
-        new URLSearchParams({
-          client_id: appId,
-          client_secret: appSecret,
-          redirect_uri: redirectUri,
-          code: code,
-        }).toString();
-
-      const tokenRes = await fetch(tokenUrl);
-      const tokenData = await tokenRes.json();
-
-      if (!tokenData.access_token) {
-        console.error("Facebook token exchange failed:", tokenData);
-        return res.redirect("/auth?error=fb_token_failed");
-      }
-
-      const userInfoUrl = `https://graph.facebook.com/v21.0/me?fields=id,first_name,last_name,email,picture.type(large)&access_token=${tokenData.access_token}`;
-      const userInfoRes = await fetch(userInfoUrl);
-      const fbUser = await userInfoRes.json();
-
-      if (!fbUser.email) {
-        return res.redirect("/auth?error=fb_no_email");
-      }
-
-      let user = await storage.getUserByEmail(fbUser.email);
-
-      if (user) {
-        await storage.updateUser(user.id, {
-          firstName: fbUser.first_name || user.firstName,
-          lastName: fbUser.last_name || user.lastName,
-          profileImageUrl: fbUser.picture?.data?.url || user.profileImageUrl,
-        });
-        user = (await storage.getUser(user.id))!;
-      } else {
-        user = await storage.upsertUser({
-          email: fbUser.email,
-          authProvider: 'facebook',
-          firstName: fbUser.first_name || '',
-          lastName: fbUser.last_name || '',
-          profileImageUrl: fbUser.picture?.data?.url || '',
-        });
-      }
-
-      req.session.userId = user.id;
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("/auth?error=session_failed");
-        }
-        res.redirect("/home");
-      });
-    } catch (error: any) {
-      console.error("Facebook auth callback error:", error);
-      res.redirect("/auth?error=fb_auth_failed");
     }
   });
 

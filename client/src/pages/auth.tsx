@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,28 +23,6 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("error");
-    if (error) {
-      const messages: Record<string, string> = {
-        facebook_denied: "Facebook prijava je otkazana",
-        invalid_state: "Neuspešna verifikacija. Pokušajte ponovo.",
-        fb_not_configured: "Facebook prijava nije dostupna",
-        fb_token_failed: "Greška pri komunikaciji sa Facebook-om",
-        fb_no_email: "Email adresa nije dostupna sa vašeg Facebook naloga. Molimo dozvolite pristup emailu.",
-        fb_auth_failed: "Facebook prijava nije uspela. Pokušajte ponovo.",
-        session_failed: "Greška pri prijavljivanju. Pokušajte ponovo.",
-      };
-      toast({
-        title: "Prijava nije uspela",
-        description: messages[error] || "Došlo je do greške. Pokušajte ponovo.",
-        variant: "destructive",
-      });
-      window.history.replaceState({}, "", "/auth");
-    }
-  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,10 +70,6 @@ export default function AuthPage() {
     }
   };
 
-  const handleFacebookLogin = () => {
-    window.location.href = "/auth/facebook";
-  };
-
   const handleGoogleLogin = async (response: any) => {
     setLoading(true);
     try {
@@ -120,7 +94,6 @@ export default function AuthPage() {
   };
 
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -253,34 +226,6 @@ export default function AuthPage() {
             </>
           )}
 
-          {facebookAppId && (
-            <>
-              {!googleClientId && (
-                <div className="relative my-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ili</span>
-                  </div>
-                </div>
-              )}
-              <div className="mt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleFacebookLogin}
-                  data-testid="button-facebook-signin"
-                >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                  Prijavite se sa Facebook
-                </Button>
-              </div>
-            </>
-          )}
 
           <div className="mt-5 text-center text-sm">
             {mode === "login" ? (
