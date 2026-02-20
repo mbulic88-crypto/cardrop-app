@@ -315,8 +315,17 @@ function FacebookLoginButton({
   onSuccess: (response: any) => void;
   appId: string;
 }) {
-  const [sdkLoaded, setSdkLoaded] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
+
+  const initFBSdk = () => {
+    if ((window as any).FB) return;
+    (window as any).FB?.init({
+      appId: appId,
+      cookie: true,
+      xfbml: true,
+      version: "v21.0",
+    });
+  };
 
   useEffect(() => {
     (window as any).fbAsyncInit = function () {
@@ -326,34 +335,25 @@ function FacebookLoginButton({
         xfbml: true,
         version: "v21.0",
       });
-      setSdkLoaded(true);
     };
 
-    if ((window as any).FB) {
-      (window as any).FB.init({
-        appId: appId,
-        cookie: true,
-        xfbml: true,
-        version: "v21.0",
-      });
-      setSdkLoaded(true);
-    } else {
+    if (!(window as any).FB) {
       const existingScript = document.querySelector('script[src*="connect.facebook.net"]');
       if (!existingScript) {
         const script = document.createElement("script");
         script.src = "https://connect.facebook.net/sr_RS/sdk.js";
         script.async = true;
         script.defer = true;
-        script.onerror = () => {
-          console.error("Failed to load Facebook SDK");
-        };
         document.body.appendChild(script);
       }
     }
   }, [appId]);
 
   const handleClick = () => {
-    if (!(window as any).FB) return;
+    if (!(window as any).FB) {
+      initFBSdk();
+      if (!(window as any).FB) return;
+    }
     setFbLoading(true);
 
     (window as any).FB.login(
@@ -376,7 +376,7 @@ function FacebookLoginButton({
       variant="outline"
       className="w-full"
       onClick={handleClick}
-      disabled={!sdkLoaded || fbLoading}
+      disabled={fbLoading}
       data-testid="button-facebook-signin"
     >
       <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
