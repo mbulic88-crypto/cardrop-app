@@ -17,6 +17,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // One-time fix: activate "Garaza u Futogu" Silver spot that was left inactive
+  try {
+    const fixSpotId = '9ec043a3-7234-4793-bf0a-09a195270f71';
+    const fixSpot = await storage.getParkingSpot(fixSpotId);
+    if (fixSpot && !fixSpot.isActive) {
+      await storage.updateParkingSpot(fixSpotId, {
+        isActive: true,
+        isPremium: true,
+      } as any);
+      console.log('Fixed: Activated Garaza u Futogu spot');
+    }
+  } catch (e) {
+    // Spot may not exist in this environment, ignore
+  }
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
