@@ -29,8 +29,9 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
+      let userData;
       if (mode === "register") {
-        await apiRequest("POST", "/api/auth/register", {
+        userData = await apiRequest("POST", "/api/auth/register", {
           email,
           password,
           firstName,
@@ -38,14 +39,14 @@ export default function AuthPage() {
         });
         toast({ title: "Registracija uspešna!", description: "Dobrodošli na CarDrop" });
       } else {
-        await apiRequest("POST", "/api/auth/login", {
+        userData = await apiRequest("POST", "/api/auth/login", {
           email,
           password,
         });
         toast({ title: "Prijava uspešna!", description: "Dobrodošli nazad" });
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.setQueryData(["/api/auth/user"], userData);
       const returnTo = localStorage.getItem("cardrop-returnTo");
       localStorage.removeItem("cardrop-returnTo");
       setLocation(returnTo || "/home");
@@ -76,12 +77,12 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      await apiRequest("POST", "/api/auth/google", {
+      const userData = await apiRequest("POST", "/api/auth/google", {
         credential: response.credential,
         clientId,
       });
 
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.setQueryData(["/api/auth/user"], userData);
       toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
       const returnTo = localStorage.getItem("cardrop-returnTo");
       localStorage.removeItem("cardrop-returnTo");
