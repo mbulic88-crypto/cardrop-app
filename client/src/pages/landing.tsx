@@ -250,8 +250,11 @@ export default function Landing() {
 
   const currentLangLabel = languageOptions.find(l => l.code === language)?.label || "Srpski";
 
+  const [loginRedirectPath, setLoginRedirectPath] = useState("/select-category");
+
   const handleListSpotClick = () => {
     if (!isAuthenticated) {
+      setLoginRedirectPath("/select-category");
       setShowLoginDialog(true);
     } else {
       setLocation("/select-category");
@@ -260,6 +263,7 @@ export default function Landing() {
 
   const handleSellClick = () => {
     if (!isAuthenticated) {
+      setLoginRedirectPath("/add-sale");
       setShowLoginDialog(true);
     } else {
       setLocation("/add-sale");
@@ -268,6 +272,7 @@ export default function Landing() {
 
   const handleProtectedAction = (path: string) => {
     if (!isAuthenticated) {
+      setLoginRedirectPath(path);
       setShowLoginDialog(true);
     } else {
       setLocation(path);
@@ -1048,7 +1053,7 @@ export default function Landing() {
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
-        redirectPath="/select-category"
+        redirectPath={loginRedirectPath}
       />
     </div>
   );

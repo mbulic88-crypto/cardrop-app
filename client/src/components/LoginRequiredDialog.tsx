@@ -27,6 +27,9 @@ export default function LoginRequiredDialog({
   const [, setLocation] = useLocation();
 
   const handleLogin = () => {
+    if (redirectPath) {
+      localStorage.setItem("cardrop-returnTo", redirectPath);
+    }
     onClose();
     setLocation("/auth");
   };

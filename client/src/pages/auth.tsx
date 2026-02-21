@@ -46,7 +46,9 @@ export default function AuthPage() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/home");
+      const returnTo = localStorage.getItem("cardrop-returnTo");
+      localStorage.removeItem("cardrop-returnTo");
+      setLocation(returnTo || "/home");
     } catch (error: any) {
       const msg = error.message?.includes(":")
         ? error.message.split(": ").slice(1).join(": ")
@@ -81,7 +83,9 @@ export default function AuthPage() {
 
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
-      setLocation("/home");
+      const returnTo = localStorage.getItem("cardrop-returnTo");
+      localStorage.removeItem("cardrop-returnTo");
+      setLocation(returnTo || "/home");
     } catch (error: any) {
       toast({
         title: "Google prijava nije uspela",
