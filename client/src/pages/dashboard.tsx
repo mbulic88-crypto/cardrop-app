@@ -13,8 +13,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { User, ParkingSpot, SalesListing } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle } from "lucide-react";
+import type { User, ParkingSpot, SalesListing, Message } from "@shared/schema";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
@@ -69,6 +70,96 @@ export default function Dashboard() {
     queryKey: ["/api/sales-listings/my-listings"],
     enabled: isAuthenticated,
   });
+
+  type EnrichedMessage = Message & { senderName?: string; receiverName?: string; spotTitle?: string | null };
+
+  const { data: allMessages = [], isLoading: messagesLoading } = useQuery<EnrichedMessage[]>({
+    queryKey: ["/api/messages"],
+    enabled: isAuthenticated,
+    refetchInterval: 30000,
+  });
+
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+
+  const replyMutation = useMutation({
+    mutationFn: async (data: { receiverId: string; spotId?: string | null; content: string }) => {
+      return await apiRequest("POST", "/api/messages", data);
+    },
+    onSuccess: () => {
+      setReplyContent("");
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      toast({ title: "Poruka poslata" });
+    },
+    onError: () => {
+      toast({ title: "Greška", description: "Nije moguće poslati poruku", variant: "destructive" });
+    },
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: (messageId: string) => apiRequest("PUT", `/api/messages/${messageId}/read`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+    },
+  });
+
+  type ConversationPartner = {
+    otherId: string;
+    otherName: string;
+    lastMessage: EnrichedMessage;
+    unreadCount: number;
+    messages: EnrichedMessage[];
+    spotId?: string | null;
+    spotTitle?: string | null;
+  };
+
+  const conversations = (() => {
+    if (!user || !allMessages.length) return [];
+    const grouped: Record<string, ConversationPartner> = {};
+    for (const msg of allMessages) {
+      const otherId = msg.senderId === user.id ? msg.receiverId : msg.senderId;
+      const otherName = msg.senderId === user.id ? (msg.receiverName || 'Korisnik') : (msg.senderName || 'Korisnik');
+      const key = msg.spotId ? `${otherId}-${msg.spotId}` : otherId;
+      if (!grouped[key]) {
+        grouped[key] = {
+          otherId,
+          otherName,
+          lastMessage: msg,
+          unreadCount: 0,
+          messages: [],
+          spotId: msg.spotId,
+          spotTitle: msg.spotTitle,
+        };
+      }
+      grouped[key].messages.push(msg);
+      if (!msg.isRead && msg.receiverId === user.id) {
+        grouped[key].unreadCount++;
+      }
+      if (msg.createdAt && grouped[key].lastMessage.createdAt && new Date(msg.createdAt) > new Date(grouped[key].lastMessage.createdAt!)) {
+        grouped[key].lastMessage = msg;
+      }
+    }
+    return Object.entries(grouped)
+      .map(([key, conv]) => ({ key, ...conv }))
+      .sort((a, b) => new Date(b.lastMessage.createdAt!).getTime() - new Date(a.lastMessage.createdAt!).getTime());
+  })();
+
+  const activeConversation = selectedConversation ? conversations.find(c => c.key === selectedConversation) : null;
+
+  useEffect(() => {
+    if (activeConversation && user) {
+      activeConversation.messages.forEach(msg => {
+        if (!msg.isRead && msg.receiverId === user.id) {
+          markReadMutation.mutate(msg.id);
+        }
+      });
+    }
+  }, [selectedConversation, allMessages]);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || 'spots';
+
+  const totalUnread = allMessages.filter(m => !m.isRead && m.receiverId === user?.id).length;
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -219,11 +310,19 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold mb-8 text-foreground">Moj Nalog</h1>
 
-        <Tabs defaultValue="spots" className="w-full">
-          <TabsList className="mb-8" data-testid="dashboard-tabs">
+        <Tabs defaultValue={initialTab} className="w-full">
+          <TabsList className="mb-8 flex-wrap gap-1" data-testid="dashboard-tabs">
             <TabsTrigger value="spots" data-testid="tab-my-spots">Moja Parking Mesta</TabsTrigger>
             <TabsTrigger value="sales" data-testid="tab-my-sales">Moji Oglasi Prodaje</TabsTrigger>
             <TabsTrigger value="bookings" data-testid="tab-bookings">Moje Rezervacije</TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages" className="relative">
+              Poruke
+              {totalUnread > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                  {totalUnread}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="profile" data-testid="tab-profile">Profil</TabsTrigger>
           </TabsList>
 
@@ -443,6 +542,154 @@ export default function Dashboard() {
           {/* Moje Rezervacije */}
           <TabsContent value="bookings">
             <MyBookings embedded />
+          </TabsContent>
+
+          {/* Poruke */}
+          <TabsContent value="messages" className="space-y-4">
+            {!selectedConversation ? (
+              <>
+                <h2 className="text-2xl font-semibold text-foreground">Poruke</h2>
+                {messagesLoading ? (
+                  <Card className="p-8 text-center">
+                    <p className="text-muted-foreground">Učitavanje poruka...</p>
+                  </Card>
+                ) : conversations.length === 0 ? (
+                  <Card className="p-8 text-center">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">Nemate poruka</p>
+                    <p className="text-sm text-muted-foreground mt-2">Poruke koje razmenjujete sa vlasnicima parking mesta će se pojaviti ovde.</p>
+                  </Card>
+                ) : (
+                  <div className="space-y-2">
+                    {conversations.map((conv) => (
+                      <Card
+                        key={conv.key}
+                        className={`p-4 cursor-pointer hover-elevate ${conv.unreadCount > 0 ? 'border-accent/50' : ''}`}
+                        onClick={() => setSelectedConversation(conv.key)}
+                        data-testid={`conversation-${conv.key}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`font-semibold text-card-foreground ${conv.unreadCount > 0 ? 'text-foreground' : ''}`}>
+                                {conv.otherName}
+                              </span>
+                              {conv.unreadCount > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full bg-destructive text-destructive-foreground">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            {conv.spotTitle && (
+                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {conv.spotTitle}
+                              </p>
+                            )}
+                            <p className={`text-sm mt-1 truncate ${conv.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                              {conv.lastMessage.senderId === user?.id ? 'Vi: ' : ''}{conv.lastMessage.content}
+                            </p>
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {conv.lastMessage.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleDateString('sr-RS', { day: 'numeric', month: 'short' }) : ''}
+                          </span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : activeConversation ? (
+              <div className="flex flex-col h-[calc(100vh-320px)] min-h-[400px]">
+                <div className="flex items-center gap-3 mb-4">
+                  <Button variant="ghost" size="icon" onClick={() => { setSelectedConversation(null); setReplyContent(""); }} data-testid="button-back-messages">
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{activeConversation.otherName}</h3>
+                    {activeConversation.spotTitle && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {activeConversation.spotTitle}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <Card className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {[...activeConversation.messages].sort((a, b) => new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime()).map((msg) => {
+                    const isMine = msg.senderId === user?.id;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                        data-testid={`message-${msg.id}`}
+                      >
+                        <div className={`max-w-[75%] rounded-lg px-3 py-2 ${isMine ? 'bg-accent text-accent-foreground' : 'bg-muted text-foreground'}`}>
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : ''}`}>
+                            <span className="text-[10px] opacity-70">
+                              {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                            {isMine && (
+                              msg.isRead
+                                ? <CheckCheck className="w-3 h-3 opacity-70" />
+                                : <Check className="w-3 h-3 opacity-50" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Card>
+
+                <div className="flex gap-2 mt-3">
+                  <Textarea
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    placeholder="Napišite odgovor..."
+                    className="resize-none flex-1"
+                    rows={2}
+                    data-testid="input-reply-message"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (replyContent.trim()) {
+                          const payload: any = {
+                            receiverId: activeConversation.otherId,
+                            content: replyContent.trim(),
+                          };
+                          if (activeConversation.spotId) payload.spotId = activeConversation.spotId;
+                          replyMutation.mutate(payload);
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    onClick={() => {
+                      if (replyContent.trim()) {
+                        const payload: any = {
+                          receiverId: activeConversation.otherId,
+                          content: replyContent.trim(),
+                        };
+                        if (activeConversation.spotId) payload.spotId = activeConversation.spotId;
+                        replyMutation.mutate(payload);
+                      }
+                    }}
+                    disabled={!replyContent.trim() || replyMutation.isPending}
+                    data-testid="button-send-reply"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Razgovor nije pronađen</p>
+                <Button variant="outline" className="mt-4" onClick={() => setSelectedConversation(null)}>Nazad</Button>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Profil */}

@@ -946,8 +946,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      const messages = await storage.getUserMessages(userId);
-      res.json(messages);
+      const msgs = await storage.getUserMessages(userId);
+      const userCache: Record<string, any> = {};
+      const spotCache: Record<string, any> = {};
+      const enriched = await Promise.all(msgs.map(async (msg) => {
+        if (!userCache[msg.senderId]) {
+          userCache[msg.senderId] = await storage.getUser(msg.senderId);
+        }
+        if (!userCache[msg.receiverId]) {
+          userCache[msg.receiverId] = await storage.getUser(msg.receiverId);
+        }
+        let spotTitle = null;
+        if (msg.spotId) {
+          if (!spotCache[msg.spotId]) {
+            spotCache[msg.spotId] = await storage.getParkingSpot(msg.spotId);
+          }
+          spotTitle = spotCache[msg.spotId]?.title || null;
+        }
+        const sender = userCache[msg.senderId];
+        const receiver = userCache[msg.receiverId];
+        return {
+          ...msg,
+          senderName: sender ? `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || sender.email : 'Korisnik',
+          receiverName: receiver ? `${receiver.firstName || ''} ${receiver.lastName || ''}`.trim() || receiver.email : 'Korisnik',
+          spotTitle,
+        };
+      }));
+      res.json(enriched);
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Greška pri učitavanju poruka" });
