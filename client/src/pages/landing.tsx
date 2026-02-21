@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock } from "lucide-react";
+import { SiInstagram, SiFacebook } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -1011,6 +1012,14 @@ export default function Landing() {
             <a href="mailto:info@cardropp.app" className="text-accent text-xl font-semibold" data-testid="link-contact-email">
               info@cardropp.app
             </a>
+            <div className="flex items-center justify-center gap-4 mt-5">
+              <a href="https://www.instagram.com/cardrop.app/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#E4405F] transition-colors" data-testid="link-instagram">
+                <SiInstagram className="w-6 h-6" />
+              </a>
+              <a href="https://www.facebook.com/profile.php?id=61584352366124" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#1877F2] transition-colors" data-testid="link-facebook">
+                <SiFacebook className="w-6 h-6" />
+              </a>
+            </div>
             <div className="flex items-center justify-center gap-2 mt-4 text-primary">
               <Clock className="w-4 h-4" />
               <span className="text-sm font-medium">{t.contactResponseTime}</span>
