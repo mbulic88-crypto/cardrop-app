@@ -14,7 +14,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User, ParkingSpot, SalesListing, Message } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck } from "lucide-react";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -55,6 +55,16 @@ export default function Dashboard() {
       setLocation("/");
     }
   }, [isAuthenticated, isLoading, setLocation]);
+
+  useEffect(() => {
+    if (isAuthenticated && pushSupported && !isSubscribed && !pushLoading) {
+      const autoPrompted = sessionStorage.getItem('push-auto-prompted');
+      if (!autoPrompted) {
+        sessionStorage.setItem('push-auto-prompted', '1');
+        subscribe();
+      }
+    }
+  }, [isAuthenticated, pushSupported, isSubscribed, pushLoading]);
 
   const { data: user } = useQuery<User>({
     queryKey: ["/api/auth/user"],
@@ -288,21 +298,31 @@ export default function Dashboard() {
               <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
               <span className="text-xl font-bold text-foreground">CarDrop</span>
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              data-testid="button-logout"
-              onClick={async () => {
-                try {
-                  await apiRequest("POST", "/api/auth/logout", {});
-                } catch (e) {}
-                queryClient.clear();
-                window.location.href = "/";
-              }}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Odjava
-            </Button>
+            <div className="flex items-center gap-2">
+              {user?.isAdmin && (
+                <Link href="/admin">
+                  <Button variant="outline" size="sm" data-testid="button-admin-panel">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="button-logout"
+                onClick={async () => {
+                  try {
+                    await apiRequest("POST", "/api/auth/logout", {});
+                  } catch (e) {}
+                  queryClient.clear();
+                  window.location.href = "/";
+                }}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Odjava
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -311,11 +331,21 @@ export default function Dashboard() {
         <h1 className="text-3xl font-bold mb-8 text-foreground">Moj Nalog</h1>
 
         <Tabs defaultValue={initialTab} className="w-full">
-          <TabsList className="mb-8 flex-wrap gap-1" data-testid="dashboard-tabs">
-            <TabsTrigger value="spots" data-testid="tab-my-spots">Moja Parking Mesta</TabsTrigger>
-            <TabsTrigger value="sales" data-testid="tab-my-sales">Moji Oglasi Prodaje</TabsTrigger>
-            <TabsTrigger value="bookings" data-testid="tab-bookings">Moje Rezervacije</TabsTrigger>
-            <TabsTrigger value="messages" data-testid="tab-messages" className="relative">
+          <TabsList className="mb-8 flex-wrap gap-2 h-auto p-2 bg-card border border-border" data-testid="dashboard-tabs">
+            <TabsTrigger value="spots" data-testid="tab-my-spots" className="px-4 py-2.5 text-sm font-medium rounded-md data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">
+              <MapPin className="w-4 h-4 mr-2" />
+              Parking Mesta
+            </TabsTrigger>
+            <TabsTrigger value="sales" data-testid="tab-my-sales" className="px-4 py-2.5 text-sm font-medium rounded-md data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">
+              <Tag className="w-4 h-4 mr-2" />
+              Oglasi Prodaje
+            </TabsTrigger>
+            <TabsTrigger value="bookings" data-testid="tab-bookings" className="px-4 py-2.5 text-sm font-medium rounded-md data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">
+              <Edit2 className="w-4 h-4 mr-2" />
+              Rezervacije
+            </TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages" className="px-4 py-2.5 text-sm font-medium rounded-md data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">
+              <MessageSquare className="w-4 h-4 mr-2" />
               Poruke
               {totalUnread > 0 && (
                 <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold rounded-full bg-destructive text-destructive-foreground">
@@ -323,7 +353,10 @@ export default function Dashboard() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="profile" data-testid="tab-profile">Profil</TabsTrigger>
+            <TabsTrigger value="profile" data-testid="tab-profile" className="px-4 py-2.5 text-sm font-medium rounded-md data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-sm">
+              <Bell className="w-4 h-4 mr-2" />
+              Profil
+            </TabsTrigger>
           </TabsList>
 
           {/* Ukupna zarada */}
