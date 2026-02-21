@@ -1012,12 +1012,12 @@ export default function Landing() {
             <a href="mailto:info@cardropp.app" className="text-accent text-xl font-semibold" data-testid="link-contact-email">
               info@cardropp.app
             </a>
-            <div className="flex items-center justify-center gap-4 mt-5">
-              <a href="https://www.instagram.com/cardrop.app/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#E4405F] transition-colors" data-testid="link-instagram">
-                <SiInstagram className="w-6 h-6" />
+            <div className="flex items-center justify-center gap-5 mt-5">
+              <a href="https://www.instagram.com/cardrop.app/" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80" data-testid="link-instagram">
+                <SiInstagram className="w-8 h-8 text-[#E4405F]" />
               </a>
-              <a href="https://www.facebook.com/profile.php?id=61584352366124" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-[#1877F2] transition-colors" data-testid="link-facebook">
-                <SiFacebook className="w-6 h-6" />
+              <a href="https://www.facebook.com/profile.php?id=61584352366124" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80" data-testid="link-facebook">
+                <SiFacebook className="w-8 h-8 text-[#1877F2]" />
               </a>
             </div>
             <div className="flex items-center justify-center gap-2 mt-4 text-primary">
