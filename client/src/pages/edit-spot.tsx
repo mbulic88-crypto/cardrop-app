@@ -35,6 +35,11 @@ const formSchema = z.object({
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
   is24Hours: z.boolean().default(true),
+  pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily'),
+  advertiserType: z.enum(['owner', 'agency', 'company']).default('owner'),
+  companyName: z.string().optional(),
+  pib: z.string().optional(),
+  contactPerson: z.string().optional(),
 });
 
 const serbianCities = [
@@ -49,6 +54,7 @@ export default function EditSpot() {
   const [match, params] = useRoute("/edit-spot/:id");
   const spotId = params?.id as string | undefined;
   const { toast } = useToast();
+  const [rentalDurationType, setRentalDurationType] = useState<'short' | 'long'>('short');
 
   const { data: spot, isLoading: spotLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -73,8 +79,16 @@ export default function EditSpot() {
       hasEvCharging: false,
       hasSecurityCamera: false,
       is24Hours: true,
+      pricingType: "daily",
+      advertiserType: "owner",
+      companyName: "",
+      pib: "",
+      contactPerson: "",
     },
   });
+
+  const watchedPricingType = form.watch("pricingType");
+  const watchedAdvertiserType = form.watch("advertiserType");
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -100,7 +114,17 @@ export default function EditSpot() {
         hasEvCharging: spot.hasEvCharging,
         hasSecurityCamera: spot.hasSecurityCamera,
         is24Hours: spot.is24Hours,
+        pricingType: (spot as any).pricingType || "daily",
+        advertiserType: (spot as any).advertiserType || "owner",
+        companyName: (spot as any).companyName || "",
+        pib: (spot as any).pib || "",
+        contactPerson: (spot as any).contactPerson || "",
       });
+      if ((spot as any).pricingType === 'weekly' || (spot as any).pricingType === 'monthly') {
+        setRentalDurationType('long');
+      } else {
+        setRentalDurationType('short');
+      }
     }
   }, [spot, form]);
 
