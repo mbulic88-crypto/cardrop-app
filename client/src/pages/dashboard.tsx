@@ -14,7 +14,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User, ParkingSpot, SalesListing } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone } from "lucide-react";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import MyBookings from "./my-bookings";
@@ -123,7 +123,24 @@ export default function Dashboard() {
       toast({
         title: "Greška",
         description: "Nije moguće obrisati parking mesto",
-        variant: "destructive",
+        variant: "destructive" as const,
+      });
+    },
+  });
+
+  const upgradeMutation = useMutation({
+    mutationFn: ({ spotId, tier }: { spotId: string; tier: 'silver' | 'gold' }) =>
+      apiRequest("POST", "/api/stripe/create-checkout-existing", { spotId, tier }),
+    onSuccess: (data: any) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Nije moguće pokrenuti nadogradnju",
+        variant: "destructive" as const,
       });
     },
   });
@@ -289,6 +306,34 @@ export default function Dashboard() {
                         }
                       </p>
                     </div>
+                    {(spot.subscriptionType === 'standard' || spot.subscriptionType === 'silver') && (
+                      <div className="flex gap-2 mb-3">
+                        {spot.subscriptionType === 'standard' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-[#A8A9AD] text-[#A8A9AD]"
+                            onClick={() => upgradeMutation.mutate({ spotId: spot.id, tier: 'silver' })}
+                            disabled={upgradeMutation.isPending}
+                            data-testid={`button-upgrade-silver-${spot.id}`}
+                          >
+                            <ArrowUpCircle className="w-4 h-4 mr-1" />
+                            Silver
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 border-[#DAA520] text-[#DAA520]"
+                          onClick={() => upgradeMutation.mutate({ spotId: spot.id, tier: 'gold' })}
+                          disabled={upgradeMutation.isPending}
+                          data-testid={`button-upgrade-gold-${spot.id}`}
+                        >
+                          <ArrowUpCircle className="w-4 h-4 mr-1" />
+                          Gold
+                        </Button>
+                      </div>
+                    )}
                     <div className="flex gap-2">
                       <Link href={`/edit-spot/${spot.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full" data-testid={`button-edit-${spot.id}`}>
