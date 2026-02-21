@@ -283,19 +283,84 @@ export default function EditSpot() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground block">Trajanje zakupa</label>
+                <Select 
+                  value={rentalDurationType} 
+                  onValueChange={(val: 'short' | 'long') => {
+                    setRentalDurationType(val);
+                    if (val === 'short') {
+                      form.setValue('pricingType', 'hourly');
+                    } else {
+                      form.setValue('pricingType', 'weekly');
+                    }
+                  }}
+                >
+                  <SelectTrigger data-testid="select-rental-duration">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">Kratkoročno (sat/dan)</SelectItem>
+                    <SelectItem value="long">Dugoročno (nedelja/mesec)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="pricingType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Period naplate</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-pricing-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {rentalDurationType === 'short' ? (
+                          <>
+                            <SelectItem value="hourly">Po satu</SelectItem>
+                            <SelectItem value="daily">Po danu</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="weekly">Po nedelji</SelectItem>
+                            <SelectItem value="monthly">Po mesecu</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="pricePerHour"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cena po satu</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Cena" {...field} data-testid="input-price" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const getPriceLabel = () => {
+                      switch (watchedPricingType) {
+                        case 'hourly': return 'Cena po satu';
+                        case 'daily': return 'Cena po danu';
+                        case 'weekly': return 'Cena po nedelji';
+                        case 'monthly': return 'Cena po mesecu';
+                        default: return 'Cena po danu';
+                      }
+                    };
+                    return (
+                      <FormItem>
+                        <FormLabel>{getPriceLabel()}</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="Cena" {...field} data-testid="input-price" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -384,6 +449,73 @@ export default function EditSpot() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="advertiserType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tip oglašivača</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-advertiser-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="owner">Vlasnik</SelectItem>
+                        <SelectItem value="agency">Agencija</SelectItem>
+                        <SelectItem value="company">Firma</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {(watchedAdvertiserType === 'company' || watchedAdvertiserType === 'agency') && (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Naziv firme</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Unesite naziv firme" {...field} data-testid="input-company-name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pib"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PIB</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Poreski identifikacioni broj" {...field} data-testid="input-pib" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contactPerson"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kontakt osoba</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ime kontakt osobe" {...field} data-testid="input-contact-person" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <Button
                 type="submit"
