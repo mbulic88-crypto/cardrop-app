@@ -53,6 +53,10 @@ const translations = {
     footerText: "\u00a9 2025 CarDrop | Ai Me IT LLC, Albuquerque, NM, USA",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
+    installAndroid: "Android",
+    installAndroidDesc: "Kliknite dugme iznad i aplikacija se automatski instalira.",
+    installIphone: "iPhone",
+    installIphoneDesc: "Otvorite u Safari-ju, kliknite dugme za deljenje (⎙) i izaberite \"Dodaj na početni ekran\".",
     sellButton: "Oglasi Prodaju",
     whoIsThisFor: "Za Koga Je Ovo",
     whoCanRent: "Ko Može Da Iznajmi Parking",
@@ -133,6 +137,10 @@ const translations = {
     footerText: "\u00a9 2025 CarDrop | Ai Me IT LLC, Albuquerque, NM, USA",
     langButton: "SRP",
     installApp: "Install App",
+    installAndroid: "Android",
+    installAndroidDesc: "Click the button above and the app installs automatically.",
+    installIphone: "iPhone",
+    installIphoneDesc: "Open in Safari, tap the Share button (⎙) and select \"Add to Home Screen\".",
     sellButton: "List for Sale",
     whoIsThisFor: "Who Is This For",
     whoCanRent: "Who Can Rent Out Parking",
@@ -511,6 +519,16 @@ export default function Landing() {
                     <Download className="w-5 h-5 mr-2" />
                     {t.installApp}
                   </Button>
+                  <div className="mt-4 grid grid-cols-2 gap-3 max-w-md" data-testid="install-instructions">
+                    <div className="rounded-md bg-card/50 border border-border/50 p-3">
+                      <p className="text-sm font-semibold text-foreground mb-1">{t.installAndroid}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
+                    </div>
+                    <div className="rounded-md bg-card/50 border border-border/50 p-3">
+                      <p className="text-sm font-semibold text-foreground mb-1">{t.installIphone}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{t.installIphoneDesc}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
