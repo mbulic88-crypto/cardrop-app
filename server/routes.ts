@@ -32,12 +32,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Spot may not exist in this environment, ignore
   }
 
+  const ADMIN_EMAIL_LIST = ['m.bulic88@gmail.com'];
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
+      }
+      if (!user.isAdmin && ADMIN_EMAIL_LIST.includes(user.email || '')) {
+        await storage.updateUser(user.id, { isAdmin: true } as any);
+        user.isAdmin = true;
       }
       const { passwordHash, ...safeUser } = user;
       res.json(safeUser);
@@ -990,11 +996,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin middleware
+  const ADMIN_EMAILS = ['m.bulic88@gmail.com'];
+
   const isAdmin = async (req: any, res: any, next: any) => {
     const userId = req.session?.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const user = await storage.getUser(userId);
-    if (!user?.isAdmin) return res.status(403).json({ message: "Forbidden - Admin only" });
+    if (!user) return res.status(401).json({ message: "Unauthorized" });
+    const hasAdminAccess = user.isAdmin || ADMIN_EMAILS.includes(user.email || '');
+    if (!hasAdminAccess) return res.status(403).json({ message: "Forbidden - Admin only" });
+    if (!user.isAdmin && hasAdminAccess) {
+      await storage.updateUser(user.id, { isAdmin: true } as any);
+    }
     next();
   };
 
