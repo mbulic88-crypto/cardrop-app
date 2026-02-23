@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock } from "lucide-react";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share } from "lucide-react";
 import { SiInstagram, SiFacebook } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
@@ -56,7 +56,7 @@ const translations = {
     installAndroid: "Android",
     installAndroidDesc: "Kliknite dugme iznad i aplikacija se automatski instalira.",
     installIphone: "iPhone",
-    installIphoneDesc: "Otvorite u Safari-ju, kliknite dugme za deljenje (⎙) i izaberite \"Dodaj na početni ekran\".",
+    installIphoneDesc: "Otvorite u Safari-ju, kliknite dugme za deljenje i izaberite \"Dodaj na početni ekran\".",
     sellButton: "Oglasi Prodaju",
     whoIsThisFor: "Za Koga Je Ovo",
     whoCanRent: "Ko Može Da Iznajmi Parking",
@@ -140,7 +140,7 @@ const translations = {
     installAndroid: "Android",
     installAndroidDesc: "Click the button above and the app installs automatically.",
     installIphone: "iPhone",
-    installIphoneDesc: "Open in Safari, tap the Share button (⎙) and select \"Add to Home Screen\".",
+    installIphoneDesc: "Open in Safari, tap the Share button and select \"Add to Home Screen\".",
     sellButton: "List for Sale",
     whoIsThisFor: "Who Is This For",
     whoCanRent: "Who Can Rent Out Parking",
@@ -526,7 +526,19 @@ export default function Landing() {
                     </div>
                     <div className="rounded-md bg-card/50 border border-border/50 p-3">
                       <p className="text-sm font-semibold text-foreground mb-1">{t.installIphone}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{t.installIphoneDesc}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {t.installIphoneDesc.split("Share button").length > 1 ? (
+                          <>
+                            {t.installIphoneDesc.split("Share button")[0]}
+                            Share button (<Share className="inline w-3 h-3 align-text-bottom" />) {t.installIphoneDesc.split("Share button")[1]}
+                          </>
+                        ) : t.installIphoneDesc.split("deljenje").length > 1 ? (
+                          <>
+                            {t.installIphoneDesc.split("deljenje")[0]}
+                            deljenje (<Share className="inline w-3 h-3 align-text-bottom" />) {t.installIphoneDesc.split("deljenje")[1]}
+                          </>
+                        ) : t.installIphoneDesc}
+                      </p>
                     </div>
                   </div>
                 </div>
