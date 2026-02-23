@@ -312,7 +312,7 @@ export default function Terms() {
               </p>
               <ul className="space-y-2 text-muted-foreground list-disc list-inside mb-3">
                 <li><strong>Stripe</strong> – za obradu plaćanja pretplata. Korišćenjem platnih usluga na Platformi prihvatate Stripe-ove uslove korišćenja</li>
-                <li><strong>Replit</strong> – za hosting i infrastrukturu Platforme</li>
+                <li><strong>Cloud infrastruktura</strong> – za hosting i rad Platforme</li>
                 <li><strong>Geoapify</strong> – za geolokacijske usluge i prikaz mapa</li>
               </ul>
               <p className="text-muted-foreground">
