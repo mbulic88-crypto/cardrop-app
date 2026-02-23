@@ -79,7 +79,7 @@ export default function PrivacyPolicy() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">2.1 Lični podaci (podaci o identitetu)</h4>
                   <p className="mb-2">
-                    Prilikom registracije putem Replit Auth (OpenID Connect) sistema autentifikacije, prikupljamo:
+                    Prilikom registracije na platformi, prikupljamo:
                   </p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Korisnički ID (jedinstveni identifikator)</li>
@@ -87,8 +87,7 @@ export default function PrivacyPolicy() {
                     <li>URL adresa profilne slike</li>
                   </ul>
                   <p className="mt-2 text-sm">
-                    Napomena: Ne prikupljamo lozinke niti email adrese direktno - autentifikacija se
-                    vrši isključivo putem Replit Auth sistema.
+                    Napomena: Lozinke se čuvaju u šifrovanom obliku i nikada se ne skladište u čistom tekstu.
                   </p>
                 </div>
 
@@ -105,7 +104,7 @@ export default function PrivacyPolicy() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">2.3 Podaci o oglasima i sadržaju</h4>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li>Fotografije parking mesta (čuvaju se u Replit Object Storage)</li>
+                    <li>Fotografije parking mesta (čuvaju se u cloud skladištu)</li>
                     <li>Opis parking mesta, cena, uslovi korišćenja</li>
                     <li>Recenzije i ocene</li>
                     <li>Direktne poruke između korisnika</li>
@@ -143,7 +142,7 @@ export default function PrivacyPolicy() {
                 <p>Vaše podatke koristimo u sledeće svrhe:</p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li><strong className="text-foreground">Pružanje usluge:</strong> Omogućavanje objavljivanja i pretraživanja oglasa za parking mesta, upravljanje rezervacijama i komunikacijom između korisnika</li>
-                  <li><strong className="text-foreground">Autentifikacija:</strong> Identifikacija korisnika i upravljanje korisničkim nalozima putem Replit Auth sistema</li>
+                  <li><strong className="text-foreground">Autentifikacija:</strong> Identifikacija korisnika i upravljanje korisničkim nalozima</li>
                   <li><strong className="text-foreground">Obrada plaćanja:</strong> Prosleđivanje potrebnih podataka Stripe platformi za sigurnu obradu plaćanja</li>
                   <li><strong className="text-foreground">Lokacijske usluge:</strong> Prikazivanje parking mesta na mapi i funkcija pronalaženja parkinga u blizini</li>
                   <li><strong className="text-foreground">Komunikacija:</strong> Slanje push notifikacija o statusu rezervacija, novih poruka i drugih relevantnih ažuriranja</li>
@@ -260,7 +259,7 @@ export default function PrivacyPolicy() {
                 <div>
                   <h4 className="font-semibold text-foreground mb-2">6.1 Neophodni kolačići</h4>
                   <ul className="space-y-1 list-disc list-inside">
-                    <li><strong className="text-foreground">Sesijski kolačići:</strong> Održavanje vaše prijave na platformu (Replit Auth)</li>
+                    <li><strong className="text-foreground">Sesijski kolačići:</strong> Održavanje vaše prijave na platformu</li>
                     <li><strong className="text-foreground">CSRF zaštita:</strong> Sprečavanje Cross-Site Request Forgery napada</li>
                     <li><strong className="text-foreground">Podešavanja teme:</strong> Čuvanje vašeg izbora svetle/tamne teme</li>
                   </ul>
@@ -310,17 +309,7 @@ export default function PrivacyPolicy() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">7.2 Replit (hosting i infrastruktura)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Sedište: San Francisco, CA, SAD</li>
-                    <li>Svrha: Hosting platforme, baza podataka (PostgreSQL/Neon), skladištenje fajlova (Object Storage), autentifikacija korisnika</li>
-                    <li>Podaci: Svi podaci koji se čuvaju na platformi prolaze kroz Replit infrastrukturu</li>
-                    <li>Privatnost: <a href="https://replit.com/site/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline">replit.com/site/privacy</a></li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">7.3 Geoapify (mapiranje i geolokacija)</h4>
+                  <h4 className="font-semibold text-foreground mb-2">7.2 Geoapify (mapiranje i geolokacija)</h4>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Svrha: Prikaz mapa, geokodiranje adresa, pretraga lokacija</li>
                     <li>Podaci: Koordinate lokacija, upiti za pretragu adresa</li>
@@ -350,7 +339,7 @@ export default function PrivacyPolicy() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>Primenjujemo odgovarajuće tehničke i organizacione mere zaštite</li>
                   <li>Koristimo šifrovane komunikacione kanale (HTTPS/TLS) za sav prenos podataka</li>
-                  <li>Naši pružaoci usluga (Stripe, Replit) imaju sopstvene mehanizme usklađenosti sa GDPR regulativom, uključujući standardne ugovorne klauzule (SCC)</li>
+                  <li>Naši pružaoci usluga (Stripe i drugi) imaju sopstvene mehanizme usklađenosti sa GDPR regulativom, uključujući standardne ugovorne klauzule (SCC)</li>
                   <li>Primenjujemo principe minimizacije podataka - prikupljamo samo podatke koji su neophodni za funkcionisanje platforme</li>
                 </ul>
                 <p>
@@ -463,10 +452,10 @@ export default function PrivacyPolicy() {
                 </p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li><strong className="text-foreground">Šifrovanje u prenosu:</strong> Sva komunikacija sa platformom koristi HTTPS/TLS protokol</li>
-                  <li><strong className="text-foreground">Sigurna autentifikacija:</strong> Koristimo Replit Auth (OpenID Connect) - industrijski standard za sigurnu autentifikaciju</li>
+                  <li><strong className="text-foreground">Sigurna autentifikacija:</strong> Koristimo sigurne metode autentifikacije sa šifrovanim lozinkama i Google OAuth</li>
                   <li><strong className="text-foreground">Sigurna obrada plaćanja:</strong> Stripe PCI DSS Level 1 sertifikacija garantuje najviši nivo zaštite finansijskih podataka</li>
                   <li><strong className="text-foreground">Kontrola pristupa:</strong> Pristup ličnim podacima je ograničen na ovlašćene osobe</li>
-                  <li><strong className="text-foreground">Sigurno skladištenje:</strong> Baza podataka (PostgreSQL/Neon) i skladište fajlova (Replit Object Storage) koriste šifrovanje</li>
+                  <li><strong className="text-foreground">Sigurno skladištenje:</strong> Baza podataka i cloud skladište fajlova koriste šifrovanje</li>
                   <li><strong className="text-foreground">Redovni pregledi:</strong> Redovno proveravamo naše bezbednosne prakse</li>
                 </ul>
                 <p>
