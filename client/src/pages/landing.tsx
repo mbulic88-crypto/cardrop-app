@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone } from "lucide-react";
 import { SiInstagram, SiFacebook } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
@@ -204,11 +205,20 @@ export default function Landing() {
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showIosModal, setShowIosModal] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { isInstallable, installApp } = usePWA();
   const { theme, setTheme } = useTheme();
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    setIsIos(/iPhone|iPad|iPod/i.test(ua));
+    setIsAndroid(/Android/i.test(ua));
+  }, []);
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem("parkin-language");
@@ -520,26 +530,26 @@ export default function Landing() {
                     {t.installApp}
                   </Button>
                   <div className="mt-4 grid grid-cols-2 gap-3 max-w-md" data-testid="install-instructions">
-                    <div className="rounded-md bg-card/50 border border-border/50 p-3">
-                      <p className="text-sm font-semibold text-foreground mb-1">{t.installAndroid}</p>
+                    <button
+                      type="button"
+                      onClick={isInstallable ? installApp : undefined}
+                      data-testid="button-install-android"
+                      className={`rounded-md p-3 text-left transition-all hover-elevate ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"} ${isInstallable ? "cursor-pointer" : "cursor-default"}`}
+                    >
+                      <p className={`text-sm font-semibold mb-1 ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
-                    </div>
-                    <div className="rounded-md bg-card/50 border border-border/50 p-3">
-                      <p className="text-sm font-semibold text-foreground mb-1">{t.installIphone}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowIosModal(true)}
+                      data-testid="button-install-iphone"
+                      className={`rounded-md p-3 text-left transition-all hover-elevate cursor-pointer ${isIos ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
+                    >
+                      <p className={`text-sm font-semibold mb-1 ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        {t.installIphoneDesc.split("Share button").length > 1 ? (
-                          <>
-                            {t.installIphoneDesc.split("Share button")[0]}
-                            Share button (<Share className="inline w-3 h-3 align-text-bottom" />) {t.installIphoneDesc.split("Share button")[1]}
-                          </>
-                        ) : t.installIphoneDesc.split("deljenje").length > 1 ? (
-                          <>
-                            {t.installIphoneDesc.split("deljenje")[0]}
-                            deljenje (<Share className="inline w-3 h-3 align-text-bottom" />) {t.installIphoneDesc.split("deljenje")[1]}
-                          </>
-                        ) : t.installIphoneDesc}
+                        {language === "sr" ? "Tapnite za uputstvo kako instalirati na iPhone." : "Tap for instructions on how to install on iPhone."}
                       </p>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1094,6 +1104,64 @@ export default function Landing() {
         onClose={() => setShowLoginDialog(false)}
         redirectPath={loginRedirectPath}
       />
+
+      <Dialog open={showIosModal} onOpenChange={setShowIosModal}>
+        <DialogContent className="max-w-sm" data-testid="modal-ios-install">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-accent" />
+              {language === "sr" ? "Instalacija na iPhone" : "Install on iPhone"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              {language === "sr"
+                ? "iOS ne podržava automatsku instalaciju. Pratite ove korake u Safari-ju:"
+                : "iOS doesn't support automatic install. Follow these steps in Safari:"}
+            </p>
+            <ol className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">1</span>
+                <p className="text-sm text-foreground pt-0.5">
+                  {language === "sr" ? "Otvori ovu stranicu u " : "Open this page in "}
+                  <strong>Safari</strong>
+                  {language === "sr" ? " (ne Chrome ili drugi pretraživač)" : " (not Chrome or another browser)"}
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">2</span>
+                <p className="text-sm text-foreground pt-0.5">
+                  {language === "sr" ? "Tapni dugme za deljenje " : "Tap the Share button "}
+                  <Share className="inline w-4 h-4 align-text-bottom text-accent" />
+                  {language === "sr" ? " (na dnu ekrana)" : " (at the bottom of the screen)"}
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">3</span>
+                <p className="text-sm text-foreground pt-0.5">
+                  {language === "sr" ? "Izaberi " : "Select "}
+                  <strong>{language === "sr" ? "\"Dodaj na početni ekran\"" : "\"Add to Home Screen\""}</strong>
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-accent/20 text-accent text-xs font-bold flex items-center justify-center">4</span>
+                <p className="text-sm text-foreground pt-0.5">
+                  {language === "sr" ? "Tapni " : "Tap "}
+                  <strong>{language === "sr" ? "\"Dodaj\"" : "\"Add\""}</strong>
+                  {language === "sr" ? " u gornjem desnom uglu" : " in the top right corner"}
+                </p>
+              </li>
+            </ol>
+            <Button
+              className="w-full mt-2"
+              onClick={() => setShowIosModal(false)}
+              data-testid="button-ios-modal-close"
+            >
+              {language === "sr" ? "Razumeo/la sam" : "Got it"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
