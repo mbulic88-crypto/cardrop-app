@@ -73,7 +73,8 @@ The platform features a dual-theme design with green accent colors:
 *   **Payment Processing**: Payment methods limited to cash and bank transfer only (card payments removed).
 *   **User Dashboard**: Management of bookings and owned parking spots, including a transaction history with financial summaries.
 *   **Review & Rating System**: 1-5 star ratings and comments (10-1000 characters) for paid bookings, displayed on spot detail pages with average ratings.
-*   **Admin Panel**: Admin access restricted to specific email (isAdmin=true in database). Located at /admin route.
+*   **Admin Panel**: Admin access restricted to specific email (isAdmin=true in database). Located at /admin route. Features: user management, parking spot management (activate/deactivate, delete, **edit coordinates via MapPin button**), sales listings management.
+*   **Database Split (Important)**: Development environment uses local Replit PostgreSQL (`heliumdb`) with test data only. Production deployment uses the external Neon database (via `DATABASE_URL` secret) which has real user data. This means I (the agent) cannot directly see or query production user data from the dev environment. Workaround: use the Admin panel at `/admin` on the production URL to manage real data, including fixing coordinates via the new coordinate editor.
 
 ### System Design Choices
 *   **API Design**: RESTful API endpoints for CRUD operations on parking spots, bookings, payments, and reviews.

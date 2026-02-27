@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin } from "lucide-react";
 import type { User, ParkingSpot, SalesListing } from "@shared/schema";
 import {
   AlertDialog,
@@ -19,10 +21,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [editCoordSpot, setEditCoordSpot] = useState<ParkingSpot | null>(null);
+  const [editLat, setEditLat] = useState("");
+  const [editLng, setEditLng] = useState("");
 
   const { data: currentUser, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
@@ -110,6 +121,21 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Greška pri promeni statusa", variant: "destructive" });
+    },
+  });
+
+  const updateCoordsMutation = useMutation({
+    mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: string; longitude: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/parking-spots/${id}/update`, { latitude, longitude });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Koordinate su ažurirane" });
+      setEditCoordSpot(null);
+    },
+    onError: () => {
+      toast({ title: "Greška pri ažuriranju koordinata", variant: "destructive" });
     },
   });
 
@@ -294,6 +320,19 @@ export default function Admin() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setEditCoordSpot(spot);
+                              setEditLat(spot.latitude || "");
+                              setEditLng(spot.longitude || "");
+                            }}
+                            data-testid={`button-edit-coords-${spot.id}`}
+                            title="Uredi koordinate (pin na mapi)"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                          <Button
                             variant={spot.isActive ? "outline" : "default"}
                             size="icon"
                             onClick={() => toggleSpotMutation.mutate(spot.id)}
@@ -435,6 +474,61 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <Dialog open={!!editCoordSpot} onOpenChange={(open) => { if (!open) setEditCoordSpot(null); }}>
+        <DialogContent className="max-w-sm" data-testid="modal-edit-coords">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-accent" />
+              Uredi koordinate
+            </DialogTitle>
+          </DialogHeader>
+          {editCoordSpot && (
+            <div className="space-y-4 pt-2">
+              <p className="text-sm text-muted-foreground font-medium">{editCoordSpot.title}</p>
+              <p className="text-xs text-muted-foreground">{editCoordSpot.address}</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Geografska širina (Latitude)</label>
+                  <Input
+                    value={editLat}
+                    onChange={(e) => setEditLat(e.target.value)}
+                    placeholder="npr. 45.2417301"
+                    data-testid="input-edit-lat"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Geografska dužina (Longitude)</label>
+                  <Input
+                    value={editLng}
+                    onChange={(e) => setEditLng(e.target.value)}
+                    placeholder="npr. 19.8107777"
+                    data-testid="input-edit-lng"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setEditCoordSpot(null)}
+                  data-testid="button-edit-coords-cancel"
+                >
+                  Otkaži
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => updateCoordsMutation.mutate({ id: editCoordSpot.id, latitude: editLat, longitude: editLng })}
+                  disabled={updateCoordsMutation.isPending || !editLat || !editLng}
+                  data-testid="button-edit-coords-save"
+                >
+                  {updateCoordsMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sačuvaj"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

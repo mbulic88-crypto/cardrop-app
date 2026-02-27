@@ -1067,11 +1067,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/admin/parking-spots/:id/update', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { isActive, isPremium, subscriptionType } = req.body;
+      const { isActive, isPremium, subscriptionType, latitude, longitude } = req.body;
       const updates: any = {};
       if (isActive !== undefined) updates.isActive = isActive;
       if (isPremium !== undefined) updates.isPremium = isPremium;
       if (subscriptionType !== undefined) updates.subscriptionType = subscriptionType;
+      if (latitude !== undefined) updates.latitude = String(latitude);
+      if (longitude !== undefined) updates.longitude = String(longitude);
       const spot = await storage.updateParkingSpot(req.params.id, updates);
       if (!spot) {
         return res.status(404).json({ message: "Parking spot not found" });
