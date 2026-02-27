@@ -22,6 +22,7 @@ import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { DraggableLocationMap } from "@/components/DraggableLocationMap";
 import { PRICING_PLANS, getPlanById, getMaxPhotos, type SubscriptionType, type CategoryType } from "@shared/pricing";
 import type { User } from "@shared/schema";
 
@@ -761,6 +762,9 @@ export default function AddSpot() {
 
   // Watch pricingType for dynamic price label
   const watchedPricingType = form.watch("pricingType");
+  const watchedLat = form.watch("latitude");
+  const watchedLng = form.watch("longitude");
+  const hasCustomLocation = watchedLat && watchedLng && watchedLat !== "45.2671" && watchedLng !== "19.8335";
   
   const getMaxImages = () => {
     return getMaxPhotos(selectedPlan);
@@ -1086,6 +1090,25 @@ export default function AddSpot() {
               {/* Hidden lat/lng fields - auto-populated by address autocomplete */}
               <input type="hidden" {...form.register('latitude')} />
               <input type="hidden" {...form.register('longitude')} />
+
+              {/* Draggable map — shows after address is selected from autocomplete */}
+              {hasCustomLocation && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    {language === "sr" ? "Proverite lokaciju na mapi" : language === "de" ? "Standort auf der Karte prüfen" : language === "hu" ? "Ellenőrizze a helyszínt a térképen" : language === "sk" ? "Skontrolujte polohu na mape" : language === "mk" ? "Проверете ја локацијата на картата" : "Check location on map"}
+                  </p>
+                  <DraggableLocationMap
+                    latitude={parseFloat(watchedLat)}
+                    longitude={parseFloat(watchedLng)}
+                    onPositionChange={(lat, lng) => {
+                      form.setValue('latitude', lat.toFixed(7));
+                      form.setValue('longitude', lng.toFixed(7));
+                    }}
+                    height="240px"
+                    hint={language === "sr" ? "Prevucite pin na tačnu lokaciju ako nije ispravna" : "Drag the pin to the exact location if incorrect"}
+                  />
+                </div>
+              )}
 
               {/* Company specific fields */}
               {isCompany && (

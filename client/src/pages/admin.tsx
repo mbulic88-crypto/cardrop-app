@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { DraggableLocationMap } from "@/components/DraggableLocationMap";
 import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin } from "lucide-react";
 import type { User, ParkingSpot, SalesListing } from "@shared/schema";
 import {
@@ -126,8 +127,7 @@ export default function Admin() {
 
   const updateCoordsMutation = useMutation({
     mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: string; longitude: string }) => {
-      const res = await apiRequest("PATCH", `/api/admin/parking-spots/${id}/update`, { latitude, longitude });
-      return res.json();
+      return await apiRequest("PATCH", `/api/admin/parking-spots/${id}/update`, { latitude, longitude });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
@@ -476,7 +476,7 @@ export default function Admin() {
       </main>
 
       <Dialog open={!!editCoordSpot} onOpenChange={(open) => { if (!open) setEditCoordSpot(null); }}>
-        <DialogContent className="max-w-sm" data-testid="modal-edit-coords">
+        <DialogContent className="max-w-md" data-testid="modal-edit-coords">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-accent" />
@@ -484,25 +484,41 @@ export default function Admin() {
             </DialogTitle>
           </DialogHeader>
           {editCoordSpot && (
-            <div className="space-y-4 pt-2">
-              <p className="text-sm text-muted-foreground font-medium">{editCoordSpot.title}</p>
-              <p className="text-xs text-muted-foreground">{editCoordSpot.address}</p>
-              <div className="space-y-3">
+            <div className="space-y-3 pt-2">
+              <div>
+                <p className="text-sm font-medium text-foreground">{editCoordSpot.title}</p>
+                <p className="text-xs text-muted-foreground">{editCoordSpot.address}</p>
+              </div>
+              {editLat && editLng && parseFloat(editLat) && parseFloat(editLng) && (
+                <DraggableLocationMap
+                  latitude={parseFloat(editLat)}
+                  longitude={parseFloat(editLng)}
+                  onPositionChange={(lat, lng) => {
+                    setEditLat(lat.toFixed(7));
+                    setEditLng(lng.toFixed(7));
+                  }}
+                  height="220px"
+                  hint="Prevucite pin na tačnu lokaciju"
+                />
+              )}
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Geografska širina (Latitude)</label>
+                  <label className="text-xs font-medium text-foreground">Latitude</label>
                   <Input
                     value={editLat}
                     onChange={(e) => setEditLat(e.target.value)}
-                    placeholder="npr. 45.2417301"
+                    placeholder="45.2417301"
+                    className="text-sm"
                     data-testid="input-edit-lat"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Geografska dužina (Longitude)</label>
+                  <label className="text-xs font-medium text-foreground">Longitude</label>
                   <Input
                     value={editLng}
                     onChange={(e) => setEditLng(e.target.value)}
-                    placeholder="npr. 19.8107777"
+                    placeholder="19.8107777"
+                    className="text-sm"
                     data-testid="input-edit-lng"
                   />
                 </div>
