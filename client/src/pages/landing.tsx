@@ -1095,7 +1095,7 @@ export default function Landing() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{t.footerText}</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Ai Me IT LLC is a US-registered company primarily operating across the Balkans, open to global expansion.</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Ai Me IT LLC is a US-registered company operating globally.</p>
           <p className="text-xs text-muted-foreground/60 mt-1">Registered address: 1209 Mountain Road Pl NE, Suite N, Albuquerque, NM 87110, USA</p>
           <p className="text-xs text-muted-foreground/60 mt-1">
             Email: <a href="mailto:info@cardropp.app" className="underline hover:text-muted-foreground" data-testid="link-footer-email">info@cardropp.app</a>
