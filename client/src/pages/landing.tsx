@@ -51,7 +51,7 @@ const translations = {
     ctaSubtitle: "Zaradite deljenjem svog parking prostora sa drugim vozačima. Jednostavno, sigurno, profitabilno.",
     termsButton: "Uslovi Korišćenja",
     privacyButton: "Politika Privatnosti",
-    footerText: "\u00a9 2025 CarDrop owned by Ai Me IT",
+    footerText: "\u00a9 2025 CarDrop owned by Ai Me IT LLC, United States",
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
     installAndroid: "Android",
@@ -135,7 +135,7 @@ const translations = {
     ctaSubtitle: "Earn by sharing your parking space with other drivers. Simple, secure, profitable.",
     termsButton: "Terms of Use",
     privacyButton: "Privacy Policy",
-    footerText: "\u00a9 2025 CarDrop owned by Ai Me IT",
+    footerText: "\u00a9 2025 CarDrop owned by Ai Me IT LLC, United States",
     langButton: "SRP",
     installApp: "Install App",
     installAndroid: "Android",
@@ -885,12 +885,12 @@ export default function Landing() {
               <span className="text-base text-foreground font-medium">
                 {language === 'sr' ? 'Sigurna plaćanja preko' : 'Secure payments via'}
               </span>
-              <span className="text-2xl font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
+              <span className="text-2xl font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>Stripe</span>
             </div>
             <p className="text-sm text-muted-foreground text-center max-w-md">
               {language === 'sr' 
-                ? 'Sva plaćanja su zaštićena SSL enkripcijom i obrađena od strane Stripe-a, vodećeg svetskog platnog procesora.'
-                : 'All payments are SSL encrypted and processed by Stripe, the world\'s leading payment processor.'}
+                ? 'Sigurna plaćanja preko Stripe-a. Sva plaćanja su zaštićena SSL enkripcijom i obrađena od strane vodećeg svetskog platnog procesora.'
+                : 'Secure payments via Stripe. All payments are SSL encrypted and processed by the world\'s leading payment processor.'}
             </p>
           </div>
         </div>
@@ -1091,11 +1091,15 @@ export default function Landing() {
             <div className="flex items-center gap-2 text-muted-foreground">
               <Shield className="w-4 h-4 text-[#635BFF]" />
               <span className="text-sm">Powered by</span>
-              <span className="text-lg font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>stripe</span>
+              <span className="text-lg font-extrabold text-[#635BFF] leading-none tracking-tight" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>Stripe</span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground">{t.footerText}</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">info@cardropp.app</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Ai Me IT LLC is a US-registered company primarily operating across the Balkans, open to global expansion.</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Registered address: 1209 Mountain Road Pl NE, Suite N, Albuquerque, NM 87110, USA</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">
+            Email: <a href="mailto:info@cardropp.app" className="underline hover:text-muted-foreground" data-testid="link-footer-email">info@cardropp.app</a>
+          </p>
         </div>
       </footer>
 

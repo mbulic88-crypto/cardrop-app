@@ -34,6 +34,9 @@ export default function Terms() {
 
             <section>
               <h3 className="text-xl font-semibold mb-3">1. Prihvatanje Uslova</h3>
+              <p className="text-muted-foreground mb-3">
+                This service is provided by Ai Me IT LLC, a company registered in the United States, operating globally.
+              </p>
               <p className="text-muted-foreground">
                 Korišćenjem CarDrop platforme (u daljem tekstu: „Platforma"), uključujući pristup veb sajtu, mobilnoj aplikaciji i svim povezanim uslugama, potvrđujete da ste pročitali, razumeli i prihvatili ove Uslove Korišćenja (u daljem tekstu: „Uslovi") u celosti. Ako se ne slažete sa bilo kojim delom ovih Uslova, molimo vas da odmah prestanete sa korišćenjem Platforme. Nastavak korišćenja Platforme nakon izmena ovih Uslova predstavlja vaše prihvatanje izmenjenih Uslova. Ovi Uslovi predstavljaju pravno obavezujući ugovor između vas i kompanije Ai Me IT LLC.
               </p>
