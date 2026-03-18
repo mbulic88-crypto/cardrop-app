@@ -458,7 +458,6 @@ export default function Landing() {
           </div>
         </div>
       </header>
-
       {/* Hero Section - Image on top, content below */}
       <div className="relative">
         {/* Hero Image Area - light overlay for bright sunny feel */}
@@ -485,7 +484,7 @@ export default function Landing() {
                   </div>
                   <div className="text-left">
                     <div className="font-bold text-base leading-tight">Map Hack NS</div>
-                    <div className="text-green-100 text-sm leading-tight mt-0.5">Štek parking · Live info · Crvene zone</div>
+                    <div className="text-green-100 text-sm leading-tight mt-0.5">Štek parkinzi · Live chat info · Crvene zone · Korisne lokacije · Javne garaže · Ostalo</div>
                   </div>
                 </div>
                 <div className="flex-shrink-0 flex flex-col items-end gap-1">
@@ -593,7 +592,6 @@ export default function Landing() {
           </div>
         </div>
       </div>
-
       {/* Who Is This For Section */}
       <div id="za-koga" className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background scroll-mt-16">
         <div className="max-w-7xl mx-auto">
@@ -700,7 +698,6 @@ export default function Landing() {
           </div>
         </div>
       </div>
-
       {/* How It Works Section */}
       <div id="kako-funkcionise" className="py-20 md:py-24 px-6 max-w-7xl mx-auto scroll-mt-16">
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
@@ -763,7 +760,6 @@ export default function Landing() {
           </Link>
         </div>
       </div>
-
       {/* Pricing Section */}
       <div id="cenovnik" className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background scroll-mt-16">
         <div className="max-w-5xl mx-auto">
@@ -921,7 +917,6 @@ export default function Landing() {
           </div>
         </div>
       </div>
-
       {/* Testimonials Section */}
       <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto bg-card/30">
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
@@ -989,7 +984,6 @@ export default function Landing() {
           </Card>
         </div>
       </div>
-
       {/* Featured Locations Section */}
       <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto">
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
@@ -1021,7 +1015,6 @@ export default function Landing() {
           ))}
         </div>
       </div>
-
       {/* Trust Section */}
       <div className="py-16 md:py-20 px-6 max-w-7xl mx-auto">
         <div className="grid grid-cols-3 gap-4 md:gap-8 text-center">
@@ -1039,7 +1032,6 @@ export default function Landing() {
           </div>
         </div>
       </div>
-
       {/* CTA Section */}
       <div className="py-20 md:py-24 px-6 bg-primary/10">
         <div className="max-w-4xl mx-auto text-center">
@@ -1060,7 +1052,6 @@ export default function Landing() {
           </Button>
         </div>
       </div>
-
       {/* Contact Section */}
       <div id="kontakt" className="py-20 md:py-24 px-6 scroll-mt-16">
         <div className="max-w-2xl mx-auto text-center">
@@ -1096,7 +1087,6 @@ export default function Landing() {
           </Card>
         </div>
       </div>
-
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="max-w-7xl mx-auto text-center">
@@ -1128,13 +1118,11 @@ export default function Landing() {
           </p>
         </div>
       </footer>
-
       <LoginRequiredDialog
         open={showLoginDialog}
         onClose={() => setShowLoginDialog(false)}
         redirectPath={loginRedirectPath}
       />
-
       <Dialog open={showIosModal} onOpenChange={setShowIosModal}>
         <DialogContent className="max-w-sm" data-testid="modal-ios-install">
           <DialogHeader>
