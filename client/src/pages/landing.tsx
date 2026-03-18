@@ -476,22 +476,19 @@ export default function Landing() {
             <Link href="/map-hack">
               <button
                 data-testid="button-map-hack-ns"
-                className="w-full flex flex-col items-center text-center gap-2 rounded-md bg-gradient-to-b from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 active:from-green-700 active:to-green-900 transition-all px-6 py-6 text-white shadow-md"
+                className="w-full flex items-center gap-3 rounded-md bg-green-700 hover:bg-green-600 active:bg-green-800 transition-colors px-4 py-3 text-white shadow-sm"
               >
-                <span className="text-xs font-bold tracking-widest uppercase bg-white/20 rounded-full px-3 py-1 text-green-100 mb-1">
-                  1. mesec besplatno
-                </span>
-                <div className="w-14 h-14 rounded-full bg-white/15 flex items-center justify-center">
-                  <MapPin className="w-7 h-7 text-white" />
+                <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-white" />
                 </div>
-                <div className="font-extrabold text-2xl leading-tight tracking-tight">Map Hack NS</div>
-                <div className="text-green-100 text-sm leading-snug max-w-xs">
-                  Štek parking · Crvene zone · Live info · Javne garaže
+                <div className="flex-1 flex flex-col items-start gap-0.5">
+                  <span className="font-bold text-base leading-tight">Map Hack NS</span>
+                  <span className="text-green-100 text-xs leading-tight">Štek parking · Crvene zone · Live info</span>
+                  <span className="mt-1 text-xs font-semibold bg-amber-400 text-amber-900 rounded-full px-2 py-0.5 leading-tight">
+                    1. mesec besplatno
+                  </span>
                 </div>
-                <div className="mt-1 flex items-center gap-1 text-white/60 text-xs font-medium">
-                  <span>Otvori mapu</span>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </div>
+                <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </Link>
           </div>
