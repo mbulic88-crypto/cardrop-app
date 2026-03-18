@@ -36,7 +36,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       { sr: 'Do 2 fotografije', en: 'Up to 2 photos' },
       { sr: 'Prikaz na mapi', en: 'Shown on map' },
       { sr: 'Kontakt informacije', en: 'Contact information' },
-      { sr: 'Vidljivost 60 dana', en: '60 days visibility' },
+      { sr: 'Trajno aktivno', en: 'Permanently active' },
     ],
   },
   {
@@ -57,7 +57,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       { sr: 'Oznaku „Istaknuto"', en: '"Featured" badge' },
       { sr: 'Bolja vidljivost u odnosu na Standard', en: 'Better visibility than Standard' },
       { sr: 'Prikaz iznad Standard oglasa u pretrazi', en: 'Shown above Standard listings' },
-      { sr: 'Ukupno 60 dana vidljivosti (30 dana Silver + 30 dana Standard)', en: '60 days total (30 days Silver + 30 days Standard)' },
+      { sr: 'Trajno aktivno', en: 'Permanently active' },
     ],
   },
   {
@@ -78,7 +78,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       { sr: 'Oznaku „Top lokacija"', en: '"Top location" badge' },
       { sr: 'Najvišu poziciju u pretrazi (iznad Silver i Standard)', en: 'Highest search position (above Silver and Standard)' },
       { sr: 'Reklamiranje na društvenim mrežama i u email kampanjama', en: 'Social media and email campaign promotion' },
-      { sr: 'Ukupno 60 dana vidljivosti (30 dana Gold + 30 dana Standard)', en: '60 days total (30 days Gold + 30 days Standard)' },
+      { sr: 'Trajno aktivno', en: 'Permanently active' },
     ],
   },
 ];
@@ -91,13 +91,8 @@ export function getPlansByCategory(_category: CategoryType): PricingPlan[] {
   return PRICING_PLANS;
 }
 
-export function calculateExpiryDate(planId: SubscriptionType, startDate: Date = new Date()): Date | null {
-  const plan = getPlanById(planId);
-  if (!plan) throw new Error(`Invalid plan ID: ${planId}`);
-
-  const expiryDate = new Date(startDate);
-  expiryDate.setDate(expiryDate.getDate() + plan.totalVisibilityDays);
-  return expiryDate;
+export function calculateExpiryDate(_planId: SubscriptionType, _startDate: Date = new Date()): Date | null {
+  return null;
 }
 
 export function getMaxPhotos(planId: SubscriptionType): number {

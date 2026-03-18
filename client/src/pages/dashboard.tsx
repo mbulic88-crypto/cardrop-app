@@ -430,11 +430,11 @@ export default function Dashboard() {
                     <div className="mb-4 text-sm">
                       <p className="text-foreground font-semibold">{spot.pricePerHour} {spot.currency}/h</p>
                       <p className="text-muted-foreground text-xs">
-                        {spot.subscriptionType === 'standard' 
-                          ? 'Standard plan - 60 dana' 
-                          : spot.subscriptionExpiresAt 
-                            ? `${spot.subscriptionType === 'gold' ? 'Gold' : 'Silver'} - Ističe: ${new Date(spot.subscriptionExpiresAt).toLocaleDateString('sr-RS')}`
-                            : 'Aktivan'
+                        {spot.subscriptionType === 'gold'
+                          ? 'Gold plan - Permanentno'
+                          : spot.subscriptionType === 'silver'
+                            ? 'Silver plan - Permanentno'
+                            : 'Standard plan - Permanentno'
                         }
                       </p>
                     </div>

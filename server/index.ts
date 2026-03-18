@@ -8,6 +8,8 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { syncStripeProducts } from './stripeProducts';
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const app = express();
 
@@ -43,7 +45,16 @@ async function initStripe() {
   }
 }
 
+async function clearSpotExpiry() {
+  try {
+    await db.execute(sql`UPDATE parking_spots SET subscription_expires_at = NULL WHERE subscription_expires_at IS NOT NULL`);
+  } catch (error) {
+    console.error('Failed to clear spot expiry dates:', error);
+  }
+}
+
 (async () => {
+  await clearSpotExpiry();
   await initStripe();
 
   app.use((req, res, next) => {
