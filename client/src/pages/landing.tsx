@@ -481,10 +481,10 @@ export default function Landing() {
                 <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
-                <div className="flex-1 flex flex-col items-start gap-0.5">
-                  <span className="font-bold text-base leading-tight">Map Hack NS</span>
-                  <span className="text-green-100 text-xs leading-tight">Štek parking · Crvene zone · Live info</span>
-                  <span className="mt-1 text-xs font-semibold bg-amber-400 text-amber-900 rounded-full px-2 py-0.5 leading-tight">
+                <div className="flex-1 flex flex-col items-center text-center gap-0.5">
+                  <span className="font-bold text-lg leading-tight">Map Hack NS</span>
+                  <span className="text-green-100 text-xs leading-tight">Štek parkinzi · Crvene zone · Live chat info · Korisne lokacije · Privatni parkinzi i garaže · Ostalo</span>
+                  <span className="mt-1 text-xs font-semibold bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 leading-tight">
                     1. mesec besplatno
                   </span>
                 </div>
