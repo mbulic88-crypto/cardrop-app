@@ -1,0 +1,91 @@
+Prompt za Agent 4 – Map Hack NS u postojećoj PWA (prvi mesec free)
+
+Cilj: Dodati Map Hack NS funkcionalnost u postojeći PWA, odmah ispod naslovne slike, sa prvim mesecem besplatno za sve korisnike. Nakon toga, osnovna verzija postaje 350 RSD, a premium 500 RSD.
+
+1️⃣ Mapa – centralna funkcionalnost
+
+Mapa se dodaje kao prva i najbitnija opcija ispod naslovne slike.
+
+Prikazuje:
+
+Štek parking mesta
+
+Crvene zone
+
+Javne garaže
+
+Live info (pauk, sudari, gužve)
+
+Korisne lokacije (WC, pumpe, bankomati, voda/česme)
+
+Tooltip/popup sa osnovnim info i ikonama.
+
+Jasna legenda sa ikonama.
+
+2️⃣ Prvi mesec besplatno
+
+Svi korisnici koji prvi put otvore mapu dobijaju trial od 1 meseca besplatno.
+
+Trial automatski prelazi u osnovnu pretplatu (350 RSD) nakon isteka.
+
+Premium pretplata (500 RSD) se može aktivirati odmah ili kasnije.
+
+Stripe integracija mora podržavati trial period + automatsko naplaćivanje.
+
+3️⃣ Notifikacije
+
+Custom keywords za push notifikacije (“pauk”, “Gagarinova”, “oslobođeno”).
+
+Aktivno za sve korisnike (free trial + pretplate).
+
+4️⃣ Chat i tipovanje (premium)
+
+Premium korisnici (500 RSD) mogu pisati u chat.
+
+Pravila: 1 poruka/min, 1 reply/thread
+
+Quick buttons: “Ima mesta”, “Pauk”, “Gužva”, “Policija”
+
+Tipovanje poruka → rangiranje → leaderboard → badge za najpouzdanije tipove
+
+5️⃣ Admin kontrola
+
+Menja lokacije, ikonice, info
+
+Moderira chat i tipove
+
+Upravljanje korisnicima i pretplatama
+
+Dodavanje novih funkcionalnosti
+
+6️⃣ Verzije i Stripe integracija
+Funkcija	Free trial 1 mesec	OSNOVNA – 350 RSD	PREMIUM – 500 RSD
+Mapa sa štek parkingom, crvenim zonama, garažama	✅	✅	✅
+Live info (pauk, sudari, gužve)	✅	✅	✅
+Korisne lokacije (WC, pumpe, bankomati, voda)	✅	✅	✅
+Custom notifikacije	✅	✅	✅
+Chat pisanje	❌	❌	✅
+Tipovanje poruka	❌	❌	✅
+Favoriti / praćenje lokacija	❌	❌	✅
+
+Stripe mora podržati trial + automatsko naplaćivanje.
+
+7️⃣ Vizualni stil
+
+Boje: zelena + krem
+
+Ikone: Štek parking → shadowed P, Live info → radar, Crvene zone → tamnocrvena, Favoriti → zvezdica, Tipovani korisnici → spy badge
+
+8️⃣ UX fokus
+
+Mapa je pregledna, brza, odmah vidljiva
+
+Premium dodatne opcije: chat + tipovanje + favoriti
+
+Admin kontrola kompletna
+
+9️⃣ Gamification
+
+Tipovanje → rank → leaderboard → badge
+
+Incentivira kvalitet informacija i aktivnost korisnika
