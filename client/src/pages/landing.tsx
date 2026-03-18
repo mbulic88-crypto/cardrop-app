@@ -497,11 +497,46 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Action Buttons – Iznajmi, Rezerviši, Prodaja */}
+        <div className="relative z-10 bg-background px-4 pb-5">
+          <div className="max-w-xl mx-auto flex flex-col gap-3">
+            <Link href="/home" className="w-full">
+              <Button
+                size="lg"
+                className="w-full text-base py-5"
+                data-testid="button-find-spot-hero"
+              >
+                <Search className="w-5 h-5 mr-2" />
+                {t.findSpotButton}
+              </Button>
+            </Link>
+            <Button
+              size="lg"
+              className="w-full text-base py-5"
+              data-testid="button-list-spot-hero"
+              onClick={handleListSpotClick}
+            >
+              <PlusCircle className="w-5 h-5 mr-2" />
+              {t.listSpotButton}
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="w-full text-base py-5"
+              data-testid="button-sell-hero"
+              onClick={handleSellClick}
+            >
+              <Tag className="w-5 h-5 mr-2" />
+              {t.sellButton}
+            </Button>
+          </div>
+        </div>
+
         {/* Content Below Image */}
-        <div className="relative z-10 bg-background px-6 pt-10 md:pt-14 pb-10 md:pb-14">
+        <div className="relative z-10 bg-background px-6 pt-8 md:pt-14 pb-10 md:pb-14">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              {/* Left: Text and buttons */}
+              {/* Left: Text and install */}
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-5 leading-tight">
                   {t.heroTitle}
@@ -509,40 +544,6 @@ export default function Landing() {
                 <p className="text-base md:text-lg text-muted-foreground mb-8 md:mb-10 max-w-2xl leading-relaxed">
                   {t.heroSubtitle}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                  <Link href="/home">
-                    <Button 
-                      size="lg" 
-                      className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
-                      data-testid="button-find-spot-hero"
-                    >
-                      <Search className="w-5 h-5 mr-2" />
-                      {t.findSpotButton}
-                    </Button>
-                  </Link>
-                  <Button 
-                    size="lg" 
-                    className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
-                    data-testid="button-list-spot-hero"
-                    onClick={handleListSpotClick}
-                  >
-                    <PlusCircle className="w-5 h-5 mr-2" />
-                    {t.listSpotButton}
-                  </Button>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mt-4">
-                  <Button 
-                    size="lg" 
-                    variant="secondary"
-                    className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 w-full sm:w-auto"
-                    data-testid="button-sell-hero"
-                    onClick={handleSellClick}
-                  >
-                    <Tag className="w-5 h-5 mr-2" />
-                    {t.sellButton}
-                  </Button>
-                </div>
                 
                 <div className="mt-6 md:mt-8">
                   <Button
