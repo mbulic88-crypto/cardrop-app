@@ -476,20 +476,21 @@ export default function Landing() {
             <Link href="/map-hack">
               <button
                 data-testid="button-map-hack-ns"
-                className="w-full flex items-center justify-between gap-4 rounded-md bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors px-5 py-4 text-white shadow-sm"
+                className="w-full flex flex-col items-center text-center gap-2 rounded-md bg-gradient-to-b from-green-600 to-green-800 hover:from-green-500 hover:to-green-700 active:from-green-700 active:to-green-900 transition-all px-6 py-6 text-white shadow-md"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-base leading-tight">Map Hack NS</div>
-                    <div className="text-green-100 text-sm leading-tight mt-0.5">Štek parkinzi · Live chat info · Crvene zone · Korisne lokacije · Javne garaže · Ostalo</div>
-                  </div>
+                <span className="text-xs font-bold tracking-widest uppercase bg-white/20 rounded-full px-3 py-1 text-green-100 mb-1">
+                  1. mesec besplatno
+                </span>
+                <div className="w-14 h-14 rounded-full bg-white/15 flex items-center justify-center">
+                  <MapPin className="w-7 h-7 text-white" />
                 </div>
-                <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                  <span className="text-xs font-semibold bg-white/20 rounded-full px-2.5 py-0.5 text-white whitespace-nowrap">1. mesec free</span>
-                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <div className="font-extrabold text-2xl leading-tight tracking-tight">Map Hack NS</div>
+                <div className="text-green-100 text-sm leading-snug max-w-xs">
+                  Štek parking · Crvene zone · Live info · Javne garaže
+                </div>
+                <div className="mt-1 flex items-center gap-1 text-white/60 text-xs font-medium">
+                  <span>Otvori mapu</span>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
               </button>
             </Link>
