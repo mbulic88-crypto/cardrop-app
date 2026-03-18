@@ -529,6 +529,40 @@ export default function Landing() {
               <Tag className="w-5 h-5 mr-2" />
               {t.sellButton}
             </Button>
+
+            {/* Install app */}
+            <Button
+              size="lg"
+              onClick={installApp}
+              variant="secondary"
+              className="w-full text-base py-5 font-semibold border border-accent/50 bg-accent/15 text-accent"
+              data-testid="button-install-app"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              {t.installApp}
+            </Button>
+            <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
+              <button
+                type="button"
+                onClick={isInstallable ? installApp : undefined}
+                data-testid="button-install-android"
+                className={`rounded-md p-3 text-left transition-all hover-elevate ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"} ${isInstallable ? "cursor-pointer" : "cursor-default"}`}
+              >
+                <p className={`text-sm font-semibold mb-1 ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowIosModal(true)}
+                data-testid="button-install-iphone"
+                className={`rounded-md p-3 text-left transition-all hover-elevate cursor-pointer ${isIos ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
+              >
+                <p className={`text-sm font-semibold mb-1 ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {language === "sr" ? "Tapnite za uputstvo kako instalirati na iPhone." : "Tap for instructions on how to install on iPhone."}
+                </p>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -536,7 +570,7 @@ export default function Landing() {
         <div className="relative z-10 bg-background px-6 pt-8 md:pt-14 pb-10 md:pb-14">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              {/* Left: Text and install */}
+              {/* Left: Text */}
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 md:mb-5 leading-tight">
                   {t.heroTitle}
@@ -544,41 +578,6 @@ export default function Landing() {
                 <p className="text-base md:text-lg text-muted-foreground mb-8 md:mb-10 max-w-2xl leading-relaxed">
                   {t.heroSubtitle}
                 </p>
-                
-                <div className="mt-6 md:mt-8">
-                  <Button
-                    size="lg"
-                    onClick={installApp}
-                    variant="secondary"
-                    className="text-base px-6 md:px-8 py-5 font-semibold border border-accent/50 bg-accent/15 text-accent"
-                    data-testid="button-install-app"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {t.installApp}
-                  </Button>
-                  <div className="mt-4 grid grid-cols-2 gap-3 max-w-md" data-testid="install-instructions">
-                    <button
-                      type="button"
-                      onClick={isInstallable ? installApp : undefined}
-                      data-testid="button-install-android"
-                      className={`rounded-md p-3 text-left transition-all hover-elevate ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"} ${isInstallable ? "cursor-pointer" : "cursor-default"}`}
-                    >
-                      <p className={`text-sm font-semibold mb-1 ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowIosModal(true)}
-                      data-testid="button-install-iphone"
-                      className={`rounded-md p-3 text-left transition-all hover-elevate cursor-pointer ${isIos ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
-                    >
-                      <p className={`text-sm font-semibold mb-1 ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {language === "sr" ? "Tapnite za uputstvo kako instalirati na iPhone." : "Tap for instructions on how to install on iPhone."}
-                      </p>
-                    </button>
-                  </div>
-                </div>
               </div>
 
               {/* Right: Phone with GPS map image */}
