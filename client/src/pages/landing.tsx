@@ -471,6 +471,32 @@ export default function Landing() {
           />
         </div>
 
+        {/* Map Hack NS – odmah ispod slike */}
+        <div className="relative z-10 bg-background px-4 pt-5 pb-4">
+          <div className="max-w-xl mx-auto">
+            <Link href="/map-hack">
+              <button
+                data-testid="button-map-hack-ns"
+                className="w-full flex items-center justify-between gap-4 rounded-md bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors px-5 py-4 text-white shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-base leading-tight">Map Hack NS</div>
+                    <div className="text-green-100 text-sm leading-tight mt-0.5">Štek parking · Live info · Crvene zone</div>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                  <span className="text-xs font-semibold bg-white/20 rounded-full px-2.5 py-0.5 text-white whitespace-nowrap">1. mesec free</span>
+                  <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </div>
+              </button>
+            </Link>
+          </div>
+        </div>
+
         {/* Content Below Image */}
         <div className="relative z-10 bg-background px-6 pt-10 md:pt-14 pb-10 md:pb-14">
           <div className="max-w-5xl mx-auto">

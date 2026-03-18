@@ -25,6 +25,7 @@ import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AuthPage from "@/pages/auth";
+import MapHackNS from "@/pages/map-hack-ns";
 
 function usePageViewTracking() {
   const [location] = useLocation();
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route path="/admin" component={Admin} />
+      <Route path="/map-hack" component={MapHackNS} />
       <Route component={NotFound} />
     </Switch>
   );
