@@ -138,10 +138,10 @@ export default function MapHackNS() {
                     data-testid={`button-avatar-${avatarId}`}
                     onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                     className={[
-                      "w-16 h-16 p-0 transition-all overflow-hidden",
+                      "w-16 h-16 p-0 transition-all",
                       isSelected
                         ? "ring-2 ring-green-600 dark:ring-green-500 rounded-full"
-                        : "rounded-full",
+                        : "rounded-sm",
                     ].join(" ")}
                     aria-label={`Avatar ${avatarId}`}
                     aria-pressed={isSelected}
@@ -149,7 +149,7 @@ export default function MapHackNS() {
                     <img
                       src={`/avatars/avatar-${avatarId}.png`}
                       alt={`Avatar ${avatarId}`}
-                      className="w-full h-full object-cover"
+                      className="w-16 h-16 object-contain"
                       draggable={false}
                     />
                   </button>
@@ -203,7 +203,7 @@ export default function MapHackNS() {
           <img
             src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
             alt="Tvoj avatar"
-            className="w-20 h-20 rounded-full object-cover ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background"
+            className="w-20 h-20 object-contain"
           />
           <div>
             <p className="font-bold text-foreground text-lg">{user.mapNickname}</p>
