@@ -103,6 +103,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user) return res.status(404).json({ message: "Korisnik nije pronađen" });
 
+      if (user.isAdmin) {
+        return res.json({
+          phase: "active",
+          trialStartedAt: null,
+          trialExpiresAt: null,
+          daysLeft: 9999,
+          plan: "admin",
+          planExpiresAt: null,
+        });
+      }
+
       const now = new Date();
       const TRIAL_DAYS = 30;
 
