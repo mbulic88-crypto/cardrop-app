@@ -38,6 +38,9 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   mapNickname: varchar("map_nickname"),
   mapAvatarId: integer("map_avatar_id"),
+  mapHackTrialStartedAt: timestamp("map_hack_trial_started_at"),
+  mapHackPlan: varchar("map_hack_plan", { length: 20 }),
+  mapHackPlanExpiresAt: timestamp("map_hack_plan_expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

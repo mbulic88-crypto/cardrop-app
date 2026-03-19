@@ -78,13 +78,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Ovaj nadimak je već zauzet" });
       }
 
-      const updated = await storage.updateUser(userId, { mapNickname: trimmed, mapAvatarId: avatarId } as any);
+      const currentUser = await storage.getUser(userId);
+      const updateData: any = { mapNickname: trimmed, mapAvatarId: avatarId };
+      if (currentUser && !currentUser.mapHackTrialStartedAt) {
+        updateData.mapHackTrialStartedAt = new Date();
+      }
+      const updated = await storage.updateUser(userId, updateData);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
       const { passwordHash, ...safeUser } = updated;
       res.json(safeUser);
     } catch (error) {
       console.error("Error saving map hack profile:", error);
       res.status(500).json({ message: "Greška pri čuvanju profila" });
+    }
+  });
+
+  // Map Hack NS - get subscription status
+  app.get('/api/map-hack/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      const now = new Date();
+      const TRIAL_DAYS = 30;
+
+      // If trial hasn't started yet (should not happen normally since it starts on profile save)
+      if (!user.mapHackTrialStartedAt) {
+        return res.json({
+          phase: "trial",
+          trialStartedAt: null,
+          trialExpiresAt: null,
+          daysLeft: TRIAL_DAYS,
+          plan: null,
+          planExpiresAt: null,
+        });
+      }
+
+      const trialStartedAt = new Date(user.mapHackTrialStartedAt);
+      const trialExpiresAt = new Date(trialStartedAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+      // Check paid plan first
+      if (user.mapHackPlan && user.mapHackPlanExpiresAt) {
+        const planExpiresAt = new Date(user.mapHackPlanExpiresAt);
+        if (now < planExpiresAt) {
+          const msLeft = planExpiresAt.getTime() - now.getTime();
+          const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+          return res.json({
+            phase: "active",
+            trialStartedAt: trialStartedAt.toISOString(),
+            trialExpiresAt: trialExpiresAt.toISOString(),
+            daysLeft,
+            plan: user.mapHackPlan,
+            planExpiresAt: planExpiresAt.toISOString(),
+          });
+        } else {
+          return res.json({
+            phase: "plan_expired",
+            trialStartedAt: trialStartedAt.toISOString(),
+            trialExpiresAt: trialExpiresAt.toISOString(),
+            daysLeft: 0,
+            plan: user.mapHackPlan,
+            planExpiresAt: new Date(user.mapHackPlanExpiresAt).toISOString(),
+          });
+        }
+      }
+
+      // No paid plan — check trial
+      if (now < trialExpiresAt) {
+        const msLeft = trialExpiresAt.getTime() - now.getTime();
+        const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+        return res.json({
+          phase: "trial",
+          trialStartedAt: trialStartedAt.toISOString(),
+          trialExpiresAt: trialExpiresAt.toISOString(),
+          daysLeft,
+          plan: null,
+          planExpiresAt: null,
+        });
+      }
+
+      // Trial expired, no plan
+      return res.json({
+        phase: "trial_expired",
+        trialStartedAt: trialStartedAt.toISOString(),
+        trialExpiresAt: trialExpiresAt.toISOString(),
+        daysLeft: 0,
+        plan: null,
+        planExpiresAt: null,
+      });
+    } catch (error) {
+      console.error("Error fetching map hack status:", error);
+      res.status(500).json({ message: "Greška pri proveri statusa" });
     }
   });
 
