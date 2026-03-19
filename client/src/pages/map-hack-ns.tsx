@@ -1,9 +1,33 @@
-import { Link } from "wouter";
-import { MapPin, ArrowLeft } from "lucide-react";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { MapPin, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 export default function MapHackNS() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      localStorage.setItem("cardrop-returnTo", "/map-hack");
+      setLocation("/auth");
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="flex items-center gap-3 px-4 py-4 border-b">
