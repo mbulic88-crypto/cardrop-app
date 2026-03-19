@@ -1,34 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { MapPin, ArrowLeft, Loader2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { queryClient } from "@/lib/queryClient";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
-import avatarSprite from "@assets/ChatGPT_Image_Mar_19,_2026,_12_12_26_PM_1773918918027.png";
-
-function AvatarSprite({ index, size = 64 }: { index: number; size?: number }) {
-  const col = index % 5;
-  const row = Math.floor(index / 5);
-  const xPct = col === 0 ? 0 : (col / 4) * 100;
-  const yPct = row === 0 ? 0 : 100;
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        backgroundImage: `url(${avatarSprite})`,
-        backgroundSize: "500% 200%",
-        backgroundPosition: `${xPct}% ${yPct}%`,
-        backgroundRepeat: "no-repeat",
-        flexShrink: 0,
-      }}
-    />
-  );
-}
 
 export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -160,15 +138,20 @@ export default function MapHackNS() {
                     data-testid={`button-avatar-${avatarId}`}
                     onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                     className={[
-                      "w-16 h-16 p-0 transition-all",
+                      "w-16 h-16 p-0 transition-all overflow-hidden",
                       isSelected
                         ? "ring-2 ring-green-600 dark:ring-green-500 rounded-full"
-                        : "rounded-sm",
+                        : "rounded-full",
                     ].join(" ")}
                     aria-label={`Avatar ${avatarId}`}
                     aria-pressed={isSelected}
                   >
-                    <AvatarSprite index={i} size={64} />
+                    <img
+                      src={`/avatars/avatar-${avatarId}.png`}
+                      alt={`Avatar ${avatarId}`}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                    />
                   </button>
                 );
               })}
@@ -217,9 +200,11 @@ export default function MapHackNS() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="flex flex-col items-center gap-3">
-          <div className="ring-2 ring-green-600 dark:ring-green-500 rounded-full ring-offset-2 ring-offset-background">
-            <AvatarSprite index={(user.mapAvatarId ?? 1) - 1} size={80} />
-          </div>
+          <img
+            src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
+            alt="Tvoj avatar"
+            className="w-20 h-20 rounded-full object-cover ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background"
+          />
           <div>
             <p className="font-bold text-foreground text-lg">{user.mapNickname}</p>
             <p className="text-xs text-muted-foreground">tvoj profil na mapi</p>
