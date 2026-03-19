@@ -6,14 +6,8 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
-import avatarSprite from "@assets/ChatGPT_Image_Mar_19,_2026,_11_40_13_AM_1773917009111.png";
-
-const AVATAR_NAMES = [
-  "Agentka", "Kapetan", "Operaterka", "Navigatorka", "Taktičarka",
-  "Agent", "Izviđač", "Komunikator", "Strateg", "Komandant",
-];
+import avatarSprite from "@assets/ChatGPT_Image_Mar_19,_2026,_12_12_26_PM_1773918918027.png";
 
 function AvatarSprite({ index, size = 64 }: { index: number; size?: number }) {
   const col = index % 5;
@@ -30,7 +24,6 @@ function AvatarSprite({ index, size = 64 }: { index: number; size?: number }) {
         backgroundSize: "500% 200%",
         backgroundPosition: `${xPct}% ${yPct}%`,
         backgroundRepeat: "no-repeat",
-        borderRadius: "50%",
         flexShrink: 0,
       }}
     />
@@ -40,7 +33,6 @@ function AvatarSprite({ index, size = 64 }: { index: number; size?: number }) {
 export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
 
   const [nickname, setNickname] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
@@ -142,6 +134,7 @@ export default function MapHackNS() {
               maxLength={20}
               autoCapitalize="none"
               autoCorrect="off"
+              className="border-2 border-border"
             />
             <p className="text-xs text-muted-foreground">
               Ovako ćeš se pojavljivati na Map Hack NS — vidljivo svim korisnicima u chatu i na mapi.
@@ -156,7 +149,7 @@ export default function MapHackNS() {
               </p>
             </div>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-3 justify-items-center w-full">
               {Array.from({ length: 10 }, (_, i) => {
                 const avatarId = i + 1;
                 const isSelected = selectedAvatar === avatarId;
@@ -167,19 +160,15 @@ export default function MapHackNS() {
                     data-testid={`button-avatar-${avatarId}`}
                     onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                     className={[
-                      "flex flex-col items-center gap-1 p-1.5 rounded-md transition-colors",
-                      "bg-card",
+                      "p-0 rounded-full transition-all",
                       isSelected
-                        ? "ring-2 ring-green-600 dark:ring-green-500"
-                        : "ring-1 ring-border",
+                        ? "ring-2 ring-green-600 dark:ring-green-500 ring-offset-1 ring-offset-background"
+                        : "",
                     ].join(" ")}
-                    aria-label={AVATAR_NAMES[i]}
+                    aria-label={`Avatar ${avatarId}`}
                     aria-pressed={isSelected}
                   >
-                    <AvatarSprite index={i} size={48} />
-                    <span className="text-[10px] text-muted-foreground leading-none text-center w-full truncate">
-                      {AVATAR_NAMES[i]}
-                    </span>
+                    <AvatarSprite index={i} size={56} />
                   </button>
                 );
               })}
@@ -228,8 +217,8 @@ export default function MapHackNS() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="flex flex-col items-center gap-3">
-          <div className="ring-2 ring-green-600 dark:ring-green-500 rounded-full p-0.5 bg-card">
-            <AvatarSprite index={(user.mapAvatarId ?? 1) - 1} size={72} />
+          <div className="ring-2 ring-green-600 dark:ring-green-500 rounded-full ring-offset-2 ring-offset-background">
+            <AvatarSprite index={(user.mapAvatarId ?? 1) - 1} size={80} />
           </div>
           <div>
             <p className="font-bold text-foreground text-lg">{user.mapNickname}</p>
