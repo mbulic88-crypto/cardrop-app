@@ -26,6 +26,7 @@ import { eq, and, gte, lte, desc, or, sql } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByMapNickname(nickname: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
   
@@ -86,6 +87,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByMapNickname(nickname: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.mapNickname, nickname));
     return user;
   }
 

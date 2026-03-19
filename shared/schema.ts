@@ -36,6 +36,8 @@ export const users = pgTable("users", {
   phoneNumber: varchar("phone_number"),
   hasUsedFreeTrial: boolean("has_used_free_trial").notNull().default(false),
   isAdmin: boolean("is_admin").notNull().default(false),
+  mapNickname: varchar("map_nickname"),
+  mapAvatarId: integer("map_avatar_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

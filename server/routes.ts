@@ -53,6 +53,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Map Hack NS - save nickname + avatar
+  app.patch('/api/map-hack/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { nickname, avatarId } = req.body;
+
+      if (!nickname || typeof nickname !== 'string') {
+        return res.status(400).json({ message: "Nickname je obavezan" });
+      }
+      const trimmed = nickname.trim();
+      if (trimmed.length < 3 || trimmed.length > 20) {
+        return res.status(400).json({ message: "Nadimak mora imati između 3 i 20 znakova" });
+      }
+      if (!/^[a-zA-Z0-9_\-]+$/.test(trimmed)) {
+        return res.status(400).json({ message: "Nadimak sme da sadrži samo slova, brojeve, crtice i donju crtu" });
+      }
+      if (typeof avatarId !== 'number' || avatarId < 1 || avatarId > 10) {
+        return res.status(400).json({ message: "Izaberi avatar (1–10)" });
+      }
+
+      const existing = await storage.getUserByMapNickname(trimmed);
+      if (existing && existing.id !== userId) {
+        return res.status(409).json({ message: "Ovaj nadimak je već zauzet" });
+      }
+
+      await storage.updateUser(userId, { mapNickname: trimmed, mapAvatarId: avatarId } as any);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving map hack profile:", error);
+      res.status(500).json({ message: "Greška pri čuvanju profila" });
+    }
+  });
+
   // Parking spots routes
   app.get('/api/parking-spots', async (req, res) => {
     try {
