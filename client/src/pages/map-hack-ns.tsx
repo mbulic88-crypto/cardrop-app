@@ -138,7 +138,7 @@ export default function MapHackNS() {
                     data-testid={`button-avatar-${avatarId}`}
                     onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                     className={[
-                      "w-16 h-16 p-0 transition-all",
+                      "w-16 h-16 p-0 transition-all bg-[#F5EDD8]",
                       isSelected
                         ? "ring-2 ring-green-600 dark:ring-green-500 rounded-full"
                         : "rounded-sm",
@@ -200,11 +200,13 @@ export default function MapHackNS() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
         <div className="flex flex-col items-center gap-3">
-          <img
-            src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
-            alt="Tvoj avatar"
-            className="w-20 h-20 object-contain"
-          />
+          <div className="w-20 h-20 rounded-full bg-[#F5EDD8] overflow-hidden ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background">
+            <img
+              src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
+              alt="Tvoj avatar"
+              className="w-full h-full object-contain"
+            />
+          </div>
           <div>
             <p className="font-bold text-foreground text-lg">{user.mapNickname}</p>
             <p className="text-xs text-muted-foreground">tvoj profil na mapi</p>
