@@ -151,7 +151,7 @@ export default function MapHackSubscribe() {
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-lg font-bold text-foreground">Premium</span>
-                <Badge data-testid="badge-recommended">Preporučeno</Badge>
+                <Badge variant="secondary" data-testid="badge-recommended">Preporučeno</Badge>
                 {currentPlan === "premium" && (
                   <Badge variant="secondary" data-testid="badge-current-premium">Aktivan</Badge>
                 )}

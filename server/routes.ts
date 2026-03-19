@@ -79,11 +79,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentUser = await storage.getUser(userId);
-      const updateData: any = { mapNickname: trimmed, mapAvatarId: avatarId };
+      const profileData: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date } = {
+        mapNickname: trimmed,
+        mapAvatarId: avatarId,
+      };
       if (currentUser && !currentUser.mapHackTrialStartedAt) {
-        updateData.mapHackTrialStartedAt = new Date();
+        profileData.mapHackTrialStartedAt = new Date();
       }
-      const updated = await storage.updateUser(userId, updateData);
+      const updated = await storage.updateMapHackProfile(userId, profileData);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
       const { passwordHash, ...safeUser } = updated;
       res.json(safeUser);

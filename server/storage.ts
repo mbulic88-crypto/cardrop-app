@@ -29,6 +29,8 @@ export interface IStorage {
   getUserByMapNickname(nickname: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
+  updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date }): Promise<User | undefined>;
+  updateMapHackPlan(userId: string, plan: string, expiresAt: Date): Promise<User | undefined>;
   
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -118,6 +120,27 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ ...userData, updatedAt: new Date() })
       .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateMapHackProfile(
+    userId: string,
+    data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date }
+  ): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateMapHackPlan(userId: string, plan: string, expiresAt: Date): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ mapHackPlan: plan, mapHackPlanExpiresAt: expiresAt, updatedAt: new Date() })
+      .where(eq(users.id, userId))
       .returning();
     return user;
   }
