@@ -78,8 +78,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Ovaj nadimak je već zauzet" });
       }
 
-      await storage.updateUser(userId, { mapNickname: trimmed, mapAvatarId: avatarId } as any);
-      res.json({ success: true });
+      const updated = await storage.updateUser(userId, { mapNickname: trimmed, mapAvatarId: avatarId } as any);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      const { passwordHash, ...safeUser } = updated;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error saving map hack profile:", error);
       res.status(500).json({ message: "Greška pri čuvanju profila" });
