@@ -160,15 +160,15 @@ export default function MapHackNS() {
                     data-testid={`button-avatar-${avatarId}`}
                     onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                     className={[
-                      "p-0 rounded-full transition-all",
+                      "w-16 h-16 p-0 transition-all",
                       isSelected
-                        ? "ring-2 ring-green-600 dark:ring-green-500 ring-offset-1 ring-offset-background"
-                        : "",
+                        ? "ring-2 ring-green-600 dark:ring-green-500 rounded-full"
+                        : "rounded-sm",
                     ].join(" ")}
                     aria-label={`Avatar ${avatarId}`}
                     aria-pressed={isSelected}
                   >
-                    <AvatarSprite index={i} size={56} />
+                    <AvatarSprite index={i} size={64} />
                   </button>
                 );
               })}
