@@ -264,6 +264,7 @@ export default function MapHackNS() {
                 : mapStatus?.plan === "day_pass" ? "Day Pass"
                 : mapStatus?.plan === "godisnji_premium" ? "Godišnji Premium"
                 : mapStatus?.plan === "free" ? "Free plan"
+                : mapStatus?.plan === "firma" ? "Za Firme"
                 : "Probni period"}
             </p>
           </div>
