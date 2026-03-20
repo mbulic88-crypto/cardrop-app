@@ -271,11 +271,15 @@ export default function MapHackNS() {
         description: `Plaćanje za ${planId === "premium" ? "Premium" : planId === "day_pass" ? "Day Pass" : "Godišnji Premium"} — info@cardrop.app`,
       });
     }
-    await fetch("/api/map-hack/plan", {
+    const res = await fetch("/api/map-hack/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan: "free" }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || "Greška pri aktivaciji plana");
+    }
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
   }
@@ -301,8 +305,10 @@ export default function MapHackNS() {
         return;
       }
       await savePlan(selectedPlan);
-    } catch {
-      setError("Greška. Pokušaj ponovo.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
+      setError(msg);
+      toast({ title: "Greška", description: msg, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -314,8 +320,10 @@ export default function MapHackNS() {
     setIsSaving(true);
     try {
       await savePlan(selectedPlan);
-    } catch {
-      setError("Greška. Pokušaj ponovo.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
+      setError(msg);
+      toast({ title: "Greška", description: msg, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
