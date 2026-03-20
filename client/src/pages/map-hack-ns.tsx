@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import {
-  ArrowLeft, Loader2, AlertTriangle, Check, MapPin,
-  Clock, ChevronRight, Building2, RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,193 +32,254 @@ function planLabel(plan: string | null): string {
   return "Probni period";
 }
 
-function PlanCards({
-  selectedPlan,
-  onSelect,
-}: {
-  selectedPlan: PlanId | null;
-  onSelect: (p: PlanId) => void;
-}) {
+function FeatureRow({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {ok ? (
+        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <Check className="w-2.5 h-2.5 text-white" />
+        </div>
+      ) : (
+        <div className="w-4 h-4 rounded-full bg-black/10 flex items-center justify-center flex-shrink-0">
+          <X className="w-2.5 h-2.5 text-black/30" />
+        </div>
+      )}
+      <span className={ok ? "text-white/90 text-sm" : "text-foreground/30 text-sm line-through"}>{text}</span>
+    </div>
+  );
+}
+
+function FreeFeatureRow({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      {ok ? (
+        <div className="w-4 h-4 rounded-full bg-slate-400/30 flex items-center justify-center flex-shrink-0">
+          <Check className="w-2.5 h-2.5 text-slate-600 dark:text-slate-400" />
+        </div>
+      ) : (
+        <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+          <X className="w-2.5 h-2.5 text-slate-400" />
+        </div>
+      )}
+      <span className={ok ? "text-slate-700 dark:text-slate-300 text-sm" : "text-slate-400 dark:text-slate-600 text-sm line-through"}>{text}</span>
+    </div>
+  );
+}
+
+function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void }) {
   return (
     <div className="flex flex-col gap-3">
+
+      {/* PREMIUM — zeleni gradijent hero */}
       <button
         type="button"
         data-testid="button-plan-premium"
         onClick={() => onSelect("premium")}
         className={[
-          "w-full text-left rounded-md p-5 transition-all duration-200 relative",
-          selectedPlan === "premium"
-            ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background scale-[1.01]"
-            : "",
+          "w-full text-left rounded-md p-4 transition-all duration-200",
+          selectedPlan === "premium" ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background" : "",
         ].join(" ")}
         style={{
-          background: "linear-gradient(135deg, #14532d 0%, #166534 60%, #15803d 100%)",
-          boxShadow: selectedPlan === "premium"
-            ? "0 8px 32px rgba(21,128,61,0.45)"
-            : "0 4px 16px rgba(21,128,61,0.25)",
+          background: "linear-gradient(145deg, #14532d 0%, #166534 50%, #15803d 100%)",
+          boxShadow: selectedPlan === "premium" ? "0 6px 28px rgba(21,128,61,0.5)" : "0 2px 12px rgba(21,128,61,0.2)",
         }}
       >
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-white font-extrabold text-lg tracking-wide">PREMIUM</span>
+            <span className="text-white font-extrabold text-base tracking-wide">PREMIUM</span>
             <span className="bg-yellow-400 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
               Preporučeno
             </span>
           </div>
           <div className={[
-            "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
             selectedPlan === "premium" ? "bg-yellow-400 border-yellow-400" : "border-white/40",
           ].join(" ")}>
-            {selectedPlan === "premium" && <Check className="w-3.5 h-3.5 text-yellow-950" />}
+            {selectedPlan === "premium" && <Check className="w-3 h-3 text-yellow-950" />}
           </div>
         </div>
         <div className="mb-3">
-          <span className="text-white text-4xl font-extrabold leading-none">390</span>
-          <span className="text-green-200 text-base ml-1.5 font-medium">RSD / mes</span>
+          <span className="text-white text-3xl font-extrabold leading-none">390</span>
+          <span className="text-green-200 text-sm ml-1 font-medium">RSD / mes</span>
         </div>
-        <p className="text-green-100 text-sm mb-4 leading-relaxed">
-          Potpuna zaštita i najbrži parking u gradu.
-        </p>
-        <div className="flex flex-col gap-2">
-          {[
-            "Sve štek lokacije bez ograničenja",
-            "Live upozorenja i zajednički chat",
-            "Quick report jednim klikom",
-          ].map((f) => (
-            <div key={f} className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-green-400/30 flex items-center justify-center flex-shrink-0">
-                <Check className="w-2.5 h-2.5 text-green-300" />
-              </div>
-              <span className="text-green-100 text-sm">{f}</span>
-            </div>
-          ))}
+        <div className="flex flex-col gap-1.5">
+          <FeatureRow ok text="Sve štek lokacije bez ograničenja" />
+          <FeatureRow ok text="Live upozorenja o inspekciji" />
+          <FeatureRow ok text="Zajednički chat vozača" />
+          <FeatureRow ok text="Quick report jednim klikom" />
+          <FeatureRow ok text="Prioritetna podrška" />
         </div>
       </button>
 
+      {/* GODIŠNJI — indigo/tamnoplava (različita od green!) */}
       <button
         type="button"
         data-testid="button-plan-godisnji"
         onClick={() => onSelect("godisnji_premium")}
         className={[
-          "w-full text-left rounded-md p-5 transition-all duration-200 bg-green-950",
-          selectedPlan === "godisnji_premium"
-            ? "ring-2 ring-green-400 ring-offset-2 ring-offset-background scale-[1.01]"
-            : "",
+          "w-full text-left rounded-md p-4 transition-all duration-200",
+          selectedPlan === "godisnji_premium" ? "ring-2 ring-indigo-400 ring-offset-2 ring-offset-background" : "",
         ].join(" ")}
         style={{
-          boxShadow: selectedPlan === "godisnji_premium" ? "0 6px 24px rgba(0,0,0,0.3)" : "none",
+          background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%)",
+          boxShadow: selectedPlan === "godisnji_premium" ? "0 6px 28px rgba(67,56,202,0.5)" : "0 2px 12px rgba(67,56,202,0.2)",
         }}
       >
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI PREMIUM</span>
+            <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI</span>
             <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Ušteda
+              2 mes. gratis
             </span>
           </div>
           <div className={[
-            "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-            selectedPlan === "godisnji_premium" ? "bg-green-400 border-green-400" : "border-white/30",
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+            selectedPlan === "godisnji_premium" ? "bg-indigo-400 border-indigo-400" : "border-white/40",
           ].join(" ")}>
-            {selectedPlan === "godisnji_premium" && <Check className="w-3.5 h-3.5 text-green-950" />}
+            {selectedPlan === "godisnji_premium" && <Check className="w-3 h-3 text-white" />}
           </div>
         </div>
-        <div className="mb-3">
+        <div className="flex items-baseline gap-2 mb-1">
           <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
-          <span className="text-green-400 text-base ml-1.5 font-medium">RSD / god</span>
+          <span className="text-indigo-300 text-sm font-medium">RSD / god</span>
         </div>
-        <div className="bg-green-900/70 rounded-md px-3 py-2 mb-2">
-          <p className="text-green-300 text-xs font-semibold">
-            = 290 RSD / mes &nbsp;·&nbsp; 2 meseca GRATIS
-          </p>
+        <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
+          <p className="text-indigo-200 text-xs font-semibold">= 290 RSD/mes · ušteda 1.180 RSD</p>
         </div>
-        <p className="text-green-400 text-sm">Sve Premium funkcije čitavu godinu.</p>
+        <div className="flex flex-col gap-1.5">
+          <FeatureRow ok text="Sve Premium funkcije" />
+          <FeatureRow ok text="365 dana pristupa" />
+          <FeatureRow ok text="2 meseca GRATIS vs. mesečni" />
+          <FeatureRow ok text="Prioritetna podrška" />
+        </div>
       </button>
 
+      {/* DAY PASS — puna narandžasta, bijeli tekst */}
       <button
         type="button"
         data-testid="button-plan-day-pass"
         onClick={() => onSelect("day_pass")}
         className={[
-          "w-full text-left rounded-md p-4 transition-all duration-200 border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30",
-          selectedPlan === "day_pass"
-            ? "ring-2 ring-amber-500 ring-offset-1 ring-offset-background scale-[1.01]"
-            : "",
+          "w-full text-left rounded-md p-4 transition-all duration-200",
+          selectedPlan === "day_pass" ? "ring-2 ring-orange-300 ring-offset-2 ring-offset-background" : "",
         ].join(" ")}
+        style={{
+          background: "linear-gradient(145deg, #c2410c 0%, #ea580c 60%, #f97316 100%)",
+          boxShadow: selectedPlan === "day_pass" ? "0 6px 28px rgba(234,88,12,0.5)" : "0 2px 12px rgba(234,88,12,0.2)",
+        }}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <span className="text-amber-900 dark:text-amber-200 font-extrabold text-base tracking-wide">
-                DAY PASS
-              </span>
-            </div>
-            <p className="text-amber-700 dark:text-amber-400 text-sm">Sve Premium funkcije na 24h.</p>
-            <p className="text-amber-600 dark:text-amber-500 text-xs">Idealno za goste i vikend izlaske.</p>
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-orange-200 flex-shrink-0" />
+            <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
           </div>
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <div className="text-right">
-              <span className="text-amber-800 dark:text-amber-300 text-2xl font-extrabold leading-none">99</span>
-              <span className="text-amber-600 dark:text-amber-500 text-sm ml-0.5">RSD</span>
-            </div>
-            <div className={[
-              "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-              selectedPlan === "day_pass" ? "bg-amber-500 border-amber-500" : "border-amber-300 dark:border-amber-700",
-            ].join(" ")}>
-              {selectedPlan === "day_pass" && <Check className="w-3 h-3 text-white" />}
-            </div>
+          <div className={[
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+            selectedPlan === "day_pass" ? "bg-orange-200 border-orange-200" : "border-white/40",
+          ].join(" ")}>
+            {selectedPlan === "day_pass" && <Check className="w-3 h-3 text-orange-900" />}
           </div>
+        </div>
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="text-white text-3xl font-extrabold leading-none">99</span>
+          <span className="text-orange-200 text-sm font-medium">RSD · jednokratno</span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <FeatureRow ok text="Sve Premium funkcije" />
+          <FeatureRow ok text="Važi 24 sata" />
+          <FeatureRow ok text="Bez pretplate" />
+          <FeatureRow ok text="Idealno za goste NS i vikend" />
         </div>
       </button>
 
+      {/* FREE — siva/slate, jasno inferiorna */}
       <button
         type="button"
         data-testid="button-plan-free"
         onClick={() => onSelect("free")}
         className={[
-          "w-full text-left rounded-md p-4 transition-all duration-200 border border-border bg-card",
-          selectedPlan === "free"
-            ? "ring-2 ring-green-600 ring-offset-1 ring-offset-background"
-            : "opacity-60",
+          "w-full text-left rounded-md p-4 transition-all duration-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
+          selectedPlan === "free" ? "ring-2 ring-slate-400 ring-offset-1 ring-offset-background" : "",
         ].join(" ")}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <span className="text-foreground font-bold text-base">FREE</span>
-            <p className="text-muted-foreground text-sm mt-0.5">Osnovni pristup zajednici i mapi.</p>
-          </div>
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <span className="text-muted-foreground text-sm font-semibold">Besplatno</span>
+        <div className="flex items-start justify-between mb-2">
+          <span className="text-slate-700 dark:text-slate-200 font-extrabold text-base tracking-wide">FREE</span>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 dark:text-slate-400 text-sm font-semibold">Besplatno</span>
             <div className={[
-              "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-              selectedPlan === "free" ? "bg-green-600 border-green-600" : "border-border",
+              "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+              selectedPlan === "free" ? "bg-slate-500 border-slate-500" : "border-slate-300 dark:border-slate-600",
             ].join(" ")}>
               {selectedPlan === "free" && <Check className="w-3 h-3 text-white" />}
             </div>
           </div>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <FreeFeatureRow ok text="Osnovna mapa parking zona NS" />
+          <FreeFeatureRow ok text="Pregled javnih informacija" />
+          <FreeFeatureRow ok={false} text="Štek lokacije" />
+          <FreeFeatureRow ok={false} text="Live upozorenja" />
+          <FreeFeatureRow ok={false} text="Chat zajednice" />
+        </div>
       </button>
 
-      <div className="border border-dashed border-border rounded-md p-4 opacity-70">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-foreground font-bold text-base">ZA FIRME</span>
-            </div>
-            <p className="text-muted-foreground text-sm mt-0.5">Flote i poslovni korisnici.</p>
+      {/* ZA FIRME — info kartica */}
+      <div
+        className="border border-dashed border-border rounded-md p-4"
+        data-testid="card-plan-firme"
+      >
+        <div className="flex items-start justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-foreground font-bold text-base">ZA FIRME</span>
           </div>
-          <span className="text-muted-foreground text-xs flex-shrink-0">Po dogovoru</span>
+          <span className="text-muted-foreground text-xs">Po dogovoru</span>
         </div>
+        <p className="text-muted-foreground text-sm mb-2">
+          Rešenja za flote, dostavljače i firme sa više vozila.
+        </p>
         <a
           href="mailto:info@cardrop.app"
-          className="inline-block text-xs text-green-700 dark:text-green-400 underline underline-offset-2 mt-2"
+          className="text-sm font-semibold text-green-700 dark:text-green-400 underline underline-offset-2"
           data-testid="link-firma-email"
         >
           info@cardrop.app
         </a>
       </div>
+
+    </div>
+  );
+}
+
+function CompactHero({ title = "Map Hack NS" }: { title?: string }) {
+  return (
+    <div
+      className="flex-shrink-0"
+      style={{ background: "linear-gradient(160deg, #14532d 0%, #166534 55%, #15803d 100%)" }}
+    >
+      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+        <Link href="/">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-white/80"
+            style={{ background: "transparent" }}
+            data-testid="button-back-home"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <img src={parkInLogo} alt="CarDrop" className="w-6 h-6 rounded-md" />
+          <span className="font-bold text-white text-base">{title}</span>
+        </div>
+        <div className="[&_button]:text-white/80 [&_svg]:text-white/70">
+          <ThemeToggle />
+        </div>
+      </div>
+      <p className="text-center text-green-200 text-xs pb-3 tracking-wide">
+        NS · Štek parkinzi · Crvene zone · Live chat
+      </p>
     </div>
   );
 }
@@ -300,10 +358,7 @@ export default function MapHackNS() {
         body: JSON.stringify({ nickname: nick, avatarId: selectedAvatar }),
       });
       const profileData = await profileRes.json();
-      if (!profileRes.ok) {
-        setError(profileData.message || "Greška pri čuvanju profila");
-        return;
-      }
+      if (!profileRes.ok) { setError(profileData.message || "Greška pri čuvanju profila"); return; }
       await savePlan(selectedPlan);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
@@ -339,10 +394,10 @@ export default function MapHackNS() {
 
   if (!isAuthenticated || !user) return null;
 
+  /* ─── ONBOARDING FULL ──────────────────────────────────────── */
   if (viewMode === "onboarding_full") {
     const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\-]+$/.test(nickname.trim());
     const canSubmit = nickOk && selectedAvatar !== null && selectedPlan !== null;
-
     let hint = "";
     if (!selectedAvatar) hint = "Izaberi avatar";
     else if (!nickOk) hint = "Unesi nadimak (min. 3 znaka)";
@@ -350,49 +405,17 @@ export default function MapHackNS() {
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div
-          className="relative flex-shrink-0"
-          style={{ background: "linear-gradient(160deg, #14532d 0%, #166534 55%, #15803d 100%)" }}
-        >
-          <div className="flex items-center justify-between px-4 pt-4 pb-0">
-            <Link href="/">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="text-white/80 hover:text-white"
-                style={{ background: "transparent" }}
-                data-testid="button-back-home"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
-              <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-md" />
-              <span className="font-bold text-white text-base">Map Hack NS</span>
-            </div>
-            <div className="[&_button]:text-white/80 [&_button:hover]:text-white [&_svg]:text-white/80">
-              <ThemeToggle />
-            </div>
-          </div>
-          <div className="px-5 pt-5 pb-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-3">
-              <MapPin className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-1.5">Uđi u zajednicu</h1>
-            <p className="text-green-100 text-sm leading-relaxed">
-              Štek parkinzi · Crvene zone · Live info · NS vozači
-            </p>
-          </div>
-        </div>
+        <CompactHero />
 
-        <div className="flex-1 overflow-y-auto pb-28">
+        <div className="flex-1 overflow-y-auto pb-24">
           <div className="max-w-md mx-auto px-4">
 
-            <div className="pt-6 pb-5">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
-                1 — Izaberi avatar
+            {/* Avatar */}
+            <div className="pt-5 pb-4">
+              <p className="text-sm font-bold text-foreground mb-3">
+                1. Izaberi avatar
               </p>
-              <div className="grid grid-cols-5 gap-2.5 justify-items-center">
+              <div className="grid grid-cols-5 gap-2 justify-items-center">
                 {Array.from({ length: 10 }, (_, i) => {
                   const avatarId = i + 1;
                   const isSelected = selectedAvatar === avatarId;
@@ -403,10 +426,10 @@ export default function MapHackNS() {
                       data-testid={`button-avatar-${avatarId}`}
                       onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
                       className={[
-                        "w-[58px] h-[58px] p-0 transition-all duration-200 bg-[#F5EDD8] flex-shrink-0",
+                        "w-[56px] h-[56px] p-0 transition-all duration-150 bg-[#F5EDD8] flex-shrink-0",
                         isSelected
-                          ? "ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background rounded-full scale-110"
-                          : "rounded-md opacity-60 hover-elevate",
+                          ? "ring-2 ring-green-600 dark:ring-green-400 ring-offset-2 ring-offset-background rounded-full scale-105"
+                          : "rounded-md ring-1 ring-border",
                       ].join(" ")}
                       aria-label={`Avatar ${avatarId}`}
                       aria-pressed={isSelected}
@@ -423,9 +446,10 @@ export default function MapHackNS() {
               </div>
             </div>
 
+            {/* Nadimak */}
             <div className="py-4 border-t border-border">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
-                2 — Tvoj nadimak
+              <p className="text-sm font-bold text-foreground mb-2">
+                2. Tvoj nadimak
               </p>
               <Input
                 id="nickname-input"
@@ -436,21 +460,25 @@ export default function MapHackNS() {
                 maxLength={20}
                 autoCapitalize="none"
                 autoCorrect="off"
-                className="border-2 border-border"
+                className="border-2"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
-                Vidljivo svim korisnicima u chatu i na mapi. Slova, brojevi, _ i -.
+                Vidljivo svima u chatu i na mapi. Slova, brojevi, _ i -.
               </p>
             </div>
 
+            {/* Paket */}
             <div className="py-4 border-t border-border">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-1">
-                3 — Izaberi paket
+              <p className="text-sm font-bold text-foreground mb-1">
+                3. Izaberi paket
               </p>
-              <p className="text-sm text-muted-foreground mb-5">
-                Ulaz je besplatan. Premium donosi punu brzinu i zaštitu.
+              <p className="text-xs text-muted-foreground mb-4">
+                Ulaz je besplatan. Premium donosi sve štek lokacije i live zaštitu.
               </p>
-              <PlanCards selectedPlan={selectedPlan} onSelect={(p) => { setSelectedPlan(p); setError(""); }} />
+              <PlanCards
+                selectedPlan={selectedPlan}
+                onSelect={(p) => { setSelectedPlan(p); setError(""); }}
+              />
             </div>
 
             {error && (
@@ -461,6 +489,7 @@ export default function MapHackNS() {
           </div>
         </div>
 
+        {/* Sticky CTA */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t px-4 py-3">
           <div className="max-w-md mx-auto">
             {hint && !isSaving && (
@@ -472,11 +501,10 @@ export default function MapHackNS() {
               disabled={!canSubmit || isSaving}
               data-testid="button-enter-map"
             >
-              {isSaving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Čuvamo...</>
-              ) : (
-                <><ChevronRight className="w-4 h-4 mr-2" />Uđi na mapu</>
-              )}
+              {isSaving
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Čuvamo...</>
+                : <><ChevronRight className="w-4 h-4 mr-2" />Uđi na mapu</>
+              }
             </Button>
           </div>
         </div>
@@ -484,66 +512,43 @@ export default function MapHackNS() {
     );
   }
 
+  /* ─── ONBOARDING PLAN ONLY ─────────────────────────────────── */
   if (viewMode === "onboarding_plan_only") {
     const canSubmit = selectedPlan !== null;
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div
-          className="relative flex-shrink-0"
-          style={{ background: "linear-gradient(160deg, #14532d 0%, #166534 55%, #15803d 100%)" }}
-        >
-          <div className="flex items-center justify-between px-4 pt-4 pb-0">
-            <Link href="/">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="text-white/80 hover:text-white"
-                style={{ background: "transparent" }}
-                data-testid="button-back-home"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
-              <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-md" />
-              <span className="font-bold text-white text-base">Map Hack NS</span>
-            </div>
-            <div className="[&_button]:text-white/80 [&_button:hover]:text-white [&_svg]:text-white/80">
-              <ThemeToggle />
-            </div>
-          </div>
+        <CompactHero />
 
-          <div className="px-5 pt-5 pb-7 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-[#F5EDD8] overflow-hidden ring-2 ring-white/40 flex-shrink-0">
-              <img
-                src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
-                alt="Tvoj avatar"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div>
-              <p className="font-bold text-white text-base" data-testid="text-map-nickname">
-                {user.mapNickname}
-              </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <RefreshCw className="w-3 h-3 text-amber-300" />
-                <p className="text-amber-200 text-xs">
-                  {mapStatus?.phase === "trial_expired" ? "Probni period je istekao" : "Plan je istekao"} — obnovi pristup
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="max-w-md mx-auto px-4">
+
+            {/* Profil prikaz (read-only) */}
+            <div className="flex items-center gap-3 py-4 border-b border-border">
+              <div className="w-12 h-12 rounded-full bg-[#F5EDD8] overflow-hidden ring-2 ring-border flex-shrink-0">
+                <img
+                  src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
+                  alt="avatar"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-base" data-testid="text-map-nickname">
+                  {user.mapNickname}
                 </p>
+                <div className="flex items-center gap-1.5">
+                  <RefreshCw className="w-3 h-3 text-amber-500" />
+                  <p className="text-amber-600 dark:text-amber-400 text-xs">
+                    {mapStatus?.phase === "trial_expired" ? "Probni period istekao" : "Plan istekao"} — obnovi pristup
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto pb-28">
-          <div className="max-w-md mx-auto px-4">
-            <div className="py-5">
-              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-1">
-                Izaberi paket
-              </p>
-              <p className="text-sm text-muted-foreground mb-5">
-                Izaberi plan koji ti odgovara i nastavi na mapu.
+            <div className="py-4">
+              <p className="text-sm font-bold text-foreground mb-1">Izaberi paket</p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Izaberi plan i nastavi na mapu.
               </p>
               <PlanCards
                 selectedPlan={selectedPlan}
@@ -570,11 +575,10 @@ export default function MapHackNS() {
               disabled={!canSubmit || isSaving}
               data-testid="button-choose-plan"
             >
-              {isSaving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Aktiviramo...</>
-              ) : (
-                <><ChevronRight className="w-4 h-4 mr-2" />Nastavi na mapu</>
-              )}
+              {isSaving
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Aktiviramo...</>
+                : <><ChevronRight className="w-4 h-4 mr-2" />Nastavi na mapu</>
+              }
             </Button>
           </div>
         </div>
@@ -582,6 +586,7 @@ export default function MapHackNS() {
     );
   }
 
+  /* ─── MAP VIEW ─────────────────────────────────────────────── */
   const showTrialBanner = mapStatus?.phase === "trial" && (mapStatus?.daysLeft ?? 30) <= 7;
 
   return (
@@ -638,7 +643,7 @@ export default function MapHackNS() {
         <div className="flex flex-col gap-2 max-w-xs">
           <h1 className="text-2xl font-bold text-foreground">Map Hack NS</h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            Interaktivna mapa Novog Sada sa štek parking mestima, crvenim zonama, live info i još mnogo toga.
+            Interaktivna mapa Novog Sada — štek parkinzi, crvene zone, live info.
           </p>
         </div>
 
