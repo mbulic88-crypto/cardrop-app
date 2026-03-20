@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,36 +32,74 @@ function planLabel(plan: string | null): string {
   return "Probni period";
 }
 
-function FeatureRow({ ok, text }: { ok: boolean; text: string }) {
+function LightRow({ ok, text }: { ok: boolean; text: string }) {
   return (
-    <div className="flex items-center gap-2">
-      {ok ? (
-        <div className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-          <Check className="w-2.5 h-2.5 text-white" />
-        </div>
-      ) : (
-        <div className="w-4 h-4 rounded-full bg-black/10 flex items-center justify-center flex-shrink-0">
-          <X className="w-2.5 h-2.5 text-black/30" />
-        </div>
-      )}
-      <span className={ok ? "text-white/90 text-sm" : "text-foreground/30 text-sm line-through"}>{text}</span>
+    <div className="flex items-start gap-2">
+      <div className={[
+        "w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+        ok ? "bg-white/25" : "bg-black/10",
+      ].join(" ")}>
+        {ok
+          ? <Check className="w-2.5 h-2.5 text-white" />
+          : <X className="w-2.5 h-2.5 text-white/40" />}
+      </div>
+      <span className={ok ? "text-white/90 text-sm leading-snug" : "text-white/35 text-sm leading-snug line-through"}>{text}</span>
     </div>
   );
 }
 
-function FreeFeatureRow({ ok, text }: { ok: boolean; text: string }) {
+function GoldRow({ ok, text }: { ok: boolean; text: string }) {
   return (
-    <div className="flex items-center gap-2">
-      {ok ? (
-        <div className="w-4 h-4 rounded-full bg-slate-400/30 flex items-center justify-center flex-shrink-0">
-          <Check className="w-2.5 h-2.5 text-slate-600 dark:text-slate-400" />
-        </div>
-      ) : (
-        <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
-          <X className="w-2.5 h-2.5 text-slate-400" />
-        </div>
-      )}
-      <span className={ok ? "text-slate-700 dark:text-slate-300 text-sm" : "text-slate-400 dark:text-slate-600 text-sm line-through"}>{text}</span>
+    <div className="flex items-start gap-2">
+      <div className={[
+        "w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+        ok ? "bg-yellow-900/20" : "bg-yellow-900/10",
+      ].join(" ")}>
+        {ok
+          ? <Check className="w-2.5 h-2.5 text-yellow-950" />
+          : <X className="w-2.5 h-2.5 text-yellow-900/30" />}
+      </div>
+      <span className={ok ? "text-yellow-950 text-sm leading-snug" : "text-yellow-900/30 text-sm leading-snug line-through"}>{text}</span>
+    </div>
+  );
+}
+
+function FreeRow({ ok, text }: { ok: boolean; text: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <div className={[
+        "w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+        ok ? "bg-slate-300/60 dark:bg-slate-600/60" : "bg-slate-200 dark:bg-slate-700",
+      ].join(" ")}>
+        {ok
+          ? <Check className="w-2.5 h-2.5 text-slate-700 dark:text-slate-300" />
+          : <X className="w-2.5 h-2.5 text-slate-400" />}
+      </div>
+      <span className={ok
+        ? "text-slate-700 dark:text-slate-200 text-sm leading-snug"
+        : "text-slate-400 dark:text-slate-500 text-sm leading-snug line-through"
+      }>{text}</span>
+    </div>
+  );
+}
+
+function Radio({ selected, light = true }: { selected: boolean; light?: boolean }) {
+  if (light) {
+    return (
+      <div className={[
+        "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+        selected ? "bg-white border-white" : "border-white/40",
+      ].join(" ")}>
+        {selected && <Check className="w-3 h-3 text-slate-800" />}
+      </div>
+    );
+  }
+  return (
+    <div className={[
+      "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+      selected ? "bg-slate-700 border-slate-700" : "border-slate-300 dark:border-slate-600",
+    ].join(" ")}>
+      {selected && <Check className="w-3 h-3 text-white" />}
     </div>
   );
 }
@@ -70,48 +108,116 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
   return (
     <div className="flex flex-col gap-3">
 
-      {/* PREMIUM — zeleni gradijent hero */}
+      {/* 1. FREE — bijela kartica */}
+      <button
+        type="button"
+        data-testid="button-plan-free"
+        onClick={() => onSelect("free")}
+        className={[
+          "w-full text-left rounded-md p-4 transition-all duration-200",
+          "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700",
+          selectedPlan === "free" ? "ring-2 ring-slate-400 ring-offset-1 ring-offset-background" : "",
+        ].join(" ")}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <span className="text-slate-800 dark:text-slate-100 font-extrabold text-base tracking-wide">FREE</span>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Osnovni pristup zajednici i mapi Novog Sada.</p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-slate-800 dark:text-slate-100 text-2xl font-extrabold leading-none">0</span>
+            <span className="text-slate-400 text-xs">RSD</span>
+            <Radio selected={selectedPlan === "free"} light={false} />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5 mt-3">
+          <FreeRow ok text="Brza Mapa NS sa zonama i ulicama" />
+          <FreeRow ok text="Live Chat (pisanje i čitanje u realnom vremenu)" />
+          <FreeRow ok text="Smart SMS plaćanje zone (1 klik)" />
+          <FreeRow ok text="Pregled privatnih parkinga za najam" />
+          <FreeRow ok text="Vizuelni markeri za Pauka i 'Zlatni minut'" />
+          <FreeRow ok={false} text="Push notifikacije (moraš stalno gledati u mapu)" />
+          <FreeRow ok={false} text="Štek lokacije (zaključane)" />
+        </div>
+      </button>
+
+      {/* 2. PREMIUM — zlatni gradijent */}
       <button
         type="button"
         data-testid="button-plan-premium"
         onClick={() => onSelect("premium")}
         className={[
           "w-full text-left rounded-md p-4 transition-all duration-200",
-          selectedPlan === "premium" ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background" : "",
+          selectedPlan === "premium" ? "ring-2 ring-yellow-600 ring-offset-2 ring-offset-background" : "",
         ].join(" ")}
         style={{
-          background: "linear-gradient(145deg, #14532d 0%, #166534 50%, #15803d 100%)",
-          boxShadow: selectedPlan === "premium" ? "0 6px 28px rgba(21,128,61,0.5)" : "0 2px 12px rgba(21,128,61,0.2)",
+          background: "linear-gradient(145deg, #B8860B 0%, #DAA520 45%, #FFD700 100%)",
+          boxShadow: selectedPlan === "premium"
+            ? "0 6px 28px rgba(218,165,32,0.6)"
+            : "0 2px 12px rgba(218,165,32,0.3)",
         }}
       >
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-white font-extrabold text-base tracking-wide">PREMIUM</span>
-            <span className="bg-yellow-400 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-              Preporučeno
-            </span>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-yellow-950 font-extrabold text-base tracking-wide">PREMIUM</span>
+              <span className="bg-yellow-950/15 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                Preporučeno
+              </span>
+            </div>
+            <p className="text-yellow-900/70 text-xs mt-0.5">Potpuna automatizacija i maksimalna zaštita.</p>
           </div>
-          <div className={[
-            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-            selectedPlan === "premium" ? "bg-yellow-400 border-yellow-400" : "border-white/40",
-          ].join(" ")}>
-            {selectedPlan === "premium" && <Check className="w-3 h-3 text-yellow-950" />}
-          </div>
+          <Radio selected={selectedPlan === "premium"} light={false} />
         </div>
         <div className="mb-3">
-          <span className="text-white text-3xl font-extrabold leading-none">390</span>
-          <span className="text-green-200 text-sm ml-1 font-medium">RSD / mes</span>
+          <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
+          <span className="text-yellow-800 text-sm ml-1 font-medium">RSD / mes</span>
         </div>
+        <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">Sve iz Free PLUS:</p>
         <div className="flex flex-col gap-1.5">
-          <FeatureRow ok text="Sve štek lokacije bez ograničenja" />
-          <FeatureRow ok text="Live upozorenja o inspekciji" />
-          <FeatureRow ok text="Zajednički chat vozača" />
-          <FeatureRow ok text="Quick report jednim klikom" />
-          <FeatureRow ok text="Prioritetna podrška" />
+          <GoldRow ok text="Push Notifikacije: instant obaveštenje za Pauka i Zlatni minut" />
+          <GoldRow ok text="Safe Zone Alarm: 'Sidro' marker → AUTO-PUSH u krugu 300m sa sirenom" />
+          <GoldRow ok text="Štek Lokacije: otključana baza skrivenih parkinga" />
+          <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
         </div>
       </button>
 
-      {/* GODIŠNJI — indigo/tamnoplava (različita od green!) */}
+      {/* 3. DAY PASS — crvena */}
+      <button
+        type="button"
+        data-testid="button-plan-day-pass"
+        onClick={() => onSelect("day_pass")}
+        className={[
+          "w-full text-left rounded-md p-4 transition-all duration-200",
+          selectedPlan === "day_pass" ? "ring-2 ring-red-300 ring-offset-2 ring-offset-background" : "",
+        ].join(" ")}
+        style={{
+          background: "linear-gradient(145deg, #7f1d1d 0%, #dc2626 55%, #ef4444 100%)",
+          boxShadow: selectedPlan === "day_pass"
+            ? "0 6px 28px rgba(220,38,38,0.55)"
+            : "0 2px 12px rgba(220,38,38,0.25)",
+        }}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
+            <p className="text-red-200 text-xs mt-0.5">Sve iz PREMIUM paketa na 24 sata.</p>
+          </div>
+          <Radio selected={selectedPlan === "day_pass"} light />
+        </div>
+        <div className="mb-3">
+          <span className="text-white text-3xl font-extrabold leading-none">99</span>
+          <span className="text-red-200 text-sm ml-1 font-medium">RSD · jednokratno</span>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <LightRow ok text="Sve Premium funkcije" />
+          <LightRow ok text="Važi 24 sata" />
+          <LightRow ok text="Bez pretplate" />
+          <LightRow ok text="Idealno za goste NS, turiste, subotnji izlazak u centar" />
+        </div>
+      </button>
+
+      {/* 4. GODIŠNJI PREMIUM — tamnoplava */}
       <button
         type="button"
         data-testid="button-plan-godisnji"
@@ -122,125 +228,60 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         ].join(" ")}
         style={{
           background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%)",
-          boxShadow: selectedPlan === "godisnji_premium" ? "0 6px 28px rgba(67,56,202,0.5)" : "0 2px 12px rgba(67,56,202,0.2)",
+          boxShadow: selectedPlan === "godisnji_premium"
+            ? "0 6px 28px rgba(67,56,202,0.5)"
+            : "0 2px 12px rgba(67,56,202,0.2)",
         }}
       >
         <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI</span>
-            <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-              2 mes. gratis
-            </span>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI</span>
+              <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                2 mes. gratis
+              </span>
+            </div>
+            <p className="text-indigo-300 text-xs mt-0.5">Sve iz PREMIUM paketa na godinu dana.</p>
           </div>
-          <div className={[
-            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-            selectedPlan === "godisnji_premium" ? "bg-indigo-400 border-indigo-400" : "border-white/40",
-          ].join(" ")}>
-            {selectedPlan === "godisnji_premium" && <Check className="w-3 h-3 text-white" />}
-          </div>
+          <Radio selected={selectedPlan === "godisnji_premium"} light />
         </div>
-        <div className="flex items-baseline gap-2 mb-1">
+        <div className="flex items-baseline gap-2 mb-2">
           <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
           <span className="text-indigo-300 text-sm font-medium">RSD / god</span>
         </div>
         <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
-          <p className="text-indigo-200 text-xs font-semibold">= 290 RSD/mes · ušteda 1.180 RSD</p>
+          <p className="text-indigo-200 text-xs font-semibold">Ušteda od preko 1.000 RSD — praktično 2 meseca besplatno</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <FeatureRow ok text="Sve Premium funkcije" />
-          <FeatureRow ok text="365 dana pristupa" />
-          <FeatureRow ok text="2 meseca GRATIS vs. mesečni" />
-          <FeatureRow ok text="Prioritetna podrška" />
+          <LightRow ok text="Sve Premium funkcije" />
+          <LightRow ok text="365 dana pristupa" />
+          <LightRow ok text="Ušteda od preko 1.000 RSD godišnje" />
+          <LightRow ok text="Praktično 2 meseca besplatno" />
         </div>
       </button>
 
-      {/* DAY PASS — puna narandžasta, bijeli tekst */}
-      <button
-        type="button"
-        data-testid="button-plan-day-pass"
-        onClick={() => onSelect("day_pass")}
-        className={[
-          "w-full text-left rounded-md p-4 transition-all duration-200",
-          selectedPlan === "day_pass" ? "ring-2 ring-orange-300 ring-offset-2 ring-offset-background" : "",
-        ].join(" ")}
-        style={{
-          background: "linear-gradient(145deg, #c2410c 0%, #ea580c 60%, #f97316 100%)",
-          boxShadow: selectedPlan === "day_pass" ? "0 6px 28px rgba(234,88,12,0.5)" : "0 2px 12px rgba(234,88,12,0.2)",
-        }}
-      >
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-orange-200 flex-shrink-0" />
-            <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
-          </div>
-          <div className={[
-            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-            selectedPlan === "day_pass" ? "bg-orange-200 border-orange-200" : "border-white/40",
-          ].join(" ")}>
-            {selectedPlan === "day_pass" && <Check className="w-3 h-3 text-orange-900" />}
-          </div>
-        </div>
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-white text-3xl font-extrabold leading-none">99</span>
-          <span className="text-orange-200 text-sm font-medium">RSD · jednokratno</span>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <FeatureRow ok text="Sve Premium funkcije" />
-          <FeatureRow ok text="Važi 24 sata" />
-          <FeatureRow ok text="Bez pretplate" />
-          <FeatureRow ok text="Idealno za goste NS i vikend" />
-        </div>
-      </button>
-
-      {/* FREE — siva/slate, jasno inferiorna */}
-      <button
-        type="button"
-        data-testid="button-plan-free"
-        onClick={() => onSelect("free")}
-        className={[
-          "w-full text-left rounded-md p-4 transition-all duration-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
-          selectedPlan === "free" ? "ring-2 ring-slate-400 ring-offset-1 ring-offset-background" : "",
-        ].join(" ")}
-      >
-        <div className="flex items-start justify-between mb-2">
-          <span className="text-slate-700 dark:text-slate-200 font-extrabold text-base tracking-wide">FREE</span>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 dark:text-slate-400 text-sm font-semibold">Besplatno</span>
-            <div className={[
-              "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
-              selectedPlan === "free" ? "bg-slate-500 border-slate-500" : "border-slate-300 dark:border-slate-600",
-            ].join(" ")}>
-              {selectedPlan === "free" && <Check className="w-3 h-3 text-white" />}
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <FreeFeatureRow ok text="Osnovna mapa parking zona NS" />
-          <FreeFeatureRow ok text="Pregled javnih informacija" />
-          <FreeFeatureRow ok={false} text="Štek lokacije" />
-          <FreeFeatureRow ok={false} text="Live upozorenja" />
-          <FreeFeatureRow ok={false} text="Chat zajednice" />
-        </div>
-      </button>
-
-      {/* ZA FIRME — info kartica */}
+      {/* 5. ZA FIRME — teal puna kartica, non-selectable */}
       <div
-        className="border border-dashed border-border rounded-md p-4"
+        className="rounded-md p-4"
         data-testid="card-plan-firme"
+        style={{
+          background: "linear-gradient(145deg, #134e4a 0%, #0f766e 60%, #14b8a6 100%)",
+          boxShadow: "0 2px 12px rgba(20,184,166,0.2)",
+        }}
       >
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-foreground font-bold text-base">ZA FIRME</span>
+            <Building2 className="w-4 h-4 text-teal-200 flex-shrink-0" />
+            <span className="text-white font-extrabold text-base tracking-wide">ZA FIRME</span>
           </div>
-          <span className="text-muted-foreground text-xs">Po dogovoru</span>
+          <span className="text-teal-200 text-xs font-medium">Po dogovoru</span>
         </div>
-        <p className="text-muted-foreground text-sm mb-2">
-          Rešenja za flote, dostavljače i firme sa više vozila.
+        <p className="text-teal-100/80 text-sm mb-3">
+          Posebna rešenja za flote vozila i poslovne korisnike.
         </p>
         <a
           href="mailto:info@cardrop.app"
-          className="text-sm font-semibold text-green-700 dark:text-green-400 underline underline-offset-2"
+          className="inline-block text-sm font-bold text-white underline underline-offset-2"
           data-testid="link-firma-email"
         >
           info@cardrop.app
