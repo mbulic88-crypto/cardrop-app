@@ -107,7 +107,6 @@ function Radio({ selected, light = true }: { selected: boolean; light?: boolean 
 function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void }) {
   return (
     <div className="flex flex-col gap-3">
-
       {/* 1. FREE — bijela kartica */}
       <button
         type="button"
@@ -140,7 +139,6 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <FreeRow ok={false} text="Štek lokacije (zaključane)" />
         </div>
       </button>
-
       {/* 2. PREMIUM — zlatni gradijent */}
       <button
         type="button"
@@ -181,7 +179,6 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
         </div>
       </button>
-
       {/* 3. DAY PASS — crvena */}
       <button
         type="button"
@@ -206,7 +203,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <Radio selected={selectedPlan === "day_pass"} light />
         </div>
         <div className="mb-3">
-          <span className="text-white text-3xl font-extrabold leading-none">99</span>
+          <span className="text-white text-3xl font-extrabold leading-none">120</span>
           <span className="text-red-200 text-sm ml-1 font-medium">RSD · jednokratno</span>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -216,7 +213,6 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <LightRow ok text="Idealno za goste NS, turiste, subotnji izlazak u centar" />
         </div>
       </button>
-
       {/* 4. GODIŠNJI PREMIUM — tamnoplava */}
       <button
         type="button"
@@ -259,7 +255,6 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <LightRow ok text="Praktično 2 meseca besplatno" />
         </div>
       </button>
-
       {/* 5. ZA FIRME — teal puna kartica, non-selectable */}
       <div
         className="rounded-md p-4"
@@ -287,7 +282,6 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           info@cardrop.app
         </a>
       </div>
-
     </div>
   );
 }
