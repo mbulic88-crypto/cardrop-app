@@ -114,6 +114,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Free plan — always active, no expiry
+      if (user.mapHackPlan === 'free') {
+        return res.json({
+          phase: "active",
+          trialStartedAt: null,
+          trialExpiresAt: null,
+          daysLeft: 9999,
+          plan: "free",
+          planExpiresAt: null,
+        });
+      }
+
       const now = new Date();
       const TRIAL_DAYS = 30;
 
@@ -184,6 +196,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching map hack status:", error);
       res.status(500).json({ message: "Greška pri proveri statusa" });
+    }
+  });
+
+  // Map Hack NS - set plan
+  app.post('/api/map-hack/plan', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { plan } = req.body;
+      const validPlans = ['free', 'premium', 'day_pass', 'godisnji_premium'];
+      if (!plan || !validPlans.includes(plan)) {
+        return res.status(400).json({ message: "Nevalidan plan" });
+      }
+      if (plan !== 'free') {
+        return res.status(400).json({ message: "Plaćanje za ovaj plan uskoro — info@cardrop.app" });
+      }
+      const updated = await storage.updateMapHackPlan(userId, 'free', null);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      const { passwordHash, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error setting map hack plan:", error);
+      res.status(500).json({ message: "Greška pri postavljanju plana" });
     }
   });
 

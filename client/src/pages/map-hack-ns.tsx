@@ -259,8 +259,11 @@ export default function MapHackNS() {
           <div>
             <p className="font-bold text-foreground text-lg" data-testid="text-map-nickname">{user.mapNickname}</p>
             <p className="text-xs text-muted-foreground">
-              {mapStatus?.plan
-                ? mapStatus.plan === "premium" ? "Premium plan" : "Osnovna plan"
+              {mapStatus?.plan === "admin" ? "Admin"
+                : mapStatus?.plan === "premium" ? "Premium"
+                : mapStatus?.plan === "day_pass" ? "Day Pass"
+                : mapStatus?.plan === "godisnji_premium" ? "Godišnji Premium"
+                : mapStatus?.plan === "free" ? "Free plan"
                 : "Probni period"}
             </p>
           </div>

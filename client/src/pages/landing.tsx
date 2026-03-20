@@ -484,9 +484,6 @@ export default function Landing() {
                 <div className="flex-1 flex flex-col items-center text-center gap-0.5">
                   <span className="font-bold text-lg leading-tight">NS Map Hack </span>
                   <span className="text-green-100 text-xs leading-tight">Štek parkinzi · Crvene zone · Live chat info · Korisne lokacije · Privatni parkinzi i garaže · Ostalo</span>
-                  <span className="mt-1 text-xs font-semibold bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 leading-tight">
-                    1. mesec besplatno
-                  </span>
                 </div>
                 <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>

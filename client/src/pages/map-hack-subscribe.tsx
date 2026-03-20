@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, MapPin, Radio, Bell, MessageSquare, ThumbsUp, Zap, Star, Trophy, Check } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 type MapHackStatus = {
@@ -18,15 +19,6 @@ type MapHackStatus = {
   plan: string | null;
   planExpiresAt: string | null;
 };
-
-function FeatureItem({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <Icon className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-      <span className="text-sm text-foreground">{text}</span>
-    </div>
-  );
-}
 
 export default function MapHackSubscribe() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,10 +37,29 @@ export default function MapHackSubscribe() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
-  function handleSubscribe(plan: "osnovna" | "premium") {
+  const freePlanMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/map-hack/plan", { plan: "free" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
+      toast({
+        title: "Free plan aktiviran!",
+        description: "Dobrodošao u Map Hack NS zajednicu.",
+      });
+      setLocation("/map-hack");
+    },
+    onError: () => {
+      toast({
+        title: "Greška",
+        description: "Pokušaj ponovo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  function handlePaidPlan(planName: string) {
     toast({
       title: "Uskoro dostupno",
-      description: `Plaćanje uskoro — kontaktiraj nas na info@cardrop.rs za rani pristup ${plan === "premium" ? "Premium" : "Osnovna"} planu.`,
+      description: `Plaćanje za ${planName} — info@cardrop.app`,
     });
   }
 
@@ -62,7 +73,6 @@ export default function MapHackSubscribe() {
 
   if (!isAuthenticated) return null;
 
-  const isExpired = mapStatus?.phase === "trial_expired" || mapStatus?.phase === "plan_expired";
   const currentPlan = mapStatus?.plan;
 
   return (
@@ -81,116 +91,188 @@ export default function MapHackSubscribe() {
         <span className="font-bold text-foreground text-lg">Map Hack NS</span>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-md mx-auto w-full flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
+      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-md mx-auto w-full flex flex-col gap-4">
+        <div className="flex flex-col gap-1 mb-2">
           <h1 className="text-xl font-bold text-foreground">Izaberi plan</h1>
-          {isExpired ? (
-            <p className="text-sm text-destructive font-medium" data-testid="text-expired-notice">
-              {mapStatus?.phase === "trial_expired"
-                ? "Tvoj probni period je istekao. Izaberi plan da nastaviš."
-                : "Tvoj plan je istekao. Obnovi ga da nastaviš."}
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {mapStatus?.phase === "trial"
-                ? `Probni period — ${mapStatus.daysLeft} dana preostalo`
-                : currentPlan
-                ? `Aktivan plan: ${currentPlan === "premium" ? "Premium" : "Osnovna"} — ${mapStatus?.daysLeft} dana preostalo`
-                : "Odaberi plan koji ti odgovara."}
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground">
+            {currentPlan
+              ? `Aktivan plan: ${
+                  currentPlan === "free" ? "Free" :
+                  currentPlan === "premium" ? "Premium" :
+                  currentPlan === "day_pass" ? "Day Pass" :
+                  currentPlan === "godisnji_premium" ? "Godišnji Premium" :
+                  currentPlan
+                }`
+              : "Odaberi plan koji ti odgovara."}
+          </p>
         </div>
 
-        {/* OSNOVNA plan */}
-        <Card className="flex flex-col" data-testid="card-plan-osnovna">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+        {/* FREE */}
+        <Card data-testid="card-plan-free">
+          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-foreground">Osnovna</span>
-                {currentPlan === "osnovna" && (
-                  <Badge variant="secondary" data-testid="badge-current-osnovna">Aktivan</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base font-bold text-foreground">FREE</span>
+                {currentPlan === "free" && (
+                  <Badge variant="secondary" data-testid="badge-current-free">Aktivan</Badge>
                 )}
               </div>
-              <span className="text-2xl font-extrabold text-foreground">350 <span className="text-base font-semibold text-muted-foreground">RSD/mes</span></span>
+              <span className="text-2xl font-extrabold text-foreground">
+                0 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Mapa</p>
-              <FeatureItem icon={MapPin} text="Štek parking mesta" />
-              <FeatureItem icon={MapPin} text="Crvene zone + garaže" />
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Live info</p>
-              <FeatureItem icon={Radio} text="Pauk, sudari, gužve" />
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lokacije i obaveštenja</p>
-              <FeatureItem icon={MapPin} text="WC, pumpe, bankomati, voda" />
-              <FeatureItem icon={Bell} text="Custom notifikacije" />
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chat</p>
-              <FeatureItem icon={MessageSquare} text="Čitanje poruka" />
-              <FeatureItem icon={ThumbsUp} text="Lajkovanje i ocenjivanje" />
-            </div>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Osnovni pristup zajednici i mapi Novog Sada.
+            </p>
             <Button
-              className="w-full mt-1"
-              onClick={() => handleSubscribe("osnovna")}
-              data-testid="button-subscribe-osnovna"
+              className="w-full"
+              variant="outline"
+              onClick={() => freePlanMutation.mutate()}
+              disabled={freePlanMutation.isPending || currentPlan === "free"}
+              data-testid="button-subscribe-free"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Izaberi Osnovna
+              {freePlanMutation.isPending ? "Aktivacija..." : currentPlan === "free" ? "Aktivan" : "Aktiviraj besplatno"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* PREMIUM plan */}
-        <Card className="flex flex-col" data-testid="card-plan-premium">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
+        {/* PREMIUM */}
+        <Card data-testid="card-plan-premium">
+          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-lg font-bold text-foreground">Premium</span>
+                <span className="text-base font-bold text-foreground">PREMIUM</span>
                 <Badge variant="secondary" data-testid="badge-recommended">Preporučeno</Badge>
                 {currentPlan === "premium" && (
                   <Badge variant="secondary" data-testid="badge-current-premium">Aktivan</Badge>
                 )}
               </div>
-              <span className="text-2xl font-extrabold text-foreground">490 <span className="text-base font-semibold text-muted-foreground">RSD/mes</span></span>
+              <span className="text-2xl font-extrabold text-foreground">
+                390 <span className="text-base font-semibold text-muted-foreground">RSD / mes</span>
+              </span>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Check className="w-4 h-4 text-green-600 dark:text-green-500 shrink-0" />
-              <span>Sve iz Osnovna, plus:</span>
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chat</p>
-              <FeatureItem icon={MessageSquare} text="Pisanje poruka (1/min)" />
-              <FeatureItem icon={MessageSquare} text="1 reply po poruci" />
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Brze akcije</p>
-              <FeatureItem icon={Zap} text="Quick report dugmad — 1 klik" />
-            </div>
-            <div className="flex flex-col gap-2.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Extras</p>
-              <FeatureItem icon={Star} text="Praćenje omiljenih lokacija" />
-              <FeatureItem icon={Trophy} text={`Badge / rank — "top tipser"`} />
-            </div>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Potpuna zaštita i najbrži parking u gradu.
+            </p>
             <Button
-              className="w-full mt-1"
-              onClick={() => handleSubscribe("premium")}
+              className="w-full"
+              onClick={() => handlePaidPlan("Premium")}
+              disabled={currentPlan === "premium"}
               data-testid="button-subscribe-premium"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Izaberi Premium
+              {currentPlan === "premium" ? "Aktivan" : "Izaberi Premium"}
             </Button>
           </CardContent>
         </Card>
 
-        <p className="text-xs text-muted-foreground text-center pb-2" data-testid="text-payment-note">
-          Plaćanje se može izvršiti karticom ili virmanski. Za pomoć: info@cardrop.rs
+        {/* DAY PASS */}
+        <Card data-testid="card-plan-day-pass">
+          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base font-bold text-foreground">DAY PASS</span>
+                {currentPlan === "day_pass" && (
+                  <Badge variant="secondary" data-testid="badge-current-day-pass">Aktivan</Badge>
+                )}
+              </div>
+              <span className="text-2xl font-extrabold text-foreground">
+                99 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Sve iz PREMIUM paketa na 24h.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Idealno za goste grada ili subotnji izlazak u centar.
+            </p>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => handlePaidPlan("Day Pass")}
+              disabled={currentPlan === "day_pass"}
+              data-testid="button-subscribe-day-pass"
+            >
+              {currentPlan === "day_pass" ? "Aktivan" : "Kupi Day Pass"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* GODIŠNJI PREMIUM */}
+        <Card data-testid="card-plan-godisnji">
+          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base font-bold text-foreground">GODIŠNJI PREMIUM</span>
+                <Badge variant="secondary" data-testid="badge-usteda">Ušteda</Badge>
+                {currentPlan === "godisnji_premium" && (
+                  <Badge variant="secondary" data-testid="badge-current-godisnji">Aktivan</Badge>
+                )}
+              </div>
+              <span className="text-2xl font-extrabold text-foreground">
+                3500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Sve iz PREMIUM paketa na godinu dana.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Ušteda preko 1000 RSD (2 meseca gratis).
+            </p>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => handlePaidPlan("Godišnji Premium")}
+              disabled={currentPlan === "godisnji_premium"}
+              data-testid="button-subscribe-godisnji"
+            >
+              {currentPlan === "godisnji_premium" ? "Aktivan" : "Izaberi Godišnji"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* ZA FIRME */}
+        <Card data-testid="card-plan-firme">
+          <CardHeader className="pb-2">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-base font-bold text-foreground">ZA FIRME</span>
+              <span className="text-sm text-muted-foreground font-medium">Po dogovoru</span>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              Rešenja za flote i poslovne korisnike.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Kontakt:{" "}
+              <a
+                href="mailto:info@cardrop.app"
+                className="underline underline-offset-2"
+                data-testid="link-firma-email"
+              >
+                info@cardrop.app
+              </a>
+            </p>
+            <Button
+              className="w-full"
+              variant="outline"
+              onClick={() => window.location.href = "mailto:info@cardrop.app"}
+              data-testid="button-subscribe-firme"
+            >
+              Kontaktiraj nas
+            </Button>
+          </CardContent>
+        </Card>
+
+        <p className="text-xs text-muted-foreground text-center pb-4" data-testid="text-payment-note">
+          Plaćanje karticom ili virmanski. Pitanja: info@cardrop.app
         </p>
       </div>
     </div>
