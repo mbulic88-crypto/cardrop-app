@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, ChevronRight, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, MapPin, Clock, ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 type MapHackStatus = {
@@ -18,12 +19,26 @@ type MapHackStatus = {
   planExpiresAt: string | null;
 };
 
+type PlanId = "free" | "premium" | "day_pass" | "godisnji_premium";
+
+function planLabel(plan: string | null): string {
+  if (plan === "admin") return "Admin";
+  if (plan === "premium") return "Premium";
+  if (plan === "day_pass") return "Day Pass";
+  if (plan === "godisnji_premium") return "Godišnji Premium";
+  if (plan === "free") return "Free plan";
+  if (plan === "firma") return "Za Firme";
+  return "Probni period";
+}
+
 export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const [nickname, setNickname] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -55,150 +70,390 @@ export default function MapHackNS() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
+  if (!isAuthenticated || !user) return null;
 
-  async function handleSave() {
+  async function handleEnterMap() {
     setError("");
-    if (!nickname.trim()) {
-      setError("Upiši nadimak");
-      return;
-    }
-    if (nickname.trim().length < 3) {
-      setError("Nadimak mora imati najmanje 3 znaka");
-      return;
-    }
-    if (!/^[a-zA-Z0-9_\-]+$/.test(nickname.trim())) {
-      setError("Samo slova, brojevi, crtica i donja crta");
-      return;
-    }
-    if (selectedAvatar === null) {
-      setError("Izaberi avatar");
-      return;
-    }
+    const nick = nickname.trim();
+    if (nick.length < 3) { setError("Nadimak mora imati najmanje 3 znaka"); return; }
+    if (!/^[a-zA-Z0-9_\-]+$/.test(nick)) { setError("Samo slova, brojevi, crtica i donja crta"); return; }
+    if (selectedAvatar === null) { setError("Izaberi avatar"); return; }
+    if (selectedPlan === null) { setError("Izaberi paket"); return; }
+
     setIsSaving(true);
     try {
-      const res = await fetch("/api/map-hack/profile", {
+      const profileRes = await fetch("/api/map-hack/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: nickname.trim(), avatarId: selectedAvatar }),
+        body: JSON.stringify({ nickname: nick, avatarId: selectedAvatar }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.message || "Greška pri čuvanju");
+      const profileData = await profileRes.json();
+      if (!profileRes.ok) {
+        setError(profileData.message || "Greška pri čuvanju profila");
         return;
       }
+
+      if (selectedPlan !== "free") {
+        toast({
+          title: "Uskoro dostupno",
+          description: `Plaćanje za ${selectedPlan === "premium" ? "Premium" : selectedPlan === "day_pass" ? "Day Pass" : "Godišnji Premium"} — info@cardrop.app`,
+        });
+      }
+
+      await fetch("/api/map-hack/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "free" }),
+      });
+
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
     } catch {
-      setError("Greška pri čuvanju");
+      setError("Greška. Pokušaj ponovo.");
     } finally {
       setIsSaving(false);
     }
   }
 
   if (!hasProfile) {
+    const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\-]+$/.test(nickname.trim());
+    const canSubmit = nickOk && selectedAvatar !== null && selectedPlan !== null;
+
+    let hint = "";
+    if (!selectedAvatar) hint = "Izaberi avatar";
+    else if (!nickOk) hint = "Unesi nadimak (min. 3 znaka)";
+    else if (!selectedPlan) hint = "Izaberi paket";
+
     return (
-      <div className="min-h-screen bg-background flex flex-col relative">
-        <div className="absolute top-4 right-4 z-10">
-          <ThemeToggle />
-        </div>
-
-        <header className="flex items-center gap-3 px-4 py-4 border-b">
-          <Link href="/">
-            <Button size="icon" variant="ghost" data-testid="button-back-home">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-md" />
-          <span className="font-bold text-foreground text-lg">Map Hack NS</span>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-7 max-w-md mx-auto w-full">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-bold text-foreground">Postavi profil</h1>
-            <p className="text-muted-foreground text-sm">Jednom postavljeno, viđeće te drugi korisnici na mapi.</p>
+      <div className="min-h-screen bg-background flex flex-col">
+        <div
+          className="relative flex-shrink-0"
+          style={{ background: "linear-gradient(160deg, #14532d 0%, #166534 55%, #15803d 100%)" }}
+        >
+          <div className="flex items-center justify-between px-4 pt-4 pb-0">
+            <Link href="/">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-white/80 hover:text-white"
+                style={{ background: "transparent" }}
+                data-testid="button-back-home"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 pointer-events-none">
+              <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-md" />
+              <span className="font-bold text-white text-base">Map Hack NS</span>
+            </div>
+            <div className="[&_button]:text-white/80 [&_button:hover]:text-white [&_svg]:text-white/80">
+              <ThemeToggle />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground" htmlFor="nickname-input">
-              Tvoj nadimak
-            </label>
-            <Input
-              id="nickname-input"
-              data-testid="input-nickname"
-              placeholder="npr. ParkMajstor"
-              value={nickname}
-              onChange={(e) => { setNickname(e.target.value); setError(""); }}
-              maxLength={20}
-              autoCapitalize="none"
-              autoCorrect="off"
-              className="border-2 border-border"
-            />
-            <p className="text-xs text-muted-foreground">
-              Ovako ćeš se pojavljivati na Map Hack NS — vidljivo svim korisnicima u chatu i na mapi.
+          <div className="px-5 pt-5 pb-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center mx-auto mb-3">
+              <MapPin className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-1.5">Uđi u zajednicu</h1>
+            <p className="text-green-100 text-sm leading-relaxed">
+              Štek parkinzi · Crvene zone · Live info · NS vozači
             </p>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Izaberi avatar</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Ovako ćeš izgledati u chatu i na mapi.
+        <div className="flex-1 overflow-y-auto pb-28">
+          <div className="max-w-md mx-auto px-4">
+
+            <div className="pt-6 pb-5">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
+                1 — Izaberi avatar
+              </p>
+              <div className="grid grid-cols-5 gap-2.5 justify-items-center">
+                {Array.from({ length: 10 }, (_, i) => {
+                  const avatarId = i + 1;
+                  const isSelected = selectedAvatar === avatarId;
+                  return (
+                    <button
+                      key={avatarId}
+                      type="button"
+                      data-testid={`button-avatar-${avatarId}`}
+                      onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
+                      className={[
+                        "w-[58px] h-[58px] p-0 transition-all duration-200 bg-[#F5EDD8] flex-shrink-0",
+                        isSelected
+                          ? "ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background rounded-full scale-110"
+                          : "rounded-md opacity-60 hover-elevate",
+                      ].join(" ")}
+                      aria-label={`Avatar ${avatarId}`}
+                      aria-pressed={isSelected}
+                    >
+                      <img
+                        src={`/avatars/avatar-${avatarId}.png`}
+                        alt={`Avatar ${avatarId}`}
+                        className="w-full h-full object-contain"
+                        draggable={false}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="py-4 border-t border-border">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-3">
+                2 — Tvoj nadimak
+              </p>
+              <Input
+                id="nickname-input"
+                data-testid="input-nickname"
+                placeholder="npr. ParkMajstor"
+                value={nickname}
+                onChange={(e) => { setNickname(e.target.value); setError(""); }}
+                maxLength={20}
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="border-2 border-border"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Vidljivo svim korisnicima u chatu i na mapi. Slova, brojevi, _ i -.
               </p>
             </div>
 
-            <div className="grid grid-cols-5 gap-3 justify-items-center w-full">
-              {Array.from({ length: 10 }, (_, i) => {
-                const avatarId = i + 1;
-                const isSelected = selectedAvatar === avatarId;
-                return (
-                  <button
-                    key={avatarId}
-                    type="button"
-                    data-testid={`button-avatar-${avatarId}`}
-                    onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
-                    className={[
-                      "w-16 h-16 p-0 transition-all bg-[#F5EDD8]",
-                      isSelected
-                        ? "ring-2 ring-green-600 dark:ring-green-500 rounded-full"
-                        : "rounded-sm",
-                    ].join(" ")}
-                    aria-label={`Avatar ${avatarId}`}
-                    aria-pressed={isSelected}
+            <div className="py-4 border-t border-border">
+              <p className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground mb-1">
+                3 — Izaberi paket
+              </p>
+              <p className="text-sm text-muted-foreground mb-5">
+                Ulaz je besplatan. Premium donosi punu brzinu i zaštitu.
+              </p>
+
+              <div className="flex flex-col gap-3">
+
+                <button
+                  type="button"
+                  data-testid="button-plan-premium"
+                  onClick={() => { setSelectedPlan("premium"); setError(""); }}
+                  className={[
+                    "w-full text-left rounded-md p-5 transition-all duration-200 relative",
+                    selectedPlan === "premium"
+                      ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-background scale-[1.01]"
+                      : "",
+                  ].join(" ")}
+                  style={{
+                    background: "linear-gradient(135deg, #14532d 0%, #166534 60%, #15803d 100%)",
+                    boxShadow: selectedPlan === "premium"
+                      ? "0 8px 32px rgba(21,128,61,0.45)"
+                      : "0 4px 16px rgba(21,128,61,0.25)",
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-extrabold text-lg tracking-wide">PREMIUM</span>
+                      <span className="bg-yellow-400 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                        Preporučeno
+                      </span>
+                    </div>
+                    <div className={[
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                      selectedPlan === "premium"
+                        ? "bg-yellow-400 border-yellow-400"
+                        : "border-white/40",
+                    ].join(" ")}>
+                      {selectedPlan === "premium" && <Check className="w-3.5 h-3.5 text-yellow-950" />}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <span className="text-white text-4xl font-extrabold leading-none">390</span>
+                    <span className="text-green-200 text-base ml-1.5 font-medium">RSD / mes</span>
+                  </div>
+                  <p className="text-green-100 text-sm mb-4 leading-relaxed">
+                    Potpuna zaštita i najbrži parking u gradu.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      "Sve štek lokacije bez ograničenja",
+                      "Live upozorenja i zajednički chat",
+                      "Quick report jednim klikom",
+                    ].map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-green-400/30 flex items-center justify-center flex-shrink-0">
+                          <Check className="w-2.5 h-2.5 text-green-300" />
+                        </div>
+                        <span className="text-green-100 text-sm">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="button-plan-godisnji"
+                  onClick={() => { setSelectedPlan("godisnji_premium"); setError(""); }}
+                  className={[
+                    "w-full text-left rounded-md p-5 transition-all duration-200 bg-green-950",
+                    selectedPlan === "godisnji_premium"
+                      ? "ring-2 ring-green-400 ring-offset-2 ring-offset-background scale-[1.01]"
+                      : "",
+                  ].join(" ")}
+                  style={{
+                    boxShadow: selectedPlan === "godisnji_premium"
+                      ? "0 6px 24px rgba(0,0,0,0.3)"
+                      : "none",
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI PREMIUM</span>
+                      <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                        Ušteda
+                      </span>
+                    </div>
+                    <div className={[
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                      selectedPlan === "godisnji_premium"
+                        ? "bg-green-400 border-green-400"
+                        : "border-white/30",
+                    ].join(" ")}>
+                      {selectedPlan === "godisnji_premium" && <Check className="w-3.5 h-3.5 text-green-950" />}
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
+                    <span className="text-green-400 text-base ml-1.5 font-medium">RSD / god</span>
+                  </div>
+                  <div className="bg-green-900/70 rounded-md px-3 py-2 mb-2">
+                    <p className="text-green-300 text-xs font-semibold">
+                      = 290 RSD / mes &nbsp;·&nbsp; 2 meseca GRATIS
+                    </p>
+                  </div>
+                  <p className="text-green-400 text-sm">Sve Premium funkcije čitavu godinu.</p>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="button-plan-day-pass"
+                  onClick={() => { setSelectedPlan("day_pass"); setError(""); }}
+                  className={[
+                    "w-full text-left rounded-md p-4 transition-all duration-200 border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30",
+                    selectedPlan === "day_pass"
+                      ? "ring-2 ring-amber-500 ring-offset-1 ring-offset-background scale-[1.01]"
+                      : "",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                        <span className="text-amber-900 dark:text-amber-200 font-extrabold text-base tracking-wide">
+                          DAY PASS
+                        </span>
+                      </div>
+                      <p className="text-amber-700 dark:text-amber-400 text-sm">Sve Premium funkcije na 24h.</p>
+                      <p className="text-amber-600 dark:text-amber-500 text-xs">Idealno za goste i vikend izlaske.</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="text-right">
+                        <span className="text-amber-800 dark:text-amber-300 text-2xl font-extrabold leading-none">99</span>
+                        <span className="text-amber-600 dark:text-amber-500 text-sm ml-0.5">RSD</span>
+                      </div>
+                      <div className={[
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                        selectedPlan === "day_pass"
+                          ? "bg-amber-500 border-amber-500"
+                          : "border-amber-300 dark:border-amber-700",
+                      ].join(" ")}>
+                        {selectedPlan === "day_pass" && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="button-plan-free"
+                  onClick={() => { setSelectedPlan("free"); setError(""); }}
+                  className={[
+                    "w-full text-left rounded-md p-4 transition-all duration-200 border border-border bg-card",
+                    selectedPlan === "free"
+                      ? "ring-2 ring-green-600 ring-offset-1 ring-offset-background"
+                      : "opacity-60",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-foreground font-bold text-base">FREE</span>
+                      <p className="text-muted-foreground text-sm mt-0.5">Osnovni pristup zajednici i mapi.</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <span className="text-muted-foreground text-sm font-semibold">Besplatno</span>
+                      <div className={[
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                        selectedPlan === "free"
+                          ? "bg-green-600 border-green-600"
+                          : "border-border",
+                      ].join(" ")}>
+                        {selectedPlan === "free" && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                <div className="border border-dashed border-border rounded-md p-4 opacity-70">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-foreground font-bold text-base">ZA FIRME</span>
+                      </div>
+                      <p className="text-muted-foreground text-sm mt-0.5">Flote i poslovni korisnici.</p>
+                    </div>
+                    <span className="text-muted-foreground text-xs flex-shrink-0">Po dogovoru</span>
+                  </div>
+                  <a
+                    href="mailto:info@cardrop.app"
+                    className="inline-block text-xs text-green-700 dark:text-green-400 underline underline-offset-2 mt-2"
+                    data-testid="link-firma-email"
                   >
-                    <img
-                      src={`/avatars/avatar-${avatarId}.png`}
-                      alt={`Avatar ${avatarId}`}
-                      className="w-16 h-16 object-contain"
-                      draggable={false}
-                    />
-                  </button>
-                );
-              })}
+                    info@cardrop.app
+                  </a>
+                </div>
+
+              </div>
             </div>
-          </div>
 
-          {error && (
-            <p className="text-sm text-destructive font-medium" data-testid="text-error">
-              {error}
-            </p>
-          )}
-
-          <Button
-            data-testid="button-save-profile"
-            className="w-full"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <ChevronRight className="w-4 h-4 mr-2" />
+            {error && (
+              <p className="text-sm text-destructive font-medium py-2" data-testid="text-error">
+                {error}
+              </p>
             )}
-            Nastavi na mapu
-          </Button>
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t px-4 py-3">
+          <div className="max-w-md mx-auto">
+            {hint && !isSaving && (
+              <p className="text-xs text-muted-foreground text-center mb-2">{hint}</p>
+            )}
+            <Button
+              className="w-full"
+              onClick={handleEnterMap}
+              disabled={!canSubmit || isSaving}
+              data-testid="button-enter-map"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Čuvamo...
+                </>
+              ) : (
+                <>
+                  <ChevronRight className="w-4 h-4 mr-2" />
+                  Uđi na mapu
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -237,7 +492,8 @@ export default function MapHackNS() {
         >
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <p className="text-sm text-amber-700 dark:text-amber-400 flex-1">
-            Probni period ističe za <strong>{mapStatus?.daysLeft}</strong> {mapStatus?.daysLeft === 1 ? "dan" : "dana"} —{" "}
+            Probni period ističe za <strong>{mapStatus?.daysLeft}</strong>{" "}
+            {mapStatus?.daysLeft === 1 ? "dan" : "dana"} —{" "}
             <Link href="/map-hack/subscribe">
               <span className="underline font-medium cursor-pointer" data-testid="link-subscribe-from-banner">
                 izaberi plan
@@ -257,16 +513,10 @@ export default function MapHackNS() {
             />
           </div>
           <div>
-            <p className="font-bold text-foreground text-lg" data-testid="text-map-nickname">{user.mapNickname}</p>
-            <p className="text-xs text-muted-foreground">
-              {mapStatus?.plan === "admin" ? "Admin"
-                : mapStatus?.plan === "premium" ? "Premium"
-                : mapStatus?.plan === "day_pass" ? "Day Pass"
-                : mapStatus?.plan === "godisnji_premium" ? "Godišnji Premium"
-                : mapStatus?.plan === "free" ? "Free plan"
-                : mapStatus?.plan === "firma" ? "Za Firme"
-                : "Probni period"}
+            <p className="font-bold text-foreground text-lg" data-testid="text-map-nickname">
+              {user.mapNickname}
             </p>
+            <p className="text-xs text-muted-foreground">{planLabel(mapStatus?.plan ?? null)}</p>
           </div>
         </div>
 
@@ -282,16 +532,16 @@ export default function MapHackNS() {
           <p className="text-green-600 dark:text-green-500 text-sm mt-1">
             {mapStatus?.phase === "trial"
               ? `Probni period — ${mapStatus.daysLeft} dana preostalo`
-              : mapStatus?.plan
+              : mapStatus?.plan && mapStatus.daysLeft < 9999
               ? `Plan aktivan — ${mapStatus.daysLeft} dana preostalo`
-              : "Prvi mesec besplatno za sve korisnike."}
+              : "Aktivan plan."}
           </p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <Link href="/map-hack/subscribe">
             <Button variant="outline" className="w-full" data-testid="button-view-plans">
-              Pogledaj planove
+              Promeni plan
             </Button>
           </Link>
           <Link href="/">
