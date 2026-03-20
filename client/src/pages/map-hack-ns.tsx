@@ -329,6 +329,7 @@ export default function MapHackNS() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
 
@@ -624,21 +625,56 @@ export default function MapHackNS() {
   /* ─── MAP VIEW ─────────────────────────────────────────────── */
   const showTrialBanner = mapStatus?.phase === "trial" && (mapStatus?.daysLeft ?? 30) <= 7;
 
+  const handleResetProfile = async () => {
+    setIsResetting(true);
+    try {
+      const res = await fetch("/api/map-hack/reset-profile", { method: "POST" });
+      if (!res.ok) throw new Error("Reset failed");
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
+      setLocation("/map-hack");
+    } catch {
+      toast({ title: "Greška", description: "Reset profila nije uspeo", variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const planInfoText = () => {
+    if (mapStatus?.phase === "trial") return `Probni period — ${mapStatus.daysLeft} dana preostalo`;
+    if (mapStatus?.plan && (mapStatus?.daysLeft ?? 9999) < 9999) return `Plan aktivan — ${mapStatus.daysLeft} dana preostalo`;
+    return "Aktivan plan";
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
 
-      <header className="flex items-center gap-3 px-4 py-4 border-b">
-        <Link href="/">
-          <Button size="icon" variant="ghost" data-testid="button-back-home">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-md" />
-        <span className="font-bold text-foreground text-lg">Map Hack NS</span>
-      </header>
+      <div className="relative bg-gradient-to-b from-green-700 to-green-500 pt-12 pb-10 px-6 flex flex-col items-center gap-4">
+        <div className="absolute top-4 left-4">
+          <Link href="/">
+            <Button size="icon" variant="ghost" className="text-white" data-testid="button-back-home">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+        </div>
+
+        <div className="w-20 h-20 rounded-full bg-[#F5EDD8] overflow-hidden ring-4 ring-white/40 shadow-lg">
+          <img
+            src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
+            alt="Tvoj avatar"
+            className="w-full h-full object-contain"
+          />
+        </div>
+        <div className="text-center">
+          <p className="font-bold text-white text-xl leading-tight" data-testid="text-map-nickname">
+            {user.mapNickname}
+          </p>
+          <p className="text-green-100 text-sm mt-1">{planLabel(mapStatus?.plan ?? null)}</p>
+        </div>
+      </div>
 
       {showTrialBanner && (
         <div
@@ -658,39 +694,21 @@ export default function MapHackNS() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-8 py-12">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-full bg-[#F5EDD8] overflow-hidden ring-2 ring-green-600 dark:ring-green-500 ring-offset-2 ring-offset-background">
-            <img
-              src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
-              alt="Tvoj avatar"
-              className="w-full h-full object-contain"
-            />
+          <div className="flex items-center gap-2">
+            <MapPin className="w-7 h-7 text-green-600 dark:text-green-400" />
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">NS Map Hack</h1>
           </div>
-          <div>
-            <p className="font-bold text-foreground text-lg" data-testid="text-map-nickname">
-              {user.mapNickname}
-            </p>
-            <p className="text-xs text-muted-foreground">{planLabel(mapStatus?.plan ?? null)}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 max-w-xs">
-          <h1 className="text-2xl font-bold text-foreground">Map Hack NS</h1>
-          <p className="text-muted-foreground text-base leading-relaxed">
-            Interaktivna mapa Novog Sada — štek parkinzi, crvene zone, live info.
+          <p className="text-2xl font-semibold text-muted-foreground">dolazi uskoro</p>
+          <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mt-1">
+            Interaktivna mapa Novog Sada sa štek parking mestima, crvenim zonama, live info i još mnogo toga.
           </p>
         </div>
 
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md px-5 py-4 max-w-xs w-full">
-          <p className="text-green-700 dark:text-green-400 font-semibold text-sm">Uskoro dostupno</p>
-          <p className="text-green-600 dark:text-green-500 text-sm mt-1">
-            {mapStatus?.phase === "trial"
-              ? `Probni period — ${mapStatus.daysLeft} dana preostalo`
-              : mapStatus?.plan && mapStatus.daysLeft < 9999
-              ? `Plan aktivan — ${mapStatus.daysLeft} dana preostalo`
-              : "Aktivan plan."}
-          </p>
+        <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+          <Clock className="w-4 h-4 shrink-0" />
+          <p className="text-sm font-medium" data-testid="text-plan-status">{planInfoText()}</p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -705,6 +723,22 @@ export default function MapHackNS() {
               Nazad na početnu
             </Button>
           </Link>
+          {user.isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground text-xs mt-2"
+              onClick={handleResetProfile}
+              disabled={isResetting}
+              data-testid="button-reset-profile"
+            >
+              {isResetting ? (
+                <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Resetujem...</>
+              ) : (
+                <><RefreshCw className="w-3 h-3 mr-1" />Resetuj profil (test)</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>

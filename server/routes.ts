@@ -96,6 +96,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Map Hack NS - reset profile (admin only, for testing)
+  app.post('/api/map-hack/reset-profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      const hasAccess = user.isAdmin || ADMIN_EMAIL_LIST.includes(user.email || '');
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Nemate dozvolu za ovu akciju" });
+      }
+
+      const updated = await storage.resetMapHackProfile(userId);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      const { passwordHash, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error resetting map hack profile:", error);
+      res.status(500).json({ message: "Greška pri resetovanju profila" });
+    }
+  });
+
   // Map Hack NS - get subscription status
   app.get('/api/map-hack/status', isAuthenticated, async (req: any, res) => {
     try {
