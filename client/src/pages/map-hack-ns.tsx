@@ -368,6 +368,8 @@ export default function MapHackNS() {
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [izdajOpen, setIzdajOpen] = useState(false);
+  const [aktivnoOpen, setAktivnoOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const isMapView = viewMode === "map_view";
@@ -750,9 +752,6 @@ export default function MapHackNS() {
 
   const latestChatMsg = chatMessages[chatMessages.length - 1];
   const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
-
-  const [izdajOpen, setIzdajOpen] = useState(false);
-  const [aktivnoOpen, setAktivnoOpen] = useState(false);
 
   const firstZlatni = mapMarkers.find(m => m.type === "zlatni_minut");
   const firstPauk = mapMarkers.find(m => m.type === "pauk");
