@@ -10,6 +10,7 @@ import {
   decimal,
   boolean,
   unique,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -365,3 +366,64 @@ export const insertSalesListingSchema = createInsertSchema(salesListings)
 
 export type InsertSalesListing = z.infer<typeof insertSalesListingSchema>;
 export type SalesListing = typeof salesListings.$inferSelect;
+
+// ─── Map Hack NS Tables ────────────────────────────────────────────────────
+
+export const mapMarkerTypeEnum = pgEnum("map_marker_type", [
+  "zlatni_minut",
+  "pauk",
+  "stek",
+  "safe_zone",
+]);
+
+export const mapMarkers = pgTable("map_markers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  type: mapMarkerTypeEnum("type").notNull(),
+  lat: decimal("lat", { precision: 10, scale: 7 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 7 }).notNull(),
+  label: varchar("label", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const insertMapMarkerSchema = createInsertSchema(mapMarkers).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMapMarker = z.infer<typeof insertMapMarkerSchema>;
+export type MapMarker = typeof mapMarkers.$inferSelect;
+
+export const mapChatMessages = pgTable("map_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  mapNickname: varchar("map_nickname", { length: 30 }).notNull(),
+  avatarId: integer("avatar_id").notNull().default(1),
+  text: varchar("text", { length: 280 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMapChatMessageSchema = createInsertSchema(mapChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMapChatMessage = z.infer<typeof insertMapChatMessageSchema>;
+export type MapChatMessage = typeof mapChatMessages.$inferSelect;
+
+export const mapSafeZones = pgTable("map_safe_zones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  lat: decimal("lat", { precision: 10, scale: 7 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 7 }).notNull(),
+  radiusMeters: integer("radius_meters").notNull().default(300),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertMapSafeZoneSchema = createInsertSchema(mapSafeZones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMapSafeZone = z.infer<typeof insertMapSafeZoneSchema>;
+export type MapSafeZone = typeof mapSafeZones.$inferSelect;

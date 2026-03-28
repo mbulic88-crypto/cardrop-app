@@ -6,6 +6,9 @@ import {
   freeTrialPeriod,
   messages,
   salesListings,
+  mapMarkers,
+  mapChatMessages,
+  mapSafeZones,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -19,9 +22,15 @@ import {
   type InsertMessage,
   type SalesListing,
   type InsertSalesListing,
+  type MapMarker,
+  type InsertMapMarker,
+  type MapChatMessage,
+  type InsertMapChatMessage,
+  type MapSafeZone,
+  type InsertMapSafeZone,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, or, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, or, sql, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -80,6 +89,15 @@ export interface IStorage {
   getAllSalesListingsAdmin(): Promise<SalesListing[]>;
   deleteSalesListingAdmin(id: string): Promise<void>;
   toggleSalesListingActive(id: string): Promise<SalesListing | undefined>;
+
+  // Map Hack NS operations
+  getActiveMapMarkers(): Promise<MapMarker[]>;
+  createMapMarker(data: InsertMapMarker): Promise<MapMarker>;
+  expireMapMarker(id: string): Promise<void>;
+  getMapChatMessages(limit?: number): Promise<MapChatMessage[]>;
+  createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage>;
+  getMapSafeZone(userId: string): Promise<MapSafeZone | undefined>;
+  upsertMapSafeZone(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapSafeZone>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -425,6 +443,70 @@ export class DatabaseStorage implements IStorage {
       .where(eq(salesListings.id, id))
       .returning();
     return updated;
+  }
+
+  // Map Hack NS operations
+  async getActiveMapMarkers(): Promise<MapMarker[]> {
+    const now = new Date();
+    return await db
+      .select()
+      .from(mapMarkers)
+      .where(
+        or(
+          sql`${mapMarkers.expiresAt} IS NULL`,
+          gt(mapMarkers.expiresAt, now)
+        )
+      )
+      .orderBy(desc(mapMarkers.createdAt));
+  }
+
+  async createMapMarker(data: InsertMapMarker): Promise<MapMarker> {
+    const [marker] = await db.insert(mapMarkers).values(data).returning();
+    return marker;
+  }
+
+  async expireMapMarker(id: string): Promise<void> {
+    await db
+      .update(mapMarkers)
+      .set({ expiresAt: new Date() })
+      .where(eq(mapMarkers.id, id));
+  }
+
+  async getMapChatMessages(limit = 20): Promise<MapChatMessage[]> {
+    const rows = await db
+      .select()
+      .from(mapChatMessages)
+      .orderBy(desc(mapChatMessages.createdAt))
+      .limit(limit);
+    return rows.reverse();
+  }
+
+  async createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage> {
+    const [msg] = await db.insert(mapChatMessages).values(data).returning();
+    return msg;
+  }
+
+  async getMapSafeZone(userId: string): Promise<MapSafeZone | undefined> {
+    const [zone] = await db
+      .select()
+      .from(mapSafeZones)
+      .where(eq(mapSafeZones.userId, userId));
+    return zone;
+  }
+
+  async upsertMapSafeZone(
+    userId: string,
+    data: { lat: string; lng: string; radiusMeters: number }
+  ): Promise<MapSafeZone> {
+    const [zone] = await db
+      .insert(mapSafeZones)
+      .values({ userId, ...data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: mapSafeZones.userId,
+        set: { lat: data.lat, lng: data.lng, radiusMeters: data.radiusMeters, updatedAt: new Date() },
+      })
+      .returning();
+    return zone;
   }
 }
 

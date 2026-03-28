@@ -243,6 +243,209 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Map Hack NS — Markers ────────────────────────────────────────────────
+
+  function hasActiveMapHackPlan(user: any): boolean {
+    if (user.isAdmin) return true;
+    if (user.mapHackPlan === 'free') return true;
+    if (user.mapNickname) {
+      // has trial or paid plan — check expiry via mapHackPlanExpiresAt
+      if (user.mapHackPlan && user.mapHackPlanExpiresAt) {
+        return new Date() < new Date(user.mapHackPlanExpiresAt);
+      }
+      // trial: within 30 days of mapHackTrialStartedAt
+      if (user.mapHackTrialStartedAt) {
+        const expires = new Date(user.mapHackTrialStartedAt);
+        expires.setDate(expires.getDate() + 30);
+        return new Date() < expires;
+      }
+    }
+    return false;
+  }
+
+  function hasPremiumMapHackPlan(user: any): boolean {
+    if (user.isAdmin) return true;
+    return ['premium', 'day_pass', 'godisnji_premium', 'firma'].includes(user.mapHackPlan || '');
+  }
+
+  app.get('/api/map-hack/markers', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const markers = await storage.getActiveMapMarkers();
+      res.json(markers);
+    } catch (error) {
+      console.error("Error fetching map markers:", error);
+      res.status(500).json({ message: "Greška pri učitavanju markera" });
+    }
+  });
+
+  app.post('/api/map-hack/markers', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+
+      const { type, lat, lng, label } = req.body;
+      const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone'];
+      if (!type || !validTypes.includes(type)) {
+        return res.status(400).json({ message: "Nevalidan tip markera" });
+      }
+      if (type === 'stek' && !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Štek lokacije zahtijevaju Premium plan" });
+      }
+
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      if (isNaN(latNum) || isNaN(lngNum)) {
+        return res.status(400).json({ message: "Nevalidne koordinate" });
+      }
+      // Bound to NS area
+      if (latNum < 45.20 || latNum > 45.36 || lngNum < 19.72 || lngNum > 19.98) {
+        return res.status(400).json({ message: "Lokacija mora biti u Novom Sadu" });
+      }
+
+      // Set expiry based on type
+      let expiresAt: Date | null = null;
+      if (type === 'zlatni_minut') {
+        expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      } else if (type === 'pauk') {
+        expiresAt = new Date(Date.now() + 45 * 60 * 1000);
+      }
+
+      const marker = await storage.createMapMarker({
+        userId,
+        type,
+        lat: String(latNum),
+        lng: String(lngNum),
+        label: label || null,
+        expiresAt,
+      });
+      res.json(marker);
+    } catch (error) {
+      console.error("Error creating map marker:", error);
+      res.status(500).json({ message: "Greška pri kreiranju markera" });
+    }
+  });
+
+  app.post('/api/map-hack/markers/:id/expire', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      await storage.expireMapMarker(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error expiring map marker:", error);
+      res.status(500).json({ message: "Greška pri brisanju markera" });
+    }
+  });
+
+  // ─── Map Hack NS — Chat ───────────────────────────────────────────────────
+
+  app.get('/api/map-hack/chat', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const messages = await storage.getMapChatMessages(20);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching map chat:", error);
+      res.status(500).json({ message: "Greška pri učitavanju chata" });
+    }
+  });
+
+  app.post('/api/map-hack/chat', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      if (!user.mapNickname) {
+        return res.status(400).json({ message: "Potreban je Map Hack profil" });
+      }
+
+      const { text } = req.body;
+      if (!text || typeof text !== 'string' || text.trim().length === 0) {
+        return res.status(400).json({ message: "Poruka ne može biti prazna" });
+      }
+      if (text.trim().length > 280) {
+        return res.status(400).json({ message: "Poruka je predugačka (max 280 znakova)" });
+      }
+
+      const msg = await storage.createMapChatMessage({
+        userId,
+        mapNickname: user.mapNickname,
+        avatarId: user.mapAvatarId || 1,
+        text: text.trim(),
+      });
+      res.json(msg);
+    } catch (error) {
+      console.error("Error posting map chat message:", error);
+      res.status(500).json({ message: "Greška pri slanju poruke" });
+    }
+  });
+
+  // ─── Map Hack NS — Safe Zone ──────────────────────────────────────────────
+
+  app.get('/api/map-hack/safe-zone', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const zone = await storage.getMapSafeZone(userId);
+      res.json(zone || null);
+    } catch (error) {
+      console.error("Error fetching safe zone:", error);
+      res.status(500).json({ message: "Greška pri učitavanju safe zone" });
+    }
+  });
+
+  app.put('/api/map-hack/safe-zone', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+
+      const { lat, lng, radiusMeters } = req.body;
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      const radius = parseInt(radiusMeters) || 300;
+
+      if (isNaN(latNum) || isNaN(lngNum)) {
+        return res.status(400).json({ message: "Nevalidne koordinate" });
+      }
+      if (latNum < 45.20 || latNum > 45.36 || lngNum < 19.72 || lngNum > 19.98) {
+        return res.status(400).json({ message: "Lokacija mora biti u Novom Sadu" });
+      }
+
+      const zone = await storage.upsertMapSafeZone(userId, {
+        lat: String(latNum),
+        lng: String(lngNum),
+        radiusMeters: Math.min(Math.max(radius, 50), 2000),
+      });
+      res.json(zone);
+    } catch (error) {
+      console.error("Error setting safe zone:", error);
+      res.status(500).json({ message: "Greška pri postavljanju safe zone" });
+    }
+  });
+
   // Parking spots routes
   app.get('/api/parking-spots', async (req, res) => {
     try {

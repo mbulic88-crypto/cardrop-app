@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, MapPin, Clock } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { MapHackMap } from "@/components/MapHackMap";
 
 type MapHackStatus = {
   phase: "trial" | "trial_expired" | "active" | "plan_expired";
@@ -640,106 +641,70 @@ export default function MapHackNS() {
     }
   };
 
-  const planInfoText = () => {
-    if (mapStatus?.phase === "trial") return `Probni period — ${mapStatus.daysLeft} dana preostalo`;
-    if (mapStatus?.plan && (mapStatus?.daysLeft ?? 9999) < 9999) return `Plan aktivan — ${mapStatus.daysLeft} dana preostalo`;
-    return "Aktivan plan";
-  };
-
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeToggle />
-      </div>
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
 
-      <div className="relative bg-gradient-to-b from-green-700 to-green-500 pt-12 pb-10 px-6 flex flex-col items-center gap-4">
-        <div className="absolute top-4 left-4">
+      {/* ─── Top bar ─────────────────────────────────────────────────────────── */}
+      <div className="relative z-30 flex items-center justify-between px-3 py-2 flex-shrink-0"
+        style={{ background: "rgba(13,17,23,0.92)", borderBottom: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(8px)" }}>
+
+        <div className="flex items-center gap-2">
           <Link href="/">
-            <Button size="icon" variant="ghost" className="text-white" data-testid="button-back-home">
-              <ArrowLeft className="w-5 h-5" />
+            <Button size="icon" variant="ghost" className="text-gray-300 h-8 w-8" data-testid="button-back-home">
+              <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-        </div>
-
-        <div className="w-20 h-20 rounded-full bg-[#F5EDD8] overflow-hidden ring-4 ring-white/40 shadow-lg">
-          <img
-            src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
-            alt="Tvoj avatar"
-            className="w-full h-full object-contain"
-          />
-        </div>
-        <div className="text-center">
-          <p className="font-bold text-white text-xl leading-tight" data-testid="text-map-nickname">
-            {user.mapNickname}
-          </p>
-          <p className="text-green-100 text-sm mt-1">{planLabel(mapStatus?.plan ?? null)}</p>
-        </div>
-      </div>
-
-      {showTrialBanner && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800"
-          data-testid="banner-trial-expiry"
-        >
-          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <p className="text-sm text-amber-700 dark:text-amber-400 flex-1">
-            Probni period ističe za <strong>{mapStatus?.daysLeft}</strong>{" "}
-            {mapStatus?.daysLeft === 1 ? "dan" : "dana"} —{" "}
-            <Link href="/map-hack/subscribe">
-              <span className="underline font-medium cursor-pointer" data-testid="link-subscribe-from-banner">
-                izaberi plan
-              </span>
-            </Link>
-          </p>
-        </div>
-      )}
-
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-8 py-12">
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-7 h-7 text-green-600 dark:text-green-400" />
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">NS Map Hack</h1>
+          <div className="w-7 h-7 rounded-full bg-[#F5EDD8] overflow-hidden ring-1 ring-white/20 flex-shrink-0">
+            <img src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`} alt="avatar" className="w-full h-full object-contain" />
           </div>
-          <p className="text-2xl font-semibold text-muted-foreground">dolazi uskoro</p>
-          <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mt-1">
-            Interaktivna mapa Novog Sada sa štek parking mestima, crvenim zonama, live info i još mnogo toga.
-          </p>
+          <div className="hidden sm:block">
+            <p className="text-xs font-semibold text-white leading-tight" data-testid="text-map-nickname">{user.mapNickname}</p>
+            <p className="text-xs" style={{ color: "#6b7280" }}>{planLabel(mapStatus?.plan ?? null)}</p>
+          </div>
+          <span className="text-white font-bold text-sm">NS Map Hack</span>
         </div>
 
-        <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-          <Clock className="w-4 h-4 shrink-0" />
-          <p className="text-sm font-medium" data-testid="text-plan-status">{planInfoText()}</p>
-        </div>
-
-        <div className="flex flex-col gap-3 w-full max-w-xs">
+        <div className="flex items-center gap-1.5">
+          {showTrialBanner && (
+            <Link href="/map-hack/subscribe">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer"
+                data-testid="banner-trial-expiry"
+                style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24" }}>
+                <AlertTriangle size={10} />
+                {mapStatus?.daysLeft}d
+              </div>
+            </Link>
+          )}
           <Link href="/map-hack/subscribe">
-            <Button variant="outline" className="w-full" data-testid="button-view-plans">
-              Promeni plan
-            </Button>
-          </Link>
-          <Link href="/">
-            <Button variant="ghost" className="w-full" data-testid="button-back-landing">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Nazad na početnu
+            <Button size="sm" variant="ghost" data-testid="button-view-plans"
+              className="h-8 text-xs text-gray-400 px-2">
+              Plan
             </Button>
           </Link>
           {user.isAdmin && (
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-muted-foreground text-xs mt-2"
+              className="h-8 text-xs text-gray-600 px-2"
               onClick={handleResetProfile}
               disabled={isResetting}
               data-testid="button-reset-profile"
             >
-              {isResetting ? (
-                <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Resetujem...</>
-              ) : (
-                <><RefreshCw className="w-3 h-3 mr-1" />Resetuj profil (test)</>
-              )}
+              {isResetting ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
             </Button>
           )}
+          <ThemeToggle />
         </div>
+      </div>
+
+      {/* ─── Full-screen Leaflet map ────────────────────────────────────────── */}
+      <div className="flex-1 relative overflow-hidden">
+        <MapHackMap
+          mapNickname={user.mapNickname ?? ""}
+          avatarId={user.mapAvatarId ?? 1}
+          plan={mapStatus?.plan ?? null}
+          isAdmin={user.isAdmin ?? false}
+        />
       </div>
     </div>
   );

@@ -84,10 +84,22 @@ The platform features a dual-theme design with green accent colors:
 *   **Geographic Scope**: Designed for Serbia, with city-based filtering and popular destination features.
 *   **Subscription Logic**: Backend validates plan selection, calculates expiry dates using `shared/pricing.ts` helper functions (null for free plans), and tracks subscription type and isPremium flag per parking spot. Premium spots get golden styling on map markers, list cards, and appear first in search results.
 
+*   **Map Hack NS**: Exclusive parking intelligence feature at `/map-hack`. Full-screen interactive Leaflet map of Novi Sad with:
+    - CartoDB Dark Matter tiles, bounded to NS area (SW 45.20/19.72 – NE 45.36/19.98)
+    - 4 community marker types: Zlatni Minut (10-min free spot, orange), Pauk Radar (tow truck, 45-min warning, red), Štek (PREMIUM-only saved spot, green), Safe Zone (alarm circle, blue)
+    - Filter tabs at top (Sve / Zlatni Minut / Pauk / Štek / Safe Zone)
+    - Personal Safe Zone: right-click on map sets a 300m radius alarm circle (stored per user)
+    - Park Chat: live community chat overlay (20-message history, 30s refresh)
+    - Action bar: 4 add-marker buttons, refresh, chat toggle
+    - Map data stored in 3 DB tables: `map_markers`, `map_chat_messages`, `map_safe_zones`
+    - API: GET/POST `/api/map-hack/markers`, GET/POST `/api/map-hack/chat`, GET/PUT `/api/map-hack/safe-zone`
+    - Plan tiers: FREE (basic access), PREMIUM/DAY PASS/GODIŠNJI (štek + full features), admin bypass
+    - Component: `client/src/components/MapHackMap.tsx`
+
 ## External Dependencies
 *   **Monri Payments (Payten)**: API v2 (REST/JSON) for secure payment processing.
 *   **Replit Auth**: OpenID Connect for user authentication.
 *   **Replit Object Storage**: For secure storage and retrieval of parking spot images.
-*   **Leaflet**: JavaScript library for interactive maps.
+*   **Leaflet**: JavaScript library for interactive maps (also used for Map Hack NS full-screen map).
 *   **PostgreSQL (Neon)**: Relational database hosted via Replit.
 *   **next-themes**: Theme provider for dark/light mode switching.
