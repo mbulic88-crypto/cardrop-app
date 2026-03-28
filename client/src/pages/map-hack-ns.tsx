@@ -1395,12 +1395,12 @@ export default function MapHackNS() {
         <div className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)" }}
           onClick={() => setSmsOpen(false)}>
-          <div className="w-full rounded-t-2xl"
-            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520, maxHeight: "85vh", overflowY: "auto" }}
+          <div className="w-full rounded-t-2xl flex flex-col"
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520, maxHeight: "88vh" }}
             onClick={e => e.stopPropagation()}>
 
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-3"
+            {/* Header — sticky, never scrolls */}
+            <div className="flex-shrink-0 flex items-center justify-between px-4 pt-4 pb-3"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div>
                 <p className="font-bold" style={{ color: "#f9fafb", fontSize: 15 }}>SMS Parking — Novi Sad</p>
@@ -1412,6 +1412,9 @@ export default function MapHackNS() {
                 <X size={14} style={{ color: "#9ca3af" }} />
               </button>
             </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
 
             {/* Plate input */}
             <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
@@ -1425,8 +1428,8 @@ export default function MapHackNS() {
                 style={{ background: "#1a1f2b", border: "1.5px solid rgba(255,255,255,0.2)", color: "#f9fafb", letterSpacing: "0.12em" }}
                 maxLength={8}
               />
-              <p className="text-xs mt-1.5" style={{ color: plateInput.trim().length > 0 ? "#22c55e" : "#4b5563" }}>
-                {plateInput.trim().length > 0 ? "Tablica unesena — tapni zonu da posalješ SMS" : "Unesi tablicu, pa tapni zonu"}
+              <p className="text-xs mt-1.5" style={{ color: plateInput.trim().length > 0 ? "#22c55e" : "#9ca3af" }}>
+                {plateInput.trim().length > 0 ? `Tablica ${plateInput.trim().toUpperCase()} — tapni zonu` : "Opciono: unesi tablicu da se popuni SMS automatski"}
               </p>
             </div>
 
@@ -1464,24 +1467,23 @@ export default function MapHackNS() {
               <p className="text-xs font-semibold mb-2.5" style={{ color: "#6b7280" }}>IZABERI ZONU</p>
               <div className="grid grid-cols-2 gap-2">
                 {NS_ZONES.map(zone => {
-                  const isPlate = plateInput.trim().length > 0;
+                  const plate = plateInput.trim();
                   const isSuggested = suggestedZone === zone.sms;
                   return (
                     <button
                       key={zone.sms}
                       data-testid={`btn-sms-zona-${zone.sms}`}
-                      disabled={!isPlate}
                       onClick={() => {
-                        if (!isPlate) return;
                         setSmsOpen(false);
-                        window.open(`sms:${zone.sms}?body=${encodeURIComponent(plateInput.trim())}`, "_self");
+                        const smsUrl = plate
+                          ? `sms:${zone.sms}?body=${encodeURIComponent(plate)}`
+                          : `sms:${zone.sms}`;
+                        window.open(smsUrl, "_self");
                       }}
                       className="relative flex items-center gap-3 px-3 py-3 rounded-xl text-left"
                       style={{
                         background: isSuggested ? zone.bg.replace("0.18", "0.28") : zone.bg,
                         border: `1.5px solid ${isSuggested ? zone.color + "99" : zone.color + "40"}`,
-                        opacity: isPlate ? 1 : 0.45,
-                        cursor: isPlate ? "pointer" : "not-allowed",
                       }}>
                       {isSuggested && (
                         <span className="absolute -top-2 -right-1 text-xs font-bold px-1.5 py-0.5 rounded-full"
@@ -1497,10 +1499,11 @@ export default function MapHackNS() {
                   );
                 })}
               </div>
-              <p className="text-xs text-center mt-3" style={{ color: "#4b5563" }}>
+              <p className="text-xs text-center mt-3 mb-4" style={{ color: "#4b5563" }}>
                 Naplaćuje se standardna SMS tarifa · samo za +381 brojeve
               </p>
             </div>
+            </div>{/* end scrollable body */}
           </div>
         </div>
       )}
