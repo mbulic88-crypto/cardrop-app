@@ -361,6 +361,87 @@ export default function MapHackNS() {
     }
   }
 
+  // Map view state — declared unconditionally before early returns
+  const [activeFilters, setActiveFilters] = useState<string[]>(["sve"]);
+  const [activeTab, setActiveTab] = useState<MarkerType>("zlatni_minut");
+  const [addMode, setAddMode] = useState<MarkerType | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const isMapView = viewMode === "map_view";
+
+  const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarker[]>({
+    queryKey: ["/api/map-hack/markers"],
+    enabled: isMapView,
+    refetchInterval: isMapView ? 30000 : false,
+  });
+
+  const { data: chatMessages = [], refetch: refetchChat } = useQuery<MapChatMessage[]>({
+    queryKey: ["/api/map-hack/chat"],
+    enabled: isMapView,
+    refetchInterval: isMapView ? 30000 : false,
+  });
+
+  const { data: safeZone = null } = useQuery<MapSafeZone | null>({
+    queryKey: ["/api/map-hack/safe-zone"],
+    enabled: isMapView,
+  });
+
+  const addMarkerMutation = useMutation({
+    mutationFn: (data: { type: MarkerType; lat: number; lng: number }) =>
+      apiRequest("POST", "/api/map-hack/markers", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setAddMode(null);
+      toast({ title: "Marker dodat" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+      setAddMode(null);
+    },
+  });
+
+  const expireMarkerMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("POST", `/api/map-hack/markers/${id}/expire`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setSelectedMarker(null);
+      toast({ title: "Marker uklonjen" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const sendChatMutation = useMutation({
+    mutationFn: (text: string) => apiRequest("POST", "/api/map-hack/chat", { text }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+      setChatInput("");
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const setSafeZoneMutation = useMutation({
+    mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
+      apiRequest("PUT", "/api/map-hack/safe-zone", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
+      toast({ title: "Safe Zone postavljena" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  useEffect(() => {
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
   async function savePlan(planId: PlanId) {
     if (planId !== "free") {
       toast({
@@ -626,28 +707,6 @@ export default function MapHackNS() {
   const showTrialBanner = mapStatus?.phase === "trial" && (mapStatus?.daysLeft ?? 30) <= 7;
   const isPremium = user.isAdmin || ["premium", "day_pass", "godisnji_premium", "firma"].includes(mapStatus?.plan ?? "");
 
-  const [activeFilters, setActiveFilters] = useState<string[]>(["sve"]);
-  const [activeTab, setActiveTab] = useState<MarkerType>("zlatni_minut");
-  const [addMode, setAddMode] = useState<MarkerType | null>(null);
-  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
-  const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarker[]>({
-    queryKey: ["/api/map-hack/markers"],
-    refetchInterval: 30000,
-  });
-
-  const { data: chatMessages = [], refetch: refetchChat } = useQuery<MapChatMessage[]>({
-    queryKey: ["/api/map-hack/chat"],
-    refetchInterval: 30000,
-  });
-
-  const { data: safeZone = null } = useQuery<MapSafeZone | null>({
-    queryKey: ["/api/map-hack/safe-zone"],
-  });
-
   const paukInZone = safeZone?.lat && safeZone?.lng
     ? mapMarkers.filter(m =>
         m.type === "pauk" &&
@@ -657,59 +716,6 @@ export default function MapHackNS() {
         ) <= safeZone.radiusMeters
       )
     : [];
-
-  const addMarkerMutation = useMutation({
-    mutationFn: (data: { type: MarkerType; lat: number; lng: number }) =>
-      apiRequest("POST", "/api/map-hack/markers", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
-      setAddMode(null);
-      toast({ title: "Marker dodat" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Greška", description: err.message, variant: "destructive" });
-      setAddMode(null);
-    },
-  });
-
-  const expireMarkerMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("POST", `/api/map-hack/markers/${id}/expire`, {}),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
-      setSelectedMarker(null);
-      toast({ title: "Marker uklonjen" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Greška", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const sendChatMutation = useMutation({
-    mutationFn: (text: string) => apiRequest("POST", "/api/map-hack/chat", { text }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
-      setChatInput("");
-    },
-    onError: (err: any) => {
-      toast({ title: "Greška", description: err.message, variant: "destructive" });
-    },
-  });
-
-  const setSafeZoneMutation = useMutation({
-    mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
-      apiRequest("PUT", "/api/map-hack/safe-zone", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
-      toast({ title: "Safe Zone postavljena" });
-    },
-    onError: (err: any) => {
-      toast({ title: "Greška", description: err.message, variant: "destructive" });
-    },
-  });
-
-  useEffect(() => {
-    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatOpen]);
 
   const handleResetProfile = async () => {
     setIsResetting(true);
