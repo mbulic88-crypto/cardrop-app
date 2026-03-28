@@ -340,6 +340,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
+
+      // Fetch marker and enforce ownership or admin
+      const markers = await storage.getActiveMapMarkers();
+      const marker = markers.find(m => m.id === req.params.id);
+      if (!marker) {
+        return res.status(404).json({ message: "Marker nije pronađen" });
+      }
+      if (marker.userId !== userId && !user.isAdmin) {
+        return res.status(403).json({ message: "Nemate dozvolu da obrišete ovaj marker" });
+      }
+
       await storage.expireMapMarker(req.params.id);
       res.json({ success: true });
     } catch (error) {

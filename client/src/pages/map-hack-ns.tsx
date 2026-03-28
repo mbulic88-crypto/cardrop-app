@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, MapPin } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, ShieldCheck, Trash2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { queryClient } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
-import { MapHackMap } from "@/components/MapHackMap";
+import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters } from "@/components/MapHackMap";
+import type { MapMarker, MapChatMessage, MapSafeZone } from "@shared/schema";
+import type { MarkerType } from "@/components/MapHackMap";
 
 type MapHackStatus = {
   phase: "trial" | "trial_expired" | "active" | "plan_expired";
@@ -625,6 +627,120 @@ export default function MapHackNS() {
 
   /* ─── MAP VIEW ─────────────────────────────────────────────── */
   const showTrialBanner = mapStatus?.phase === "trial" && (mapStatus?.daysLeft ?? 30) <= 7;
+  const isPremium = user.isAdmin || ["premium", "day_pass", "godisnji_premium", "firma"].includes(mapStatus?.plan ?? "");
+
+  // ── Map UI state ──────────────────────────────────────────────────────────
+  const [activeFilters, setActiveFilters] = useState<string[]>(["sve"]);
+  const [addMode, setAddMode] = useState<MarkerType | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // ── Data queries ──────────────────────────────────────────────────────────
+  const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarker[]>({
+    queryKey: ["/api/map-hack/markers"],
+    refetchInterval: 30000,
+  });
+
+  const { data: chatMessages = [], refetch: refetchChat } = useQuery<MapChatMessage[]>({
+    queryKey: ["/api/map-hack/chat"],
+    refetchInterval: 30000,
+  });
+
+  const { data: safeZone = null } = useQuery<MapSafeZone | null>({
+    queryKey: ["/api/map-hack/safe-zone"],
+  });
+
+  // ── Safe zone alarm: pauk markers inside user's radius ────────────────────
+  const paukInZone = safeZone?.lat && safeZone?.lng
+    ? mapMarkers.filter(m => m.type === "pauk" && haversineMeters(
+        parseFloat(safeZone.lat), parseFloat(safeZone.lng),
+        parseFloat(m.lat), parseFloat(m.lng)
+      ) <= safeZone.radiusMeters)
+    : [];
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  const addMarkerMutation = useMutation({
+    mutationFn: (data: { type: MarkerType; lat: number; lng: number }) =>
+      apiRequest("POST", "/api/map-hack/markers", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setAddMode(null);
+      toast({ title: "Marker dodat", description: "Marker je dodat na mapu." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+      setAddMode(null);
+    },
+  });
+
+  const expireMarkerMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("POST", `/api/map-hack/markers/${id}/expire`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setSelectedMarker(null);
+      toast({ title: "Marker uklonjen" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const sendChatMutation = useMutation({
+    mutationFn: (text: string) => apiRequest("POST", "/api/map-hack/chat", { text }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+      setChatInput("");
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const setSafeZoneMutation = useMutation({
+    mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
+      apiRequest("PUT", "/api/map-hack/safe-zone", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
+      toast({ title: "Safe Zone postavljena", description: "Zona alarma je ažurirana." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  // ── Chat scroll on open ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  // ── Filter toggle helper ──────────────────────────────────────────────────
+  const toggleFilter = (f: string) => {
+    if (f === "sve") { setActiveFilters(["sve"]); return; }
+    setActiveFilters(prev => {
+      const without = prev.filter(x => x !== "sve" && x !== f);
+      const adding = !prev.includes(f);
+      const next = adding ? [...without, f] : without;
+      return next.length === 0 ? ["sve"] : next;
+    });
+  };
+
+  // ── Time helpers ──────────────────────────────────────────────────────────
+  const timeAgo = (d: string | Date) => {
+    const diff = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "upravo";
+    if (mins < 60) return `${mins}m`;
+    return `${Math.floor(mins / 60)}h`;
+  };
+  const timeLeft = (d: string | Date | null) => {
+    if (!d) return null;
+    const diff = new Date(d).getTime() - Date.now();
+    if (diff <= 0) return "isteklo";
+    const mins = Math.ceil(diff / 60000);
+    return mins < 60 ? `${mins}min` : `${Math.ceil(mins / 60)}h`;
+  };
 
   const handleResetProfile = async () => {
     setIsResetting(true);
@@ -641,13 +757,23 @@ export default function MapHackNS() {
     }
   };
 
+  const ALL_FILTER_TYPES = ["sve", "zlatni_minut", "pauk", "stek", "safe_zone"];
+  const markerCounts: Record<string, number> = {
+    sve: mapMarkers.length,
+    zlatni_minut: mapMarkers.filter(m => m.type === "zlatni_minut").length,
+    pauk: mapMarkers.filter(m => m.type === "pauk").length,
+    stek: mapMarkers.filter(m => m.type === "stek").length,
+    safe_zone: mapMarkers.filter(m => m.type === "safe_zone").length,
+  };
+
+  const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
+
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
 
       {/* ─── Top bar ─────────────────────────────────────────────────────────── */}
       <div className="relative z-30 flex items-center justify-between px-3 py-2 flex-shrink-0"
         style={{ background: "rgba(13,17,23,0.92)", borderBottom: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(8px)" }}>
-
         <div className="flex items-center gap-2">
           <Link href="/">
             <Button size="icon" variant="ghost" className="text-gray-300 h-8 w-8" data-testid="button-back-home">
@@ -661,35 +787,24 @@ export default function MapHackNS() {
             <p className="text-xs font-semibold text-white leading-tight" data-testid="text-map-nickname">{user.mapNickname}</p>
             <p className="text-xs" style={{ color: "#6b7280" }}>{planLabel(mapStatus?.plan ?? null)}</p>
           </div>
-          <span className="text-white font-bold text-sm">NS Map Hack</span>
+          <span className="text-white font-bold text-sm tracking-tight">NS Map Hack</span>
         </div>
-
         <div className="flex items-center gap-1.5">
           {showTrialBanner && (
             <Link href="/map-hack/subscribe">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs cursor-pointer"
                 data-testid="banner-trial-expiry"
                 style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.3)", color: "#fbbf24" }}>
-                <AlertTriangle size={10} />
-                {mapStatus?.daysLeft}d
+                <AlertTriangle size={10} /> {mapStatus?.daysLeft}d
               </div>
             </Link>
           )}
           <Link href="/map-hack/subscribe">
-            <Button size="sm" variant="ghost" data-testid="button-view-plans"
-              className="h-8 text-xs text-gray-400 px-2">
-              Plan
-            </Button>
+            <Button size="sm" variant="ghost" data-testid="button-view-plans" className="h-8 text-xs text-gray-400 px-2">Plan</Button>
           </Link>
           {user.isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-gray-600 px-2"
-              onClick={handleResetProfile}
-              disabled={isResetting}
-              data-testid="button-reset-profile"
-            >
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-gray-600 px-2"
+              onClick={handleResetProfile} disabled={isResetting} data-testid="button-reset-profile">
               {isResetting ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
             </Button>
           )}
@@ -697,14 +812,249 @@ export default function MapHackNS() {
         </div>
       </div>
 
-      {/* ─── Full-screen Leaflet map ────────────────────────────────────────── */}
+      {/* ─── Map + overlay container ─────────────────────────────────────────── */}
       <div className="flex-1 relative overflow-hidden">
+
+        {/* Leaflet map (base layer) */}
         <MapHackMap
-          mapNickname={user.mapNickname ?? ""}
-          avatarId={user.mapAvatarId ?? 1}
-          plan={mapStatus?.plan ?? null}
-          isAdmin={user.isAdmin ?? false}
+          markers={mapMarkers}
+          activeFilters={activeFilters}
+          safeZone={safeZone}
+          isPremium={isPremium}
+          isAddMode={addMode !== null}
+          onMarkerClick={setSelectedMarker}
+          onMapClick={(lat, lng) => {
+            if (!addMode) return;
+            addMarkerMutation.mutate({ type: addMode, lat, lng });
+          }}
+          onContextMenu={(lat, lng) => {
+            setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
+          }}
         />
+
+        {/* ── Add-mode banner ────────────────────────────────────────────────── */}
+        {addMode && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium pointer-events-auto"
+            style={{ background: "#1e2330", border: `1px solid ${markerColor(addMode)}`, color: markerColor(addMode) }}>
+            <Target size={14} />
+            Tapni na mapu — {markerLabel(addMode)}
+            <button onClick={() => setAddMode(null)} className="ml-1 opacity-60 hover:opacity-100">
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
+        {/* ── Safe zone alarm banner ─────────────────────────────────────────── */}
+        {paukInZone.length > 0 && (
+          <div className="absolute top-3 left-3 right-14 z-20 flex items-center gap-2 px-3 py-2 rounded-lg"
+            data-testid="banner-safe-zone-alarm"
+            style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.5)", color: "#fca5a5" }}>
+            <AlertTriangle size={14} className="shrink-0" />
+            <span className="text-xs font-medium">
+              Pauk radar u Safe Zoni! ({paukInZone.length} aktivn{paukInZone.length === 1 ? "i" : "ih"})
+            </span>
+          </div>
+        )}
+
+        {/* ── Filter tabs ────────────────────────────────────────────────────── */}
+        <div className={`absolute ${paukInZone.length > 0 ? "top-14" : "top-3"} left-3 right-3 z-10 flex gap-1.5 overflow-x-auto pb-1 scrollbar-none`}>
+          {ALL_FILTER_TYPES.map(f => {
+            const isActive = activeFilters.includes(f);
+            const isLocked = f === "stek" && !isPremium;
+            return (
+              <button
+                key={f}
+                data-testid={`filter-tab-${f}`}
+                onClick={() => toggleFilter(f)}
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{
+                  background: isActive
+                    ? (f === "sve" ? "#6366f1" : markerColor(f as MarkerType))
+                    : "rgba(13,17,23,0.85)",
+                  color: isActive ? "#fff" : "#9ca3af",
+                  border: `1px solid ${isActive ? "transparent" : "rgba(255,255,255,0.1)"}`,
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                {f === "sve" ? "Sve" : markerEmoji(f)}
+                {f !== "sve" && ` ${markerCounts[f]}`}
+                {isLocked && <Lock size={9} className="ml-0.5" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Selected marker info card ──────────────────────────────────────── */}
+        {selectedMarker && (
+          <div className="absolute bottom-24 left-3 right-3 z-20 rounded-xl p-3"
+            data-testid="card-selected-marker"
+            style={{ background: "#1e2330", border: `1px solid ${markerColor(selectedMarker.type)}30` }}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{markerEmoji(selectedMarker.type)}</span>
+                <div>
+                  <div className="font-semibold text-sm" style={{ color: markerColor(selectedMarker.type) }}>
+                    {markerLabel(selectedMarker.type)}
+                  </div>
+                  {selectedMarker.label && <div className="text-xs text-gray-400">{selectedMarker.label}</div>}
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
+                    <Clock size={10} />
+                    {timeAgo(selectedMarker.createdAt)}
+                    {selectedMarker.expiresAt && (
+                      <span className="text-orange-400">· ističe za {timeLeft(selectedMarker.expiresAt)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {user.isAdmin && (
+                  <Button size="icon" variant="ghost" data-testid="btn-expire-marker"
+                    onClick={() => expireMarkerMutation.mutate(selectedMarker.id)}
+                    className="h-7 w-7 text-red-400">
+                    <Trash2 size={13} />
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" data-testid="btn-close-marker-info"
+                  onClick={() => setSelectedMarker(null)} className="h-7 w-7 text-gray-400">
+                  <X size={13} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Chat panel ────────────────────────────────────────────────────── */}
+        {chatOpen && (
+          <div className="absolute bottom-20 right-3 z-20 w-72 rounded-xl flex flex-col"
+            data-testid="panel-chat"
+            style={{ background: "#1e2330", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "50vh" }}>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+              <span className="text-sm font-semibold text-white">Park Chat</span>
+              <button onClick={() => setChatOpen(false)} className="text-gray-400 hover:text-white">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2" style={{ minHeight: 120 }}>
+              {chatMessages.length === 0 && (
+                <div className="text-xs text-gray-500 text-center py-4">Nema poruka. Budi prvi!</div>
+              )}
+              {chatMessages.map(msg => (
+                <div key={msg.id} className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                    style={{ background: AVATAR_COLORS[(msg.avatarId - 1) % AVATAR_COLORS.length], fontSize: 9 }}>
+                    {msg.avatarId}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-medium text-gray-300">{msg.mapNickname}</span>
+                      <span className="text-xs text-gray-600">{timeAgo(msg.createdAt)}</span>
+                    </div>
+                    <p className="text-xs text-gray-200 break-words">{msg.text}</p>
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="flex items-center gap-1.5 p-2 border-t border-white/10">
+              <Input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) sendChatMutation.mutate(chatInput); }}
+                placeholder="Napiši poruku..."
+                data-testid="input-chat-message"
+                className="h-8 text-xs"
+                style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", color: "#e5e7eb" }}
+                maxLength={280}
+              />
+              <Button size="icon" data-testid="btn-send-chat"
+                onClick={() => { if (chatInput.trim()) sendChatMutation.mutate(chatInput); }}
+                disabled={sendChatMutation.isPending || !chatInput.trim()}
+                className="h-8 w-8 shrink-0"
+                style={{ background: "#f97316" }}>
+                <Send size={12} />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Bottom action bar ─────────────────────────────────────────────── */}
+        <div className="absolute bottom-4 left-3 right-3 z-10 flex items-center justify-between gap-2">
+
+          {/* Add-marker buttons */}
+          <div className="flex gap-1.5">
+            {(["zlatni_minut", "pauk", "stek", "safe_zone"] as MarkerType[]).map(type => {
+              const locked = type === "stek" && !isPremium;
+              return (
+                <button
+                  key={type}
+                  data-testid={`btn-add-${type}`}
+                  title={markerLabel(type)}
+                  onClick={() => {
+                    if (locked) {
+                      toast({ title: "Premium plan potreban", description: "Štek lokacije su dostupne Premium korisnicima." });
+                      return;
+                    }
+                    setAddMode(prev => prev === type ? null : type);
+                  }}
+                  className="flex items-center justify-center rounded-full transition-all"
+                  style={{
+                    width: 42, height: 42,
+                    background: addMode === type ? markerColor(type) : "rgba(13,17,23,0.85)",
+                    border: `1px solid ${locked ? "#374151" : markerColor(type)}`,
+                    color: locked ? "#6b7280" : (addMode === type ? "#fff" : markerColor(type)),
+                    backdropFilter: "blur(8px)",
+                    fontSize: 17,
+                    opacity: locked ? 0.6 : 1,
+                  }}
+                >
+                  {locked ? <Lock size={14} /> : markerEmoji(type)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-1.5">
+            {safeZone && (
+              <div className="flex items-center gap-1 px-2 py-1.5 rounded-full text-xs"
+                style={{ background: paukInZone.length > 0 ? "rgba(239,68,68,0.2)" : "rgba(59,130,246,0.15)",
+                  border: `1px solid ${paukInZone.length > 0 ? "rgba(239,68,68,0.5)" : "rgba(59,130,246,0.3)"}`,
+                  color: paukInZone.length > 0 ? "#fca5a5" : "#93c5fd" }}>
+                <ShieldCheck size={12} />
+                {paukInZone.length > 0 ? `ALARM (${paukInZone.length})` : "Safe Zone"}
+              </div>
+            )}
+            <button data-testid="btn-refresh-map"
+              onClick={() => { refetchMarkers(); refetchChat(); }}
+              className="flex items-center justify-center rounded-full"
+              style={{ width: 38, height: 38, background: "rgba(13,17,23,0.85)",
+                border: "1px solid rgba(255,255,255,0.12)", color: "#9ca3af", backdropFilter: "blur(8px)" }}>
+              <RefreshCw size={15} />
+            </button>
+            <button data-testid="btn-toggle-chat"
+              onClick={() => setChatOpen(p => !p)}
+              className="relative flex items-center justify-center rounded-full"
+              style={{ width: 42, height: 42,
+                background: chatOpen ? "#f97316" : "rgba(13,17,23,0.85)",
+                border: `1px solid ${chatOpen ? "#f97316" : "rgba(255,255,255,0.12)"}`,
+                color: chatOpen ? "#fff" : "#9ca3af", backdropFilter: "blur(8px)" }}>
+              <MessageSquare size={17} />
+              {chatMessages.length > 0 && !chatOpen && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
+                  style={{ width: 16, height: 16, background: "#ef4444", fontSize: 9 }}>
+                  {chatMessages.length > 9 ? "9+" : chatMessages.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Right-click hint ──────────────────────────────────────────────── */}
+        <div className="absolute bottom-20 left-3 z-10 hidden sm:block text-xs pointer-events-none"
+          style={{ color: "#374151" }}>
+          Desni klik → Safe Zone alarm
+        </div>
+
       </div>
     </div>
   );
