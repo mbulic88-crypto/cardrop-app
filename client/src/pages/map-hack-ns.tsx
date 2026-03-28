@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, ShieldCheck, Trash2, Target, Bell, Navigation, Truck } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -918,6 +918,7 @@ export default function MapHackNS() {
         ] as const).map(item => {
           const locked = item.type === "stek" && !isPremium;
           const count = mapMarkers.filter(m => m.type === item.type).length;
+          const isActive = activeTab === item.type;
           return (
             <button
               key={item.type}
@@ -926,13 +927,13 @@ export default function MapHackNS() {
                 setActiveTab(item.type);
                 if (!locked) setAddMode(item.type);
               }}
-              className="flex-1 flex flex-col items-center py-1.5 rounded-lg"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full"
               style={{
-                background: activeTab === item.type ? markerColor(item.type) + "22" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${activeTab === item.type ? markerColor(item.type) + "55" : "rgba(255,255,255,0.08)"}`,
+                background: isActive ? markerColor(item.type) + "25" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${isActive ? markerColor(item.type) + "60" : "rgba(255,255,255,0.1)"}`,
               }}>
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span className="text-xs font-medium mt-0.5" style={{ color: activeTab === item.type ? markerColor(item.type) : "#6b7280", fontSize: 10 }}>
+              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <span className="font-semibold whitespace-nowrap" style={{ color: isActive ? markerColor(item.type) : "#9ca3af", fontSize: 11 }}>
                 {item.label.split(" ")[0]}{locked ? " 🔒" : count > 0 ? ` (${count})` : ""}
               </span>
             </button>
@@ -1060,9 +1061,9 @@ export default function MapHackNS() {
                   data-testid="btn-navigiraj-zlatni"
                   href={`https://www.google.com/maps?q=${firstZlatni.lat},${firstZlatni.lng}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold"
-                  style={{ background: "rgba(249,115,22,0.2)", color: "#f97316", border: "1px solid rgba(249,115,22,0.35)" }}>
-                  Navigiraj <Navigation size={10} />
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.08)", color: "#e5e7eb", border: "1px solid rgba(255,255,255,0.15)" }}>
+                  Navigiraj »
                 </a>
               </div>
             </>
@@ -1117,9 +1118,9 @@ export default function MapHackNS() {
                 <button
                   data-testid="btn-detalji-pauk"
                   onClick={() => setActiveTab("pauk")}
-                  className="flex-1 py-1.5 rounded-lg text-xs font-semibold"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af" }}>
-                  Detalji &rsaquo;&rsaquo;
+                  className="flex-1 py-1.5 rounded-lg text-xs font-bold"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb" }}>
+                  Detalji »
                 </button>
               </div>
             </>
@@ -1138,43 +1139,48 @@ export default function MapHackNS() {
 
         {/* Card 3 — Safe Zone Alarm */}
         <div className="rounded-xl p-3" data-testid="card-safe-zone-alarm"
-          style={{ background: "#12161e", border: `1px solid ${alarmActive ? "rgba(239,68,68,0.5)" : "rgba(59,130,246,0.2)"}` }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center rounded-lg"
-                style={{ width: 32, height: 32, background: alarmActive ? "rgba(239,68,68,0.2)" : "rgba(59,130,246,0.12)" }}>
-                {alarmActive
-                  ? <AlertTriangle size={16} style={{ color: "#f87171" }} />
-                  : <ShieldCheck size={16} style={{ color: "#93c5fd" }} />}
+          style={{ background: "#12161e", border: `1px solid ${alarmActive ? "rgba(239,68,68,0.5)" : "rgba(59,130,246,0.22)"}` }}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ width: 32, height: 32, background: alarmActive ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)",
+                  border: `2px solid ${alarmActive ? "#ef4444" : "rgba(239,68,68,0.5)"}` }}>
+                <AlertTriangle size={15} style={{ color: alarmActive ? "#f87171" : "#ef4444" }} />
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-bold text-white">Safe Zone Alarm</p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  {safeZone ? `${safeZone.radiusMeters}m radijus` : "Nije postavljena"}
-                </p>
+                {alarmActive ? (
+                  <>
+                    <p className="text-xs font-bold mt-0.5 animate-pulse" style={{ color: "#f87171" }}>
+                      PAUK JE BLIZU TVOG AUTA!
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "#f97316" }}>Alarm Aktiviran!</p>
+                  </>
+                ) : safeZone ? (
+                  <>
+                    <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
+                      {safeZone.radiusMeters}m radijus aktiviran
+                    </p>
+                    <p className="text-xs mt-0.5 font-medium" style={{ color: "#f97316" }}>Alarm Aktiviran!</p>
+                  </>
+                ) : (
+                  <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
+                    Postavi zonu da dobijaš alarm
+                  </p>
+                )}
               </div>
             </div>
-            {/* Timer-style icon on right when alarm active */}
-            {alarmActive && (
-              <div className="flex items-center justify-center rounded-full"
-                style={{ width: 36, height: 36, background: "rgba(239,68,68,0.12)", border: "2px solid rgba(239,68,68,0.3)" }}>
-                <Clock size={16} style={{ color: "#f87171" }} />
+            {/* Blue timer circle — always visible when zone set or alarm */}
+            {(safeZone || alarmActive) && (
+              <div className="flex items-center justify-center rounded-full flex-shrink-0 ml-2"
+                style={{ width: 48, height: 48,
+                  background: alarmActive ? "rgba(239,68,68,0.1)" : "rgba(59,130,246,0.12)",
+                  border: `2px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(59,130,246,0.4)"}`,
+                  boxShadow: `0 0 12px ${alarmActive ? "rgba(239,68,68,0.25)" : "rgba(59,130,246,0.25)"}` }}>
+                <Clock size={20} style={{ color: alarmActive ? "#f87171" : "#93c5fd" }} />
               </div>
             )}
           </div>
-          {alarmActive ? (
-            <p className="text-xs font-bold mb-1 animate-pulse" style={{ color: "#f87171" }}>
-              PAUK JE BLIZU TVOG AUTA! ({paukInZone.length} u zoni)
-            </p>
-          ) : safeZone ? (
-            <p className="text-xs" style={{ color: "#4b5563" }}>
-              Zona aktivna — nema pauka u radijusu. Alarm Aktiviran!
-            </p>
-          ) : (
-            <p className="text-xs" style={{ color: "#4b5563" }}>
-              Postavi zonu da dobijaš alarm kada pauk uđe u tvoj radijus.
-            </p>
-          )}
           <button
             data-testid="btn-set-safe-zone"
             onClick={() => setSafeZoneMutation.mutate({ lat: 45.2671, lng: 19.8335, radiusMeters: 300 })}
