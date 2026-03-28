@@ -366,11 +366,13 @@ export default function MapHackNS() {
   const [activeTab, setActiveTab] = useState<MarkerType>("zlatni_minut");
   const [addMode, setAddMode] = useState<MarkerType | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [chatCooldown, setChatCooldown] = useState(0);
+  const [smsOpen, setSmsOpen] = useState(false);
   const [izdajOpen, setIzdajOpen] = useState(false);
   const [aktivnoOpen, setAktivnoOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isMapView = viewMode === "map_view";
 
@@ -417,14 +419,35 @@ export default function MapHackNS() {
     },
   });
 
+  function startCooldown(seconds: number) {
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    setChatCooldown(seconds);
+    cooldownRef.current = setInterval(() => {
+      setChatCooldown(prev => {
+        if (prev <= 1) { clearInterval(cooldownRef.current!); cooldownRef.current = null; return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
   const sendChatMutation = useMutation({
     mutationFn: (text: string) => apiRequest("POST", "/api/map-hack/chat", { text }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
       setChatInput("");
+      startCooldown(60);
     },
     onError: (err: any) => {
-      toast({ title: "Greška", description: err.message, variant: "destructive" });
+      const msg: string = err.message ?? "";
+      if (msg.startsWith("429:")) {
+        try {
+          const json = JSON.parse(msg.slice(4).trim());
+          if (json.retryAfter) { startCooldown(json.retryAfter); return; }
+        } catch {}
+        startCooldown(60);
+      } else {
+        toast({ title: "Greška", description: msg, variant: "destructive" });
+      }
     },
   });
 
@@ -441,8 +464,8 @@ export default function MapHackNS() {
   });
 
   useEffect(() => {
-    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatOpen]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   async function savePlan(planId: PlanId) {
     if (planId !== "free") {
@@ -750,7 +773,6 @@ export default function MapHackNS() {
     return mins < 60 ? `${mins}min` : `${Math.ceil(mins / 60)}h`;
   };
 
-  const latestChatMsg = chatMessages[chatMessages.length - 1];
   const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
 
   const firstZlatni = mapMarkers.find(m => m.type === "zlatni_minut");
@@ -788,22 +810,19 @@ export default function MapHackNS() {
           {/* Separator */}
           <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)" }} />
 
-          {/* Chat bubble */}
-          <button
-            data-testid="btn-toggle-chat"
-            onClick={() => setChatOpen(p => !p)}
-            className="relative flex items-center justify-center"
+          {/* Chat indicator — always visible, shows message count */}
+          <div className="relative flex items-center justify-center"
             style={{ width: 34, height: 34, borderRadius: "50%",
-              background: chatOpen ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
-              border: `1px solid ${chatOpen ? "rgba(59,130,246,0.4)" : "rgba(255,255,255,0.12)"}` }}>
-            <MessageSquare size={15} style={{ color: chatOpen ? "#93c5fd" : "#9ca3af" }} />
-            {chatMessages.length > 0 && !chatOpen && (
+              background: "rgba(59,130,246,0.15)",
+              border: "1px solid rgba(59,130,246,0.35)" }}>
+            <MessageSquare size={15} style={{ color: "#93c5fd" }} />
+            {chatMessages.length > 0 && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
                 style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8 }}>
                 {chatMessages.length > 9 ? "9+" : chatMessages.length}
               </span>
             )}
-          </button>
+          </div>
 
           {user.isAdmin && (
             <button
@@ -860,7 +879,7 @@ export default function MapHackNS() {
       </div>
 
       {/* ── Map area ── */}
-      <div className="relative flex-shrink-0" style={{ height: "55vh", minHeight: 220 }}>
+      <div className="relative flex-shrink-0" style={{ height: "45vh", minHeight: 200 }}>
         <MapHackMap
           markers={mapMarkers}
           activeFilters={activeFilters}
@@ -875,8 +894,8 @@ export default function MapHackNS() {
           onContextMenu={(lat, lng) => {
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
-          chatPreviewMsg={!chatOpen && latestChatMsg ? { text: latestChatMsg.text, mapAvatarId: latestChatMsg.mapAvatarId ?? null } : null}
-          onChatClick={() => setChatOpen(true)}
+          chatPreviewMsg={null}
+          onChatClick={undefined}
         />
 
         {/* Add-mode banner */}
@@ -893,12 +912,12 @@ export default function MapHackNS() {
       </div>
 
       {/* ── Action bar below map ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2"
+      <div className="flex-shrink-0 flex items-center gap-1.5 px-2 py-2"
         style={{ background: "#0f1219", borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         {([
-          { type: "zlatni_minut", label: "Zlatni Minut", icon: "⏱" },
-          { type: "pauk",         label: "Pauk Radar",   icon: "🚛" },
-          { type: "stek",        label: "Štek Lokacija", icon: "🏠" },
+          { type: "zlatni_minut", label: "Zlatni", icon: "⏱" },
+          { type: "pauk",         label: "Pauk",   icon: "🚛" },
+          { type: "stek",        label: "Štek",    icon: "🏠" },
         ] as const).map(item => {
           const locked = item.type === "stek" && !isPremium;
           const count = mapMarkers.filter(m => m.type === item.type).length;
@@ -911,18 +930,29 @@ export default function MapHackNS() {
                 setActiveTab(item.type);
                 if (!locked) setAddMode(item.type);
               }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-full"
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full"
               style={{
                 background: isActive ? markerColor(item.type) + "25" : "rgba(255,255,255,0.06)",
                 border: `1px solid ${isActive ? markerColor(item.type) + "60" : "rgba(255,255,255,0.1)"}`,
+                minWidth: 0,
               }}>
-              <span style={{ fontSize: 14 }}>{locked ? "🔒" : item.icon}</span>
-              <span className="font-semibold whitespace-nowrap" style={{ color: isActive ? markerColor(item.type) : "#9ca3af", fontSize: 11 }}>
+              <span style={{ fontSize: 13, flexShrink: 0 }}>{locked ? "🔒" : item.icon}</span>
+              <span className="font-semibold truncate" style={{ color: isActive ? markerColor(item.type) : "#9ca3af", fontSize: 10 }}>
                 {item.label}{count > 0 && !locked ? ` (${count})` : ""}
               </span>
             </button>
           );
         })}
+
+        {/* SMS Parking */}
+        <button
+          data-testid="btn-sms-parking"
+          onClick={() => setSmsOpen(true)}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full"
+          style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.35)", minWidth: 0 }}>
+          <span style={{ fontSize: 13, flexShrink: 0 }}>SMS</span>
+          <span className="font-semibold truncate" style={{ color: "#4ade80", fontSize: 10 }}>Parking</span>
+        </button>
 
         {/* + Izdaj dropdown */}
         <div className="relative">
@@ -966,9 +996,9 @@ export default function MapHackNS() {
         </div>
       </div>
 
-      {/* ── Info cards (scrollable bottom section) ── */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3"
-        style={{ background: "#0d1117" }}>
+      {/* ── Info cards (compact, fixed height) ── */}
+      <div className="flex-shrink-0 overflow-y-auto px-3 py-2 space-y-2"
+        style={{ background: "#0d1117", maxHeight: 180 }}>
 
         {/* Card 1 — Zlatni Minut */}
         <div className="rounded-xl p-3" data-testid="card-zlatni-minut"
@@ -1176,55 +1206,93 @@ export default function MapHackNS() {
       </div>
 
 
-      {/* Chat panel (overlay) */}
-      {chatOpen && (
-        <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col"
-          data-testid="panel-chat"
-          style={{ background: "#1a1f2b", borderTop: "1px solid rgba(255,255,255,0.1)", maxHeight: "55vh" }}>
-          <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-            <span className="text-sm font-semibold text-white">Park Chat</span>
-            <button onClick={() => setChatOpen(false)} className="text-gray-400 hover:text-white">
-              <X size={16} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2" style={{ minHeight: 120 }}>
-            {chatMessages.length === 0 && (
-              <p className="text-xs text-gray-500 text-center py-4">Nema poruka. Budi prvi!</p>
-            )}
-            {chatMessages.map(msg => (
-              <div key={msg.id} className="flex items-start gap-2">
-                <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
-                  style={{ background: AVATAR_COLORS[(msg.avatarId - 1) % AVATAR_COLORS.length], fontSize: 9 }}>
-                  {msg.avatarId}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-medium text-gray-300">{msg.mapNickname}</span>
-                    <span className="text-xs text-gray-600">{timeAgo(msg.createdAt)}</span>
-                  </div>
-                  <p className="text-xs text-gray-200 break-words">{msg.text}</p>
-                </div>
+      {/* ── Chat (inline, always visible) ── */}
+      <div className="flex flex-col flex-1 overflow-hidden"
+        data-testid="panel-chat"
+        style={{ background: "#1a1f2b", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+        <div className="flex items-center px-3 py-1.5 border-b border-white/10">
+          <MessageSquare size={12} style={{ color: "#93c5fd" }} />
+          <span className="ml-1.5 text-xs font-semibold text-gray-300">Park Chat</span>
+          <span className="ml-1.5 text-xs text-gray-600">· 1 poruka/min</span>
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+          {chatMessages.length === 0 && (
+            <p className="text-xs text-gray-500 text-center py-3">Nema poruka. Budi prvi!</p>
+          )}
+          {chatMessages.map(msg => (
+            <div key={msg.id} className="flex items-start gap-2">
+              <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
+                style={{ background: AVATAR_COLORS[(msg.avatarId - 1) % AVATAR_COLORS.length], fontSize: 9 }}>
+                {msg.avatarId}
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 border-t border-white/10">
-            <Input
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) sendChatMutation.mutate(chatInput); }}
-              placeholder="Napiši poruku..."
-              data-testid="input-chat-message"
-              className="h-9 text-sm"
-              style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", color: "#e5e7eb" }}
-              maxLength={280}
-            />
-            <Button size="icon" data-testid="btn-send-chat"
-              onClick={() => { if (chatInput.trim()) sendChatMutation.mutate(chatInput); }}
-              disabled={sendChatMutation.isPending || !chatInput.trim()}
-              style={{ background: "#f97316" }}>
-              <Send size={14} />
-            </Button>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-gray-300">{msg.mapNickname}</span>
+                  <span className="text-xs text-gray-600">{timeAgo(msg.createdAt)}</span>
+                </div>
+                <p className="text-xs text-gray-200 break-words">{msg.text}</p>
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2 border-t border-white/10">
+          <Input
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && chatInput.trim() && !chatCooldown) sendChatMutation.mutate(chatInput); }}
+            placeholder={chatCooldown > 0 ? `Čekaj ${chatCooldown}s...` : "Napiši poruku..."}
+            data-testid="input-chat-message"
+            className="h-8 text-xs"
+            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", color: "#e5e7eb" }}
+            maxLength={280}
+            disabled={chatCooldown > 0}
+          />
+          <Button size="icon" data-testid="btn-send-chat"
+            onClick={() => { if (chatInput.trim() && !chatCooldown) sendChatMutation.mutate(chatInput); }}
+            disabled={sendChatMutation.isPending || !chatInput.trim() || chatCooldown > 0}
+            style={{ background: chatCooldown > 0 ? "#374151" : "#f97316", flexShrink: 0 }}>
+            {chatCooldown > 0 ? <span style={{ fontSize: 9, fontWeight: 700 }}>{chatCooldown}</span> : <Send size={13} />}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── SMS Parking Modal ── */}
+      {smsOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)" }}
+          onClick={() => setSmsOpen(false)}>
+          <div className="w-full rounded-t-2xl p-4"
+            style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 480 }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-bold text-white">SMS Parking — Novi Sad</p>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Izaberi zonu, otvara SMS aplikaciju na 9111</p>
+              </div>
+              <button onClick={() => setSmsOpen(false)} className="text-gray-500"><X size={16} /></button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {([
+                { zona: "1", label: "Zona 1", sublabel: "Crvena · Centar", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+                { zona: "2", label: "Zona 2", sublabel: "Žuta · Polucentar", color: "#eab308", bg: "rgba(234,179,8,0.12)" },
+                { zona: "3", label: "Zona 3", sublabel: "Zelena · Periferija", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+              ]).map(({ zona, label, sublabel, color, bg }) => (
+                <a key={zona}
+                  data-testid={`btn-sms-zona-${zona}`}
+                  href={`sms:9111?body=NS${zona}`}
+                  onClick={() => setSmsOpen(false)}
+                  className="flex flex-col items-center py-3 px-2 rounded-xl text-center"
+                  style={{ background: bg, border: `1px solid ${color}40` }}>
+                  <span className="text-lg font-black" style={{ color }}>{zona}</span>
+                  <span className="text-xs font-bold mt-0.5" style={{ color }}>{label}</span>
+                  <span className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{sublabel}</span>
+                </a>
+              ))}
+            </div>
+            <p className="text-xs text-center" style={{ color: "#4b5563" }}>
+              Šalje SMS na <strong style={{ color: "#9ca3af" }}>9111</strong> · Naplaćuje se standardna SMS tarifa
+            </p>
           </div>
         </div>
       )}

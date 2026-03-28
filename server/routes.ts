@@ -376,6 +376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const chatRateLimitMap = new Map<string, number>();
+  const CHAT_RATE_LIMIT_MS = 60_000;
+
   app.post('/api/map-hack/chat', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
@@ -387,6 +390,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Potreban je Map Hack profil" });
       }
 
+      const lastSent = chatRateLimitMap.get(userId) ?? 0;
+      const elapsed = Date.now() - lastSent;
+      if (elapsed < CHAT_RATE_LIMIT_MS) {
+        const retryAfter = Math.ceil((CHAT_RATE_LIMIT_MS - elapsed) / 1000);
+        return res.status(429).json({ message: `Sačekaj ${retryAfter}s pre sledeće poruke`, retryAfter });
+      }
+
       const { text } = req.body;
       if (!text || typeof text !== 'string' || text.trim().length === 0) {
         return res.status(400).json({ message: "Poruka ne može biti prazna" });
@@ -395,6 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Poruka je predugačka (max 280 znakova)" });
       }
 
+      chatRateLimitMap.set(userId, Date.now());
       const msg = await storage.createMapChatMessage({
         userId,
         mapNickname: user.mapNickname,
