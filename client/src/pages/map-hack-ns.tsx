@@ -1392,7 +1392,7 @@ export default function MapHackNS() {
 
       {/* ── SMS Parking Modal ── */}
       {smsOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)" }}
           onClick={() => setSmsOpen(false)}>
           <div className="w-full rounded-t-2xl flex flex-col"
