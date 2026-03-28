@@ -1396,11 +1396,11 @@ export default function MapHackNS() {
           style={{ background: "rgba(0,0,0,0.7)" }}
           onClick={() => setSmsOpen(false)}>
           <div className="w-full rounded-t-2xl flex flex-col"
-            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520, maxHeight: "88vh" }}
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520, height: "88vh" }}
             onClick={e => e.stopPropagation()}>
 
             {/* Header — sticky, never scrolls */}
-            <div className="flex-shrink-0 flex items-center justify-between px-4 pt-4 pb-3"
+            <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2.5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div>
                 <p className="font-bold" style={{ color: "#f9fafb", fontSize: 15 }}>SMS Parking — Novi Sad</p>
@@ -1417,24 +1417,26 @@ export default function MapHackNS() {
             <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
 
             {/* Plate input */}
-            <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-xs font-semibold mb-2" style={{ color: "#9ca3af" }}>REGISTARSKA TABLICA</p>
+            <div className="px-4 pt-2.5 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="text-xs font-semibold mb-1.5" style={{ color: "#9ca3af" }}>REGISTARSKA TABLICA (opciono)</p>
               <Input
                 value={plateInput}
                 onChange={e => setPlateInput(e.target.value.toUpperCase().replace(/\s/g, ""))}
                 placeholder="NS123AB"
                 data-testid="input-plate"
-                className="h-11 text-base font-bold text-center tracking-widest"
+                className="h-9 text-base font-bold text-center tracking-widest"
                 style={{ background: "#1a1f2b", border: "1.5px solid rgba(255,255,255,0.2)", color: "#f9fafb", letterSpacing: "0.12em" }}
                 maxLength={8}
               />
-              <p className="text-xs mt-1.5" style={{ color: plateInput.trim().length > 0 ? "#22c55e" : "#9ca3af" }}>
-                {plateInput.trim().length > 0 ? `Tablica ${plateInput.trim().toUpperCase()} — tapni zonu` : "Opciono: unesi tablicu da se popuni SMS automatski"}
-              </p>
+              {plateInput.trim().length > 0 && (
+                <p className="text-xs mt-1" style={{ color: "#22c55e" }}>
+                  {plateInput.trim().toUpperCase()} — tapni zonu da posalješ SMS
+                </p>
+              )}
             </div>
 
             {/* GPS suggestion */}
-            <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <Navigation size={13} style={{ color: gpsLoading ? "#9ca3af" : suggestedZone ? "#22c55e" : "#6b7280", flexShrink: 0 }} />
               {gpsLoading ? (
                 <span className="text-xs" style={{ color: "#9ca3af" }}>Određujem lokaciju...</span>
@@ -1463,9 +1465,9 @@ export default function MapHackNS() {
             </div>
 
             {/* Zone grid */}
-            <div className="px-4 py-3">
-              <p className="text-xs font-semibold mb-2.5" style={{ color: "#6b7280" }}>IZABERI ZONU</p>
-              <div className="grid grid-cols-2 gap-2">
+            <div className="px-4 pt-2.5 pb-2">
+              <p className="text-xs font-semibold mb-2" style={{ color: "#6b7280" }}>IZABERI ZONU</p>
+              <div className="grid grid-cols-2 gap-1.5">
                 {NS_ZONES.map(zone => {
                   const plate = plateInput.trim();
                   const isSuggested = suggestedZone === zone.sms;
@@ -1480,7 +1482,7 @@ export default function MapHackNS() {
                           : `sms:${zone.sms}`;
                         window.open(smsUrl, "_self");
                       }}
-                      className="relative flex items-center gap-3 px-3 py-3 rounded-xl text-left"
+                      className="relative flex items-center gap-2 px-2.5 py-2 rounded-xl text-left"
                       style={{
                         background: isSuggested ? zone.bg.replace("0.18", "0.28") : zone.bg,
                         border: `1.5px solid ${isSuggested ? zone.color + "99" : zone.color + "40"}`,
