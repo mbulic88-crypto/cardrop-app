@@ -419,6 +419,8 @@ export default function MapHackNS() {
     },
   });
 
+  useEffect(() => () => { if (cooldownRef.current) clearInterval(cooldownRef.current); }, []);
+
   function startCooldown(seconds: number) {
     if (cooldownRef.current) clearInterval(cooldownRef.current);
     setChatCooldown(seconds);
@@ -1278,16 +1280,15 @@ export default function MapHackNS() {
                 { zona: "2", label: "Zona 2", sublabel: "Žuta · Polucentar", color: "#eab308", bg: "rgba(234,179,8,0.12)" },
                 { zona: "3", label: "Zona 3", sublabel: "Zelena · Periferija", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
               ]).map(({ zona, label, sublabel, color, bg }) => (
-                <a key={zona}
+                <button key={zona}
                   data-testid={`btn-sms-zona-${zona}`}
-                  href={`sms:9111?body=NS${zona}`}
-                  onClick={() => setSmsOpen(false)}
+                  onClick={() => { setSmsOpen(false); window.open(`sms:9111?body=NS${zona}`, "_self"); }}
                   className="flex flex-col items-center py-3 px-2 rounded-xl text-center"
                   style={{ background: bg, border: `1px solid ${color}40` }}>
                   <span className="text-lg font-black" style={{ color }}>{zona}</span>
                   <span className="text-xs font-bold mt-0.5" style={{ color }}>{label}</span>
                   <span className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{sublabel}</span>
-                </a>
+                </button>
               ))}
             </div>
             <p className="text-xs text-center" style={{ color: "#4b5563" }}>
