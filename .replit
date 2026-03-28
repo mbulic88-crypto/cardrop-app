@@ -54,6 +54,7 @@ VAPID_PUBLIC_KEY = "BOxzPJDRJm_4Xy_lg-iayMLF7FCwLWuUs3Bj2PiRcolN1UoIqj_t8Yi2Tjfd
 VITE_VAPID_PUBLIC_KEY = "BOxzPJDRJm_4Xy_lg-iayMLF7FCwLWuUs3Bj2PiRcolN1UoIqj_t8Yi2TjfdQYoGw5z2I1C3BaAdgK1W192zczs"
 VITE_GOOGLE_CLIENT_ID = "406893244680-ve36p25kiv7hr2g422s3e3qpsb8sgdei.apps.googleusercontent.com"
 VITE_FACEBOOK_APP_ID = "1461490808741960"
+VITE_MAPBOX_TOKEN = "pk.eyJ1IjoiY2FyZHJvcCIsImEiOiJjbW5hcmszYXgwaWl5MzFzaDR2aW5ncWc1In0.A82w8eHoWIQ8Y9L1qmW8sw"
 
 [postMerge]
 path = "scripts/post-merge.sh"

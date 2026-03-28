@@ -23,23 +23,7 @@ export interface MapHackMapProps {
   onChatClick?: () => void;
 }
 
-const NS_LANDMARKS = [
-  { lat: 45.2522, lng: 19.8622, label: "Petrovaradinska tvrđava" },
-  { lat: 45.2509, lng: 19.8232, label: "KCV Bolnica" },
-  { lat: 45.2464, lng: 19.8444, label: "Spens" },
-  { lat: 45.2552, lng: 19.8428, label: "Železnička st." },
-  { lat: 45.2551, lng: 19.8450, label: "Trg slobode" },
-  { lat: 45.2676, lng: 19.8331, label: "Novosadski sajam" },
-  { lat: 45.2553, lng: 19.8514, label: "Dunavski park" },
-  { lat: 45.2557, lng: 19.8432, label: "Futoška pijaca" },
-  { lat: 45.2470, lng: 19.8110, label: "Betanija" },
-  { lat: 45.2390, lng: 19.8420, label: "Liman" },
-  { lat: 45.2620, lng: 19.8150, label: "Detelinar" },
-  { lat: 45.2490, lng: 19.8300, label: "Grbavica" },
-  { lat: 45.2630, lng: 19.8470, label: "Stari Grad" },
-  { lat: 45.2700, lng: 19.8200, label: "Sajmište" },
-  { lat: 45.2610, lng: 19.8530, label: "Podbar" },
-];
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
 const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
 
@@ -116,8 +100,8 @@ export function MapHackMap({
     });
 
     L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19, subdomains: "abcd" }
+      `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`,
+      { maxZoom: 19, tileSize: 256, attribution: "© Mapbox © OpenStreetMap" }
     ).addTo(map);
 
     L.control.zoom({ position: "topright" }).addTo(map);
@@ -143,20 +127,6 @@ export function MapHackMap({
       },
     });
     new CompassControl({ position: "bottomright" }).addTo(map);
-
-    NS_LANDMARKS.forEach(({ lat, lng, label }) => {
-      const icon = L.divIcon({
-        html:
-          `<div style="background:rgba(30,38,60,0.92);color:#e2e8f0;font-size:10px;` +
-          `padding:3px 7px;border-radius:5px;white-space:nowrap;` +
-          `border:1px solid rgba(148,163,184,0.3);pointer-events:none;` +
-          `font-weight:700;letter-spacing:0.03em;` +
-          `box-shadow:0 1px 4px rgba(0,0,0,0.6);">${label}</div>`,
-        className: "",
-        iconAnchor: [0, 0],
-      });
-      L.marker([lat, lng], { icon, interactive: false }).addTo(map);
-    });
 
     map.on("click", (e: L.LeafletMouseEvent) => onMapClickRef.current(e.latlng.lat, e.latlng.lng));
     map.on("contextmenu", (e: L.LeafletMouseEvent) => onContextMenuRef.current(e.latlng.lat, e.latlng.lng));
