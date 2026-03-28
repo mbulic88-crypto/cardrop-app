@@ -34,7 +34,7 @@ export function markerColor(type: MarkerType | string): string {
 export function markerEmoji(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "⏱";
   if (type === "pauk") return "🚛";
-  if (type === "stek") return "🅿";
+  if (type === "stek") return "🏠";
   if (type === "safe_zone") return "🛡";
   return "📍";
 }
@@ -42,7 +42,7 @@ export function markerEmoji(type: MarkerType | string): string {
 export function markerLabel(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "Zlatni Minut";
   if (type === "pauk") return "Pauk Radar";
-  if (type === "stek") return "Štek";
+  if (type === "stek") return "Štek Lokacija";
   if (type === "safe_zone") return "Safe Zone";
   return type;
 }
@@ -87,39 +87,48 @@ export function MapHackMap({
       center: [45.2671, 19.8335],
       zoom: 14,
       minZoom: 13,
-      maxZoom: 17,
+      maxZoom: 18,
       zoomControl: false,
       attributionControl: false,
       maxBounds: L.latLngBounds([45.20, 19.72], [45.36, 19.98]),
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
-      maxZoom: 19,
-    }).addTo(map);
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19 }
+    ).addTo(map);
 
     L.control.zoom({ position: "topright" }).addTo(map);
 
-    const ResetControl = L.Control.extend({
+    const CompassControl = L.Control.extend({
       onAdd() {
-        const btn = L.DomUtil.create("button", "leaflet-bar leaflet-control");
-        btn.title = "Resetuj pogled";
-        btn.style.cssText =
-          "background:rgba(13,17,23,0.9);color:#9ca3af;border:1px solid rgba(255,255,255,0.12);" +
-          "width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;" +
-          "align-items:center;justify-content:center;border-radius:4px;margin-top:4px;";
-        btn.textContent = "⊕";
-        L.DomEvent.on(btn, "click", () => map.setView([45.2671, 19.8335], 14));
-        return btn;
+        const div = L.DomUtil.create("div");
+        div.style.cssText =
+          "width:44px;height:44px;border-radius:50%;" +
+          "background:rgba(15,20,35,0.88);border:2px solid rgba(255,255,255,0.18);" +
+          "display:flex;align-items:center;justify-content:center;" +
+          "cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5);";
+        div.title = "Resetuj pogled";
+        div.innerHTML =
+          `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">` +
+          `<circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>` +
+          `<polygon points="12,3 14.5,12 12,10 9.5,12" fill="#ef4444"/>` +
+          `<polygon points="12,21 9.5,12 12,14 14.5,12" fill="rgba(255,255,255,0.6)"/>` +
+          `<circle cx="12" cy="12" r="2" fill="white"/>` +
+          `</svg>`;
+        L.DomEvent.on(div, "click", () => map.setView([45.2671, 19.8335], 14));
+        return div;
       },
     });
-    new ResetControl({ position: "topright" }).addTo(map);
+    new CompassControl({ position: "bottomright" }).addTo(map);
 
     NS_LANDMARKS.forEach(({ lat, lng, label }) => {
       const icon = L.divIcon({
-        html: `<div style="background:rgba(60,65,80,0.65);color:#9ca3af;font-size:9px;` +
-          `padding:1px 5px;border-radius:3px;white-space:nowrap;` +
-          `border:1px solid rgba(150,150,170,0.2);pointer-events:none;">${label}</div>`,
+        html:
+          `<div style="background:rgba(15,20,35,0.75);color:#cbd5e1;font-size:9px;` +
+          `padding:2px 6px;border-radius:4px;white-space:nowrap;` +
+          `border:1px solid rgba(255,255,255,0.12);pointer-events:none;` +
+          `font-weight:600;letter-spacing:0.02em;">${label}</div>`,
         className: "",
         iconAnchor: [0, 0],
       });
@@ -159,13 +168,20 @@ export function MapHackMap({
       const isLocked = marker.type === "stek" && !isPremium;
       const icon = L.divIcon({
         html:
-          `<div style="width:36px;height:36px;background:${isLocked ? "rgba(55,65,81,0.9)" : color + "cc"};` +
-          `border:2px solid ${isLocked ? "#4b5563" : color};border-radius:50%;` +
-          `display:flex;align-items:center;justify-content:center;font-size:16px;` +
-          `box-shadow:0 0 10px ${isLocked ? "transparent" : color + "60"};cursor:pointer;">` +
-          `${isLocked ? "🔒" : markerEmoji(marker.type)}</div>`,
+          `<div style="` +
+          `background:${isLocked ? "rgba(30,35,50,0.92)" : "rgba(15,20,35,0.88)"};` +
+          `border:2px solid ${isLocked ? "#4b5563" : color};` +
+          `border-radius:20px;padding:4px 10px;` +
+          `display:flex;align-items:center;gap:5px;` +
+          `box-shadow:0 2px 12px ${isLocked ? "rgba(0,0,0,0.4)" : color + "50"};` +
+          `cursor:pointer;white-space:nowrap;` +
+          `font-size:12px;font-weight:600;color:${isLocked ? "#6b7280" : "#fff"};` +
+          `font-family:system-ui,sans-serif;">` +
+          `<span style="font-size:14px;">${isLocked ? "🔒" : markerEmoji(marker.type)}</span>` +
+          `<span>${markerLabel(marker.type)}</span>` +
+          `</div>`,
         className: "",
-        iconAnchor: [18, 18],
+        iconAnchor: [0, 20],
       });
       const lm = L.marker([parseFloat(marker.lat), parseFloat(marker.lng)], { icon }).addTo(
         markersLayerRef.current!
@@ -183,13 +199,19 @@ export function MapHackMap({
       .filter((m) => m.type === "pauk")
       .forEach((m) => {
         L.circle([parseFloat(m.lat), parseFloat(m.lng)], {
-          radius: 150,
+          radius: 180,
           color: "#ef4444",
           fillColor: "#ef4444",
-          fillOpacity: 0.12,
-          weight: 1,
-          opacity: 0.4,
-          dashArray: "4 4",
+          fillOpacity: 0.18,
+          weight: 0,
+          interactive: false,
+        }).addTo(heatmapLayerRef.current!);
+        L.circle([parseFloat(m.lat), parseFloat(m.lng)], {
+          radius: 80,
+          color: "#ef4444",
+          fillColor: "#ff6b35",
+          fillOpacity: 0.35,
+          weight: 0,
           interactive: false,
         }).addTo(heatmapLayerRef.current!);
       });
@@ -201,8 +223,8 @@ export function MapHackMap({
     if (safeZone?.lat && safeZone?.lng) {
       L.circle([parseFloat(safeZone.lat), parseFloat(safeZone.lng)], {
         radius: safeZone.radiusMeters,
-        color: "#3b82f6",
-        fillColor: "#3b82f6",
+        color: "#22c55e",
+        fillColor: "#22c55e",
         fillOpacity: 0.08,
         weight: 2,
         dashArray: "6 4",
@@ -211,5 +233,5 @@ export function MapHackMap({
     }
   }, [safeZone]);
 
-  return <div ref={mapRef} className="absolute inset-0" style={{ background: "#0d1117" }} />;
+  return <div ref={mapRef} className="absolute inset-0" />;
 }
