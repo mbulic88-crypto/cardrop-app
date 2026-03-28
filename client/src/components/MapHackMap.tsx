@@ -52,7 +52,7 @@ export function markerLabel(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "Zlatni Minut";
   if (type === "pauk") return "Pauk Radar";
   if (type === "stek") return "Štek Lokacija";
-  if (type === "safe_zone") return "Safe Zone";
+  if (type === "safe_zone") return "Safe Zone Alarm";
   return type;
 }
 
@@ -177,6 +177,13 @@ export function MapHackMap({
     filtered.forEach((marker) => {
       const color = markerColor(marker.type);
       const isLocked = marker.type === "stek" && !isPremium;
+      const labelHtml = isLocked
+        ? `<span style="font-size:14px;">🔒</span>` +
+          `<span>${markerLabel(marker.type)}</span>` +
+          `<span style="font-size:9px;font-weight:700;color:#f97316;margin-left:2px;">PREMIUM</span>` +
+          `<span style="font-size:14px;">🔒</span>`
+        : `<span style="font-size:14px;">${markerEmoji(marker.type)}</span>` +
+          `<span>${markerLabel(marker.type)}</span>`;
       const icon = L.divIcon({
         html:
           `<div style="` +
@@ -188,8 +195,7 @@ export function MapHackMap({
           `cursor:pointer;white-space:nowrap;` +
           `font-size:12px;font-weight:600;color:${isLocked ? "#6b7280" : "#fff"};` +
           `font-family:system-ui,sans-serif;">` +
-          `<span style="font-size:14px;">${isLocked ? "🔒" : markerEmoji(marker.type)}</span>` +
-          `<span>${markerLabel(marker.type)}</span>` +
+          labelHtml +
           `</div>`,
         className: "",
         iconAnchor: [0, 20],

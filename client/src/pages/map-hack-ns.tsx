@@ -861,7 +861,7 @@ export default function MapHackNS() {
       </div>
 
       {/* ── Map area ── */}
-      <div className="relative flex-shrink-0" style={{ height: "44vh", minHeight: 200 }}>
+      <div className="relative flex-shrink-0" style={{ height: "55vh", minHeight: 220 }}>
         <MapHackMap
           markers={mapMarkers}
           activeFilters={activeFilters}
@@ -917,9 +917,9 @@ export default function MapHackNS() {
                 background: isActive ? markerColor(item.type) + "25" : "rgba(255,255,255,0.06)",
                 border: `1px solid ${isActive ? markerColor(item.type) + "60" : "rgba(255,255,255,0.1)"}`,
               }}>
-              <span style={{ fontSize: 14 }}>{item.icon}</span>
+              <span style={{ fontSize: 14 }}>{locked ? "🔒" : item.icon}</span>
               <span className="font-semibold whitespace-nowrap" style={{ color: isActive ? markerColor(item.type) : "#9ca3af", fontSize: 11 }}>
-                {item.label.split(" ")[0]}{locked ? " 🔒" : count > 0 ? ` (${count})` : ""}
+                {item.label}{count > 0 && !locked ? ` (${count})` : ""}
               </span>
             </button>
           );
@@ -970,42 +970,6 @@ export default function MapHackNS() {
       {/* ── Info cards (scrollable bottom section) ── */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3"
         style={{ background: "#0d1117" }}>
-
-        {/* Selected marker detail card */}
-        {selectedMarker && (
-          <div className="rounded-xl p-3" data-testid="card-selected-marker"
-            style={{ background: `${markerColor(selectedMarker.type)}14`, border: `1px solid ${markerColor(selectedMarker.type)}30` }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span style={{ fontSize: 18 }}>{markerEmoji(selectedMarker.type)}</span>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: markerColor(selectedMarker.type) }}>
-                    {markerLabel(selectedMarker.type)}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                    <Clock size={9} />
-                    {timeAgo(selectedMarker.createdAt)}
-                    {selectedMarker.expiresAt && (
-                      <span style={{ color: "#f97316" }}>· {timeLeft(selectedMarker.expiresAt)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {user.isAdmin && (
-                  <Button size="icon" variant="ghost" data-testid="btn-expire-marker"
-                    onClick={() => expireMarkerMutation.mutate(selectedMarker.id)} className="text-red-400">
-                    <Trash2 size={13} />
-                  </Button>
-                )}
-                <Button size="icon" variant="ghost" data-testid="btn-close-marker-info"
-                  onClick={() => setSelectedMarker(null)} className="text-gray-400">
-                  <X size={13} />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Card 1 — Zlatni Minut */}
         <div className="rounded-xl p-3" data-testid="card-zlatni-minut"
@@ -1174,6 +1138,42 @@ export default function MapHackNS() {
             {safeZone ? "Resetuj safe zone" : "Postavi Safe Zone"}
           </button>
         </div>
+
+        {/* Selected marker detail — shown below 3 main cards when a marker is tapped */}
+        {selectedMarker && (
+          <div className="rounded-xl p-3" data-testid="card-selected-marker"
+            style={{ background: `${markerColor(selectedMarker.type)}14`, border: `1px solid ${markerColor(selectedMarker.type)}30` }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: 18 }}>{markerEmoji(selectedMarker.type)}</span>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: markerColor(selectedMarker.type) }}>
+                    {markerLabel(selectedMarker.type)}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                    <Clock size={9} />
+                    {timeAgo(selectedMarker.createdAt)}
+                    {selectedMarker.expiresAt && (
+                      <span style={{ color: "#f97316" }}>· {timeLeft(selectedMarker.expiresAt)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {user.isAdmin && (
+                  <Button size="icon" variant="ghost" data-testid="btn-expire-marker"
+                    onClick={() => expireMarkerMutation.mutate(selectedMarker.id)} className="text-red-400">
+                    <Trash2 size={13} />
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" data-testid="btn-close-marker-info"
+                  onClick={() => setSelectedMarker(null)} className="text-gray-400">
+                  <X size={13} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
 
