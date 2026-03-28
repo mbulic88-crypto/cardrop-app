@@ -252,7 +252,7 @@ export function MapHackMap({
 
   const avatarIdx = (chatPreviewMsg?.mapAvatarId ?? 1) % AVATAR_COLORS.length;
   const previewText = chatPreviewMsg
-    ? chatPreviewMsg.text.slice(0, 28) + (chatPreviewMsg.text.length > 28 ? "···" : "")
+    ? chatPreviewMsg.text.slice(0, 28) + (chatPreviewMsg.text.length > 28 ? "..." : "")
     : null;
 
   return (

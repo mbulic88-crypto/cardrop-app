@@ -1018,7 +1018,7 @@ export default function MapHackNS() {
             </>
           ) : (
             <p className="text-xs py-1" style={{ color: "#4b5563" }}>
-              Nema slobodnih mesta u blizini. Budi prvi koji prijavi!
+              Nema aktivnih Zlatni Minut mesta u blizini.
             </p>
           )}
           <button onClick={() => setAddMode("zlatni_minut")}
@@ -1075,7 +1075,7 @@ export default function MapHackNS() {
             </>
           ) : (
             <p className="text-xs py-1" style={{ color: "#4b5563" }}>
-              Sve čisto! Nema pauka u blizini.
+              Nema aktivnih Pauk Radar signala u blizini.
             </p>
           )}
           <button onClick={() => setAddMode("pauk")}
