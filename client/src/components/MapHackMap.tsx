@@ -24,10 +24,21 @@ export interface MapHackMapProps {
 }
 
 const NS_LANDMARKS = [
-  { lat: 45.2517, lng: 19.8484, label: "Petrovaradinska tvrđava" },
-  { lat: 45.2531, lng: 19.8440, label: "KCV Bolnica" },
-  { lat: 45.2611, lng: 19.8203, label: "Spens" },
-  { lat: 45.2600, lng: 19.8347, label: "Železnička st." },
+  { lat: 45.2522, lng: 19.8622, label: "Petrovaradinska tvrđava" },
+  { lat: 45.2509, lng: 19.8232, label: "KCV Bolnica" },
+  { lat: 45.2464, lng: 19.8444, label: "Spens" },
+  { lat: 45.2552, lng: 19.8428, label: "Železnička st." },
+  { lat: 45.2551, lng: 19.8450, label: "Trg slobode" },
+  { lat: 45.2676, lng: 19.8331, label: "Novosadski sajam" },
+  { lat: 45.2553, lng: 19.8514, label: "Dunavski park" },
+  { lat: 45.2557, lng: 19.8432, label: "Futoška pijaca" },
+  { lat: 45.2470, lng: 19.8110, label: "Betanija" },
+  { lat: 45.2390, lng: 19.8420, label: "Liman" },
+  { lat: 45.2620, lng: 19.8150, label: "Detelinar" },
+  { lat: 45.2490, lng: 19.8300, label: "Grbavica" },
+  { lat: 45.2630, lng: 19.8470, label: "Stari Grad" },
+  { lat: 45.2700, lng: 19.8200, label: "Sajmište" },
+  { lat: 45.2610, lng: 19.8530, label: "Podbar" },
 ];
 
 const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
@@ -136,10 +147,11 @@ export function MapHackMap({
     NS_LANDMARKS.forEach(({ lat, lng, label }) => {
       const icon = L.divIcon({
         html:
-          `<div style="background:rgba(15,20,35,0.75);color:#cbd5e1;font-size:9px;` +
-          `padding:2px 6px;border-radius:4px;white-space:nowrap;` +
-          `border:1px solid rgba(255,255,255,0.12);pointer-events:none;` +
-          `font-weight:600;letter-spacing:0.02em;">${label}</div>`,
+          `<div style="background:rgba(30,38,60,0.92);color:#e2e8f0;font-size:10px;` +
+          `padding:3px 7px;border-radius:5px;white-space:nowrap;` +
+          `border:1px solid rgba(148,163,184,0.3);pointer-events:none;` +
+          `font-weight:700;letter-spacing:0.03em;` +
+          `box-shadow:0 1px 4px rgba(0,0,0,0.6);">${label}</div>`,
         className: "",
         iconAnchor: [0, 0],
       });
