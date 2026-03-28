@@ -876,6 +876,8 @@ export default function MapHackNS() {
           onContextMenu={(lat, lng) => {
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
+          chatPreviewMsg={!chatOpen && latestChatMsg ? { text: latestChatMsg.text, mapAvatarId: latestChatMsg.mapAvatarId ?? null } : null}
+          onChatClick={() => setChatOpen(true)}
         />
 
         {/* Add-mode banner */}
@@ -888,23 +890,6 @@ export default function MapHackNS() {
               <X size={11} />
             </button>
           </div>
-        )}
-
-        {/* Chat preview pill — bottom-left of map */}
-        {latestChatMsg && !chatOpen && (
-          <button
-            data-testid="btn-chat-preview-pill"
-            onClick={() => setChatOpen(true)}
-            className="absolute bottom-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
-            style={{ background: "rgba(15,20,35,0.88)", border: "1px solid rgba(255,255,255,0.14)", maxWidth: "70%" }}>
-            <div className="w-5 h-5 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center"
-              style={{ background: AVATAR_COLORS[(latestChatMsg.mapAvatarId ?? 1) % AVATAR_COLORS.length] }}>
-              <img src={`/avatars/avatar-${latestChatMsg.mapAvatarId ?? 1}.png`} alt="" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-xs text-gray-300 truncate">
-              {latestChatMsg.text.slice(0, 28)}{latestChatMsg.text.length > 28 ? "···" : ""}
-            </span>
-          </button>
         )}
       </div>
 

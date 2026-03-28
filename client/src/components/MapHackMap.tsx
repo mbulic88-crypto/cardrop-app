@@ -5,6 +5,11 @@ import type { MapMarker, MapSafeZone } from "@shared/schema";
 
 export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone";
 
+export interface ChatPreviewMsg {
+  text: string;
+  mapAvatarId: number | null;
+}
+
 export interface MapHackMapProps {
   markers: MapMarker[];
   activeFilters: string[];
@@ -14,6 +19,8 @@ export interface MapHackMapProps {
   onMarkerClick: (marker: MapMarker) => void;
   onMapClick: (lat: number, lng: number) => void;
   onContextMenu: (lat: number, lng: number) => void;
+  chatPreviewMsg?: ChatPreviewMsg | null;
+  onChatClick?: () => void;
 }
 
 const NS_LANDMARKS = [
@@ -22,6 +29,8 @@ const NS_LANDMARKS = [
   { lat: 45.2611, lng: 19.8203, label: "Spens" },
   { lat: 45.2600, lng: 19.8347, label: "Železnička st." },
 ];
+
+const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
 
 export function markerColor(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "#f97316";
@@ -68,6 +77,8 @@ export function MapHackMap({
   onMarkerClick,
   onMapClick,
   onContextMenu,
+  chatPreviewMsg,
+  onChatClick,
 }: MapHackMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -233,5 +244,32 @@ export function MapHackMap({
     }
   }, [safeZone]);
 
-  return <div ref={mapRef} className="absolute inset-0" />;
+  const avatarIdx = (chatPreviewMsg?.mapAvatarId ?? 1) % AVATAR_COLORS.length;
+  const previewText = chatPreviewMsg
+    ? chatPreviewMsg.text.slice(0, 28) + (chatPreviewMsg.text.length > 28 ? "···" : "")
+    : null;
+
+  return (
+    <div className="absolute inset-0">
+      <div ref={mapRef} className="absolute inset-0" />
+      {chatPreviewMsg && (
+        <button
+          data-testid="btn-chat-preview-pill"
+          onClick={onChatClick}
+          className="absolute bottom-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
+          style={{ background: "rgba(15,20,35,0.88)", border: "1px solid rgba(255,255,255,0.14)", maxWidth: "70%" }}>
+          <div
+            className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+            style={{ background: AVATAR_COLORS[avatarIdx] }}>
+            <img
+              src={`/avatars/avatar-${chatPreviewMsg.mapAvatarId ?? 1}.png`}
+              alt=""
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <span className="text-xs text-gray-300 truncate">{previewText}</span>
+        </button>
+      )}
+    </div>
+  );
 }
