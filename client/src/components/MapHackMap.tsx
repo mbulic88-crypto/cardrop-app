@@ -40,7 +40,7 @@ function markerSvgPath(type: MarkerType | string, locked: boolean): string {
     return `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
   }
   if (type === "zlatni_minut") {
-    return `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`;
+    return `<path d="M3 9l2-5h14l2 5v6H3V9z"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/>`;
   }
   if (type === "pauk") {
     return `<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`;

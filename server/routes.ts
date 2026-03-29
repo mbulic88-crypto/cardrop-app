@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           await storage.createMapChatMessage({
             userId: null,
-            mapNickname: 'sistem',
+            mapNickname: 'CarDrop Bot',
             avatarId: 0,
             text: `${nick} je prijavio/la: ${typeLabel}`,
             isSystem: true,

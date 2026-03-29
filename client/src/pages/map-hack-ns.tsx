@@ -1358,8 +1358,9 @@ export default function MapHackNS() {
               if (msg.isSystem) {
                 return (
                   <div key={msg.id} className="flex justify-center my-1">
-                    <span className="text-xs px-3 py-1 rounded-full"
+                    <span className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full"
                       style={{ background: "rgba(255,255,255,0.06)", color: "#6b7280", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <Bell size={10} style={{ flexShrink: 0 }} />
                       {msg.text}
                     </span>
                   </div>
