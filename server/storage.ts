@@ -9,6 +9,7 @@ import {
   mapMarkers,
   mapChatMessages,
   mapSafeZones,
+  mapWatchAreas,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -28,6 +29,7 @@ import {
   type InsertMapChatMessage,
   type MapSafeZone,
   type InsertMapSafeZone,
+  type MapWatchArea,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, or, sql, gt } from "drizzle-orm";
@@ -98,6 +100,10 @@ export interface IStorage {
   createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage>;
   getMapSafeZone(userId: string): Promise<MapSafeZone | undefined>;
   upsertMapSafeZone(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapSafeZone>;
+  getMapWatchArea(userId: string): Promise<MapWatchArea | undefined>;
+  upsertMapWatchArea(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapWatchArea>;
+  deleteMapWatchArea(userId: string): Promise<void>;
+  getAllMapWatchAreas(): Promise<MapWatchArea[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -507,6 +513,37 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return zone;
+  }
+
+  async getMapWatchArea(userId: string): Promise<MapWatchArea | undefined> {
+    const [area] = await db
+      .select()
+      .from(mapWatchAreas)
+      .where(eq(mapWatchAreas.userId, userId));
+    return area;
+  }
+
+  async upsertMapWatchArea(
+    userId: string,
+    data: { lat: string; lng: string; radiusMeters: number }
+  ): Promise<MapWatchArea> {
+    const [area] = await db
+      .insert(mapWatchAreas)
+      .values({ userId, ...data })
+      .onConflictDoUpdate({
+        target: mapWatchAreas.userId,
+        set: { lat: data.lat, lng: data.lng, radiusMeters: data.radiusMeters },
+      })
+      .returning();
+    return area;
+  }
+
+  async deleteMapWatchArea(userId: string): Promise<void> {
+    await db.delete(mapWatchAreas).where(eq(mapWatchAreas.userId, userId));
+  }
+
+  async getAllMapWatchAreas(): Promise<MapWatchArea[]> {
+    return await db.select().from(mapWatchAreas);
   }
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { MapMarker, MapSafeZone } from "@shared/schema";
+import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 
 export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone";
 
@@ -14,6 +14,7 @@ export interface MapHackMapProps {
   markers: MapMarker[];
   activeFilters: string[];
   safeZone: MapSafeZone | null;
+  watchArea?: MapWatchArea | null;
   isPremium: boolean;
   isAddMode: boolean;
   onMarkerClick: (marker: MapMarker) => void;
@@ -94,6 +95,7 @@ export function MapHackMap({
   markers,
   activeFilters,
   safeZone,
+  watchArea,
   isPremium,
   isAddMode,
   onMarkerClick,
@@ -107,6 +109,7 @@ export function MapHackMap({
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
   const safeZoneLayerRef = useRef<L.LayerGroup | null>(null);
+  const watchAreaLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -161,7 +164,9 @@ export function MapHackMap({
     markersLayerRef.current = L.layerGroup().addTo(map);
     heatmapLayerRef.current = L.layerGroup().addTo(map);
     safeZoneLayerRef.current = L.layerGroup().addTo(map);
+    watchAreaLayerRef.current = L.layerGroup().addTo(map);
     leafletMapRef.current = map;
+    (window as any).__leafletMap = map;
 
     return () => {
       map.remove();
@@ -255,6 +260,38 @@ export function MapHackMap({
       }).addTo(safeZoneLayerRef.current);
     }
   }, [safeZone]);
+
+  useEffect(() => {
+    if (!watchAreaLayerRef.current) return;
+    watchAreaLayerRef.current.clearLayers();
+    if (watchArea?.lat && watchArea?.lng) {
+      const lat = parseFloat(watchArea.lat);
+      const lng = parseFloat(watchArea.lng);
+      L.circle([lat, lng], {
+        radius: watchArea.radiusMeters,
+        color: "#f59e0b",
+        fillColor: "#f59e0b",
+        fillOpacity: 0.07,
+        weight: 2,
+        dashArray: "5 5",
+        interactive: false,
+      }).addTo(watchAreaLayerRef.current!);
+      const pulseIcon = L.divIcon({
+        html:
+          `<div style="` +
+          `width:20px;height:20px;border-radius:50%;` +
+          `background:rgba(245,158,11,0.3);` +
+          `border:2px solid rgba(245,158,11,0.8);` +
+          `box-shadow:0 0 0 4px rgba(245,158,11,0.15);` +
+          `animation:watchPulse 1.8s ease-in-out infinite;` +
+          `">` +
+          `</div>`,
+        className: "",
+        iconAnchor: [10, 10],
+      });
+      L.marker([lat, lng], { icon: pulseIcon, interactive: false }).addTo(watchAreaLayerRef.current!);
+    }
+  }, [watchArea]);
 
   const avatarIdx = (chatPreviewMsg?.mapAvatarId ?? 1) % AVATAR_COLORS.length;
   const previewText = chatPreviewMsg

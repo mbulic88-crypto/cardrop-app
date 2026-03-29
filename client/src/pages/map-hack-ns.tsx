@@ -10,7 +10,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters } from "@/components/MapHackMap";
-import type { MapMarker, MapChatMessage, MapSafeZone } from "@shared/schema";
+import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
 
 type MapHackStatus = {
@@ -370,6 +370,8 @@ export default function MapHackNS() {
   const [chatCooldown, setChatCooldown] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
   const [smsOpen, setSmsOpen] = useState(false);
+  const [watchZoneOpen, setWatchZoneOpen] = useState(false);
+  const [watchRadiusInput, setWatchRadiusInput] = useState("300");
   const [izdajOpen, setIzdajOpen] = useState(false);
   const [aktivnoOpen, setAktivnoOpen] = useState(false);
   const [bottomTab, setBottomTab] = useState<"info" | "chat">("info");
@@ -396,6 +398,11 @@ export default function MapHackNS() {
   const { data: safeZone = null } = useQuery<MapSafeZone | null>({
     queryKey: ["/api/map-hack/safe-zone"],
     enabled: isMapView,
+  });
+
+  const { data: watchArea = null } = useQuery<MapWatchArea | null>({
+    queryKey: ["/api/map-hack/watch-area"],
+    enabled: isMapView && (user?.isAdmin || ["premium","day_pass","godisnji_premium","firma"].includes(mapStatus?.plan ?? "")),
   });
 
   const addMarkerMutation = useMutation({
@@ -469,6 +476,30 @@ export default function MapHackNS() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
       toast({ title: "Safe Zone postavljena" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const setWatchAreaMutation = useMutation({
+    mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
+      apiRequest("PUT", "/api/map-hack/watch-area", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/watch-area"] });
+      setWatchZoneOpen(false);
+      toast({ title: "Zona upozorenja postavljena", description: "Dobit ćeš push obaveštenje kad se Zlatni Minut ili Pauk pojavi u ovoj zoni." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteWatchAreaMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", "/api/map-hack/watch-area"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/watch-area"] });
+      toast({ title: "Zona upozorenja uklonjena" });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -934,6 +965,7 @@ export default function MapHackNS() {
           markers={mapMarkers}
           activeFilters={activeFilters}
           safeZone={safeZone}
+          watchArea={watchArea}
           isPremium={isPremium}
           isAddMode={addMode !== null}
           onMarkerClick={setSelectedMarker}
@@ -1058,6 +1090,31 @@ export default function MapHackNS() {
             <Smartphone size={18} style={{ color: "#22c55e" }} />
             <span className="font-bold" style={{ color: "#4ade80", fontSize: 10, letterSpacing: "0.02em" }}>SMS</span>
           </button>
+
+          {/* Zona upozorenja */}
+          {(() => {
+            const locked = !isPremium;
+            const hasZone = !!watchArea;
+            return (
+              <button
+                data-testid="btn-watch-zone"
+                onClick={() => { if (!locked) setWatchZoneOpen(true); else toast({ title: "Premium funkcija", description: "Zona upozorenja je dostupna samo za Premium korisnike." }); }}
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                style={{
+                  background: locked ? "rgba(255,255,255,0.03)" : hasZone ? "rgba(245,158,11,0.18)" : "rgba(245,158,11,0.08)",
+                  border: `1.5px solid ${locked ? "rgba(255,255,255,0.08)" : hasZone ? "rgba(245,158,11,0.7)" : "rgba(245,158,11,0.3)"}`,
+                  opacity: locked ? 0.55 : 1,
+                }}>
+                {locked
+                  ? <Lock size={18} style={{ color: "#6b7280" }} />
+                  : <Bell size={18} style={{ color: hasZone ? "#fbbf24" : "#d97706" }} />
+                }
+                <span className="font-bold" style={{ color: locked ? "#4b5563" : hasZone ? "#fbbf24" : "#d97706", fontSize: 10, letterSpacing: "0.02em" }}>
+                  {locked ? "Premium" : hasZone ? "Zona" : "Zona"}
+                </span>
+              </button>
+            );
+          })()}
 
           {/* + Prijavi dropdown */}
           <div className="relative flex-shrink-0">
@@ -1450,6 +1507,136 @@ export default function MapHackNS() {
         )}
 
       </div>
+
+      {/* ── Zona upozorenja Modal ── */}
+      {watchZoneOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setWatchZoneOpen(false)}>
+          <div className="w-full rounded-t-2xl flex flex-col"
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520 }}
+            onClick={e => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between px-4 pt-3 pb-2.5 flex-shrink-0"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.4)" }}>
+                  <Bell size={15} style={{ color: "#f59e0b" }} />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">Zona upozorenja</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Push alert kad Zlatni Minut ili Pauk uđe u zonu</p>
+                </div>
+              </div>
+              <button onClick={() => setWatchZoneOpen(false)}
+                className="flex items-center justify-center rounded-full"
+                style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 flex flex-col gap-4">
+              {watchArea ? (
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl p-3 flex items-center gap-3"
+                    style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)" }}>
+                    <Bell size={16} style={{ color: "#f59e0b" }} className="flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white">Zona aktivna</p>
+                      <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>
+                        Radius: {watchArea.radiusMeters}m · {parseFloat(watchArea.lat).toFixed(5)}, {parseFloat(watchArea.lng).toFixed(5)}
+                      </p>
+                    </div>
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "#f59e0b", boxShadow: "0 0 6px rgba(245,158,11,0.6)" }} />
+                  </div>
+                  <p className="text-xs text-center" style={{ color: "#6b7280" }}>
+                    Zona je prikazana na mapi. Možeš je ažurirati ili ukloniti.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-red-900/50 text-red-400 hover:bg-red-950/30"
+                      data-testid="btn-delete-watch-zone"
+                      onClick={() => deleteWatchAreaMutation.mutate()}
+                      disabled={deleteWatchAreaMutation.isPending}>
+                      {deleteWatchAreaMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      <span className="ml-1.5">Ukloni zonu</span>
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      style={{ background: "#d97706" }}
+                      data-testid="btn-update-watch-zone"
+                      onClick={() => {
+                        const map = (window as any).__leafletMap;
+                        const center = map ? map.getCenter() : { lat: parseFloat(watchArea.lat), lng: parseFloat(watchArea.lng) };
+                        setWatchAreaMutation.mutate({ lat: center.lat, lng: center.lng, radiusMeters: Math.min(Math.max(parseInt(watchRadiusInput) || 300, 100), 1000) });
+                      }}
+                      disabled={setWatchAreaMutation.isPending}>
+                      {setWatchAreaMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
+                      <span className="ml-1.5">Ažuriraj</span>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <p className="text-xs font-semibold mb-2" style={{ color: "#9ca3af" }}>KAKO RADI</p>
+                    <div className="flex flex-col gap-1.5">
+                      {[
+                        "Zona se postavlja na centar mape — pomeri mapu na željenu lokaciju pre nego što potvrdiš.",
+                        "Kada neko prijavi Zlatni Minut ili Pauka u tvojoj zoni, dobijaš push notification odmah.",
+                        "Možeš imati jednu aktivnu zonu u bilo kom trenutku.",
+                      ].map((txt, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-xs font-bold mt-0.5 flex-shrink-0" style={{ color: "#f59e0b" }}>{i + 1}.</span>
+                          <span className="text-xs" style={{ color: "#d1d5db" }}>{txt}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-xs font-semibold" style={{ color: "#9ca3af" }}>RADIUS ZONE</p>
+                    <div className="flex items-center gap-2">
+                      {[100, 200, 300, 500, 800, 1000].map(r => (
+                        <button
+                          key={r}
+                          data-testid={`btn-radius-${r}`}
+                          onClick={() => setWatchRadiusInput(String(r))}
+                          className="flex-1 py-1.5 rounded-lg text-xs font-bold"
+                          style={{
+                            background: watchRadiusInput === String(r) ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)",
+                            border: `1px solid ${watchRadiusInput === String(r) ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.1)"}`,
+                            color: watchRadiusInput === String(r) ? "#fbbf24" : "#6b7280",
+                          }}>
+                          {r}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    style={{ background: "#d97706", color: "#fff" }}
+                    data-testid="btn-set-watch-zone"
+                    onClick={() => {
+                      const map = (window as any).__leafletMap;
+                      const center = map ? map.getCenter() : { lat: 45.2671, lng: 19.8335 };
+                      setWatchAreaMutation.mutate({ lat: center.lat, lng: center.lng, radiusMeters: parseInt(watchRadiusInput) || 300 });
+                    }}
+                    disabled={setWatchAreaMutation.isPending}>
+                    {setWatchAreaMutation.isPending
+                      ? <><Loader2 size={14} className="animate-spin mr-2" />Postavljamo...</>
+                      : <><Bell size={14} className="mr-2" />Postavi zonu na centar mape</>
+                    }
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SMS Parking Modal ── */}
       {smsOpen && (

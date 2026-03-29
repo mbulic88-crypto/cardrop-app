@@ -431,3 +431,19 @@ export const insertMapSafeZoneSchema = createInsertSchema(mapSafeZones).omit({
 });
 export type InsertMapSafeZone = z.infer<typeof insertMapSafeZoneSchema>;
 export type MapSafeZone = typeof mapSafeZones.$inferSelect;
+
+export const mapWatchAreas = pgTable("map_watch_areas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique().references(() => users.id, { onDelete: "cascade" }),
+  lat: decimal("lat", { precision: 10, scale: 7 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 7 }).notNull(),
+  radiusMeters: integer("radius_meters").notNull().default(300),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertMapWatchAreaSchema = createInsertSchema(mapWatchAreas).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMapWatchArea = z.infer<typeof insertMapWatchAreaSchema>;
+export type MapWatchArea = typeof mapWatchAreas.$inferSelect;

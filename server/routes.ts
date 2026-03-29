@@ -13,6 +13,18 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { sanitizeObject } from './sanitize';
 
+function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -344,6 +356,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (_) {
           // system message failure is non-critical
         }
+
+        // Push notifications to premium users with watch areas near this marker
+        try {
+          const watchAreas = await storage.getAllMapWatchAreas();
+          for (const area of watchAreas) {
+            if (area.userId === userId) continue; // skip self
+            const dist = haversineMetersServer(
+              parseFloat(area.lat), parseFloat(area.lng),
+              latNum, lngNum
+            );
+            if (dist <= area.radiusMeters) {
+              const emoji = type === 'zlatni_minut' ? '⏱' : '🚛';
+              await sendPushToUser(area.userId, {
+                title: `${emoji} ${typeLabel} u tvojoj zoni!`,
+                body: `${nick} je prijavio/la ${typeLabel.toLowerCase()} na ${Math.round(dist)}m od tvoje zone upozorenja.`,
+                icon: '/icons/icon-192x192.png',
+                tag: `watch-area-${type}`,
+                url: '/map-hack',
+              }).catch(() => {});
+            }
+          }
+        } catch (_) {
+          // push failure is non-critical
+        }
       }
 
       res.json(marker);
@@ -489,6 +525,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting safe zone:", error);
       res.status(500).json({ message: "Greška pri postavljanju safe zone" });
+    }
+  });
+
+  // ─── Map Hack NS — Watch Area ─────────────────────────────────────────────
+
+  app.get('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je Premium plan" });
+      }
+      const area = await storage.getMapWatchArea(userId);
+      res.json(area || null);
+    } catch (error) {
+      console.error("Error fetching watch area:", error);
+      res.status(500).json({ message: "Greška pri učitavanju zone upozorenja" });
+    }
+  });
+
+  app.put('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je Premium plan" });
+      }
+
+      const { lat, lng, radiusMeters } = req.body;
+      const latNum = parseFloat(lat);
+      const lngNum = parseFloat(lng);
+      const radius = Math.min(Math.max(parseInt(radiusMeters) || 300, 100), 1000);
+
+      if (isNaN(latNum) || isNaN(lngNum)) {
+        return res.status(400).json({ message: "Nevalidne koordinate" });
+      }
+      if (latNum < 45.20 || latNum > 45.36 || lngNum < 19.72 || lngNum > 19.98) {
+        return res.status(400).json({ message: "Lokacija mora biti u Novom Sadu" });
+      }
+
+      const area = await storage.upsertMapWatchArea(userId, {
+        lat: String(latNum),
+        lng: String(lngNum),
+        radiusMeters: radius,
+      });
+      res.json(area);
+    } catch (error) {
+      console.error("Error setting watch area:", error);
+      res.status(500).json({ message: "Greška pri postavljanju zone upozorenja" });
+    }
+  });
+
+  app.delete('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je Premium plan" });
+      }
+      await storage.deleteMapWatchArea(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting watch area:", error);
+      res.status(500).json({ message: "Greška pri brisanju zone upozorenja" });
     }
   });
 
