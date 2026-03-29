@@ -28,6 +28,32 @@ if (!MAPBOX_TOKEN) console.warn("[MapHackMap] VITE_MAPBOX_TOKEN nije postavljen 
 
 const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function markerSvgPath(type: MarkerType | string, locked: boolean): string {
+  if (locked) {
+    return `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
+  }
+  if (type === "zlatni_minut") {
+    return `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`;
+  }
+  if (type === "pauk") {
+    return `<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`;
+  }
+  if (type === "stek") {
+    return `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
+  }
+  if (type === "safe_zone") {
+    return `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
+  }
+  return `<circle cx="12" cy="12" r="10"/>`;
+}
+
 export function markerColor(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "#f97316";
   if (type === "pauk") return "#ef4444";
@@ -160,28 +186,25 @@ export function MapHackMap({
     filtered.forEach((marker) => {
       const color = markerColor(marker.type);
       const isLocked = marker.type === "stek" && !isPremium;
-      const labelHtml = isLocked
-        ? `<span style="font-size:14px;">🔒</span>` +
-          `<span>${markerLabel(marker.type)}</span>` +
-          `<span style="font-size:9px;font-weight:700;color:#f97316;margin-left:2px;">PREMIUM</span>` +
-          `<span style="font-size:14px;">🔒</span>`
-        : `<span style="font-size:14px;">${markerEmoji(marker.type)}</span>` +
-          `<span>${markerLabel(marker.type)}</span>`;
+      const iconColor = isLocked ? "#6b7280" : "#ffffff";
+      const bgColor = isLocked ? "rgba(30,35,50,0.85)" : hexToRgba(color, 0.28);
+      const borderColor = isLocked ? "rgba(107,114,128,0.5)" : hexToRgba(color, 0.7);
+      const svgPath = markerSvgPath(marker.type, isLocked);
       const icon = L.divIcon({
         html:
           `<div style="` +
-          `background:${isLocked ? "rgba(30,35,50,0.92)" : "rgba(15,20,35,0.88)"};` +
-          `border:2px solid ${isLocked ? "#4b5563" : color};` +
-          `border-radius:20px;padding:4px 10px;` +
-          `display:flex;align-items:center;gap:5px;` +
-          `box-shadow:0 2px 12px ${isLocked ? "rgba(0,0,0,0.4)" : color + "50"};` +
-          `cursor:pointer;white-space:nowrap;` +
-          `font-size:12px;font-weight:600;color:${isLocked ? "#6b7280" : "#fff"};` +
-          `font-family:system-ui,sans-serif;">` +
-          labelHtml +
+          `width:34px;height:34px;border-radius:50%;` +
+          `background:${bgColor};` +
+          `border:1.5px solid ${borderColor};` +
+          `display:flex;align-items:center;justify-content:center;` +
+          `box-shadow:0 2px 10px ${isLocked ? "rgba(0,0,0,0.35)" : hexToRgba(color, 0.35)};` +
+          `cursor:pointer;">` +
+          `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` +
+          svgPath +
+          `</svg>` +
           `</div>`,
         className: "",
-        iconAnchor: [0, 20],
+        iconAnchor: [17, 17],
       });
       const lm = L.marker([parseFloat(marker.lat), parseFloat(marker.lng)], { icon }).addTo(
         markersLayerRef.current!

@@ -396,10 +396,14 @@ export type MapMarker = typeof mapMarkers.$inferSelect;
 
 export const mapChatMessages = pgTable("map_chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
   mapNickname: varchar("map_nickname", { length: 30 }).notNull(),
   avatarId: integer("avatar_id").notNull().default(1),
   text: varchar("text", { length: 280 }).notNull(),
+  isSystem: boolean("is_system").notNull().default(false),
+  replyToId: varchar("reply_to_id"),
+  replyToNickname: varchar("reply_to_nickname", { length: 30 }),
+  replyToText: varchar("reply_to_text", { length: 120 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

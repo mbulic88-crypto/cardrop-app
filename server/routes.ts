@@ -326,6 +326,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         label: label || null,
         expiresAt,
       });
+
+      if (type === 'zlatni_minut' || type === 'pauk') {
+        const typeLabel = type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
+        const nick = user.mapNickname || 'Korisnik';
+        try {
+          await storage.createMapChatMessage({
+            userId: null,
+            mapNickname: 'sistem',
+            avatarId: 0,
+            text: `${nick} je prijavio/la: ${typeLabel}`,
+            isSystem: true,
+            replyToId: null,
+            replyToNickname: null,
+            replyToText: null,
+          });
+        } catch (_) {
+          // system message failure is non-critical
+        }
+      }
+
       res.json(marker);
     } catch (error) {
       console.error("Error creating map marker:", error);
@@ -397,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(429).json({ message: `Sačekaj ${retryAfter}s pre sledeće poruke`, retryAfter });
       }
 
-      const { text } = req.body;
+      const { text, replyToId, replyToNickname, replyToText } = req.body;
       if (!text || typeof text !== 'string' || text.trim().length === 0) {
         return res.status(400).json({ message: "Poruka ne može biti prazna" });
       }
@@ -411,6 +431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         mapNickname: user.mapNickname,
         avatarId: user.mapAvatarId || 1,
         text: text.trim(),
+        isSystem: false,
+        replyToId: replyToId || null,
+        replyToNickname: replyToNickname || null,
+        replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
       });
       res.json(msg);
     } catch (error) {

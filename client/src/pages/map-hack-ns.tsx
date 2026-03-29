@@ -368,6 +368,7 @@ export default function MapHackNS() {
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
   const [smsOpen, setSmsOpen] = useState(false);
   const [izdajOpen, setIzdajOpen] = useState(false);
   const [aktivnoOpen, setAktivnoOpen] = useState(false);
@@ -400,8 +401,11 @@ export default function MapHackNS() {
   const addMarkerMutation = useMutation({
     mutationFn: (data: { type: MarkerType; lat: number; lng: number }) =>
       apiRequest("POST", "/api/map-hack/markers", data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      if (variables.type === "zlatni_minut" || variables.type === "pauk") {
+        queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+      }
       setAddMode(null);
       toast({ title: "Marker dodat" });
     },
@@ -437,10 +441,12 @@ export default function MapHackNS() {
   }
 
   const sendChatMutation = useMutation({
-    mutationFn: (text: string) => apiRequest("POST", "/api/map-hack/chat", { text }),
+    mutationFn: (payload: { text: string; replyToId?: string; replyToNickname?: string; replyToText?: string }) =>
+      apiRequest("POST", "/api/map-hack/chat", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
       setChatInput("");
+      setReplyingTo(null);
       startCooldown(60);
     },
     onError: (err: any) => {
@@ -1344,46 +1350,100 @@ export default function MapHackNS() {
         {bottomTab === "chat" && (
         <div className="flex-1 flex flex-col overflow-hidden" data-testid="panel-chat"
           style={{ background: "#0d1117" }}>
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
             {chatMessages.length === 0 && (
               <p className="text-xs text-center py-6" style={{ color: "#4b5563" }}>Nema poruka. Budi prvi!</p>
             )}
-            {chatMessages.map(msg => (
-              <div key={msg.id} className="flex items-start gap-2">
-                <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
-                  style={{ background: AVATAR_COLORS[(msg.avatarId - 1) % AVATAR_COLORS.length], fontSize: 10 }}>
-                  {msg.avatarId}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold" style={{ color: "#d1d5db" }}>{msg.mapNickname}</span>
-                    <span className="text-xs" style={{ color: "#4b5563" }}>{timeAgo(msg.createdAt)}</span>
+            {chatMessages.map(msg => {
+              if (msg.isSystem) {
+                return (
+                  <div key={msg.id} className="flex justify-center my-1">
+                    <span className="text-xs px-3 py-1 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#6b7280", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      {msg.text}
+                    </span>
                   </div>
-                  <p className="text-sm break-words mt-0.5" style={{ color: "#e5e7eb" }}>{msg.text}</p>
+                );
+              }
+              return (
+                <div key={msg.id} className="group flex items-start gap-2">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
+                    style={{ background: AVATAR_COLORS[(msg.avatarId - 1) % AVATAR_COLORS.length], fontSize: 10 }}>
+                    {msg.avatarId}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold" style={{ color: "#d1d5db" }}>{msg.mapNickname}</span>
+                      <span className="text-xs" style={{ color: "#4b5563" }}>{timeAgo(msg.createdAt)}</span>
+                    </div>
+                    {msg.replyToNickname && msg.replyToText && (
+                      <div className="mt-0.5 mb-0.5 pl-2 rounded-sm text-xs"
+                        style={{ borderLeft: "2px solid rgba(249,115,22,0.5)", color: "#9ca3af" }}>
+                        <span style={{ color: "#f97316" }}>@{msg.replyToNickname}</span>
+                        <span className="ml-1 truncate">{msg.replyToText.slice(0, 60)}{msg.replyToText.length > 60 ? "…" : ""}</span>
+                      </div>
+                    )}
+                    <p className="text-sm break-words mt-0.5" style={{ color: "#e5e7eb" }}>{msg.text}</p>
+                  </div>
+                  <button
+                    data-testid={`btn-reply-${msg.id}`}
+                    onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.text })}
+                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: "#6b7280", padding: "2px 4px", marginTop: 2 }}
+                    title="Odgovori">
+                    <MessageSquare size={12} />
+                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={chatEndRef} />
           </div>
-          <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2.5"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-            <Input
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && chatInput.trim() && !chatCooldown) sendChatMutation.mutate(chatInput); }}
-              placeholder={chatCooldown > 0 ? `Čekaj ${chatCooldown}s...` : "Napiši poruku... (1/min)"}
-              data-testid="input-chat-message"
-              className="h-9 text-sm"
-              style={{ background: "#12161e", border: "1px solid rgba(255,255,255,0.12)", color: "#e5e7eb" }}
-              maxLength={280}
-              disabled={chatCooldown > 0}
-            />
-            <Button size="icon" data-testid="btn-send-chat"
-              onClick={() => { if (chatInput.trim() && !chatCooldown) sendChatMutation.mutate(chatInput); }}
-              disabled={sendChatMutation.isPending || !chatInput.trim() || chatCooldown > 0}
-              style={{ background: chatCooldown > 0 ? "#374151" : "#f97316", flexShrink: 0 }}>
-              {chatCooldown > 0 ? <span style={{ fontSize: 9, fontWeight: 700 }}>{chatCooldown}</span> : <Send size={14} />}
-            </Button>
+          <div className="flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            {replyingTo && (
+              <div className="flex items-center gap-2 px-3 pt-2 pb-0.5">
+                <div className="flex-1 min-w-0 text-xs pl-2 rounded-sm"
+                  style={{ borderLeft: "2px solid #f97316", color: "#9ca3af" }}>
+                  <span style={{ color: "#f97316" }}>↩ @{replyingTo.nickname}</span>
+                  <span className="ml-1 truncate">{replyingTo.text.slice(0, 50)}{replyingTo.text.length > 50 ? "…" : ""}</span>
+                </div>
+                <button onClick={() => setReplyingTo(null)} style={{ color: "#6b7280" }}>
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              <Input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && chatInput.trim() && !chatCooldown) {
+                    sendChatMutation.mutate({
+                      text: chatInput,
+                      ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+                    });
+                  }
+                }}
+                placeholder={chatCooldown > 0 ? `Čekaj ${chatCooldown}s...` : "Napiši poruku... (1/min)"}
+                data-testid="input-chat-message"
+                className="h-9 text-sm"
+                style={{ background: "#12161e", border: "1px solid rgba(255,255,255,0.12)", color: "#e5e7eb" }}
+                maxLength={280}
+                disabled={chatCooldown > 0}
+              />
+              <Button size="icon" data-testid="btn-send-chat"
+                onClick={() => {
+                  if (chatInput.trim() && !chatCooldown) {
+                    sendChatMutation.mutate({
+                      text: chatInput,
+                      ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+                    });
+                  }
+                }}
+                disabled={sendChatMutation.isPending || !chatInput.trim() || chatCooldown > 0}
+                style={{ background: chatCooldown > 0 ? "#374151" : "#f97316", flexShrink: 0 }}>
+                {chatCooldown > 0 ? <span style={{ fontSize: 9, fontWeight: 700 }}>{chatCooldown}</span> : <Send size={14} />}
+              </Button>
+            </div>
           </div>
         </div>
         )}
