@@ -20,6 +20,7 @@ export interface MapHackMapProps {
   onMarkerClick: (marker: MapMarker) => void;
   onMapClick: (lat: number, lng: number) => void;
   onContextMenu: (lat: number, lng: number) => void;
+  onCenterChange?: (lat: number, lng: number) => void;
   chatPreviewMsg?: ChatPreviewMsg | null;
   onChatClick?: () => void;
 }
@@ -101,6 +102,7 @@ export function MapHackMap({
   onMarkerClick,
   onMapClick,
   onContextMenu,
+  onCenterChange,
   chatPreviewMsg,
   onChatClick,
 }: MapHackMapProps) {
@@ -113,8 +115,10 @@ export function MapHackMap({
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
+  const onCenterChangeRef = useRef(onCenterChange);
   onMapClickRef.current = onMapClick;
   onContextMenuRef.current = onContextMenu;
+  onCenterChangeRef.current = onCenterChange;
 
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
@@ -160,13 +164,16 @@ export function MapHackMap({
 
     map.on("click", (e: L.LeafletMouseEvent) => onMapClickRef.current(e.latlng.lat, e.latlng.lng));
     map.on("contextmenu", (e: L.LeafletMouseEvent) => onContextMenuRef.current(e.latlng.lat, e.latlng.lng));
+    map.on("moveend", () => {
+      const c = map.getCenter();
+      onCenterChangeRef.current?.(c.lat, c.lng);
+    });
 
     markersLayerRef.current = L.layerGroup().addTo(map);
     heatmapLayerRef.current = L.layerGroup().addTo(map);
     safeZoneLayerRef.current = L.layerGroup().addTo(map);
     watchAreaLayerRef.current = L.layerGroup().addTo(map);
     leafletMapRef.current = map;
-    (window as any).__leafletMap = map;
 
     return () => {
       map.remove();

@@ -371,7 +371,7 @@ export default function MapHackNS() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
   const [smsOpen, setSmsOpen] = useState(false);
   const [watchZoneOpen, setWatchZoneOpen] = useState(false);
-  const [watchRadiusInput, setWatchRadiusInput] = useState("300");
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 45.2671, lng: 19.8335 });
   const [izdajOpen, setIzdajOpen] = useState(false);
   const [aktivnoOpen, setAktivnoOpen] = useState(false);
   const [bottomTab, setBottomTab] = useState<"info" | "chat">("info");
@@ -483,12 +483,12 @@ export default function MapHackNS() {
   });
 
   const setWatchAreaMutation = useMutation({
-    mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
-      apiRequest("PUT", "/api/map-hack/watch-area", data),
+    mutationFn: (data: { lat: number; lng: number }) =>
+      apiRequest("POST", "/api/map-hack/watch-area", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/watch-area"] });
       setWatchZoneOpen(false);
-      toast({ title: "Zona upozorenja postavljena", description: "Dobit ćeš push obaveštenje kad se Zlatni Minut ili Pauk pojavi u ovoj zoni." });
+      toast({ title: "Zona upozorenja postavljena", description: "Dobit ćeš push obaveštenje kad se Zlatni Minut pojavi u krugu 300m." });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -976,6 +976,7 @@ export default function MapHackNS() {
           onContextMenu={(lat, lng) => {
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
+          onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           chatPreviewMsg={null}
           onChatClick={undefined}
         />
@@ -1568,9 +1569,7 @@ export default function MapHackNS() {
                       style={{ background: "#d97706" }}
                       data-testid="btn-update-watch-zone"
                       onClick={() => {
-                        const map = (window as any).__leafletMap;
-                        const center = map ? map.getCenter() : { lat: parseFloat(watchArea.lat), lng: parseFloat(watchArea.lng) };
-                        setWatchAreaMutation.mutate({ lat: center.lat, lng: center.lng, radiusMeters: Math.min(Math.max(parseInt(watchRadiusInput) || 300, 100), 1000) });
+                        setWatchAreaMutation.mutate({ lat: mapCenter.lat, lng: mapCenter.lng });
                       }}
                       disabled={setWatchAreaMutation.isPending}>
                       {setWatchAreaMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
@@ -1585,7 +1584,7 @@ export default function MapHackNS() {
                     <div className="flex flex-col gap-1.5">
                       {[
                         "Zona se postavlja na centar mape — pomeri mapu na željenu lokaciju pre nego što potvrdiš.",
-                        "Kada neko prijavi Zlatni Minut ili Pauka u tvojoj zoni, dobijaš push notification odmah.",
+                        "Kada neko prijavi Zlatni Minut u tvojoj zoni (krug 300m), dobijaš push notification odmah.",
                         "Možeš imati jednu aktivnu zonu u bilo kom trenutku.",
                       ].map((txt, i) => (
                         <div key={i} className="flex items-start gap-2">
@@ -1596,34 +1595,12 @@ export default function MapHackNS() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <p className="text-xs font-semibold" style={{ color: "#9ca3af" }}>RADIUS ZONE</p>
-                    <div className="flex items-center gap-2">
-                      {[100, 200, 300, 500, 800, 1000].map(r => (
-                        <button
-                          key={r}
-                          data-testid={`btn-radius-${r}`}
-                          onClick={() => setWatchRadiusInput(String(r))}
-                          className="flex-1 py-1.5 rounded-lg text-xs font-bold"
-                          style={{
-                            background: watchRadiusInput === String(r) ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.05)",
-                            border: `1px solid ${watchRadiusInput === String(r) ? "rgba(245,158,11,0.6)" : "rgba(255,255,255,0.1)"}`,
-                            color: watchRadiusInput === String(r) ? "#fbbf24" : "#6b7280",
-                          }}>
-                          {r}m
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <Button
                     className="w-full"
                     style={{ background: "#d97706", color: "#fff" }}
                     data-testid="btn-set-watch-zone"
                     onClick={() => {
-                      const map = (window as any).__leafletMap;
-                      const center = map ? map.getCenter() : { lat: 45.2671, lng: 19.8335 };
-                      setWatchAreaMutation.mutate({ lat: center.lat, lng: center.lng, radiusMeters: parseInt(watchRadiusInput) || 300 });
+                      setWatchAreaMutation.mutate({ lat: mapCenter.lat, lng: mapCenter.lng });
                     }}
                     disabled={setWatchAreaMutation.isPending}>
                     {setWatchAreaMutation.isPending

@@ -357,28 +357,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // system message failure is non-critical
         }
 
-        // Push notifications to premium users with watch areas near this marker
-        try {
-          const watchAreas = await storage.getAllMapWatchAreas();
-          for (const area of watchAreas) {
-            if (area.userId === userId) continue; // skip self
-            const dist = haversineMetersServer(
-              parseFloat(area.lat), parseFloat(area.lng),
-              latNum, lngNum
-            );
-            if (dist <= area.radiusMeters) {
-              const emoji = type === 'zlatni_minut' ? '⏱' : '🚛';
-              await sendPushToUser(area.userId, {
-                title: `${emoji} ${typeLabel} u tvojoj zoni!`,
-                body: `${nick} je prijavio/la ${typeLabel.toLowerCase()} na ${Math.round(dist)}m od tvoje zone upozorenja.`,
-                icon: '/icons/icon-192x192.png',
-                tag: `watch-area-${type}`,
-                url: '/map-hack',
-              }).catch(() => {});
+        // Push notifications to premium users with watch areas near this marker (zlatni_minut only)
+        if (type === 'zlatni_minut') {
+          try {
+            const watchAreas = await storage.getAllMapWatchAreas();
+            for (const area of watchAreas) {
+              if (area.userId === userId) continue; // skip self
+              // Re-check premium entitlement to avoid sending to downgraded users
+              const watcher = await storage.getUser(area.userId);
+              if (!watcher || !hasPremiumMapHackPlan(watcher)) continue;
+              const dist = haversineMetersServer(
+                parseFloat(area.lat), parseFloat(area.lng),
+                latNum, lngNum
+              );
+              if (dist <= area.radiusMeters) {
+                await sendPushToUser(area.userId, {
+                  title: 'Zlatni Minut!',
+                  body: 'Prijavljen u tvojoj zoni. Brzi!',
+                  icon: '/icons/icon-192x192.png',
+                  tag: 'watch-area-zlatni_minut',
+                  url: '/map-hack',
+                }).catch(() => {});
+              }
             }
+          } catch (_) {
+            // push failure is non-critical
           }
-        } catch (_) {
-          // push failure is non-critical
         }
       }
 
@@ -545,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {
+  app.post('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
@@ -553,10 +557,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Potreban je Premium plan" });
       }
 
-      const { lat, lng, radiusMeters } = req.body;
+      const { lat, lng } = req.body;
       const latNum = parseFloat(lat);
       const lngNum = parseFloat(lng);
-      const radius = Math.min(Math.max(parseInt(radiusMeters) || 300, 100), 1000);
 
       if (isNaN(latNum) || isNaN(lngNum)) {
         return res.status(400).json({ message: "Nevalidne koordinate" });
@@ -568,7 +571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const area = await storage.upsertMapWatchArea(userId, {
         lat: String(latNum),
         lng: String(lngNum),
-        radiusMeters: radius,
+        radiusMeters: 300,
       });
       res.json(area);
     } catch (error) {
