@@ -276,9 +276,9 @@ export function MapHackMap({
       const lng = parseFloat(watchArea.lng);
       L.circle([lat, lng], {
         radius: watchArea.radiusMeters,
-        color: "#f59e0b",
-        fillColor: "#f59e0b",
-        fillOpacity: 0.07,
+        color: "#22c55e",
+        fillColor: "#22c55e",
+        fillOpacity: 0.06,
         weight: 2,
         dashArray: "5 5",
         interactive: false,
@@ -287,9 +287,9 @@ export function MapHackMap({
         html:
           `<div style="` +
           `width:20px;height:20px;border-radius:50%;` +
-          `background:rgba(245,158,11,0.3);` +
-          `border:2px solid rgba(245,158,11,0.8);` +
-          `box-shadow:0 0 0 4px rgba(245,158,11,0.15);` +
+          `background:rgba(34,197,94,0.3);` +
+          `border:2px solid rgba(34,197,94,0.8);` +
+          `box-shadow:0 0 0 4px rgba(34,197,94,0.15);` +
           `animation:watchPulse 1.8s ease-in-out infinite;` +
           `">` +
           `</div>`,
