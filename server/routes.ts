@@ -428,7 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
-      const messages = await storage.getMapChatMessages(20);
+      const messages = await storage.getMapChatMessages();
       res.json(messages);
     } catch (error) {
       console.error("Error fetching map chat:", error);
