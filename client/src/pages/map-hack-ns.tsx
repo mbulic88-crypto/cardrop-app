@@ -631,7 +631,7 @@ export default function MapHackNS() {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) return;
         const resp = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=6&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&type=street&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=6&apiKey=${apiKey}`
         );
         const data = await resp.json();
         const suggestions = (data.features ?? []).map((f: any) => {
