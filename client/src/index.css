@@ -423,6 +423,8 @@ div[class*="geoapify-autocomplete-items"] .active * {
   display: none !important;
 }
 
+} /* end @layer utilities */
+
 @keyframes watchPulse {
   0%, 100% { box-shadow: 0 0 0 4px rgba(34,197,94,0.15); opacity: 1; }
   50% { box-shadow: 0 0 0 10px rgba(34,197,94,0.05); opacity: 0.7; }
