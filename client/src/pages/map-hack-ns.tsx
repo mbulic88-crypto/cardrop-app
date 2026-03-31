@@ -374,7 +374,10 @@ export default function MapHackNS() {
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 45.2671, lng: 19.8335 });
   const [izdajOpen, setIzdajOpen] = useState(false);
   const [aktivnoOpen, setAktivnoOpen] = useState(false);
-  const [bottomTab, setBottomTab] = useState<"info" | "chat">("info");
+  const [lastSeenAt, setLastSeenAt] = useState<number>(() => {
+    const stored = localStorage.getItem("mh_chat_last_seen");
+    return stored ? parseInt(stored, 10) : 0;
+  });
   const [plateInput, setPlateInput] = useState("");
   const [suggestedZone, setSuggestedZone] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -571,6 +574,21 @@ export default function MapHackNS() {
       setIsSaving(false);
     }
   }
+
+  const clearUnread = () => {
+    const now = Date.now();
+    setLastSeenAt(now);
+    localStorage.setItem("mh_chat_last_seen", String(now));
+  };
+
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+    const timer = setTimeout(() => {
+      clearUnread();
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [chatMessages]);
 
   if (viewMode === "loading") {
     return (
@@ -818,6 +836,22 @@ export default function MapHackNS() {
 
   const AVATAR_COLORS = ["#6366f1","#8b5cf6","#ec4899","#f97316","#22c55e","#14b8a6","#3b82f6","#a16207"];
 
+  const formatChatTime = (d: string | Date) => {
+    const date = new Date(d);
+    const now = new Date();
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    const isToday = date.toDateString() === now.toDateString();
+    if (isToday) return `${hh}:${mm}`;
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mo = String(date.getMonth() + 1).padStart(2, "0");
+    return `${dd}.${mo} ${hh}:${mm}`;
+  };
+
+  const unreadCount = chatMessages.filter(
+    m => new Date(m.createdAt).getTime() > lastSeenAt
+  ).length;
+
   const firstZlatni = mapMarkers.find(m => m.type === "zlatni_minut");
   const firstPauk = mapMarkers.find(m => m.type === "pauk");
   const alarmActive = paukInZone.length > 0;
@@ -891,19 +925,25 @@ export default function MapHackNS() {
           {/* Separator */}
           <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)" }} />
 
-          {/* Chat indicator — always visible, shows message count */}
-          <div className="relative flex items-center justify-center"
+          {/* Chat indicator — shows unread count, click to clear */}
+          <button
+            data-testid="btn-chat-indicator"
+            onClick={() => {
+              clearUnread();
+              chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="relative flex items-center justify-center"
             style={{ width: 34, height: 34, borderRadius: "50%",
               background: "rgba(59,130,246,0.15)",
               border: "1px solid rgba(59,130,246,0.35)" }}>
             <MessageSquare size={15} style={{ color: "#93c5fd" }} />
-            {chatMessages.length > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
                 style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8 }}>
-                {chatMessages.length > 9 ? "9+" : chatMessages.length}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-          </div>
+          </button>
 
           {user.isAdmin && (
             <button
@@ -1156,256 +1196,7 @@ export default function MapHackNS() {
         </div>
       </div>
 
-      {/* ── Bottom tab panel: Info | Chat ── */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ background: "#0d1117" }}>
-
-        {/* Tab switcher row */}
-        <div className="flex-shrink-0 flex items-center border-b"
-          style={{ borderColor: "rgba(255,255,255,0.08)", background: "#0d1117" }}>
-          <button
-            data-testid="tab-info"
-            onClick={() => setBottomTab("info")}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold"
-            style={{
-              color: bottomTab === "info" ? "#f97316" : "#6b7280",
-              borderBottom: `2px solid ${bottomTab === "info" ? "#f97316" : "transparent"}`,
-              background: "transparent",
-            }}>
-            <MapPin size={13} />
-            Info
-          </button>
-          <button
-            data-testid="tab-chat"
-            onClick={() => { setBottomTab("chat"); setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50); }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold"
-            style={{
-              color: bottomTab === "chat" ? "#93c5fd" : "#6b7280",
-              borderBottom: `2px solid ${bottomTab === "chat" ? "#93c5fd" : "transparent"}`,
-              background: "transparent",
-            }}>
-            <MessageSquare size={13} />
-            Chat
-            {chatMessages.length > 0 && (
-              <span className="flex items-center justify-center rounded-full text-white font-bold"
-                style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8, marginLeft: 2 }}>
-                {chatMessages.length > 9 ? "9+" : chatMessages.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Info panel */}
-        {bottomTab === "info" && (
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-
-        {/* Card 1 — Zlatni Minut */}
-        <div className="rounded-xl p-3" data-testid="card-zlatni-minut"
-          style={{ background: "#12161e", border: "1px solid rgba(249,115,22,0.2)" }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center rounded-lg" style={{ width: 32, height: 32, background: "rgba(249,115,22,0.15)" }}>
-                <Clock size={16} style={{ color: "#f97316" }} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">Zlatni Minut</p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>Slobodna mesta</p>
-              </div>
-            </div>
-            <button onClick={() => { refetchMarkers(); }} className="text-gray-600" data-testid="btn-refresh-zlatni">
-              <RefreshCw size={11} />
-            </button>
-          </div>
-          {firstZlatni ? (
-            <>
-              <p className="text-xs mb-2" style={{ color: "#9ca3af" }}>
-                Izlazim za:{" "}
-                <span style={{ color: "#f97316", fontWeight: 600 }}>
-                  {firstZlatni.expiresAt ? timeLeft(firstZlatni.expiresAt) : timeAgo(firstZlatni.createdAt)}
-                </span>
-                {" | "}Slobodno za: <span style={{ color: "#fbbf24", fontWeight: 600 }}>~5 min</span>
-              </p>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1 flex-wrap">
-                  {mapMarkers.filter(m => m.type === "zlatni_minut").map(m => (
-                    <span key={m.id} className="text-xs px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(249,115,22,0.12)", color: "#fdba74", border: "1px solid rgba(249,115,22,0.25)" }}>
-                      {m.expiresAt ? timeLeft(m.expiresAt) : timeAgo(m.createdAt)}
-                    </span>
-                  ))}
-                </div>
-                <a
-                  data-testid="btn-navigiraj-zlatni"
-                  href={`https://www.google.com/maps?q=${firstZlatni.lat},${firstZlatni.lng}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
-                  style={{ background: "rgba(255,255,255,0.08)", color: "#e5e7eb", border: "1px solid rgba(255,255,255,0.15)" }}>
-                  Navigiraj »
-                </a>
-              </div>
-            </>
-          ) : (
-            <p className="text-xs py-1" style={{ color: "#4b5563" }}>
-              Nema aktivnih Zlatni Minut mesta u blizini.
-            </p>
-          )}
-          <button onClick={() => setAddMode("zlatni_minut")}
-            data-testid="btn-add-zlatni_minut"
-            className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.22)", color: "#f97316" }}>
-            + Prijavi slobodno mesto
-          </button>
-        </div>
-
-        {/* Card 2 — Pauk Radar */}
-        <div className="rounded-xl p-3" data-testid="card-pauk-radar"
-          style={{ background: "#12161e", border: `1px solid ${firstPauk ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.15)"}` }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center rounded-lg"
-                style={{ width: 32, height: 32, background: firstPauk ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.08)" }}>
-                <Truck size={16} style={{ color: firstPauk ? "#f87171" : "#6b7280" }} />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">Pauk Radar</p>
-                <p className="text-xs" style={{ color: "#6b7280" }}>
-                  {firstPauk ? "Pauk aktivan!" : "Zona čista"}
-                </p>
-              </div>
-            </div>
-            {alarmActive && (
-              <span className="text-xs px-2 py-0.5 rounded-full font-bold animate-pulse"
-                style={{ background: "rgba(239,68,68,0.2)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.4)" }}>
-                ALARM
-              </span>
-            )}
-          </div>
-          {firstPauk ? (
-            <>
-              <p className="text-xs mb-2.5 font-medium" style={{ color: "#fca5a5" }}>
-                Pauk viđen u blizini · {timeAgo(firstPauk.createdAt)}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  data-testid="btn-push-alert"
-                  className="flex-1 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171" }}>
-                  PUSH ALERT
-                </button>
-                <button
-                  data-testid="btn-detalji-pauk"
-                  onClick={() => setActiveTab("pauk")}
-                  className="flex-1 py-1.5 rounded-lg text-xs font-bold"
-                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb" }}>
-                  Detalji »
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="text-xs py-1" style={{ color: "#4b5563" }}>
-              Nema aktivnih Pauk Radar signala u blizini.
-            </p>
-          )}
-          <button onClick={() => setAddMode("pauk")}
-            data-testid="btn-add-pauk"
-            className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
-            + Prijavi pauka
-          </button>
-        </div>
-
-        {/* Card 3 — Safe Zone Alarm */}
-        <div className="rounded-xl p-3" data-testid="card-safe-zone-alarm"
-          style={{ background: "#12161e", border: `1px solid ${alarmActive ? "rgba(239,68,68,0.5)" : "rgba(59,130,246,0.22)"}` }}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2 flex-1">
-              <div className="flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ width: 32, height: 32, background: alarmActive ? "rgba(239,68,68,0.2)" : "rgba(239,68,68,0.15)",
-                  border: `2px solid ${alarmActive ? "#ef4444" : "rgba(239,68,68,0.5)"}` }}>
-                <AlertTriangle size={15} style={{ color: alarmActive ? "#f87171" : "#ef4444" }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-white">Safe Zone Alarm</p>
-                {alarmActive ? (
-                  <>
-                    <p className="text-xs font-bold mt-0.5 animate-pulse" style={{ color: "#f87171" }}>
-                      PAUK JE BLIZU TVOG AUTA!
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: "#f97316" }}>Alarm Aktiviran!</p>
-                  </>
-                ) : safeZone ? (
-                  <>
-                    <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
-                      {safeZone.radiusMeters}m radijus aktiviran
-                    </p>
-                    <p className="text-xs mt-0.5 font-medium" style={{ color: "#f97316" }}>Alarm Aktiviran!</p>
-                  </>
-                ) : (
-                  <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
-                    Postavi zonu da dobijaš alarm
-                  </p>
-                )}
-              </div>
-            </div>
-            {/* Blue timer circle — always visible when zone set or alarm */}
-            {(safeZone || alarmActive) && (
-              <div className="flex items-center justify-center rounded-full flex-shrink-0 ml-2"
-                style={{ width: 48, height: 48,
-                  background: alarmActive ? "rgba(239,68,68,0.1)" : "rgba(59,130,246,0.12)",
-                  border: `2px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(59,130,246,0.4)"}`,
-                  boxShadow: `0 0 12px ${alarmActive ? "rgba(239,68,68,0.25)" : "rgba(59,130,246,0.25)"}` }}>
-                <Clock size={20} style={{ color: alarmActive ? "#f87171" : "#93c5fd" }} />
-              </div>
-            )}
-          </div>
-          <button
-            data-testid="btn-set-safe-zone"
-            onClick={() => setSafeZoneMutation.mutate({ lat: 45.2671, lng: 19.8335, radiusMeters: 300 })}
-            className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold"
-            style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.22)", color: "#93c5fd" }}>
-            {safeZone ? "Resetuj safe zone" : "Postavi Safe Zone"}
-          </button>
-        </div>
-
-        {/* Selected marker detail — shown below 3 main cards when a marker is tapped */}
-        {selectedMarker && (
-          <div className="rounded-xl p-3" data-testid="card-selected-marker"
-            style={{ background: `${markerColor(selectedMarker.type)}14`, border: `1px solid ${markerColor(selectedMarker.type)}30` }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span style={{ fontSize: 18 }}>{markerEmoji(selectedMarker.type)}</span>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: markerColor(selectedMarker.type) }}>
-                    {markerLabel(selectedMarker.type)}
-                  </p>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                    <Clock size={9} />
-                    {timeAgo(selectedMarker.createdAt)}
-                    {selectedMarker.expiresAt && (
-                      <span style={{ color: "#f97316" }}>· {timeLeft(selectedMarker.expiresAt)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {user.isAdmin && (
-                  <Button size="icon" variant="ghost" data-testid="btn-expire-marker"
-                    onClick={() => expireMarkerMutation.mutate(selectedMarker.id)} className="text-red-400">
-                    <Trash2 size={13} />
-                  </Button>
-                )}
-                <Button size="icon" variant="ghost" data-testid="btn-close-marker-info"
-                  onClick={() => setSelectedMarker(null)} className="text-gray-400">
-                  <X size={13} />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        </div>
-        )}
-
         {/* ── Chat panel ── */}
-        {bottomTab === "chat" && (
         <div className="flex-1 flex flex-col overflow-hidden" data-testid="panel-chat"
           style={{ background: "#0d1117" }}>
           <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
@@ -1433,7 +1224,7 @@ export default function MapHackNS() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold" style={{ color: "#d1d5db" }}>{msg.mapNickname}</span>
-                      <span className="text-xs" style={{ color: "#4b5563" }}>{timeAgo(msg.createdAt)}</span>
+                      <span className="text-xs" style={{ color: "#4b5563" }}>{formatChatTime(msg.createdAt)}</span>
                     </div>
                     {msg.replyToNickname && msg.replyToText && (
                       <div className="mt-0.5 mb-0.5 pl-2 rounded-sm text-xs"
@@ -1505,9 +1296,6 @@ export default function MapHackNS() {
             </div>
           </div>
         </div>
-        )}
-
-      </div>
 
       {/* ── Zona upozorenja Modal ── */}
       {watchZoneOpen && (
@@ -1527,7 +1315,7 @@ export default function MapHackNS() {
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">Zona upozorenja</p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>Push alert kad Zlatni Minut ili Pauk uđe u zonu</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Push alert kad Zlatni Minut uđe u zonu</p>
                 </div>
               </div>
               <button onClick={() => setWatchZoneOpen(false)}

@@ -478,10 +478,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(mapMarkers.id, id));
   }
 
-  async getMapChatMessages(limit = 20): Promise<MapChatMessage[]> {
+  async getMapChatMessages(limit = 60): Promise<MapChatMessage[]> {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const rows = await db
       .select()
       .from(mapChatMessages)
+      .where(gt(mapChatMessages.createdAt, cutoff))
       .orderBy(desc(mapChatMessages.createdAt))
       .limit(limit);
     return rows.reverse();
