@@ -10,7 +10,8 @@ import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClie
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { getStripePriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq, or, gt, desc } from "drizzle-orm";
+import { mapMarkers as mapMarkersTable, users as usersTable } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -287,8 +288,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
-      const markers = await storage.getActiveMapMarkers();
-      res.json(markers);
+      const now = new Date();
+      const markersWithNick = await db
+        .select({
+          id: mapMarkersTable.id,
+          userId: mapMarkersTable.userId,
+          type: mapMarkersTable.type,
+          lat: mapMarkersTable.lat,
+          lng: mapMarkersTable.lng,
+          label: mapMarkersTable.label,
+          createdAt: mapMarkersTable.createdAt,
+          expiresAt: mapMarkersTable.expiresAt,
+          mapNickname: usersTable.mapNickname,
+        })
+        .from(mapMarkersTable)
+        .leftJoin(usersTable, eq(mapMarkersTable.userId, usersTable.id))
+        .where(
+          or(
+            sql`${mapMarkersTable.expiresAt} IS NULL`,
+            gt(mapMarkersTable.expiresAt, now)
+          )
+        )
+        .orderBy(desc(mapMarkersTable.createdAt));
+      res.json(markersWithNick);
     } catch (error) {
       console.error("Error fetching map markers:", error);
       res.status(500).json({ message: "Greška pri učitavanju markera" });
@@ -419,6 +441,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Map Hack NS — Update marker label (comment / info) ─────────────────
+
+  app.patch('/api/map-hack/markers/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+
+      const markers = await storage.getActiveMapMarkers();
+      const marker = markers.find(m => m.id === req.params.id);
+      if (!marker) return res.status(404).json({ message: "Marker nije pronađen" });
+
+      // Only owner can edit zlatni_minut; only admin can edit stek/pauk
+      if (marker.type === "zlatni_minut") {
+        if (marker.userId !== userId) {
+          return res.status(403).json({ message: "Samo vlasnik može menjati komentar" });
+        }
+      } else {
+        if (!user.isAdmin) {
+          return res.status(403).json({ message: "Samo admin može menjati informacije" });
+        }
+      }
+
+      const rawLabel: string | undefined = req.body.label;
+      const label = typeof rawLabel === "string" ? rawLabel.slice(0, 120).trim() || null : null;
+      const updated = await storage.updateMapMarkerLabel(req.params.id, label);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating marker label:", error);
+      res.status(500).json({ message: "Greška pri ažuriranju markera" });
+    }
+  });
+
   // ─── Map Hack NS — Parking Listings (app rentals on map) ─────────────────
 
   app.get('/api/map-hack/parking-listings', isAuthenticated, async (req: any, res) => {
@@ -439,6 +496,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           longitude: s.longitude,
           pricePerHour: s.pricePerHour,
           pricingType: s.pricingType,
+          description: s.description,
+          phone: s.phone,
+          contactEmail: s.contactEmail,
+          spotType: s.spotType,
+          is24Hours: s.is24Hours,
+          hasEvCharging: s.hasEvCharging,
+          hasSecurityCamera: s.hasSecurityCamera,
         }));
       res.json(listings);
     } catch (error) {

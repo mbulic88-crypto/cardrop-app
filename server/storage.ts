@@ -96,6 +96,7 @@ export interface IStorage {
   getActiveMapMarkers(): Promise<MapMarker[]>;
   createMapMarker(data: InsertMapMarker): Promise<MapMarker>;
   expireMapMarker(id: string): Promise<void>;
+  updateMapMarkerLabel(id: string, label: string | null): Promise<MapMarker>;
   getMapChatMessages(limit?: number): Promise<MapChatMessage[]>;
   createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage>;
   getMapSafeZone(userId: string): Promise<MapSafeZone | undefined>;
@@ -476,6 +477,15 @@ export class DatabaseStorage implements IStorage {
       .update(mapMarkers)
       .set({ expiresAt: new Date() })
       .where(eq(mapMarkers.id, id));
+  }
+
+  async updateMapMarkerLabel(id: string, label: string | null): Promise<MapMarker> {
+    const [marker] = await db
+      .update(mapMarkers)
+      .set({ label })
+      .where(eq(mapMarkers.id, id))
+      .returning();
+    return marker;
   }
 
   async getMapChatMessages(limit = 60): Promise<MapChatMessage[]> {

@@ -14,6 +14,8 @@ import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
 
+type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
+
 type MapHackStatus = {
   phase: "trial" | "trial_expired" | "active" | "plan_expired";
   trialStartedAt: string | null;
@@ -366,7 +368,9 @@ export default function MapHackNS() {
   const [activeFilters, setActiveFilters] = useState<string[]>(["sve"]);
   const [activeTab, setActiveTab] = useState<MarkerType>("zlatni_minut");
   const [addMode, setAddMode] = useState<MarkerType | null>(null);
-  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarkerWithNickname | null>(null);
+  const [selectedParking, setSelectedParking] = useState<ParkingListing | null>(null);
+  const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
@@ -392,7 +396,7 @@ export default function MapHackNS() {
 
   const isMapView = viewMode === "map_view";
 
-  const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarker[]>({
+  const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarkerWithNickname[]>({
     queryKey: ["/api/map-hack/markers"],
     enabled: isMapView,
     refetchInterval: isMapView ? 30000 : false,
@@ -444,6 +448,19 @@ export default function MapHackNS() {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
       setSelectedMarker(null);
       toast({ title: "Marker uklonjen" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const updateMarkerLabelMutation = useMutation({
+    mutationFn: ({ id, label }: { id: string; label: string | null }) =>
+      apiRequest("PATCH", `/api/map-hack/markers/${id}`, { label }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setMarkerLabelEdit(null);
+      toast({ title: "Sačuvano" });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -614,14 +631,17 @@ export default function MapHackNS() {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) return;
         const resp = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=rect:19.70,45.18,20.00,45.37&lang=sr&limit=5&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=6&apiKey=${apiKey}`
         );
         const data = await resp.json();
-        const suggestions = (data.features ?? []).map((f: any) => ({
-          text: f.properties.formatted ?? f.properties.name ?? "",
-          lat: f.geometry.coordinates[1],
-          lng: f.geometry.coordinates[0],
-        }));
+        const suggestions = (data.features ?? []).map((f: any) => {
+          const p = f.properties;
+          const street = p.street ?? p.name ?? "";
+          const housenumber = p.housenumber ? ` ${p.housenumber}` : "";
+          const city = p.city ?? p.town ?? p.village ?? "Novi Sad";
+          const text = street ? `${street}${housenumber}, ${city}` : (p.formatted ?? "");
+          return { text, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
+        });
         setSearchSuggestions(suggestions);
       } catch (_) {
         setSearchSuggestions([]);
@@ -939,6 +959,236 @@ export default function MapHackNS() {
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
 
+      {/* ── Marker Detail Panel ── */}
+      {selectedMarker && (
+        <div
+          className="absolute inset-0 z-50 flex flex-col justify-end"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => { setSelectedMarker(null); setMarkerLabelEdit(null); }}
+        >
+          <div
+            className="rounded-t-2xl px-4 pt-4 pb-6 flex flex-col gap-3"
+            style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "65vh", overflowY: "auto" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${markerColor(selectedMarker.type)}22`, border: `1.5px solid ${markerColor(selectedMarker.type)}99` }}>
+                  <span style={{ fontSize: 13 }}>{markerEmoji(selectedMarker.type)}</span>
+                </div>
+                <span className="font-bold text-white text-sm">{markerLabel(selectedMarker.type)}</span>
+              </div>
+              <button onClick={() => { setSelectedMarker(null); setMarkerLabelEdit(null); }}>
+                <X size={16} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            {/* Creator + time */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs" style={{ color: "#9ca3af" }}>
+                {selectedMarker.mapNickname || "Korisnik"}
+              </span>
+              <span style={{ color: "#4b5563", fontSize: 11 }}>·</span>
+              <span className="text-xs" style={{ color: "#6b7280" }}>
+                {timeAgo(selectedMarker.createdAt)}
+              </span>
+              {selectedMarker.expiresAt && (
+                <>
+                  <span style={{ color: "#4b5563", fontSize: 11 }}>·</span>
+                  <span className="text-xs" style={{ color: "#6b7280" }}>
+                    ističe za {timeLeft(selectedMarker.expiresAt)}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Comment / info text */}
+            {(selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek") && (
+              <>
+                {selectedMarker.label && markerLabelEdit === null && (
+                  <div className="px-3 py-2 rounded-xl text-sm" style={{ background: "rgba(255,255,255,0.05)", color: "#d1d5db", lineHeight: 1.5 }}>
+                    {selectedMarker.label}
+                  </div>
+                )}
+
+                {/* Edit textarea */}
+                {markerLabelEdit !== null && (
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      value={markerLabelEdit}
+                      onChange={(e) => setMarkerLabelEdit(e.target.value)}
+                      maxLength={120}
+                      rows={3}
+                      placeholder={selectedMarker.type === "zlatni_minut" ? "Dodaj komentar o parking mestu..." : "Dodaj informaciju o štek lokaciji..."}
+                      className="w-full text-sm rounded-xl px-3 py-2 resize-none"
+                      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb", outline: "none" }}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateMarkerLabelMutation.mutate({ id: selectedMarker.id, label: markerLabelEdit.trim() || null })}
+                        disabled={updateMarkerLabelMutation.isPending}
+                        className="flex-1 py-2 rounded-xl text-xs font-bold"
+                        style={{ background: "#166534", color: "#4ade80" }}
+                      >
+                        {updateMarkerLabelMutation.isPending ? "Čuvam..." : "Sačuvaj"}
+                      </button>
+                      <button onClick={() => setMarkerLabelEdit(null)} className="px-4 py-2 rounded-xl text-xs" style={{ color: "#9ca3af", border: "1px solid rgba(255,255,255,0.10)" }}>
+                        Otkaži
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit trigger */}
+                {markerLabelEdit === null && (
+                  (() => {
+                    const canEdit = selectedMarker.type === "zlatni_minut"
+                      ? selectedMarker.userId === user.id
+                      : user.isAdmin;
+                    if (!canEdit) return null;
+                    return (
+                      <button
+                        onClick={() => setMarkerLabelEdit(selectedMarker.label ?? "")}
+                        className="text-xs font-medium text-left"
+                        style={{ color: markerColor(selectedMarker.type) }}
+                      >
+                        {selectedMarker.label ? "Izmeni komentar" : (selectedMarker.type === "zlatni_minut" ? "+ Dodaj komentar" : "+ Dodaj informaciju")}
+                      </button>
+                    );
+                  })()
+                )}
+              </>
+            )}
+
+            {/* Google Maps link */}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${selectedMarker.lat},${selectedMarker.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="link-marker-gmaps"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold"
+              style={{ background: "rgba(14,165,233,0.10)", border: "1px solid rgba(14,165,233,0.30)", color: "#38bdf8" }}
+            >
+              <Navigation size={14} />
+              Otvori u Google Maps
+            </a>
+
+            {/* Admin: remove marker */}
+            {user.isAdmin && (
+              <button
+                data-testid="btn-expire-selected-marker"
+                onClick={() => expireMarkerMutation.mutate(selectedMarker.id)}
+                disabled={expireMarkerMutation.isPending}
+                className="w-full py-2 rounded-xl text-xs font-medium"
+                style={{ color: "#ef4444", border: "1px solid rgba(239,68,68,0.20)" }}
+              >
+                {expireMarkerMutation.isPending ? "Uklanjam..." : "Ukloni marker"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Private Parking Detail Panel (admin only) ── */}
+      {selectedParking && (
+        <div
+          className="absolute inset-0 z-50 flex flex-col justify-end"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setSelectedParking(null)}
+        >
+          <div
+            className="rounded-t-2xl px-4 pt-4 pb-6 flex flex-col gap-3"
+            style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "70vh", overflowY: "auto" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Panel header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.18)", border: "1.5px solid rgba(59,130,246,0.7)" }}>
+                  <span className="font-bold text-xs" style={{ color: "#93c5fd" }}>P</span>
+                </div>
+                <span className="font-bold text-white text-sm truncate" style={{ maxWidth: 220 }}>{selectedParking.title}</span>
+              </div>
+              <button onClick={() => setSelectedParking(null)}>
+                <X size={16} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            {/* Address */}
+            <div className="flex items-start gap-2">
+              <MapPin size={13} style={{ color: "#6b7280", marginTop: 2, flexShrink: 0 }} />
+              <span className="text-xs" style={{ color: "#9ca3af" }}>{selectedParking.address}</span>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-lg text-sm font-bold" style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa" }}>
+                {parseFloat(selectedParking.pricePerHour).toFixed(0)} RSD
+                {selectedParking.pricingType === "hourly" ? "/h" : selectedParking.pricingType === "daily" ? "/dan" : selectedParking.pricingType === "monthly" ? "/mes" : "/dan"}
+              </div>
+              {selectedParking.spotType && (
+                <span className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
+                  {selectedParking.spotType === "covered" ? "Natkriveno" : selectedParking.spotType === "garage" ? "Garaža" : "Otvoreno"}
+                </span>
+              )}
+            </div>
+
+            {/* Amenities */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectedParking.is24Hours && (
+                <span className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(34,197,94,0.10)", color: "#4ade80" }}>24/7</span>
+              )}
+              {selectedParking.hasEvCharging && (
+                <span className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(234,179,8,0.10)", color: "#fbbf24" }}>EV punjač</span>
+              )}
+              {selectedParking.hasSecurityCamera && (
+                <span className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(107,114,128,0.15)", color: "#9ca3af" }}>Kamera</span>
+              )}
+            </div>
+
+            {/* Description */}
+            {selectedParking.description && (
+              <div className="px-3 py-2 rounded-xl text-xs" style={{ background: "rgba(255,255,255,0.04)", color: "#d1d5db", lineHeight: 1.6 }}>
+                {selectedParking.description}
+              </div>
+            )}
+
+            {/* Contact */}
+            {(selectedParking.phone || selectedParking.contactEmail) && (
+              <div className="flex flex-col gap-1">
+                {selectedParking.phone && (
+                  <div className="flex items-center gap-2">
+                    <Smartphone size={12} style={{ color: "#6b7280" }} />
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>{selectedParking.phone}</span>
+                  </div>
+                )}
+                {selectedParking.contactEmail && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs" style={{ color: "#6b7280" }}>@</span>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>{selectedParking.contactEmail}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Google Maps */}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${selectedParking.latitude},${selectedParking.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="link-parking-gmaps"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold"
+              style={{ background: "rgba(14,165,233,0.10)", border: "1px solid rgba(14,165,233,0.30)", color: "#38bdf8" }}
+            >
+              <Navigation size={14} />
+              Otvori u Google Maps
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* ── Header: back arrow + search + bell + chat ── */}
       <div className="flex-shrink-0 z-30" style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between px-3 py-3">
@@ -1121,6 +1371,7 @@ export default function MapHackNS() {
           onChatClick={undefined}
           parkingListings={parkingListings}
           flyToLocation={flyToLocation}
+          onParkingClick={user.isAdmin ? setSelectedParking : undefined}
         />
 
         {/* Add-mode banner */}

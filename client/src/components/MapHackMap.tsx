@@ -18,6 +18,13 @@ export interface ParkingListing {
   longitude: string;
   pricePerHour: string;
   pricingType: string;
+  description?: string | null;
+  phone?: string | null;
+  contactEmail?: string | null;
+  spotType?: string | null;
+  is24Hours?: boolean | null;
+  hasEvCharging?: boolean | null;
+  hasSecurityCamera?: boolean | null;
 }
 
 export interface MapHackMapProps {
@@ -35,6 +42,7 @@ export interface MapHackMapProps {
   onChatClick?: () => void;
   parkingListings?: ParkingListing[];
   flyToLocation?: { lat: number; lng: number } | null;
+  onParkingClick?: (listing: ParkingListing) => void;
 }
 
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN as string) || "";
@@ -119,6 +127,7 @@ export function MapHackMap({
   onChatClick,
   parkingListings,
   flyToLocation,
+  onParkingClick,
 }: MapHackMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -342,16 +351,20 @@ export function MapHackMap({
       const unit = spot.pricingType === "hourly" ? "/h" : spot.pricingType === "daily" ? "/dan" : spot.pricingType === "monthly" ? "/mes" : "/dan";
       const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
       const lm = L.marker([lat, lng], { icon }).addTo(parkingLayerRef.current!);
-      lm.bindPopup(
-        `<div style="font-size:12px;min-width:150px;max-width:200px;">` +
-        `<div style="font-weight:600;margin-bottom:2px;color:#111;">${esc(spot.title)}</div>` +
-        `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${esc(spot.address ?? "")}</div>` +
-        `<div style="font-weight:700;color:#2563eb;">${esc(price)} RSD${esc(unit)}</div>` +
-        `</div>`,
-        { closeButton: false, maxWidth: 220 }
-      );
+      if (onParkingClick) {
+        lm.on("click", () => onParkingClick(spot));
+      } else {
+        lm.bindPopup(
+          `<div style="font-size:12px;min-width:150px;max-width:200px;">` +
+          `<div style="font-weight:600;margin-bottom:2px;color:#111;">${esc(spot.title)}</div>` +
+          `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${esc(spot.address ?? "")}</div>` +
+          `<div style="font-weight:700;color:#2563eb;">${esc(price)} RSD${esc(unit)}</div>` +
+          `</div>`,
+          { closeButton: false, maxWidth: 220 }
+        );
+      }
     });
-  }, [parkingListings]);
+  }, [parkingListings, onParkingClick]);
 
   useEffect(() => {
     if (!flyToLocation || !leafletMapRef.current) return;
