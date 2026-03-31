@@ -486,24 +486,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
       const spots = await storage.getAllParkingSpots();
+      const isAdmin = user.isAdmin === true;
       const listings = spots
         .filter(s => s.isActive && s.latitude && s.longitude)
-        .map(s => ({
-          id: s.id,
-          title: s.title,
-          address: s.address,
-          latitude: s.latitude,
-          longitude: s.longitude,
-          pricePerHour: s.pricePerHour,
-          pricingType: s.pricingType,
-          description: s.description,
-          phone: s.phone,
-          contactEmail: s.contactEmail,
-          spotType: s.spotType,
-          is24Hours: s.is24Hours,
-          hasEvCharging: s.hasEvCharging,
-          hasSecurityCamera: s.hasSecurityCamera,
-        }));
+        .map(s => {
+          const base = {
+            id: s.id,
+            title: s.title,
+            address: s.address,
+            latitude: s.latitude,
+            longitude: s.longitude,
+            pricePerHour: s.pricePerHour,
+            pricingType: s.pricingType,
+            spotType: s.spotType,
+            is24Hours: s.is24Hours,
+            hasEvCharging: s.hasEvCharging,
+            hasSecurityCamera: s.hasSecurityCamera,
+          };
+          if (isAdmin) {
+            return { ...base, description: s.description, phone: s.phone, contactEmail: s.contactEmail };
+          }
+          return base;
+        });
       res.json(listings);
     } catch (error) {
       console.error("Error fetching parking listings for map:", error);
