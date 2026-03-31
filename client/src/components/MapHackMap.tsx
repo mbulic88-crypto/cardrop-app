@@ -10,6 +10,16 @@ export interface ChatPreviewMsg {
   mapAvatarId: number | null;
 }
 
+export interface ParkingListing {
+  id: string;
+  title: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  pricePerHour: string;
+  pricingType: string;
+}
+
 export interface MapHackMapProps {
   markers: MapMarker[];
   activeFilters: string[];
@@ -23,6 +33,8 @@ export interface MapHackMapProps {
   onCenterChange?: (lat: number, lng: number) => void;
   chatPreviewMsg?: ChatPreviewMsg | null;
   onChatClick?: () => void;
+  parkingListings?: ParkingListing[];
+  flyToLocation?: { lat: number; lng: number } | null;
 }
 
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN as string) || "";
@@ -105,6 +117,8 @@ export function MapHackMap({
   onCenterChange,
   chatPreviewMsg,
   onChatClick,
+  parkingListings,
+  flyToLocation,
 }: MapHackMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -112,6 +126,7 @@ export function MapHackMap({
   const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
   const safeZoneLayerRef = useRef<L.LayerGroup | null>(null);
   const watchAreaLayerRef = useRef<L.LayerGroup | null>(null);
+  const parkingLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -173,6 +188,7 @@ export function MapHackMap({
     heatmapLayerRef.current = L.layerGroup().addTo(map);
     safeZoneLayerRef.current = L.layerGroup().addTo(map);
     watchAreaLayerRef.current = L.layerGroup().addTo(map);
+    parkingLayerRef.current = L.layerGroup().addTo(map);
     leafletMapRef.current = map;
 
     return () => {
@@ -299,6 +315,47 @@ export function MapHackMap({
       L.marker([lat, lng], { icon: pulseIcon, interactive: false }).addTo(watchAreaLayerRef.current!);
     }
   }, [watchArea]);
+
+  useEffect(() => {
+    if (!parkingLayerRef.current) return;
+    parkingLayerRef.current.clearLayers();
+    (parkingListings ?? []).forEach(spot => {
+      const lat = parseFloat(spot.latitude);
+      const lng = parseFloat(spot.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+      const icon = L.divIcon({
+        html:
+          `<div style="` +
+          `width:30px;height:30px;border-radius:50%;` +
+          `background:rgba(59,130,246,0.22);` +
+          `border:2px solid rgba(59,130,246,0.8);` +
+          `display:flex;align-items:center;justify-content:center;` +
+          `box-shadow:0 2px 8px rgba(59,130,246,0.3);` +
+          `cursor:pointer;font-weight:700;color:#93c5fd;font-size:13px;` +
+          `font-family:system-ui,sans-serif;">` +
+          `P` +
+          `</div>`,
+        className: "",
+        iconAnchor: [15, 15],
+      });
+      const price = parseFloat(spot.pricePerHour).toFixed(0);
+      const unit = spot.pricingType === "hourly" ? "/h" : spot.pricingType === "daily" ? "/dan" : spot.pricingType === "monthly" ? "/mes" : "/dan";
+      const lm = L.marker([lat, lng], { icon }).addTo(parkingLayerRef.current!);
+      lm.bindPopup(
+        `<div style="font-size:12px;min-width:150px;max-width:200px;">` +
+        `<div style="font-weight:600;margin-bottom:2px;color:#111;">${spot.title}</div>` +
+        `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${spot.address}</div>` +
+        `<div style="font-weight:700;color:#2563eb;">${price} RSD${unit}</div>` +
+        `</div>`,
+        { closeButton: false, maxWidth: 220 }
+      );
+    });
+  }, [parkingListings]);
+
+  useEffect(() => {
+    if (!flyToLocation || !leafletMapRef.current) return;
+    leafletMapRef.current.flyTo([flyToLocation.lat, flyToLocation.lng], 16, { animate: true, duration: 1 });
+  }, [flyToLocation]);
 
   const avatarIdx = (chatPreviewMsg?.mapAvatarId ?? 1) % AVATAR_COLORS.length;
   const previewText = chatPreviewMsg

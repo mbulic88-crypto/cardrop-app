@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck, Car, Home, Smartphone, Navigation } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck, Car, Home, Smartphone, Navigation, Search, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters } from "@/components/MapHackMap";
+import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
 
@@ -381,8 +382,13 @@ export default function MapHackNS() {
   const [plateInput, setPlateInput] = useState("");
   const [suggestedZone, setSuggestedZone] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; lat: number; lng: number }>>([]);
+  const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isMapView = viewMode === "map_view";
 
@@ -406,6 +412,12 @@ export default function MapHackNS() {
   const { data: watchArea = null } = useQuery<MapWatchArea | null>({
     queryKey: ["/api/map-hack/watch-area"],
     enabled: isMapView && (user?.isAdmin || ["premium","day_pass","godisnji_premium","firma"].includes(mapStatus?.plan ?? "")),
+  });
+
+  const { data: parkingListings = [] } = useQuery<ParkingListing[]>({
+    queryKey: ["/api/map-hack/parking-listings"],
+    enabled: isMapView,
+    refetchInterval: isMapView ? 120000 : false,
   });
 
   const addMarkerMutation = useMutation({
@@ -589,6 +601,35 @@ export default function MapHackNS() {
     }, 1500);
     return () => clearTimeout(timer);
   }, [chatMessages]);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!searchQuery.trim() || searchQuery.length < 3) {
+      setSearchSuggestions([]);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
+        if (!apiKey) return;
+        const resp = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=rect:19.70,45.18,20.00,45.37&lang=sr&limit=5&apiKey=${apiKey}`
+        );
+        const data = await resp.json();
+        const suggestions = (data.features ?? []).map((f: any) => ({
+          text: f.properties.formatted ?? f.properties.name ?? "",
+          lat: f.geometry.coordinates[1],
+          lng: f.geometry.coordinates[0],
+        }));
+        setSearchSuggestions(suggestions);
+      } catch (_) {
+        setSearchSuggestions([]);
+      }
+    }, 350);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchQuery]);
 
   if (viewMode === "loading") {
     return (
@@ -897,12 +938,69 @@ export default function MapHackNS() {
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
 
-      {/* ── Header: Map Hack NS title + bell + chat ── */}
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 z-30"
-        style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        {/* Title */}
-        <p className="text-lg font-bold text-white tracking-tight" data-testid="text-map-title">Map Hack NS</p>
-        {/* Right: bell + separator + chat */}
+      {/* ── Header: back arrow + search + bell + chat ── */}
+      <div className="flex-shrink-0 z-30" style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center justify-between px-3 py-3">
+          {/* Left: back arrow */}
+          <Link href="/">
+            <button
+              data-testid="btn-back-home"
+              className="flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)" }}>
+              <ArrowLeft size={16} style={{ color: "#d1d5db" }} />
+            </button>
+          </Link>
+
+          {/* Center: search button or search input */}
+          {searchOpen ? (
+            <div className="flex-1 mx-2 relative">
+              <input
+                autoFocus
+                data-testid="input-map-search"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); setSearchSuggestions([]); } }}
+                placeholder="Pretraži ulicu ili adresu..."
+                className="w-full text-sm rounded-xl px-3 py-1.5 outline-none"
+                style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.16)", color: "#e5e7eb" }}
+              />
+              {searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
+                  style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                  {searchSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      data-testid={`search-result-${i}`}
+                      onClick={() => {
+                        setFlyToLocation({ lat: s.lat, lng: s.lng });
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                        setSearchSuggestions([]);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm"
+                      style={{ color: "#d1d5db", borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                      <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
+                      <span className="truncate">{s.text}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              data-testid="btn-map-search"
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)" }}>
+              <Search size={15} style={{ color: "#9ca3af" }} />
+            </button>
+          )}
+
+          {/* Right: bell + separator + chat */}
         <div className="flex items-center gap-3">
           {/* Bell alarm icon */}
           <button
@@ -954,6 +1052,7 @@ export default function MapHackNS() {
               {isResetting ? <Loader2 size={11} className="animate-spin text-gray-500" /> : <RefreshCw size={11} className="text-gray-600" />}
             </button>
           )}
+        </div>
         </div>
       </div>
 
@@ -1019,6 +1118,8 @@ export default function MapHackNS() {
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           chatPreviewMsg={null}
           onChatClick={undefined}
+          parkingListings={parkingListings}
+          flyToLocation={flyToLocation}
         />
 
         {/* Add-mode banner */}
@@ -1193,6 +1294,16 @@ export default function MapHackNS() {
               </div>
             )}
           </div>
+
+          {/* Izdaj Parking — link to add-spot */}
+          <button
+            data-testid="btn-izdaj-parking"
+            onClick={() => setLocation("/select-category")}
+            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl h-full"
+            style={{ background: "rgba(14,165,233,0.1)", border: "1.5px solid rgba(14,165,233,0.35)", minWidth: 56 }}>
+            <Plus size={18} style={{ color: "#38bdf8" }} />
+            <span className="font-bold" style={{ color: "#38bdf8", fontSize: 10, letterSpacing: "0.02em" }}>Izdaj</span>
+          </button>
         </div>
       </div>
 

@@ -419,6 +419,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Map Hack NS — Parking Listings (app rentals on map) ─────────────────
+
+  app.get('/api/map-hack/parking-listings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const spots = await storage.getAllParkingSpots();
+      const listings = spots
+        .filter(s => s.isActive && s.latitude && s.longitude)
+        .map(s => ({
+          id: s.id,
+          title: s.title,
+          address: s.address,
+          latitude: s.latitude,
+          longitude: s.longitude,
+          pricePerHour: s.pricePerHour,
+          pricingType: s.pricingType,
+        }));
+      res.json(listings);
+    } catch (error) {
+      console.error("Error fetching parking listings for map:", error);
+      res.status(500).json({ message: "Greška pri učitavanju oglasa" });
+    }
+  });
+
   // ─── Map Hack NS — Chat ───────────────────────────────────────────────────
 
   app.get('/api/map-hack/chat', isAuthenticated, async (req: any, res) => {
