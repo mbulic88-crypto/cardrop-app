@@ -340,12 +340,13 @@ export function MapHackMap({
       });
       const price = parseFloat(spot.pricePerHour).toFixed(0);
       const unit = spot.pricingType === "hourly" ? "/h" : spot.pricingType === "daily" ? "/dan" : spot.pricingType === "monthly" ? "/mes" : "/dan";
+      const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
       const lm = L.marker([lat, lng], { icon }).addTo(parkingLayerRef.current!);
       lm.bindPopup(
         `<div style="font-size:12px;min-width:150px;max-width:200px;">` +
-        `<div style="font-weight:600;margin-bottom:2px;color:#111;">${spot.title}</div>` +
-        `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${spot.address}</div>` +
-        `<div style="font-weight:700;color:#2563eb;">${price} RSD${unit}</div>` +
+        `<div style="font-weight:600;margin-bottom:2px;color:#111;">${esc(spot.title)}</div>` +
+        `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${esc(spot.address ?? "")}</div>` +
+        `<div style="font-weight:700;color:#2563eb;">${esc(price)} RSD${esc(unit)}</div>` +
         `</div>`,
         { closeButton: false, maxWidth: 220 }
       );
