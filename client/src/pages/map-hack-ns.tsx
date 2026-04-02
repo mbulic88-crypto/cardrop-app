@@ -1359,7 +1359,9 @@ export default function MapHackNS() {
           onMarkerClick={setSelectedMarker}
           onMapClick={(lat, lng) => {
             if (watchZonePlaceMode) {
-              setWatchAreaMutation.mutate({ lat, lng });
+              if (!setWatchAreaMutation.isPending) {
+                setWatchAreaMutation.mutate({ lat, lng });
+              }
               return;
             }
             if (!addMode) return;
