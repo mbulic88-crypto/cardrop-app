@@ -380,8 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Push notifications to premium users with watch areas near this marker (zlatni_minut + pauk)
-        if (type === 'zlatni_minut' || type === 'pauk') {
-          try {
+        try {
             const watchAreas = await storage.getAllMapWatchAreas();
             for (const area of watchAreas) {
               if (area.userId === userId) continue; // skip self
@@ -406,7 +405,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (_) {
             // push failure is non-critical
           }
-        }
       }
 
       res.json(marker);

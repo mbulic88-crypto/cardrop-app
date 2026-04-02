@@ -1414,7 +1414,7 @@ export default function MapHackNS() {
               <button
                 key="zlatni_minut"
                 data-testid="action-bar-zlatni_minut"
-                onClick={() => { setAddMode(isActive ? null : "zlatni_minut"); setActiveTab("zlatni_minut"); }}
+                onClick={() => { setAddMode(isActive ? null : "zlatni_minut"); setActiveTab("zlatni_minut"); setWatchZonePlaceMode(false); }}
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
                 style={{
                   background: isActive ? "#c2410c" : "rgba(234,88,12,0.55)",
@@ -1440,7 +1440,7 @@ export default function MapHackNS() {
               <button
                 key="pauk"
                 data-testid="action-bar-pauk"
-                onClick={() => { setAddMode(isActive ? null : "pauk"); setActiveTab("pauk"); }}
+                onClick={() => { setAddMode(isActive ? null : "pauk"); setActiveTab("pauk"); setWatchZonePlaceMode(false); }}
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
                 style={{
                   background: isActive ? "#991b1b" : "rgba(185,28,28,0.55)",
@@ -1467,7 +1467,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } }}
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
                 style={{
                   background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#5b21b6" : "rgba(109,40,217,0.5)",
