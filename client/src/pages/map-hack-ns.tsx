@@ -1497,7 +1497,7 @@ export default function MapHackNS() {
             className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
             style={{ background: "rgba(21,128,61,0.55)", border: "1.5px solid rgba(34,197,94,0.7)" }}>
             <Smartphone size={18} style={{ color: "#86efac" }} />
-            <span className="font-bold" style={{ color: "#86efac", fontSize: 10, letterSpacing: "0.02em" }}>SMS</span>
+            <span className="font-bold" style={{ color: "#86efac", fontSize: 10, letterSpacing: "0.02em" }}>SMS plaćanje</span>
           </button>
 
           {/* Zona upozorenja */}
