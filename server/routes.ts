@@ -478,12 +478,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create system chat message when label is updated on zlatni_minut or pauk
       if (updated.type === 'zlatni_minut' || updated.type === 'pauk') {
-        const typeLabel = updated.type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
         const nick = user.mapNickname || 'Korisnik';
         try {
           const chatText = label
-            ? `${nick} je dodao/la komentar na ${typeLabel}: ${label}`
-            : `${nick} je uklonio/la komentar sa ${typeLabel}`;
+            ? `${nick} je dodao/la komentar: ${label}`
+            : `${nick} je uklonio/la komentar`;
           await storage.createMapChatMessage({
             userId: null,
             mapNickname: 'CarDrop Bot',
