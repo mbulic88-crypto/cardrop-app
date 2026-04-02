@@ -325,7 +325,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
 
-      const { type, lat, lng, label } = req.body;
+      const { type, lat, lng } = req.body;
+      const label: string | null = typeof req.body.label === 'string'
+        ? req.body.label.trim().slice(0, 100) || null
+        : null;
       const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone'];
       if (!type || !validTypes.includes(type)) {
         return res.status(400).json({ message: "Nevalidan tip markera" });

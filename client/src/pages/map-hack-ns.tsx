@@ -1732,7 +1732,7 @@ export default function MapHackNS() {
                     color: "#fff",
                     opacity: addMarkerMutation.isPending ? 0.6 : 1,
                   }}>
-                  {addMarkerMutation.isPending ? "Postavljam..." : "Postavi marker"}
+                  {addMarkerMutation.isPending ? "Postavljam..." : "Postavi"}
                 </button>
               </div>
             </div>
