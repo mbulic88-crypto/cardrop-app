@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import Map, {
   Marker,
+  Popup,
   NavigationControl,
   Source,
   Layer,
@@ -134,6 +135,12 @@ function createCircleGeoJSON(lat: number, lng: number, radiusMeters: number, poi
   };
 }
 
+interface ParkingPopupState {
+  spot: ParkingListing;
+  lat: number;
+  lng: number;
+}
+
 export function MapHackMap({
   markers,
   activeFilters,
@@ -152,6 +159,7 @@ export function MapHackMap({
   onParkingClick,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -170,6 +178,7 @@ export function MapHackMap({
   }, [flyToLocation]);
 
   const handleClick = useCallback((e: MapLayerMouseEvent) => {
+    setParkingPopup(null);
     onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
   }, []);
 
@@ -180,12 +189,6 @@ export function MapHackMap({
 
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     onCenterChangeRef.current?.(e.viewState.latitude, e.viewState.longitude);
-  }, []);
-
-  const handleMapLoad = useCallback((e: any) => {
-    try {
-      e.target.setConfigProperty("basemap", "lightPreset", "night");
-    } catch (_) {}
   }, []);
 
   const filtered = activeFilters.includes("sve")
@@ -225,12 +228,11 @@ export function MapHackMap({
           [19.72, 45.20],
           [19.98, 45.36],
         ]}
-        mapStyle="mapbox://styles/mapbox/standard"
+        mapStyle="mapbox://styles/mapbox/navigation-night-v1"
         mapboxAccessToken={MAPBOX_TOKEN}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onMoveEnd={handleMoveEnd}
-        onLoad={handleMapLoad}
         style={{ width: "100%", height: "100%" }}
         attributionControl={false}
       >
@@ -400,6 +402,11 @@ export function MapHackMap({
           const lat = parseFloat(spot.latitude);
           const lng = parseFloat(spot.longitude);
           if (isNaN(lat) || isNaN(lng)) return null;
+          const price = parseFloat(spot.pricePerHour).toFixed(0);
+          const unit = spot.pricingType === "hourly" ? "/h"
+            : spot.pricingType === "daily" ? "/dan"
+            : spot.pricingType === "monthly" ? "/mes"
+            : "/dan";
           return (
             <Marker
               key={`parking-${spot.id}`}
@@ -410,7 +417,13 @@ export function MapHackMap({
               <div
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onParkingClick) onParkingClick(spot);
+                  if (onParkingClick) {
+                    onParkingClick(spot);
+                  } else {
+                    setParkingPopup(prev =>
+                      prev?.spot.id === spot.id ? null : { spot, lat, lng }
+                    );
+                  }
                 }}
                 style={{
                   width: 30,
@@ -422,7 +435,7 @@ export function MapHackMap({
                   alignItems: "center",
                   justifyContent: "center",
                   boxShadow: "0 2px 8px rgba(59,130,246,0.3)",
-                  cursor: onParkingClick ? "pointer" : "default",
+                  cursor: "pointer",
                   fontWeight: 700,
                   color: "#93c5fd",
                   fontSize: 13,
@@ -434,6 +447,32 @@ export function MapHackMap({
             </Marker>
           );
         })}
+
+        {/* Parking fallback popup (shown when onParkingClick is not provided) */}
+        {parkingPopup && !onParkingClick && (
+          <Popup
+            latitude={parkingPopup.lat}
+            longitude={parkingPopup.lng}
+            anchor="bottom"
+            onClose={() => setParkingPopup(null)}
+            closeButton={false}
+            closeOnClick={false}
+          >
+            <div style={{ fontSize: 12, minWidth: 150, maxWidth: 200, padding: "2px 0" }}>
+              <div style={{ fontWeight: 600, marginBottom: 2, color: "#111" }}>{parkingPopup.spot.title}</div>
+              {parkingPopup.spot.address && (
+                <div style={{ color: "#6b7280", fontSize: 11, marginBottom: 4 }}>{parkingPopup.spot.address}</div>
+              )}
+              <div style={{ fontWeight: 700, color: "#2563eb" }}>
+                {parseFloat(parkingPopup.spot.pricePerHour).toFixed(0)} RSD
+                {parkingPopup.spot.pricingType === "hourly" ? "/h"
+                  : parkingPopup.spot.pricingType === "daily" ? "/dan"
+                  : parkingPopup.spot.pricingType === "monthly" ? "/mes"
+                  : "/dan"}
+              </div>
+            </div>
+          </Popup>
+        )}
       </Map>
 
       {/* Chat preview pill */}
