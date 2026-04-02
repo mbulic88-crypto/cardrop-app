@@ -1412,7 +1412,7 @@ export default function MapHackNS() {
                       style={{ width: 14, height: 14, background: "#f97316", fontSize: 7 }}>{count}</span>
                   )}
                 </div>
-                <span className="font-bold" style={{ color: "#fb923c", fontSize: 10, letterSpacing: "0.02em" }}>Zlatni</span>
+                <span className="font-bold" style={{ color: "#fb923c", fontSize: 10, letterSpacing: "0.02em" }}>Zlatni minut</span>
               </button>
             );
           })()}
