@@ -384,7 +384,9 @@ export default function MapHackNS() {
     const stored = localStorage.getItem("mh_chat_last_seen");
     return stored ? parseInt(stored, 10) : 0;
   });
-  const [plateInput, setPlateInput] = useState("");
+  const [plateInput, setPlateInput] = useState<string>(() => localStorage.getItem("cardrop_plate") ?? "");
+  const [pendingPlacement, setPendingPlacement] = useState<{ type: MarkerType; lat: number; lng: number } | null>(null);
+  const [pendingComment, setPendingComment] = useState("");
   const [suggestedZone, setSuggestedZone] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -427,7 +429,7 @@ export default function MapHackNS() {
   });
 
   const addMarkerMutation = useMutation({
-    mutationFn: (data: { type: MarkerType; lat: number; lng: number }) =>
+    mutationFn: (data: { type: MarkerType; lat: number; lng: number; label?: string | null }) =>
       apiRequest("POST", "/api/map-hack/markers", data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
@@ -435,11 +437,15 @@ export default function MapHackNS() {
         queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
       }
       setAddMode(null);
+      setPendingPlacement(null);
+      setPendingComment("");
       toast({ title: "Marker dodat" });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
       setAddMode(null);
+      setPendingPlacement(null);
+      setPendingComment("");
     },
   });
 
@@ -1365,6 +1371,11 @@ export default function MapHackNS() {
               return;
             }
             if (!addMode) return;
+            if (addMode === "zlatni_minut" || addMode === "pauk") {
+              setPendingPlacement({ type: addMode, lat, lng });
+              setPendingComment("");
+              return;
+            }
             addMarkerMutation.mutate({ type: addMode, lat, lng });
           }}
           onContextMenu={(lat, lng) => {
@@ -1637,6 +1648,98 @@ export default function MapHackNS() {
           </div>
         </div>
       </div>
+      {/* ── Pending Placement Comment Modal ── */}
+      {pendingPlacement && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => { setPendingPlacement(null); setPendingComment(""); }}>
+          <div className="w-full rounded-t-2xl flex flex-col"
+            style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520 }}
+            onClick={e => e.stopPropagation()}>
+
+            <div className="flex items-center justify-between px-4 pt-3 pb-2.5"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: pendingPlacement.type === "pauk" ? "rgba(239,68,68,0.18)" : "rgba(249,115,22,0.18)",
+                    border: `1px solid ${pendingPlacement.type === "pauk" ? "rgba(239,68,68,0.4)" : "rgba(249,115,22,0.4)"}`,
+                  }}>
+                  {pendingPlacement.type === "pauk"
+                    ? <Truck size={15} style={{ color: "#f87171" }} />
+                    : <Car size={15} style={{ color: "#fb923c" }} />
+                  }
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">
+                    {pendingPlacement.type === "pauk" ? "Pauk Radar" : "Zlatni Minut"}
+                  </p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Dodaj komentar (opciono)</p>
+                </div>
+              </div>
+              <button onClick={() => { setPendingPlacement(null); setPendingComment(""); }}
+                className="flex items-center justify-center rounded-full"
+                style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 flex flex-col gap-3">
+              <textarea
+                data-testid="input-marker-comment"
+                value={pendingComment}
+                onChange={e => setPendingComment(e.target.value.slice(0, 100))}
+                placeholder={pendingPlacement.type === "pauk"
+                  ? "npr. Stoji tu već 30min, kruži po bloku..."
+                  : "npr. Slobodnih mesta ima, ali frka na uglu..."}
+                rows={3}
+                className="w-full rounded-xl px-3 py-2.5 text-sm resize-none"
+                style={{
+                  background: "#1a1f2b",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#e5e7eb",
+                  outline: "none",
+                }}
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-xs" style={{ color: pendingComment.length >= 90 ? "#f87171" : "#6b7280" }}>
+                  {pendingComment.length}/100
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  data-testid="btn-cancel-placement"
+                  onClick={() => { setPendingPlacement(null); setPendingComment(""); }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  Otkaži
+                </button>
+                <button
+                  data-testid="btn-confirm-placement"
+                  onClick={() => {
+                    addMarkerMutation.mutate({
+                      type: pendingPlacement.type,
+                      lat: pendingPlacement.lat,
+                      lng: pendingPlacement.lng,
+                      label: pendingComment.trim() || null,
+                    });
+                  }}
+                  disabled={addMarkerMutation.isPending}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{
+                    background: pendingPlacement.type === "pauk" ? "#991b1b" : "#c2410c",
+                    border: `1px solid ${pendingPlacement.type === "pauk" ? "#ef4444" : "#f97316"}`,
+                    color: "#fff",
+                    opacity: addMarkerMutation.isPending ? 0.6 : 1,
+                  }}>
+                  {addMarkerMutation.isPending ? "Postavljam..." : "Postavi marker"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Zona upozorenja Modal ── */}
       {watchZoneOpen && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center"
@@ -1773,7 +1876,11 @@ export default function MapHackNS() {
               <p className="text-xs font-semibold mb-1.5" style={{ color: "#9ca3af" }}>REGISTARSKA TABLICA (opciono)</p>
               <Input
                 value={plateInput}
-                onChange={e => setPlateInput(e.target.value.toUpperCase().replace(/\s/g, ""))}
+                onChange={e => {
+                  const val = e.target.value.toUpperCase().replace(/\s/g, "");
+                  setPlateInput(val);
+                  localStorage.setItem("cardrop_plate", val);
+                }}
                 placeholder="NS123AB"
                 data-testid="input-plate"
                 className="h-9 text-base font-bold text-center tracking-widest"

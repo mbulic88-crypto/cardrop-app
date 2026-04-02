@@ -365,11 +365,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const typeLabel = type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
         const nick = user.mapNickname || 'Korisnik';
         try {
+          const chatText = label
+            ? `${nick} je prijavio/la: ${typeLabel} — ${label}`
+            : `${nick} je prijavio/la: ${typeLabel}`;
           await storage.createMapChatMessage({
             userId: null,
             mapNickname: 'CarDrop Bot',
             avatarId: 0,
-            text: `${nick} je prijavio/la: ${typeLabel}`,
+            text: chatText,
             isSystem: true,
             replyToId: null,
             replyToNickname: null,
