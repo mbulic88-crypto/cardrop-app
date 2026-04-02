@@ -1520,7 +1520,7 @@ export default function MapHackNS() {
                   : <Bell size={18} style={{ color: (hasZone || isPlacing) ? "#fde68a" : "#fbbf24" }} />
                 }
                 <span className="font-bold" style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24", fontSize: 10, letterSpacing: "0.02em" }}>
-                  {locked ? "Premium" : "Zona"}
+                  {locked ? "Premium" : "Safe zona"}
                 </span>
               </button>
             );
