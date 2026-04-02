@@ -1447,7 +1447,7 @@ export default function MapHackNS() {
                 key="stek"
                 data-testid="action-bar-stek"
                 onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); } }}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-[#22c55e47]"
                 style={{
                   background: locked ? "rgba(255,255,255,0.03)" : isActive ? "rgba(139,92,246,0.22)" : "rgba(139,92,246,0.08)",
                   border: `1.5px solid ${locked ? "rgba(255,255,255,0.08)" : isActive ? "rgba(139,92,246,0.7)" : "rgba(139,92,246,0.25)"}`,
