@@ -227,11 +227,11 @@ export function MapHackMap({
           latitude: 45.2671,
           zoom: 14,
         }}
-        minZoom={13}
+        minZoom={11}
         maxZoom={18}
         maxBounds={[
-          [19.72, 45.20],
-          [19.98, 45.36],
+          [19.50, 45.05],
+          [20.20, 45.55],
         ]}
         mapStyle="mapbox://styles/mapbox/standard"
         mapboxAccessToken={MAPBOX_TOKEN}

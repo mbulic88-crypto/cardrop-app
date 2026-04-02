@@ -1470,20 +1470,20 @@ export default function MapHackNS() {
                 onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } }}
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
                 style={{
-                  background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#5b21b6" : "rgba(109,40,217,0.5)",
-                  border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : isActive ? "#8b5cf6" : "rgba(139,92,246,0.75)"}`,
+                  background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#15803d" : "rgba(21,128,61,0.55)",
+                  border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : isActive ? "#22c55e" : "rgba(34,197,94,0.7)"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
                 {locked ? <Lock size={18} style={{ color: "#6b7280" }} /> : (
                   <div className="relative">
-                    <Home size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
+                    <Home size={18} style={{ color: isActive ? "#fff" : "#86efac" }} />
                     {count > 0 && (
                       <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full text-white font-bold"
-                        style={{ width: 14, height: 14, background: "#fff", color: "#5b21b6", fontSize: 7 }}>{count}</span>
+                        style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
                     )}
                   </div>
                 )}
-                <span className="font-bold" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>
+                <span className="font-bold" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 10, letterSpacing: "0.02em" }}>
                   {locked ? "Premium" : "Štek parking"}
                 </span>
               </button>
@@ -1495,9 +1495,9 @@ export default function MapHackNS() {
             data-testid="btn-sms-parking"
             onClick={openSmsModal}
             className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
-            style={{ background: "rgba(21,128,61,0.55)", border: "1.5px solid rgba(34,197,94,0.7)" }}>
-            <Smartphone size={18} style={{ color: "#86efac" }} />
-            <span className="font-bold" style={{ color: "#86efac", fontSize: 10, letterSpacing: "0.02em" }}>SMS plaćanje</span>
+            style={{ background: "rgba(109,40,217,0.5)", border: "1.5px solid rgba(139,92,246,0.75)" }}>
+            <Smartphone size={18} style={{ color: "#ddd6fe" }} />
+            <span className="font-bold" style={{ color: "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>SMS plaćanje</span>
           </button>
 
           {/* Zona upozorenja */}
