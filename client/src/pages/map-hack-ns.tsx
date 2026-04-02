@@ -1510,43 +1510,6 @@ export default function MapHackNS() {
             );
           })()}
 
-          {/* + Prijavi dropdown */}
-          <div className="relative flex-shrink-0">
-            <button
-              data-testid="btn-izdaj"
-              onClick={() => setIzdajOpen(p => !p)}
-              className="flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl h-full"
-              style={{ background: "#166534", border: "1.5px solid rgba(34,197,94,0.45)", color: "#fff", minWidth: 56 }}>
-              <ChevronDown size={18} style={{ color: "#4ade80" }} />
-              <span className="font-bold" style={{ color: "#4ade80", fontSize: 10, letterSpacing: "0.02em" }}>Prijavi</span>
-            </button>
-            {izdajOpen && (
-              <div className="absolute bottom-full right-0 mb-2 rounded-xl overflow-hidden z-30"
-                style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", minWidth: 160 }}>
-                {([
-                  { type: "zlatni_minut", label: "Zlatni Minut", Icon: Car,    color: "#f97316" },
-                  { type: "pauk",         label: "Pauk Radar",   Icon: Truck,  color: "#ef4444" },
-                  { type: "stek",         label: "Štek Lokacija",Icon: Home,   color: "#8b5cf6" },
-                  { type: "safe_zone",    label: "Safe Zone",    Icon: Target, color: "#3b82f6" },
-                ] as const).map(item => {
-                  const locked = item.type === "stek" && !isPremium;
-                  return (
-                    <button
-                      key={item.type}
-                      data-testid={`izdaj-${item.type}`}
-                      onClick={() => { setIzdajOpen(false); if (!locked) setAddMode(item.type); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-left"
-                      style={{ color: locked ? "#4b5563" : "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                      <item.Icon size={14} style={{ color: locked ? "#4b5563" : item.color, flexShrink: 0 }} />
-                      <span>{item.label}</span>
-                      {locked && <Lock size={10} className="ml-auto" style={{ color: "#4b5563" }} />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           {/* Izdaj Parking — link to add-spot */}
           <button
             data-testid="btn-izdaj-parking"
