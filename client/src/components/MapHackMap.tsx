@@ -158,7 +158,7 @@ export function MapHackMap({
     });
 
     L.tileLayer(
-      `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`,
+      `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`,
       { maxZoom: 19, tileSize: 256, attribution: "© Mapbox © OpenStreetMap" }
     ).addTo(map);
 

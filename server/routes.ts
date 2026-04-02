@@ -379,8 +379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // system message failure is non-critical
         }
 
-        // Push notifications to premium users with watch areas near this marker (zlatni_minut only)
-        if (type === 'zlatni_minut') {
+        // Push notifications to premium users with watch areas near this marker (zlatni_minut + pauk)
+        if (type === 'zlatni_minut' || type === 'pauk') {
           try {
             const watchAreas = await storage.getAllMapWatchAreas();
             for (const area of watchAreas) {
@@ -393,11 +393,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 latNum, lngNum
               );
               if (dist <= area.radiusMeters) {
+                const isPauk = type === 'pauk';
                 await sendPushToUser(area.userId, {
-                  title: 'Zlatni Minut!',
-                  body: 'Prijavljen u tvojoj zoni. Brzi!',
+                  title: isPauk ? 'Pauk u blizini!' : 'Zlatni Minut!',
+                  body: isPauk ? 'Evakuator prijavljen u tvojoj zoni.' : 'Prijavljen u tvojoj zoni. Brzi!',
                   icon: '/icons/icon-192x192.png',
-                  tag: 'watch-area-zlatni_minut',
+                  tag: `watch-area-${type}`,
                   url: '/map-hack',
                 }).catch(() => {});
               }
