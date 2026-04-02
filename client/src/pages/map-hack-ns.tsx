@@ -1013,7 +1013,7 @@ export default function MapHackNS() {
             </div>
 
             {/* Comment / info text */}
-            {(selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek") && (
+            {(selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek" || selectedMarker.type === "pauk") && (
               <>
                 {selectedMarker.label && markerLabelEdit === null && (
                   <div className="px-3 py-2 rounded-xl text-sm" style={{ background: "rgba(255,255,255,0.05)", color: "#d1d5db", lineHeight: 1.5 }}>
@@ -1557,12 +1557,21 @@ export default function MapHackNS() {
           )}
           {chatMessages.map(msg => {
             if (msg.isSystem) {
+              const dashIdx = msg.text.indexOf(" — ");
+              const baseText = dashIdx !== -1 ? msg.text.slice(0, dashIdx) : msg.text;
+              const commentText = dashIdx !== -1 ? msg.text.slice(dashIdx + 3) : null;
               return (
                 <div key={msg.id} className="flex justify-center my-1">
-                  <span className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#6b7280", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <Bell size={10} style={{ flexShrink: 0 }} />
-                    {msg.text}
+                  <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    <Bell size={10} style={{ flexShrink: 0, color: "#f97316" }} />
+                    <span>{baseText}</span>
+                    {commentText && (
+                      <>
+                        <span style={{ color: "rgba(255,255,255,0.25)" }}>—</span>
+                        <span style={{ color: "#e5e7eb", fontStyle: "italic" }}>{commentText}</span>
+                      </>
+                    )}
                   </span>
                 </div>
               );
