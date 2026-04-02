@@ -1533,7 +1533,7 @@ export default function MapHackNS() {
             className="flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl h-full"
             style={{ background: "rgba(7,89,133,0.55)", border: "1.5px solid rgba(14,165,233,0.7)", minWidth: 56 }}>
             <Plus size={18} style={{ color: "#7dd3fc" }} />
-            <span className="font-bold" style={{ color: "#7dd3fc", fontSize: 10, letterSpacing: "0.02em" }}>Izdaj</span>
+            <span className="font-bold" style={{ color: "#7dd3fc", fontSize: 10, letterSpacing: "0.02em" }}>Izdaj parking</span>
           </button>
         </div>
       </div>
