@@ -368,8 +368,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const typeLabel = type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
         const nick = user.mapNickname || 'Korisnik';
         try {
-          const chatText = label
-            ? `${nick} je prijavio/la: ${typeLabel} — ${label}`
+          const markerLabel = marker.label;
+          const chatText = markerLabel
+            ? `${nick} je prijavio/la: ${typeLabel} — ${markerLabel}`
             : `${nick} je prijavio/la: ${typeLabel}`;
           await storage.createMapChatMessage({
             userId: null,
@@ -472,8 +473,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const rawLabel: string | undefined = req.body.label;
-      const label = typeof rawLabel === "string" ? rawLabel.slice(0, 120).trim() || null : null;
+      const label = typeof rawLabel === "string" ? rawLabel.slice(0, 100).trim() || null : null;
       const updated = await storage.updateMapMarkerLabel(req.params.id, label);
+
+      // Create system chat message when label is updated on zlatni_minut or pauk
+      if (updated.type === 'zlatni_minut' || updated.type === 'pauk') {
+        const typeLabel = updated.type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
+        const nick = user.mapNickname || 'Korisnik';
+        try {
+          const chatText = label
+            ? `${nick} je dodao/la komentar na ${typeLabel}: ${label}`
+            : `${nick} je uklonio/la komentar sa ${typeLabel}`;
+          await storage.createMapChatMessage({
+            userId: null,
+            mapNickname: 'CarDrop Bot',
+            avatarId: 0,
+            text: chatText,
+            isSystem: true,
+            replyToId: null,
+            replyToNickname: null,
+            replyToText: null,
+          });
+        } catch (_) {
+          // system message failure is non-critical
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating marker label:", error);
