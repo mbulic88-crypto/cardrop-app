@@ -1479,8 +1479,8 @@ export default function MapHackNS() {
           <button
             data-testid="btn-sms-parking"
             onClick={openSmsModal}
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
-            style={{ background: "rgba(34,197,94,0.1)", border: "1.5px solid rgba(34,197,94,0.3)" }}>
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-[#8b5cf638]"
+            style={{ border: "1.5px solid rgba(34,197,94,0.3)" }}>
             <Smartphone size={18} style={{ color: "#22c55e" }} />
             <span className="font-bold" style={{ color: "#4ade80", fontSize: 10, letterSpacing: "0.02em" }}>SMS</span>
           </button>
