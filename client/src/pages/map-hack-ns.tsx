@@ -1484,7 +1484,7 @@ export default function MapHackNS() {
                   </div>
                 )}
                 <span className="font-bold" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>
-                  {locked ? "Premium" : "Štek"}
+                  {locked ? "Premium" : "Štek parking"}
                 </span>
               </button>
             );
