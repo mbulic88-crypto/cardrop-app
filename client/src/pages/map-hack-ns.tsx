@@ -1698,6 +1698,7 @@ export default function MapHackNS() {
                       data-testid="btn-update-watch-zone"
                       onClick={() => {
                         setWatchZoneOpen(false);
+                        setAddMode(null);
                         setWatchZonePlaceMode(true);
                       }}
                       disabled={setWatchAreaMutation.isPending}>
@@ -1730,6 +1731,7 @@ export default function MapHackNS() {
                     data-testid="btn-set-watch-zone"
                     onClick={() => {
                       setWatchZoneOpen(false);
+                      setAddMode(null);
                       setWatchZonePlaceMode(true);
                     }}>
                     <Bell size={14} className="mr-2" />Tapni na mapu da postaviš zonu
