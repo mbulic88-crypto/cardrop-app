@@ -7,6 +7,7 @@ import Map, {
   Layer,
 } from "react-map-gl";
 import type { MapRef, MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
+import type { MapboxEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 
@@ -191,6 +192,10 @@ export function MapHackMap({
     onCenterChangeRef.current?.(e.viewState.latitude, e.viewState.longitude);
   }, []);
 
+  const handleMapLoad = useCallback((e: MapboxEvent) => {
+    e.target.setConfigProperty("basemap", "lightPreset", "night");
+  }, []);
+
   const filtered = activeFilters.includes("sve")
     ? markers
     : markers.filter((m) => activeFilters.includes(m.type));
@@ -228,11 +233,12 @@ export function MapHackMap({
           [19.72, 45.20],
           [19.98, 45.36],
         ]}
-        mapStyle="mapbox://styles/mapbox/navigation-night-v1"
+        mapStyle="mapbox://styles/mapbox/standard"
         mapboxAccessToken={MAPBOX_TOKEN}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onMoveEnd={handleMoveEnd}
+        onLoad={handleMapLoad}
         style={{ width: "100%", height: "100%" }}
         attributionControl={false}
       >

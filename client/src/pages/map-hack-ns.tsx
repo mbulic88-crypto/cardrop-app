@@ -1653,7 +1653,7 @@ export default function MapHackNS() {
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">Zona upozorenja</p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>Push alert kad Zlatni Minut uđe u zonu</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Push alert kad Zlatni Minut ili Pauk uđu u zonu</p>
                 </div>
               </div>
               <button onClick={() => setWatchZoneOpen(false)}
