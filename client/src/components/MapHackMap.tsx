@@ -1,6 +1,12 @@
-import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useCallback } from "react";
+import Map, {
+  Marker,
+  NavigationControl,
+  Source,
+  Layer,
+} from "react-map-gl";
+import type { MapRef, MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 
 export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone";
@@ -57,23 +63,23 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function markerSvgPath(type: MarkerType | string, locked: boolean): string {
+function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
+  let path = "";
   if (locked) {
-    return `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
+    path = `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
+  } else if (type === "zlatni_minut") {
+    path = `<path d="M3 9l2-5h14l2 5v6H3V9z"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/>`;
+  } else if (type === "pauk") {
+    path = `<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`;
+  } else if (type === "stek") {
+    path = `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
+  } else if (type === "safe_zone") {
+    path = `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
+  } else {
+    path = `<circle cx="12" cy="12" r="10"/>`;
   }
-  if (type === "zlatni_minut") {
-    return `<path d="M3 9l2-5h14l2 5v6H3V9z"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/>`;
-  }
-  if (type === "pauk") {
-    return `<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`;
-  }
-  if (type === "stek") {
-    return `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
-  }
-  if (type === "safe_zone") {
-    return `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
-  }
-  return `<circle cx="12" cy="12" r="10"/>`;
+  const stroke = locked ? "#6b7280" : "#ffffff";
+  return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
 export function markerColor(type: MarkerType | string): string {
@@ -112,6 +118,22 @@ export function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function createCircleGeoJSON(lat: number, lng: number, radiusMeters: number, points = 64) {
+  const coords: [number, number][] = [];
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = (radiusMeters * Math.cos(angle)) / (111320 * Math.cos((lat * Math.PI) / 180));
+    const dy = (radiusMeters * Math.sin(angle)) / 110540;
+    coords.push([lng + dx, lat + dy]);
+  }
+  coords.push(coords[0]);
+  return {
+    type: "Feature" as const,
+    geometry: { type: "Polygon" as const, coordinates: [coords] },
+    properties: {},
+  };
+}
+
 export function MapHackMap({
   markers,
   activeFilters,
@@ -129,13 +151,7 @@ export function MapHackMap({
   flyToLocation,
   onParkingClick,
 }: MapHackMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMapRef = useRef<L.Map | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  const heatmapLayerRef = useRef<L.LayerGroup | null>(null);
-  const safeZoneLayerRef = useRef<L.LayerGroup | null>(null);
-  const watchAreaLayerRef = useRef<L.LayerGroup | null>(null);
-  const parkingLayerRef = useRef<L.LayerGroup | null>(null);
+  const mapRef = useRef<MapRef>(null);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -145,231 +161,49 @@ export function MapHackMap({
   onCenterChangeRef.current = onCenterChange;
 
   useEffect(() => {
-    if (!mapRef.current || leafletMapRef.current) return;
-
-    const map = L.map(mapRef.current, {
-      center: [45.2671, 19.8335],
-      zoom: 14,
-      minZoom: 13,
-      maxZoom: 18,
-      zoomControl: false,
-      attributionControl: false,
-      maxBounds: L.latLngBounds([45.20, 19.72], [45.36, 19.98]),
+    if (!flyToLocation || !mapRef.current) return;
+    mapRef.current.flyTo({
+      center: [flyToLocation.lng, flyToLocation.lat],
+      zoom: 16,
+      duration: 1000,
     });
+  }, [flyToLocation]);
 
-    L.tileLayer(
-      `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`,
-      { maxZoom: 19, tileSize: 256, attribution: "© Mapbox © OpenStreetMap" }
-    ).addTo(map);
-
-    L.control.zoom({ position: "topright" }).addTo(map);
-
-    const CompassControl = L.Control.extend({
-      onAdd() {
-        const div = L.DomUtil.create("div");
-        div.style.cssText =
-          "width:44px;height:44px;border-radius:50%;" +
-          "background:rgba(15,20,35,0.88);border:2px solid rgba(255,255,255,0.18);" +
-          "display:flex;align-items:center;justify-content:center;" +
-          "cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5);";
-        div.title = "Resetuj pogled";
-        div.innerHTML =
-          `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">` +
-          `<circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>` +
-          `<polygon points="12,3 14.5,12 12,10 9.5,12" fill="#ef4444"/>` +
-          `<polygon points="12,21 9.5,12 12,14 14.5,12" fill="rgba(255,255,255,0.6)"/>` +
-          `<circle cx="12" cy="12" r="2" fill="white"/>` +
-          `</svg>`;
-        L.DomEvent.on(div, "click", () => map.setView([45.2671, 19.8335], 14));
-        return div;
-      },
-    });
-    new CompassControl({ position: "bottomright" }).addTo(map);
-
-    map.on("click", (e: L.LeafletMouseEvent) => onMapClickRef.current(e.latlng.lat, e.latlng.lng));
-    map.on("contextmenu", (e: L.LeafletMouseEvent) => onContextMenuRef.current(e.latlng.lat, e.latlng.lng));
-    map.on("moveend", () => {
-      const c = map.getCenter();
-      onCenterChangeRef.current?.(c.lat, c.lng);
-    });
-
-    markersLayerRef.current = L.layerGroup().addTo(map);
-    heatmapLayerRef.current = L.layerGroup().addTo(map);
-    safeZoneLayerRef.current = L.layerGroup().addTo(map);
-    watchAreaLayerRef.current = L.layerGroup().addTo(map);
-    parkingLayerRef.current = L.layerGroup().addTo(map);
-    leafletMapRef.current = map;
-
-    return () => {
-      map.remove();
-      leafletMapRef.current = null;
-    };
+  const handleClick = useCallback((e: MapLayerMouseEvent) => {
+    onMapClickRef.current(e.lngLat.lat, e.lngLat.lng);
   }, []);
 
-  useEffect(() => {
-    const container = leafletMapRef.current?.getContainer();
-    if (container) container.style.cursor = isAddMode ? "crosshair" : "grab";
-  }, [isAddMode]);
+  const handleContextMenu = useCallback((e: MapLayerMouseEvent) => {
+    e.preventDefault();
+    onContextMenuRef.current(e.lngLat.lat, e.lngLat.lng);
+  }, []);
 
-  useEffect(() => {
-    if (!markersLayerRef.current) return;
-    markersLayerRef.current.clearLayers();
+  const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
+    onCenterChangeRef.current?.(e.viewState.latitude, e.viewState.longitude);
+  }, []);
 
-    const filtered =
-      activeFilters.includes("sve")
-        ? markers
-        : markers.filter((m) => activeFilters.includes(m.type));
+  const handleMapLoad = useCallback((e: any) => {
+    try {
+      e.target.setConfigProperty("basemap", "lightPreset", "night");
+    } catch (_) {}
+  }, []);
 
-    filtered.forEach((marker) => {
-      const color = markerColor(marker.type);
-      const isLocked = marker.type === "stek" && !isPremium;
-      const iconColor = isLocked ? "#6b7280" : "#ffffff";
-      const bgColor = isLocked ? "rgba(30,35,50,0.85)" : hexToRgba(color, 0.28);
-      const borderColor = isLocked ? "rgba(107,114,128,0.5)" : hexToRgba(color, 0.7);
-      const svgPath = markerSvgPath(marker.type, isLocked);
-      const icon = L.divIcon({
-        html:
-          `<div style="` +
-          `width:34px;height:34px;border-radius:50%;` +
-          `background:${bgColor};` +
-          `border:1.5px solid ${borderColor};` +
-          `display:flex;align-items:center;justify-content:center;` +
-          `box-shadow:0 2px 10px ${isLocked ? "rgba(0,0,0,0.35)" : hexToRgba(color, 0.35)};` +
-          `cursor:pointer;">` +
-          `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` +
-          svgPath +
-          `</svg>` +
-          `</div>`,
-        className: "",
-        iconAnchor: [17, 17],
-      });
-      const lm = L.marker([parseFloat(marker.lat), parseFloat(marker.lng)], { icon }).addTo(
-        markersLayerRef.current!
-      );
-      lm.on("click", () => onMarkerClick(marker));
-    });
-  }, [markers, activeFilters, isPremium, onMarkerClick]);
+  const filtered = activeFilters.includes("sve")
+    ? markers
+    : markers.filter((m) => activeFilters.includes(m.type));
 
-  useEffect(() => {
-    if (!heatmapLayerRef.current) return;
-    heatmapLayerRef.current.clearLayers();
-    const showHeatmap = activeFilters.includes("sve") || activeFilters.includes("pauk");
-    if (!showHeatmap) return;
-    markers
-      .filter((m) => m.type === "pauk")
-      .forEach((m) => {
-        L.circle([parseFloat(m.lat), parseFloat(m.lng)], {
-          radius: 180,
-          color: "#ef4444",
-          fillColor: "#ef4444",
-          fillOpacity: 0.18,
-          weight: 0,
-          interactive: false,
-        }).addTo(heatmapLayerRef.current!);
-        L.circle([parseFloat(m.lat), parseFloat(m.lng)], {
-          radius: 80,
-          color: "#ef4444",
-          fillColor: "#ff6b35",
-          fillOpacity: 0.35,
-          weight: 0,
-          interactive: false,
-        }).addTo(heatmapLayerRef.current!);
-      });
-  }, [markers, activeFilters]);
+  const showHeatmap = activeFilters.includes("sve") || activeFilters.includes("pauk");
+  const paukMarkers = markers.filter((m) => m.type === "pauk");
 
-  useEffect(() => {
-    if (!safeZoneLayerRef.current) return;
-    safeZoneLayerRef.current.clearLayers();
-    if (safeZone?.lat && safeZone?.lng) {
-      L.circle([parseFloat(safeZone.lat), parseFloat(safeZone.lng)], {
-        radius: safeZone.radiusMeters,
-        color: "#22c55e",
-        fillColor: "#22c55e",
-        fillOpacity: 0.08,
-        weight: 2,
-        dashArray: "6 4",
-        interactive: false,
-      }).addTo(safeZoneLayerRef.current);
-    }
-  }, [safeZone]);
+  const safeZoneGeoJSON =
+    safeZone?.lat && safeZone?.lng
+      ? createCircleGeoJSON(parseFloat(safeZone.lat), parseFloat(safeZone.lng), safeZone.radiusMeters)
+      : null;
 
-  useEffect(() => {
-    if (!watchAreaLayerRef.current) return;
-    watchAreaLayerRef.current.clearLayers();
-    if (watchArea?.lat && watchArea?.lng) {
-      const lat = parseFloat(watchArea.lat);
-      const lng = parseFloat(watchArea.lng);
-      L.circle([lat, lng], {
-        radius: watchArea.radiusMeters,
-        color: "#22c55e",
-        fillColor: "#22c55e",
-        fillOpacity: 0.06,
-        weight: 2,
-        dashArray: "5 5",
-        interactive: false,
-      }).addTo(watchAreaLayerRef.current!);
-      const pulseIcon = L.divIcon({
-        html:
-          `<div style="` +
-          `width:20px;height:20px;border-radius:50%;` +
-          `background:rgba(34,197,94,0.3);` +
-          `border:2px solid rgba(34,197,94,0.8);` +
-          `box-shadow:0 0 0 4px rgba(34,197,94,0.15);` +
-          `animation:watchPulse 1.8s ease-in-out infinite;` +
-          `">` +
-          `</div>`,
-        className: "",
-        iconAnchor: [10, 10],
-      });
-      L.marker([lat, lng], { icon: pulseIcon, interactive: false }).addTo(watchAreaLayerRef.current!);
-    }
-  }, [watchArea]);
-
-  useEffect(() => {
-    if (!parkingLayerRef.current) return;
-    parkingLayerRef.current.clearLayers();
-    (parkingListings ?? []).forEach(spot => {
-      const lat = parseFloat(spot.latitude);
-      const lng = parseFloat(spot.longitude);
-      if (isNaN(lat) || isNaN(lng)) return;
-      const icon = L.divIcon({
-        html:
-          `<div style="` +
-          `width:30px;height:30px;border-radius:50%;` +
-          `background:rgba(59,130,246,0.22);` +
-          `border:2px solid rgba(59,130,246,0.8);` +
-          `display:flex;align-items:center;justify-content:center;` +
-          `box-shadow:0 2px 8px rgba(59,130,246,0.3);` +
-          `cursor:pointer;font-weight:700;color:#93c5fd;font-size:13px;` +
-          `font-family:system-ui,sans-serif;">` +
-          `P` +
-          `</div>`,
-        className: "",
-        iconAnchor: [15, 15],
-      });
-      const price = parseFloat(spot.pricePerHour).toFixed(0);
-      const unit = spot.pricingType === "hourly" ? "/h" : spot.pricingType === "daily" ? "/dan" : spot.pricingType === "monthly" ? "/mes" : "/dan";
-      const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-      const lm = L.marker([lat, lng], { icon }).addTo(parkingLayerRef.current!);
-      if (onParkingClick) {
-        lm.on("click", () => onParkingClick(spot));
-      } else {
-        lm.bindPopup(
-          `<div style="font-size:12px;min-width:150px;max-width:200px;">` +
-          `<div style="font-weight:600;margin-bottom:2px;color:#111;">${esc(spot.title)}</div>` +
-          `<div style="color:#6b7280;font-size:11px;margin-bottom:4px;">${esc(spot.address ?? "")}</div>` +
-          `<div style="font-weight:700;color:#2563eb;">${esc(price)} RSD${esc(unit)}</div>` +
-          `</div>`,
-          { closeButton: false, maxWidth: 220 }
-        );
-      }
-    });
-  }, [parkingListings, onParkingClick]);
-
-  useEffect(() => {
-    if (!flyToLocation || !leafletMapRef.current) return;
-    leafletMapRef.current.flyTo([flyToLocation.lat, flyToLocation.lng], 16, { animate: true, duration: 1 });
-  }, [flyToLocation]);
+  const watchAreaGeoJSON =
+    watchArea?.lat && watchArea?.lng
+      ? createCircleGeoJSON(parseFloat(watchArea.lat), parseFloat(watchArea.lng), watchArea.radiusMeters)
+      : null;
 
   const avatarIdx = (chatPreviewMsg?.mapAvatarId ?? 1) % AVATAR_COLORS.length;
   const previewText = chatPreviewMsg
@@ -377,17 +211,243 @@ export function MapHackMap({
     : null;
 
   return (
-    <div className="absolute inset-0">
-      <div ref={mapRef} className="absolute inset-0" />
+    <div className="absolute inset-0" style={{ cursor: isAddMode ? "crosshair" : undefined }}>
+      <Map
+        ref={mapRef}
+        initialViewState={{
+          longitude: 19.8335,
+          latitude: 45.2671,
+          zoom: 14,
+        }}
+        minZoom={13}
+        maxZoom={18}
+        maxBounds={[
+          [19.72, 45.20],
+          [19.98, 45.36],
+        ]}
+        mapStyle="mapbox://styles/mapbox/standard"
+        mapboxAccessToken={MAPBOX_TOKEN}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onMoveEnd={handleMoveEnd}
+        onLoad={handleMapLoad}
+        style={{ width: "100%", height: "100%" }}
+        attributionControl={false}
+      >
+        <NavigationControl position="top-right" showCompass={false} />
+
+        {/* Compass / reset button */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 12,
+            right: 12,
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "rgba(15,20,35,0.88)",
+            border: "2px solid rgba(255,255,255,0.18)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            zIndex: 10,
+          }}
+          title="Resetuj pogled"
+          onClick={(e) => {
+            e.stopPropagation();
+            mapRef.current?.flyTo({ center: [19.8335, 45.2671], zoom: 14, duration: 800 });
+          }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+            <polygon points="12,3 14.5,12 12,10 9.5,12" fill="#ef4444" />
+            <polygon points="12,21 9.5,12 12,14 14.5,12" fill="rgba(255,255,255,0.6)" />
+            <circle cx="12" cy="12" r="2" fill="white" />
+          </svg>
+        </div>
+
+        {/* Pauk heatmap outer circles */}
+        {showHeatmap && paukMarkers.map((m) => (
+          <Source
+            key={`h-outer-${m.id}`}
+            id={`h-outer-${m.id}`}
+            type="geojson"
+            data={createCircleGeoJSON(parseFloat(m.lat), parseFloat(m.lng), 180)}
+          >
+            <Layer
+              id={`h-outer-fill-${m.id}`}
+              type="fill"
+              paint={{ "fill-color": "#ef4444", "fill-opacity": 0.18 }}
+            />
+          </Source>
+        ))}
+
+        {/* Pauk heatmap inner circles */}
+        {showHeatmap && paukMarkers.map((m) => (
+          <Source
+            key={`h-inner-${m.id}`}
+            id={`h-inner-${m.id}`}
+            type="geojson"
+            data={createCircleGeoJSON(parseFloat(m.lat), parseFloat(m.lng), 80)}
+          >
+            <Layer
+              id={`h-inner-fill-${m.id}`}
+              type="fill"
+              paint={{ "fill-color": "#ff6b35", "fill-opacity": 0.35 }}
+            />
+          </Source>
+        ))}
+
+        {/* Safe zone */}
+        {safeZoneGeoJSON && (
+          <Source id="safe-zone" type="geojson" data={safeZoneGeoJSON}>
+            <Layer
+              id="safe-zone-fill"
+              type="fill"
+              paint={{ "fill-color": "#22c55e", "fill-opacity": 0.08 }}
+            />
+            <Layer
+              id="safe-zone-line"
+              type="line"
+              paint={{
+                "line-color": "#22c55e",
+                "line-width": 2,
+                "line-dasharray": [6, 4],
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Watch area */}
+        {watchAreaGeoJSON && (
+          <Source id="watch-area" type="geojson" data={watchAreaGeoJSON}>
+            <Layer
+              id="watch-area-fill"
+              type="fill"
+              paint={{ "fill-color": "#22c55e", "fill-opacity": 0.06 }}
+            />
+            <Layer
+              id="watch-area-line"
+              type="line"
+              paint={{
+                "line-color": "#22c55e",
+                "line-width": 2,
+                "line-dasharray": [5, 5],
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Watch area center pulse dot */}
+        {watchArea?.lat && watchArea?.lng && (
+          <Marker
+            latitude={parseFloat(watchArea.lat)}
+            longitude={parseFloat(watchArea.lng)}
+            anchor="center"
+          >
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                background: "rgba(34,197,94,0.3)",
+                border: "2px solid rgba(34,197,94,0.8)",
+                boxShadow: "0 0 0 4px rgba(34,197,94,0.15)",
+                animation: "watchPulse 1.8s ease-in-out infinite",
+                pointerEvents: "none",
+              }}
+            />
+          </Marker>
+        )}
+
+        {/* Map markers */}
+        {filtered.map((marker) => {
+          const color = markerColor(marker.type);
+          const isLocked = marker.type === "stek" && !isPremium;
+          const bgColor = isLocked ? "rgba(30,35,50,0.85)" : hexToRgba(color, 0.28);
+          const borderColor = isLocked ? "rgba(107,114,128,0.5)" : hexToRgba(color, 0.7);
+          return (
+            <Marker
+              key={marker.id}
+              latitude={parseFloat(marker.lat)}
+              longitude={parseFloat(marker.lng)}
+              anchor="center"
+            >
+              <div
+                onClick={(e) => { e.stopPropagation(); onMarkerClick(marker); }}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  background: bgColor,
+                  border: `1.5px solid ${borderColor}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: `0 2px 10px ${isLocked ? "rgba(0,0,0,0.35)" : hexToRgba(color, 0.35)}`,
+                  cursor: "pointer",
+                }}
+                dangerouslySetInnerHTML={{ __html: markerSvgHtml(marker.type, isLocked) }}
+              />
+            </Marker>
+          );
+        })}
+
+        {/* Parking markers */}
+        {(parkingListings ?? []).map((spot) => {
+          const lat = parseFloat(spot.latitude);
+          const lng = parseFloat(spot.longitude);
+          if (isNaN(lat) || isNaN(lng)) return null;
+          return (
+            <Marker
+              key={`parking-${spot.id}`}
+              latitude={lat}
+              longitude={lng}
+              anchor="center"
+            >
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onParkingClick) onParkingClick(spot);
+                }}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "rgba(59,130,246,0.22)",
+                  border: "2px solid rgba(59,130,246,0.8)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 8px rgba(59,130,246,0.3)",
+                  cursor: onParkingClick ? "pointer" : "default",
+                  fontWeight: 700,
+                  color: "#93c5fd",
+                  fontSize: 13,
+                  fontFamily: "system-ui,sans-serif",
+                }}
+              >
+                P
+              </div>
+            </Marker>
+          );
+        })}
+      </Map>
+
+      {/* Chat preview pill */}
       {chatPreviewMsg && (
         <button
           data-testid="btn-chat-preview-pill"
           onClick={onChatClick}
           className="absolute bottom-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full"
-          style={{ background: "rgba(15,20,35,0.88)", border: "1px solid rgba(255,255,255,0.14)", maxWidth: "70%" }}>
+          style={{ background: "rgba(15,20,35,0.88)", border: "1px solid rgba(255,255,255,0.14)", maxWidth: "70%" }}
+        >
           <div
             className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
-            style={{ background: AVATAR_COLORS[avatarIdx] }}>
+            style={{ background: AVATAR_COLORS[avatarIdx] }}
+          >
             <img
               src={`/avatars/avatar-${chatPreviewMsg.mapAvatarId ?? 1}.png`}
               alt=""
