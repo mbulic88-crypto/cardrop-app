@@ -564,7 +564,6 @@ export default function MapHackNS() {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
     if (!sessionId) return;
-    window.history.replaceState({}, "", "/map-hack");
     fetch("/api/map-hack/verify-plan-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -572,13 +571,16 @@ export default function MapHackNS() {
     })
       .then(r => r.json())
       .then((data: { success?: boolean; plan?: string }) => {
+        window.history.replaceState({}, "", "/map-hack");
         if (data.success && data.plan) {
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
           toast({ title: "Plan aktiviran!", description: `${planLabel(data.plan)} je uspešno aktiviran.` });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        window.history.replaceState({}, "", "/map-hack");
+      });
   }, []);
 
   async function savePlan(planId: PlanId) {

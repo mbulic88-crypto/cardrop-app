@@ -412,7 +412,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function hasPremiumMapHackPlan(user: any): boolean {
     if (user.isAdmin) return true;
-    return ['premium', 'day_pass', 'godisnji_premium', 'firma'].includes(user.mapHackPlan || '');
+    if (user.mapHackPlan === 'firma') return true;
+    const paidPlans = ['premium', 'day_pass', 'godisnji_premium'];
+    if (!paidPlans.includes(user.mapHackPlan || '')) return false;
+    if (!user.mapHackPlanExpiresAt) return false;
+    return new Date() < new Date(user.mapHackPlanExpiresAt);
   }
 
   app.get('/api/map-hack/markers', isAuthenticated, async (req: any, res) => {
