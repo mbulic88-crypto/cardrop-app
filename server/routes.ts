@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileData: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date } = {
         mapNickname: trimmed,
         mapAvatarId: avatarId,
-        mapProfileLastChangedAt: isFirstTimeOnboarding ? undefined : now,
+        mapProfileLastChangedAt: now,
       };
       if (currentUser && !currentUser.mapHackTrialStartedAt) {
         profileData.mapHackTrialStartedAt = new Date();
@@ -647,6 +647,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         replyToNickname: replyToNickname || null,
         replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
       });
+
+      // If push notifications were sent for chat messages in the future,
+      // they must be filtered by mapNotificationsEnabled — same as marker push flow.
+      // Example guard: if (recipient.mapNotificationsEnabled !== false) { sendPushToUser(...) }
+
       res.json(msg);
     } catch (error) {
       console.error("Error posting map chat message:", error);

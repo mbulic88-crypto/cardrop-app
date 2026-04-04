@@ -831,7 +831,7 @@ export default function MapHackNS() {
                   {user.mapNickname}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <RefreshCw className="w-3 h-3 text-amber-500" />
+                  <AlertTriangle className="w-3 h-3 text-amber-500" />
                   <p className="text-amber-600 dark:text-amber-400 text-xs">
                     {mapStatus?.phase === "trial_expired" ? "Probni period istekao" : "Plan istekao"} — obnovi pristup
                   </p>
