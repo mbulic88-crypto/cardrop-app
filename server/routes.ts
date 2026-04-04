@@ -339,10 +339,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stripe = await getUncachableStripeClient();
       const userId = req.session.userId;
-      const { sessionId, plan } = req.body;
+      const { sessionId } = req.body;
 
-      if (!sessionId || !plan) {
+      if (!sessionId) {
         return res.status(400).json({ message: "Nedostaju parametri" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      if (user.mapHackStripeSessionId === sessionId) {
+        return res.status(409).json({ message: "Sesija je već iskorišćena" });
       }
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
@@ -355,23 +362,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Neovlašćen pristup" });
       }
 
-      const now = new Date();
-      let expiresAt: Date;
-      if (plan === 'day_pass') {
-        expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      } else if (plan === 'premium') {
-        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-      } else if (plan === 'godisnji_premium') {
-        expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-      } else {
-        return res.status(400).json({ message: "Nevalidan plan" });
+      const verifiedPlan = session.metadata?.plan;
+      const validPlans = ['day_pass', 'premium', 'godisnji_premium'];
+      if (!verifiedPlan || !validPlans.includes(verifiedPlan)) {
+        return res.status(400).json({ message: "Nevalidan plan u sesiji" });
       }
 
-      const updated = await storage.updateMapHackPlan(userId, plan, expiresAt);
+      const now = new Date();
+      let expiresAt: Date;
+      if (verifiedPlan === 'day_pass') {
+        expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      } else if (verifiedPlan === 'premium') {
+        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      } else {
+        expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      }
+
+      const updated = await storage.updateMapHackPlan(userId, verifiedPlan, expiresAt, sessionId);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
 
       const { passwordHash, ...safeUser } = updated;
-      res.json({ success: true, user: safeUser });
+      res.json({ success: true, plan: verifiedPlan, user: safeUser });
     } catch (error: unknown) {
       console.error("Error verifying map hack payment:", error);
       const msg = error instanceof Error ? error.message : "Greška pri verifikaciji";

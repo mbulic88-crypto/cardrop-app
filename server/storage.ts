@@ -42,7 +42,7 @@ export interface IStorage {
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
   updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }): Promise<User | undefined>;
   resetMapHackProfile(userId: string): Promise<User | undefined>;
-  updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null): Promise<User | undefined>;
+  updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null, stripeSessionId?: string): Promise<User | undefined>;
   
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -176,10 +176,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null): Promise<User | undefined> {
+  async updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null, stripeSessionId?: string): Promise<User | undefined> {
     const [user] = await db
       .update(users)
-      .set({ mapHackPlan: plan, mapHackPlanExpiresAt: expiresAt, updatedAt: new Date() })
+      .set({
+        mapHackPlan: plan,
+        mapHackPlanExpiresAt: expiresAt,
+        ...(stripeSessionId !== undefined ? { mapHackStripeSessionId: stripeSessionId } : {}),
+        updatedAt: new Date(),
+      })
       .where(eq(users.id, userId))
       .returning();
     return user;

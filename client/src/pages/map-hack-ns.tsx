@@ -562,21 +562,20 @@ export default function MapHackNS() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const plan = params.get("plan");
     const sessionId = params.get("session_id");
-    if (!plan || !sessionId) return;
+    if (!sessionId) return;
     window.history.replaceState({}, "", "/map-hack");
     fetch("/api/map-hack/verify-plan-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, plan }),
+      body: JSON.stringify({ sessionId }),
     })
       .then(r => r.json())
-      .then((data: { success?: boolean }) => {
-        if (data.success) {
+      .then((data: { success?: boolean; plan?: string }) => {
+        if (data.success && data.plan) {
           queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
           queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
-          toast({ title: "Plan aktiviran!", description: `${planLabel(plan)} je uspešno aktiviran.` });
+          toast({ title: "Plan aktiviran!", description: `${planLabel(data.plan)} je uspešno aktiviran.` });
         }
       })
       .catch(() => {});
