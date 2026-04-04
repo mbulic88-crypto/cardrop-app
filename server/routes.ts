@@ -403,10 +403,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 latNum, lngNum
               );
               if (dist <= area.radiusMeters) {
-                const isPauk = type === 'pauk';
+                const pushTitle = type === 'pauk'
+                  ? 'Pauk u blizini!'
+                  : type === 'radar'
+                  ? 'Radar prijavljen!'
+                  : 'Zlatni Minut!';
+                const pushBody = type === 'pauk'
+                  ? 'Evakuator prijavljen u tvojoj zoni.'
+                  : type === 'radar'
+                  ? 'Policijski radar prijavljen u tvojoj zoni.'
+                  : 'Prijavljen u tvojoj zoni. Brzi!';
                 await sendPushToUser(area.userId, {
-                  title: isPauk ? 'Pauk u blizini!' : 'Zlatni Minut!',
-                  body: isPauk ? 'Evakuator prijavljen u tvojoj zoni.' : 'Prijavljen u tvojoj zoni. Brzi!',
+                  title: pushTitle,
+                  body: pushBody,
                   icon: '/icons/icon-192x192.png',
                   tag: `watch-area-${type}`,
                   url: '/map-hack',

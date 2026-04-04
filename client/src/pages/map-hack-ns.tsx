@@ -434,7 +434,7 @@ export default function MapHackNS() {
       apiRequest("POST", "/api/map-hack/markers", data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
-      if (variables.type === "zlatni_minut" || variables.type === "pauk") {
+      if (variables.type === "zlatni_minut" || variables.type === "pauk" || variables.type === "radar") {
         queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
       }
       setAddMode(null);
