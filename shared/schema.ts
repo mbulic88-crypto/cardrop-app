@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   mapHackTrialStartedAt: timestamp("map_hack_trial_started_at"),
   mapHackPlan: varchar("map_hack_plan", { length: 20 }),
   mapHackPlanExpiresAt: timestamp("map_hack_plan_expires_at"),
+  mapProfileLastChangedAt: timestamp("map_profile_last_changed_at"),
+  mapNotificationsEnabled: boolean("map_notifications_enabled").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

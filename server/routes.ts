@@ -92,9 +92,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const currentUser = await storage.getUser(userId);
-      const profileData: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date } = {
+
+      // Weekly cooldown for profile changes (skip for admins and first-time onboarding)
+      const isAdminUser = currentUser?.isAdmin || ADMIN_EMAIL_LIST.includes(currentUser?.email || '');
+      const isFirstTimeOnboarding = !currentUser?.mapNickname;
+      if (!isAdminUser && !isFirstTimeOnboarding && currentUser?.mapProfileLastChangedAt) {
+        const lastChanged = new Date(currentUser.mapProfileLastChangedAt);
+        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
+        const nextAllowed = new Date(lastChanged.getTime() + oneWeekMs);
+        if (new Date() < nextAllowed) {
+          return res.status(429).json({ error: "cooldown", nextAllowed: nextAllowed.toISOString() });
+        }
+      }
+
+      const now = new Date();
+      const profileData: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date } = {
         mapNickname: trimmed,
         mapAvatarId: avatarId,
+        mapProfileLastChangedAt: isFirstTimeOnboarding ? undefined : now,
       };
       if (currentUser && !currentUser.mapHackTrialStartedAt) {
         profileData.mapHackTrialStartedAt = new Date();
@@ -128,6 +143,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error resetting map hack profile:", error);
       res.status(500).json({ message: "Greška pri resetovanju profila" });
+    }
+  });
+
+  // Map Hack NS - toggle notifications
+  app.patch('/api/map-hack/notifications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { enabled } = req.body;
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: "enabled mora biti boolean" });
+      }
+      const updated = await storage.updateUser(userId, { mapNotificationsEnabled: enabled } as any);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      res.json({ mapNotificationsEnabled: updated.mapNotificationsEnabled });
+    } catch (error) {
+      console.error("Error toggling notifications:", error);
+      res.status(500).json({ message: "Greška pri promeni notifikacija" });
     }
   });
 
@@ -398,6 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Re-check premium entitlement to avoid sending to downgraded users
               const watcher = await storage.getUser(area.userId);
               if (!watcher || !hasPremiumMapHackPlan(watcher)) continue;
+              if (watcher.mapNotificationsEnabled === false) continue; // user muted notifications
               const dist = haversineMetersServer(
                 parseFloat(area.lat), parseFloat(area.lng),
                 latNum, lngNum

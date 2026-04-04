@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Home, Smartphone, Navigation, Search, Plus, RadioTower } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -336,7 +336,12 @@ export default function MapHackNS() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isResetting, setIsResetting] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
+  const [editNickname, setEditNickname] = useState("");
+  const [editAvatarId, setEditAvatarId] = useState(1);
+  const [profileEditError, setProfileEditError] = useState("");
+  const [profileEditSaving, setProfileEditSaving] = useState(false);
 
   const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
 
@@ -888,21 +893,6 @@ export default function MapHackNS() {
       )
     : [];
 
-  const handleResetProfile = async () => {
-    setIsResetting(true);
-    try {
-      const res = await fetch("/api/map-hack/reset-profile", { method: "POST" });
-      if (!res.ok) throw new Error("Reset failed");
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
-      setLocation("/map-hack");
-    } catch {
-      toast({ title: "Greška", description: "Reset profila nije uspeo", variant: "destructive" });
-    } finally {
-      setIsResetting(false);
-    }
-  };
-
   const timeAgo = (d: string | Date) => {
     const diff = Date.now() - new Date(d).getTime();
     const mins = Math.floor(diff / 60000);
@@ -1271,17 +1261,28 @@ export default function MapHackNS() {
             </button>
           )}
 
-          {/* Right: bell + separator + chat */}
-        <div className="flex items-center gap-3">
-          {/* Bell alarm icon */}
+          {/* Right: bell + separator + chat + info + user */}
+        <div className="flex items-center gap-2">
+          {/* Bell — notifications toggle; alarm badge stays */}
           <button
-            data-testid="btn-alarm-bell"
-            onClick={() => alarmActive ? setActiveTab("safe_zone") : (showTrialBanner ? undefined : undefined)}
+            data-testid="btn-notifications-toggle"
+            onClick={async () => {
+              const newEnabled = !(user.mapNotificationsEnabled ?? true);
+              try {
+                await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
+                await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+              } catch {
+                toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
+              }
+            }}
             className="relative flex items-center justify-center"
             style={{ width: 34, height: 34, borderRadius: "50%",
               background: alarmActive ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.07)",
               border: `1px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)"}` }}>
-            <Bell size={15} style={{ color: alarmActive ? "#fca5a5" : "#9ca3af" }} />
+            {(user.mapNotificationsEnabled ?? true)
+              ? <Bell size={15} style={{ color: alarmActive ? "#fca5a5" : "#9ca3af" }} />
+              : <BellOff size={15} style={{ color: "#6b7280" }} />
+            }
             {(alarmActive || showTrialBanner) && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
                 style={{ width: 16, height: 16, fontSize: 8,
@@ -1294,7 +1295,7 @@ export default function MapHackNS() {
           {/* Separator */}
           <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)" }} />
 
-          {/* Chat indicator — shows unread count, click to clear */}
+          {/* Chat indicator — shows unread count, click to scroll to bottom */}
           <button
             data-testid="btn-chat-indicator"
             onClick={() => {
@@ -1314,15 +1315,32 @@ export default function MapHackNS() {
             )}
           </button>
 
-          {user.isAdmin && (
-            <button
-              onClick={handleResetProfile} disabled={isResetting} data-testid="button-reset-profile"
-              className="flex items-center justify-center"
-              style={{ width: 28, height: 28, borderRadius: "50%",
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              {isResetting ? <Loader2 size={11} className="animate-spin text-gray-500" /> : <RefreshCw size={11} className="text-gray-600" />}
-            </button>
-          )}
+          {/* Legend info button */}
+          <button
+            data-testid="btn-legend"
+            onClick={() => setLegendOpen(true)}
+            className="flex items-center justify-center"
+            style={{ width: 34, height: 34, borderRadius: "50%",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)" }}>
+            <Info size={15} style={{ color: "#9ca3af" }} />
+          </button>
+
+          {/* Profile edit button */}
+          <button
+            data-testid="btn-profile-edit"
+            onClick={() => {
+              setEditNickname(user.mapNickname ?? "");
+              setEditAvatarId(user.mapAvatarId ?? 1);
+              setProfileEditError("");
+              setProfileEditOpen(true);
+            }}
+            className="flex items-center justify-center"
+            style={{ width: 34, height: 34, borderRadius: "50%",
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(255,255,255,0.12)" }}>
+            <User size={15} style={{ color: "#9ca3af" }} />
+          </button>
         </div>
         </div>
       </div>
@@ -2082,6 +2100,237 @@ export default function MapHackNS() {
               </p>
             </div>
             </div>{/* end scrollable body */}
+          </div>
+        </div>
+      )}
+
+      {/* ── Legend Modal ── */}
+      {legendOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setLegendOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-t-2xl overflow-y-auto"
+            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "85vh" }}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <Info size={16} style={{ color: "#6b7280" }} />
+                <span className="font-bold text-white text-sm">Legenda mape</span>
+              </div>
+              <button onClick={() => setLegendOpen(false)} className="flex items-center justify-center" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            <div className="px-4 py-3 space-y-5">
+              {/* Marker types */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>Tipovi markera</p>
+                <div className="space-y-2.5">
+                  {[
+                    { icon: <Clock size={14} />, color: "#f97316", label: "Zlatni Minut", desc: "Slobodno parking mesto — ističe za 45 min", badge: "Free" },
+                    { icon: <AlertTriangle size={14} />, color: "#ef4444", label: "Pauk Radar", desc: "Evakuator primećen u blizini — upozorenje!", badge: "Free" },
+                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno ili povoljno parking mesto", badge: "Premium" },
+                    { icon: <Bell size={14} />, color: "#4ade80", label: "Safe Zone", desc: "Tvoja lična zona — alarm kad pauk uđe (300m)", badge: "Free" },
+                    { icon: <Target size={14} />, color: "#fbbf24", label: "Watch Area", desc: "Zona praćenja — push alarm 300m radius", badge: "Premium" },
+                    { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili fotoredar na putu", badge: "Premium" },
+                  ].map(item => (
+                    <div key={item.label} className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: item.color + "22", border: `1px solid ${item.color}44` }}>
+                        <span style={{ color: item.color }}>{item.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-sm">{item.label}</span>
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: item.badge === "Premium" ? "rgba(218,165,32,0.15)" : "rgba(255,255,255,0.08)", color: item.badge === "Premium" ? "#DAA520" : "#9ca3af" }}>{item.badge}</span>
+                        </div>
+                        <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Push notifikacije */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16 }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Push notifikacije</p>
+                <div className="rounded-xl px-3 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <p className="text-sm text-white mb-1 font-medium">Automatska upozorenja</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Kada neko prijavi Pauka ili Zlatni Minut u tvojoj Safe Zoni dobijaš push obaveštenje odmah. Zahteva: postavljenu Safe Zonu i dozvolu u browseru.</p>
+                  <p className="text-xs mt-2" style={{ color: "#6b7280" }}>Notifikacije možeš isključiti klikom na zvonce u hederu.</p>
+                </div>
+              </div>
+
+              {/* Plan info */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16 }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Planovi</p>
+                <div className="space-y-2">
+                  {[
+                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "Safe Zona alarm", "Live Chat", "Pregled parkinga"] },
+                    { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Štek lokacije", "Watch Area", "Radar markeri", "Push notifikacije"] },
+                    { plan: "Day Pass — 120 RSD", items: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"] },
+                  ].map(p => (
+                    <div key={p.plan} className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <p className="text-xs font-bold text-white mb-1.5">{p.plan}</p>
+                      <div className="space-y-0.5">
+                        {p.items.map(item => (
+                          <div key={item} className="flex items-center gap-1.5">
+                            <Check size={10} style={{ color: "#4ade80", flexShrink: 0 }} />
+                            <span className="text-xs" style={{ color: "#9ca3af" }}>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pb-2" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Profile Edit Modal ── */}
+      {profileEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setProfileEditOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-t-2xl overflow-y-auto"
+            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "85vh" }}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div>
+                <span className="font-bold text-white text-sm">Promeni profil</span>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Možeš da menjaš jednom u 7 dana</p>
+              </div>
+              <button onClick={() => setProfileEditOpen(false)} className="flex items-center justify-center" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+
+            <div className="px-4 py-4 space-y-4">
+              {/* Cooldown info if applicable */}
+              {(() => {
+                if (!user?.mapProfileLastChangedAt || user?.isAdmin) return null;
+                const lastChanged = new Date(user.mapProfileLastChangedAt);
+                const nextAllowed = new Date(lastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+                if (new Date() < nextAllowed) {
+                  const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+                  return (
+                    <div className="rounded-xl px-3 py-2.5 flex items-start gap-2"
+                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                      <AlertTriangle size={14} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+                      <p className="text-xs" style={{ color: "#f87171" }}>
+                        Profil možeš promeniti za <strong>{daysLeft} {daysLeft === 1 ? "dan" : "dana"}</strong> ({nextAllowed.toLocaleDateString("sr-RS")})
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Avatar grid */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>Avatar</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: 8 }, (_, i) => i + 1).map(id => (
+                    <button
+                      key={id}
+                      data-testid={`btn-avatar-${id}`}
+                      onClick={() => setEditAvatarId(id)}
+                      className="rounded-xl overflow-hidden flex-shrink-0"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: `2px solid ${editAvatarId === id ? "#f97316" : "rgba(255,255,255,0.1)"}`,
+                        padding: 3,
+                      }}>
+                      <img src={`/avatars/avatar-${id}.png`} alt={`Avatar ${id}`} className="w-full aspect-square object-contain rounded-lg" style={{ background: "#F5EDD8" }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nickname input */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Nadimak na mapi</p>
+                <input
+                  data-testid="input-edit-nickname"
+                  value={editNickname}
+                  onChange={e => { setEditNickname(e.target.value); setProfileEditError(""); }}
+                  placeholder="Nadimak (3–20 znakova)"
+                  className="w-full text-sm rounded-xl px-3 py-2.5 outline-none"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb" }}
+                  maxLength={20}
+                />
+              </div>
+
+              {/* Error */}
+              {profileEditError && (
+                <div className="rounded-xl px-3 py-2 flex items-start gap-2" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                  <AlertTriangle size={13} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-xs" style={{ color: "#f87171" }}>{profileEditError}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pb-2">
+                <button
+                  onClick={() => setProfileEditOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                  style={{ background: "rgba(255,255,255,0.06)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  Otkaži
+                </button>
+                <button
+                  data-testid="btn-save-profile-edit"
+                  disabled={profileEditSaving}
+                  onClick={async () => {
+                    const trimmed = editNickname.trim();
+                    if (trimmed.length < 3 || trimmed.length > 20) {
+                      setProfileEditError("Nadimak mora imati između 3 i 20 znakova");
+                      return;
+                    }
+                    if (!/^[a-zA-Z0-9_\-]+$/.test(trimmed)) {
+                      setProfileEditError("Nadimak sme da sadrži samo slova, brojeve, crtice i donju crtu");
+                      return;
+                    }
+                    setProfileEditSaving(true);
+                    try {
+                      const res = await fetch("/api/map-hack/profile", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ nickname: trimmed, avatarId: editAvatarId }),
+                      });
+                      if (res.status === 429) {
+                        const data = await res.json() as { error: string; nextAllowed: string };
+                        const next = new Date(data.nextAllowed);
+                        setProfileEditError(`Možeš menjati jednom nedeljno. Sledeća promena: ${next.toLocaleDateString("sr-RS")}`);
+                        return;
+                      }
+                      if (!res.ok) {
+                        const data = await res.json() as { message: string };
+                        setProfileEditError(data.message ?? "Greška pri čuvanju");
+                        return;
+                      }
+                      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                      setProfileEditOpen(false);
+                      toast({ title: "Profil ažuriran" });
+                    } catch {
+                      setProfileEditError("Greška pri čuvanju profila");
+                    } finally {
+                      setProfileEditSaving(false);
+                    }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: profileEditSaving ? "rgba(249,115,22,0.4)" : "#f97316", color: "#fff", opacity: profileEditSaving ? 0.7 : 1 }}>
+                  {profileEditSaving ? "Čuva se..." : "Sačuvaj"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -152,7 +152,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateMapHackProfile(
     userId: string,
-    data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date }
+    data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }
   ): Promise<User | undefined> {
     const [user] = await db
       .update(users)
