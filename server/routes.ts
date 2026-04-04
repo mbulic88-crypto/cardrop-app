@@ -376,8 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       }
 
-      await storage.recordConsumedStripeSession(sessionId, userId, verifiedPlan);
-      const updated = await storage.updateMapHackPlan(userId, verifiedPlan, expiresAt, sessionId);
+      const updated = await storage.activateMapHackPlanWithSession(userId, verifiedPlan, expiresAt, sessionId);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
 
       const { passwordHash, ...safeUser } = updated;

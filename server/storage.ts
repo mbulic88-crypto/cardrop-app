@@ -46,6 +46,7 @@ export interface IStorage {
   updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null, stripeSessionId?: string): Promise<User | undefined>;
   isStripeSessionConsumed(stripeSessionId: string): Promise<boolean>;
   recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void>;
+  activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
   
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -204,6 +205,18 @@ export class DatabaseStorage implements IStorage {
 
   async recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void> {
     await db.insert(mapHackConsumedSessions).values({ stripeSessionId, userId, plan });
+  }
+
+  async activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined> {
+    return await db.transaction(async (tx) => {
+      await tx.insert(mapHackConsumedSessions).values({ stripeSessionId, userId, plan });
+      const [user] = await tx
+        .update(users)
+        .set({ mapHackPlan: plan, mapHackPlanExpiresAt: expiresAt, mapHackStripeSessionId: stripeSessionId, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
   }
 
   // Parking spots operations
