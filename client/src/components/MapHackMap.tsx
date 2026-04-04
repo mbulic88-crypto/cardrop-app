@@ -11,7 +11,7 @@ import type { MapboxEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 
-export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone";
+export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone" | "radar";
 
 export interface ChatPreviewMsg {
   text: string;
@@ -77,6 +77,8 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
     path = `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
   } else if (type === "safe_zone") {
     path = `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
+  } else if (type === "radar") {
+    path = `<circle cx="12" cy="19" r="2"/><line x1="12" y1="17" x2="12" y2="10"/><path d="M8 13.5a5.5 5.5 0 0 1 8 0"/><path d="M4.5 10.5a10 10 0 0 1 15 0"/>`;
   } else {
     path = `<circle cx="12" cy="12" r="10"/>`;
   }
@@ -89,6 +91,7 @@ export function markerColor(type: MarkerType | string): string {
   if (type === "pauk") return "#ef4444";
   if (type === "stek") return "#22c55e";
   if (type === "safe_zone") return "#3b82f6";
+  if (type === "radar") return "#8b5cf6";
   return "#6b7280";
 }
 
@@ -97,6 +100,7 @@ export function markerEmoji(type: MarkerType | string): string {
   if (type === "pauk") return "🚛";
   if (type === "stek") return "🏠";
   if (type === "safe_zone") return "🛡";
+  if (type === "radar") return "📡";
   return "📍";
 }
 
@@ -105,6 +109,7 @@ export function markerLabel(type: MarkerType | string): string {
   if (type === "pauk") return "Pauk Radar";
   if (type === "stek") return "Štek Lokacija";
   if (type === "safe_zone") return "Safe Zone Alarm";
+  if (type === "radar") return "Radar";
   return type;
 }
 

@@ -310,7 +310,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         )
         .orderBy(desc(mapMarkersTable.createdAt));
-      res.json(markersWithNick);
+      const isPremiumUser = hasPremiumMapHackPlan(user);
+      const filtered = isPremiumUser
+        ? markersWithNick
+        : markersWithNick.filter((m: any) => m.type !== 'radar');
+      res.json(filtered);
     } catch (error) {
       console.error("Error fetching map markers:", error);
       res.status(500).json({ message: "Greška pri učitavanju markera" });
@@ -329,12 +333,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const label: string | null = typeof req.body.label === 'string'
         ? req.body.label.trim().slice(0, 100) || null
         : null;
-      const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone'];
+      const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone', 'radar'];
       if (!type || !validTypes.includes(type)) {
         return res.status(400).json({ message: "Nevalidan tip markera" });
       }
-      if (type === 'stek' && !hasPremiumMapHackPlan(user)) {
-        return res.status(403).json({ message: "Štek lokacije zahtijevaju Premium plan" });
+      if ((type === 'stek' || type === 'radar') && !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Ova funkcija zahteva Premium plan" });
       }
 
       const latNum = parseFloat(lat);
@@ -351,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let expiresAt: Date | null = null;
       if (type === 'zlatni_minut') {
         expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-      } else if (type === 'pauk') {
+      } else if (type === 'pauk' || type === 'radar') {
         expiresAt = new Date(Date.now() + 45 * 60 * 1000);
       }
 
@@ -364,8 +368,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt,
       });
 
-      if (type === 'zlatni_minut' || type === 'pauk') {
-        const typeLabel = type === 'zlatni_minut' ? 'Zlatni Minut' : 'Pauk Radar';
+      if (type === 'zlatni_minut' || type === 'pauk' || type === 'radar') {
+        const typeLabel = type === 'zlatni_minut' ? 'Zlatni Minut' : type === 'pauk' ? 'Pauk Radar' : 'Radar';
         const nick = user.mapNickname || 'Korisnik';
         try {
           const markerLabel = marker.label;

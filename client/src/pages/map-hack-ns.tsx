@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck, Car, Home, Smartphone, Navigation, Search, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck, Car, Home, Smartphone, Navigation, Search, Plus, RadioTower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -182,6 +182,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <GoldRow ok text="Push Notifikacije: instant obaveštenje za Pauka i Zlatni minut" />
           <GoldRow ok text="Safe Zone Alarm: 'Sidro' marker → AUTO-PUSH u krugu 300m sa sirenom" />
           <GoldRow ok text="Štek Lokacije: otključana baza skrivenih parkinga" />
+          <GoldRow ok text="Radar Markeri: označi policijski radar i fotoredar na mapi" />
           <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
         </div>
       </button>
@@ -213,7 +214,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <span className="text-red-200 text-sm ml-1 font-medium">RSD · jednokratno</span>
         </div>
         <div className="flex flex-col gap-1.5">
-          <LightRow ok text="Sve Premium funkcije" />
+          <LightRow ok text="Sve Premium funkcije (Štek, Radar, Push, Safe Zone)" />
           <LightRow ok text="Važi 24 sata" />
           <LightRow ok text="Bez pretplate" />
           <LightRow ok text="Idealno za goste NS, turiste, subotnji izlazak u centar" />
@@ -255,7 +256,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <p className="text-indigo-200 text-xs font-semibold">Ušteda od preko 1.000 RSD — praktično 2 meseca besplatno</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <LightRow ok text="Sve Premium funkcije" />
+          <LightRow ok text="Sve Premium funkcije (Štek, Radar, Push, Safe Zone)" />
           <LightRow ok text="365 dana pristupa" />
           <LightRow ok text="Ušteda od preko 1.000 RSD godišnje" />
           <LightRow ok text="Praktično 2 meseca besplatno" />
@@ -643,13 +644,22 @@ export default function MapHackNS() {
           `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&type=street&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=6&apiKey=${apiKey}`
         );
         const data = await resp.json();
+        const NS_LAT = 45.2671;
+        const NS_LNG = 19.8335;
         const suggestions = (data.features ?? []).map((f: any) => {
           const p = f.properties;
           const street = p.street ?? p.name ?? "";
           const housenumber = p.housenumber ? ` ${p.housenumber}` : "";
           const city = p.city ?? p.town ?? p.village ?? "Novi Sad";
           const text = street ? `${street}${housenumber}, ${city}` : (p.formatted ?? "");
-          return { text, lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] };
+          const lat = f.geometry.coordinates[1];
+          const lng = f.geometry.coordinates[0];
+          return { text, lat, lng };
+        });
+        suggestions.sort((a, b) => {
+          const dA = haversineMeters(a.lat, a.lng, NS_LAT, NS_LNG);
+          const dB = haversineMeters(b.lat, b.lng, NS_LAT, NS_LNG);
+          return dA - dB;
         });
         setSearchSuggestions(suggestions);
       } catch (_) {
@@ -1239,7 +1249,7 @@ export default function MapHackNS() {
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm"
                       style={{ color: "#d1d5db", borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
                       <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
-                      <span className="truncate">{s.text}</span>
+                      <span className="text-left">{s.text}</span>
                     </button>
                   ))}
                 </div>
@@ -1344,6 +1354,30 @@ export default function MapHackNS() {
             </button>
           );
         })}
+        {isPremium && (() => {
+          const isActive = activeFilters.includes("radar");
+          return (
+            <button
+              key="radar"
+              data-testid="filter-tab-radar"
+              onClick={() => {
+                setActiveFilters(prev => {
+                  const without = prev.filter(x => x !== "sve" && x !== "radar");
+                  const next = prev.includes("radar") ? without : [...without, "radar"];
+                  return next.length === 0 ? ["sve"] : next;
+                });
+              }}
+              className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: isActive ? "#8b5cf622" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isActive ? "#8b5cf666" : "rgba(255,255,255,0.1)"}`,
+                color: isActive ? "#8b5cf6" : "#9ca3af",
+              }}>
+              <span>📡</span>
+              <span>Radar</span>
+            </button>
+          );
+        })()}
         {/* Aktivno dropdown */}
         <button
           data-testid="btn-filter-aktivno"
@@ -1371,7 +1405,7 @@ export default function MapHackNS() {
               return;
             }
             if (!addMode) return;
-            if (addMode === "zlatni_minut" || addMode === "pauk") {
+            if (addMode === "zlatni_minut" || addMode === "pauk" || addMode === "radar") {
               setPendingPlacement({ type: addMode, lat, lng });
               setPendingComment("");
               return;
@@ -1416,7 +1450,7 @@ export default function MapHackNS() {
       {/* ── Action bar below map ── */}
       <div className="flex-shrink-0 px-3 py-2.5"
         style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex items-stretch gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {/* Zlatni Minut */}
           {(() => {
             const count = mapMarkers.filter(m => m.type === "zlatni_minut").length;
@@ -1426,19 +1460,20 @@ export default function MapHackNS() {
                 key="zlatni_minut"
                 data-testid="action-bar-zlatni_minut"
                 onClick={() => { setAddMode(isActive ? null : "zlatni_minut"); setActiveTab("zlatni_minut"); setWatchZonePlaceMode(false); }}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
+                  width: 58, height: 58,
                   background: isActive ? "#c2410c" : "rgba(234,88,12,0.55)",
                   border: `1.5px solid ${isActive ? "#f97316" : "rgba(249,115,22,0.7)"}`,
                 }}>
                 <div className="relative">
                   <Car size={18} style={{ color: isActive ? "#fff" : "#fed7aa" }} />
                   {count > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full text-white font-bold"
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                       style={{ width: 14, height: 14, background: "#fff", color: "#c2410c", fontSize: 7 }}>{count}</span>
                   )}
                 </div>
-                <span className="font-bold" style={{ color: isActive ? "#fff" : "#fed7aa", fontSize: 10, letterSpacing: "0.02em" }}>Zlatni minut</span>
+                <span className="font-bold text-center" style={{ color: isActive ? "#fff" : "#fed7aa", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Zlatni minut</span>
               </button>
             );
           })()}
@@ -1452,15 +1487,16 @@ export default function MapHackNS() {
                 key="pauk"
                 data-testid="action-bar-pauk"
                 onClick={() => { setAddMode(isActive ? null : "pauk"); setActiveTab("pauk"); setWatchZonePlaceMode(false); }}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
+                  width: 58, height: 58,
                   background: isActive ? "#991b1b" : "rgba(185,28,28,0.55)",
                   border: `1.5px solid ${isActive ? "#ef4444" : "rgba(239,68,68,0.75)"}`,
                 }}>
                 <div className="relative">
                   <Truck size={18} style={{ color: isActive ? "#fff" : "#fca5a5" }} />
                   {count > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full text-white font-bold"
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                       style={{ width: 14, height: 14, background: "#fff", color: "#991b1b", fontSize: 7 }}>{count}</span>
                   )}
                 </div>
@@ -1479,8 +1515,9 @@ export default function MapHackNS() {
                 key="stek"
                 data-testid="action-bar-stek"
                 onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } }}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
+                  width: 58, height: 58,
                   background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#15803d" : "rgba(21,128,61,0.55)",
                   border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : isActive ? "#22c55e" : "rgba(34,197,94,0.7)"}`,
                   opacity: locked ? 0.5 : 1,
@@ -1489,14 +1526,41 @@ export default function MapHackNS() {
                   <div className="relative">
                     <Home size={18} style={{ color: isActive ? "#fff" : "#86efac" }} />
                     {count > 0 && (
-                      <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full text-white font-bold"
+                      <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                         style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
                     )}
                   </div>
                 )}
-                <span className="font-bold" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 10, letterSpacing: "0.02em" }}>
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
                   {locked ? "Premium" : "Štek parking"}
                 </span>
+              </button>
+            );
+          })()}
+
+          {/* Radar — premium only */}
+          {isPremium && (() => {
+            const count = mapMarkers.filter(m => m.type === "radar").length;
+            const isActive = addMode === "radar";
+            return (
+              <button
+                key="radar"
+                data-testid="action-bar-radar"
+                onClick={() => { setAddMode(isActive ? null : "radar"); setActiveTab("radar"); setWatchZonePlaceMode(false); }}
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                style={{
+                  width: 58, height: 58,
+                  background: isActive ? "#6d28d9" : "rgba(109,40,217,0.55)",
+                  border: `1.5px solid ${isActive ? "#8b5cf6" : "rgba(139,92,246,0.75)"}`,
+                }}>
+                <div className="relative">
+                  <RadioTower size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                      style={{ width: 14, height: 14, background: "#fff", color: "#6d28d9", fontSize: 7 }}>{count}</span>
+                  )}
+                </div>
+                <span className="font-bold" style={{ color: isActive ? "#fff" : "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>Radar</span>
               </button>
             );
           })()}
@@ -1505,10 +1569,10 @@ export default function MapHackNS() {
           <button
             data-testid="btn-sms-parking"
             onClick={openSmsModal}
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
-            style={{ background: "rgba(109,40,217,0.5)", border: "1.5px solid rgba(139,92,246,0.75)" }}>
-            <Smartphone size={18} style={{ color: "#ddd6fe" }} />
-            <span className="font-bold" style={{ color: "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>SMS plaćanje</span>
+            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            style={{ width: 58, height: 58, background: "rgba(79,70,229,0.5)", border: "1.5px solid rgba(99,102,241,0.75)" }}>
+            <Smartphone size={18} style={{ color: "#c7d2fe" }} />
+            <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS plaćanje</span>
           </button>
 
           {/* Zona upozorenja */}
@@ -1520,8 +1584,9 @@ export default function MapHackNS() {
               <button
                 data-testid="btn-watch-zone"
                 onClick={() => { if (!locked) setWatchZoneOpen(true); else toast({ title: "Premium funkcija", description: "Zona upozorenja je dostupna samo za Premium korisnike." }); }}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl"
+                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
+                  width: 58, height: 58,
                   background: locked ? "rgba(255,255,255,0.05)" : (hasZone || isPlacing) ? "#92400e" : "rgba(161,67,6,0.5)",
                   border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : (hasZone || isPlacing) ? "#f59e0b" : "rgba(245,158,11,0.7)"}`,
                   opacity: locked ? 0.5 : 1,
@@ -1530,7 +1595,7 @@ export default function MapHackNS() {
                   ? <Lock size={18} style={{ color: "#6b7280" }} />
                   : <Bell size={18} style={{ color: (hasZone || isPlacing) ? "#fde68a" : "#fbbf24" }} />
                 }
-                <span className="font-bold" style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24", fontSize: 10, letterSpacing: "0.02em" }}>
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
                   {locked ? "Premium" : "Safe zona"}
                 </span>
               </button>
@@ -1541,10 +1606,10 @@ export default function MapHackNS() {
           <button
             data-testid="btn-izdaj-parking"
             onClick={() => setLocation("/select-category")}
-            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-xl h-full"
-            style={{ background: "rgba(7,89,133,0.55)", border: "1.5px solid rgba(14,165,233,0.7)", minWidth: 56 }}>
+            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            style={{ width: 58, height: 58, background: "rgba(7,89,133,0.55)", border: "1.5px solid rgba(14,165,233,0.7)" }}>
             <Plus size={18} style={{ color: "#7dd3fc" }} />
-            <span className="font-bold" style={{ color: "#7dd3fc", fontSize: 10, letterSpacing: "0.02em" }}>Izdaj parking</span>
+            <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
           </button>
         </div>
       </div>
