@@ -1736,17 +1736,33 @@ export default function MapHackNS() {
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{
-                    background: pendingPlacement.type === "pauk" ? "rgba(239,68,68,0.18)" : "rgba(249,115,22,0.18)",
-                    border: `1px solid ${pendingPlacement.type === "pauk" ? "rgba(239,68,68,0.4)" : "rgba(249,115,22,0.4)"}`,
+                    background: pendingPlacement.type === "pauk"
+                      ? "rgba(239,68,68,0.18)"
+                      : pendingPlacement.type === "radar"
+                      ? "rgba(139,92,246,0.18)"
+                      : "rgba(249,115,22,0.18)",
+                    border: `1px solid ${
+                      pendingPlacement.type === "pauk"
+                        ? "rgba(239,68,68,0.4)"
+                        : pendingPlacement.type === "radar"
+                        ? "rgba(139,92,246,0.4)"
+                        : "rgba(249,115,22,0.4)"
+                    }`,
                   }}>
                   {pendingPlacement.type === "pauk"
                     ? <Truck size={15} style={{ color: "#f87171" }} />
+                    : pendingPlacement.type === "radar"
+                    ? <RadioTower size={15} style={{ color: "#a78bfa" }} />
                     : <Car size={15} style={{ color: "#fb923c" }} />
                   }
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">
-                    {pendingPlacement.type === "pauk" ? "Pauk Radar" : "Zlatni Minut"}
+                    {pendingPlacement.type === "pauk"
+                      ? "Pauk Radar"
+                      : pendingPlacement.type === "radar"
+                      ? "Radar"
+                      : "Zlatni Minut"}
                   </p>
                   <p className="text-xs" style={{ color: "#9ca3af" }}>Dodaj komentar (opciono)</p>
                 </div>
@@ -1763,9 +1779,13 @@ export default function MapHackNS() {
                 data-testid="input-marker-comment"
                 value={pendingComment}
                 onChange={e => setPendingComment(e.target.value.slice(0, 100))}
-                placeholder={pendingPlacement.type === "pauk"
-                  ? "npr. Stoji tu već 30min, kruži po bloku..."
-                  : "npr. Slobodnih mesta ima, ali frka na uglu..."}
+                placeholder={
+                  pendingPlacement.type === "pauk"
+                    ? "npr. Stoji tu već 30min, kruži po bloku..."
+                    : pendingPlacement.type === "radar"
+                    ? "npr. Mobilni radar na Bulevaru, pazi na 60..."
+                    : "npr. Slobodnih mesta ima, ali frka na uglu..."
+                }
                 rows={3}
                 className="w-full rounded-xl px-3 py-2.5 text-sm resize-none"
                 style={{
@@ -1801,8 +1821,18 @@ export default function MapHackNS() {
                   disabled={addMarkerMutation.isPending}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                   style={{
-                    background: pendingPlacement.type === "pauk" ? "#991b1b" : "#c2410c",
-                    border: `1px solid ${pendingPlacement.type === "pauk" ? "#ef4444" : "#f97316"}`,
+                    background: pendingPlacement.type === "pauk"
+                      ? "#991b1b"
+                      : pendingPlacement.type === "radar"
+                      ? "#6d28d9"
+                      : "#c2410c",
+                    border: `1px solid ${
+                      pendingPlacement.type === "pauk"
+                        ? "#ef4444"
+                        : pendingPlacement.type === "radar"
+                        ? "#8b5cf6"
+                        : "#f97316"
+                    }`,
                     color: "#fff",
                     opacity: addMarkerMutation.isPending ? 0.6 : 1,
                   }}>
