@@ -30,6 +30,7 @@ import {
   type MapSafeZone,
   type InsertMapSafeZone,
   type MapWatchArea,
+  mapHackConsumedSessions,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc, or, sql, gt } from "drizzle-orm";
@@ -43,6 +44,8 @@ export interface IStorage {
   updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }): Promise<User | undefined>;
   resetMapHackProfile(userId: string): Promise<User | undefined>;
   updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null, stripeSessionId?: string): Promise<User | undefined>;
+  isStripeSessionConsumed(stripeSessionId: string): Promise<boolean>;
+  recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void>;
   
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -188,6 +191,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async isStripeSessionConsumed(stripeSessionId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ id: mapHackConsumedSessions.id })
+      .from(mapHackConsumedSessions)
+      .where(eq(mapHackConsumedSessions.stripeSessionId, stripeSessionId))
+      .limit(1);
+    return !!row;
+  }
+
+  async recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void> {
+    await db.insert(mapHackConsumedSessions).values({ stripeSessionId, userId, plan });
   }
 
   // Parking spots operations

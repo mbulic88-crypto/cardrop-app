@@ -345,10 +345,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Nedostaju parametri" });
       }
 
-      const user = await storage.getUser(userId);
-      if (!user) return res.status(404).json({ message: "Korisnik nije pronađen" });
-
-      if (user.mapHackStripeSessionId === sessionId) {
+      const alreadyConsumed = await storage.isStripeSessionConsumed(sessionId);
+      if (alreadyConsumed) {
         return res.status(409).json({ message: "Sesija je već iskorišćena" });
       }
 
@@ -378,6 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
       }
 
+      await storage.recordConsumedStripeSession(sessionId, userId, verifiedPlan);
       const updated = await storage.updateMapHackPlan(userId, verifiedPlan, expiresAt, sessionId);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
 

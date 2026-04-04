@@ -52,6 +52,15 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// Map Hack consumed Stripe sessions (replay prevention)
+export const mapHackConsumedSessions = pgTable("map_hack_consumed_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  stripeSessionId: varchar("stripe_session_id").notNull().unique(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  plan: varchar("plan", { length: 30 }).notNull(),
+  activatedAt: timestamp("activated_at").defaultNow().notNull(),
+});
+
 // Parking spots table
 export const parkingSpots = pgTable("parking_spots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
