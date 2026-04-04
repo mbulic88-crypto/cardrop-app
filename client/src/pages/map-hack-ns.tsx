@@ -342,6 +342,8 @@ export default function MapHackNS() {
   const [editAvatarId, setEditAvatarId] = useState(1);
   const [profileEditError, setProfileEditError] = useState("");
   const [profileEditSaving, setProfileEditSaving] = useState(false);
+  const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
+  const [upsellPending, setUpsellPending] = useState(false);
 
   const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
 
@@ -558,12 +560,42 @@ export default function MapHackNS() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const plan = params.get("plan");
+    const sessionId = params.get("session_id");
+    if (!plan || !sessionId) return;
+    window.history.replaceState({}, "", "/map-hack");
+    fetch("/api/map-hack/verify-plan-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, plan }),
+    })
+      .then(r => r.json())
+      .then((data: { success?: boolean }) => {
+        if (data.success) {
+          queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
+          toast({ title: "Plan aktiviran!", description: `${planLabel(plan)} je uspešno aktiviran.` });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   async function savePlan(planId: PlanId) {
     if (planId !== "free") {
-      toast({
-        title: "Uskoro dostupno",
-        description: `Plaćanje za ${planId === "premium" ? "Premium" : planId === "day_pass" ? "Day Pass" : "Godišnji Premium"} — info@cardrop.app`,
+      const res = await fetch("/api/map-hack/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(data.message || "Greška pri kreiranju sesije");
+      }
+      const data = await res.json() as { url: string };
+      window.location.href = data.url;
+      return;
     }
     const res = await fetch("/api/map-hack/plan", {
       method: "POST",
@@ -571,7 +603,7 @@ export default function MapHackNS() {
       body: JSON.stringify({ plan: "free" }),
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      const data = await res.json().catch(() => ({})) as { message?: string };
       throw new Error(data.message || "Greška pri aktivaciji plana");
     }
     await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -1351,7 +1383,6 @@ export default function MapHackNS() {
           { key: "zlatni_minut", label: "Parking", icon: "🅿" },
           { key: "pauk",         label: "Pauk",    icon: "🚛" },
           { key: "stek",        label: "Štek",    icon: "🏠" },
-          { key: "safe_zone",   label: "Safe Zone", icon: "🛡" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
           return (
@@ -1397,6 +1428,30 @@ export default function MapHackNS() {
               }}>
               <span>📡</span>
               <span>Radar</span>
+            </button>
+          );
+        })()}
+        {(() => {
+          const isActive = activeFilters.includes("safe_zone");
+          return (
+            <button
+              key="safe_zone"
+              data-testid="filter-tab-safe_zone"
+              onClick={() => {
+                setActiveFilters(prev => {
+                  const without = prev.filter(x => x !== "sve" && x !== "safe_zone");
+                  const next = prev.includes("safe_zone") ? without : [...without, "safe_zone"];
+                  return next.length === 0 ? ["sve"] : next;
+                });
+              }}
+              className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isActive ? markerColor("safe_zone") : "#9ca3af",
+              }}>
+              <span>🛡</span>
+              <span>Safe Zone</span>
             </button>
           );
         })()}
@@ -1536,7 +1591,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setPremiumUpsellOpen(true); } }}
                 className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -1605,7 +1660,7 @@ export default function MapHackNS() {
             return (
               <button
                 data-testid="btn-watch-zone"
-                onClick={() => { if (!locked) setWatchZoneOpen(true); else toast({ title: "Premium funkcija", description: "Zona upozorenja je dostupna samo za Premium korisnike." }); }}
+                onClick={() => { if (!locked) setWatchZoneOpen(true); else setPremiumUpsellOpen(true); }}
                 className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -1661,7 +1716,6 @@ export default function MapHackNS() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5 mb-0.5">
-                      <span className="font-bold" style={{ color: typeColor, fontSize: 11 }}>CarDrop Bot</span>
                       <span style={{ color: "#4b5563", fontSize: 10 }}>{formatChatTime(msg.createdAt)}</span>
                     </div>
                     <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.4 }}>{baseText}</p>
@@ -2188,6 +2242,144 @@ export default function MapHackNS() {
               </div>
 
               <div className="pb-2" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Premium Upsell Modal ── */}
+      {premiumUpsellOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setPremiumUpsellOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-t-2xl overflow-y-auto"
+            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div>
+                <span className="font-bold text-white text-sm">Otključaj Premium</span>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Štek lokacije, Watch Area, Radar, Push notifikacije</p>
+              </div>
+              <button
+                onClick={() => setPremiumUpsellOpen(false)}
+                className="flex items-center justify-center rounded-full"
+                style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+            <div className="px-4 py-4 flex flex-col gap-3">
+
+              {/* Premium card */}
+              <button
+                data-testid="upsell-plan-premium"
+                disabled={upsellPending}
+                onClick={async () => {
+                  setUpsellPending(true);
+                  try {
+                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "premium" }) });
+                    const data = await res.json() as { url?: string; message?: string };
+                    if (!res.ok) throw new Error(data.message || "Greška");
+                    window.location.href = data.url!;
+                  } catch (err) {
+                    toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
+                    setUpsellPending(false);
+                  }
+                }}
+                className="w-full text-left rounded-xl p-4 transition-all duration-200"
+                style={{ background: "linear-gradient(145deg, #B8860B 0%, #DAA520 45%, #FFD700 100%)", boxShadow: "0 2px 12px rgba(218,165,32,0.3)", opacity: upsellPending ? 0.7 : 1 }}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-yellow-950 font-extrabold text-base tracking-wide">PREMIUM</span>
+                      <span className="bg-yellow-950/15 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Preporučeno</span>
+                    </div>
+                    <p className="text-yellow-900/70 text-xs mt-0.5">Štek, Watch Area, Radar, Push notifikacije</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
+                    <span className="text-yellow-800 text-xs ml-1">RSD/mes</span>
+                  </div>
+                </div>
+                <div className="mt-3 py-2 px-4 rounded-lg text-center font-bold text-sm" style={{ background: "rgba(0,0,0,0.15)", color: "#713f12" }}>
+                  {upsellPending ? "Učitava..." : "Pretplati se →"}
+                </div>
+              </button>
+
+              {/* Day Pass card */}
+              <button
+                data-testid="upsell-plan-day-pass"
+                disabled={upsellPending}
+                onClick={async () => {
+                  setUpsellPending(true);
+                  try {
+                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "day_pass" }) });
+                    const data = await res.json() as { url?: string; message?: string };
+                    if (!res.ok) throw new Error(data.message || "Greška");
+                    window.location.href = data.url!;
+                  } catch (err) {
+                    toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
+                    setUpsellPending(false);
+                  }
+                }}
+                className="w-full text-left rounded-xl p-4 transition-all duration-200"
+                style={{ background: "linear-gradient(145deg, #7f1d1d 0%, #dc2626 55%, #ef4444 100%)", boxShadow: "0 2px 12px rgba(220,38,38,0.25)", opacity: upsellPending ? 0.7 : 1 }}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
+                    <p className="text-red-200 text-xs mt-0.5">Sve Premium funkcije na 24 sata</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-white text-2xl font-extrabold leading-none">120</span>
+                    <span className="text-red-200 text-xs ml-1">RSD</span>
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-2 mb-3">
+                  <LightRow ok text="Važi 24 sata" />
+                  <LightRow ok text="Bez pretplate" />
+                </div>
+                <div className="py-2 px-4 rounded-lg text-center font-bold text-sm text-white" style={{ background: "rgba(0,0,0,0.2)" }}>
+                  {upsellPending ? "Učitava..." : "Pretplati se →"}
+                </div>
+              </button>
+
+              {/* Godišnji card */}
+              <button
+                data-testid="upsell-plan-godisnji"
+                disabled={upsellPending}
+                onClick={async () => {
+                  setUpsellPending(true);
+                  try {
+                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "godisnji_premium" }) });
+                    const data = await res.json() as { url?: string; message?: string };
+                    if (!res.ok) throw new Error(data.message || "Greška");
+                    window.location.href = data.url!;
+                  } catch (err) {
+                    toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
+                    setUpsellPending(false);
+                  }
+                }}
+                className="w-full text-left rounded-xl p-4 transition-all duration-200"
+                style={{ background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%)", boxShadow: "0 2px 12px rgba(67,56,202,0.2)", opacity: upsellPending ? 0.7 : 1 }}>
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI</span>
+                      <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">2 mes. gratis</span>
+                    </div>
+                    <p className="text-indigo-300 text-xs mt-0.5">365 dana pristupa svim Premium funkcijama</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-white text-2xl font-extrabold leading-none">3.500</span>
+                    <span className="text-indigo-300 text-xs ml-1">RSD/god</span>
+                  </div>
+                </div>
+                <div className="py-2 px-4 rounded-lg text-center font-bold text-sm text-white" style={{ background: "rgba(0,0,0,0.2)" }}>
+                  {upsellPending ? "Učitava..." : "Pretplati se →"}
+                </div>
+              </button>
+
+              <p className="text-center text-xs pb-2" style={{ color: "#4b5563" }}>Sigurno plaćanje putem Stripe-a · RSD</p>
             </div>
           </div>
         </div>

@@ -290,6 +290,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Map Hack NS — Stripe Checkout for plans ─────────────────────────────
+
+  app.post('/api/map-hack/create-checkout', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const { plan } = req.body;
+
+      const validPlans: Record<string, { name: string; amount: number; description: string }> = {
+        premium: { name: "CarDrop Map Hack NS — Premium", amount: 39000, description: "Premium plan — 30 dana" },
+        day_pass: { name: "CarDrop Map Hack NS — Day Pass", amount: 12000, description: "Day Pass — 24 sata" },
+        godisnji_premium: { name: "CarDrop Map Hack NS — Godišnji", amount: 350000, description: "Godišnji Premium — 365 dana" },
+      };
+
+      if (!plan || !validPlans[plan]) {
+        return res.status(400).json({ message: "Nevalidan plan" });
+      }
+
+      const planDef = validPlans[plan];
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'rsd',
+            product_data: { name: planDef.name, description: planDef.description },
+            unit_amount: planDef.amount,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/map-hack`,
+        metadata: { userId, plan },
+      });
+
+      res.json({ url: session.url });
+    } catch (error: unknown) {
+      console.error("Error creating map hack checkout:", error);
+      const msg = error instanceof Error ? error.message : "Greška pri kreiranju sesije";
+      res.status(500).json({ message: msg });
+    }
+  });
+
+  app.post('/api/map-hack/verify-plan-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const { sessionId, plan } = req.body;
+
+      if (!sessionId || !plan) {
+        return res.status(400).json({ message: "Nedostaju parametri" });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ message: "Plaćanje nije završeno" });
+      }
+
+      if (session.metadata?.userId !== String(userId)) {
+        return res.status(403).json({ message: "Neovlašćen pristup" });
+      }
+
+      const now = new Date();
+      let expiresAt: Date;
+      if (plan === 'day_pass') {
+        expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      } else if (plan === 'premium') {
+        expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      } else if (plan === 'godisnji_premium') {
+        expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+      } else {
+        return res.status(400).json({ message: "Nevalidan plan" });
+      }
+
+      const updated = await storage.updateMapHackPlan(userId, plan, expiresAt);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      const { passwordHash, ...safeUser } = updated;
+      res.json({ success: true, user: safeUser });
+    } catch (error: unknown) {
+      console.error("Error verifying map hack payment:", error);
+      const msg = error instanceof Error ? error.message : "Greška pri verifikaciji";
+      res.status(500).json({ message: msg });
+    }
+  });
+
   // ─── Map Hack NS — Markers ────────────────────────────────────────────────
 
   function hasActiveMapHackPlan(user: any): boolean {
