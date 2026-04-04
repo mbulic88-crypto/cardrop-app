@@ -1632,7 +1632,8 @@ export default function MapHackNS() {
               const isZlatniMinut = msg.text.includes("Zlatni Minut");
               const isPauk = msg.text.includes("Pauk Radar");
               const isRadar = msg.text.includes("Radar") && !isPauk;
-              const TypeIcon = isZlatniMinut ? Clock : isPauk ? AlertTriangle : isRadar ? RadioTower : MessageSquare;
+              const isKomentar = msg.text.includes("komentar");
+              const TypeIcon = isZlatniMinut ? Clock : isPauk ? AlertTriangle : isRadar ? RadioTower : isKomentar ? MessageSquare : MessageSquare;
               const typeColor = isZlatniMinut ? "#f97316" : isPauk ? "#ef4444" : isRadar ? "#8b5cf6" : "#6b7280";
               return (
                 <div key={msg.id} className="flex items-start gap-2 my-2">
