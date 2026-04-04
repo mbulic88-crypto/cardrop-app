@@ -40,7 +40,7 @@ export interface IStorage {
   getUserByMapNickname(nickname: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
-  updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date }): Promise<User | undefined>;
+  updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }): Promise<User | undefined>;
   resetMapHackProfile(userId: string): Promise<User | undefined>;
   updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null): Promise<User | undefined>;
   

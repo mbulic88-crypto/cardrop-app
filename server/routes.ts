@@ -70,7 +70,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/map-hack/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      const { nickname, avatarId } = req.body;
+      const { mapNickname: nickInput, mapAvatarId: avatarIdInput, nickname: nickFallback, avatarId: avatarIdFallback } = req.body;
+      const nickname: unknown = nickInput ?? nickFallback;
+      const avatarId: unknown = avatarIdInput ?? avatarIdFallback;
 
       if (!nickname || typeof nickname !== 'string') {
         return res.status(400).json({ message: "Nickname je obavezan" });
@@ -154,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (typeof enabled !== 'boolean') {
         return res.status(400).json({ message: "enabled mora biti boolean" });
       }
-      const updated = await storage.updateUser(userId, { mapNotificationsEnabled: enabled } as any);
+      const updated = await storage.updateUser(userId, { mapNotificationsEnabled: enabled });
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
       res.json({ mapNotificationsEnabled: updated.mapNotificationsEnabled });
     } catch (error) {
@@ -637,20 +639,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       chatRateLimitMap.set(userId, Date.now());
+      const trimmedText = text.trim();
       const msg = await storage.createMapChatMessage({
         userId,
         mapNickname: user.mapNickname,
         avatarId: user.mapAvatarId || 1,
-        text: text.trim(),
+        text: trimmedText,
         isSystem: false,
         replyToId: replyToId || null,
         replyToNickname: replyToNickname || null,
         replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
       });
 
-      // If push notifications were sent for chat messages in the future,
-      // they must be filtered by mapNotificationsEnabled — same as marker push flow.
-      // Example guard: if (recipient.mapNotificationsEnabled !== false) { sendPushToUser(...) }
+      // Push notification to watch area users when message contains urgent keywords.
+      // Respects mapNotificationsEnabled — same filter pattern as marker push flow.
+      const urgentKeywords = ['pauk', 'evakuator', 'šlep', 'policija', 'radar'];
+      const msgLower = trimmedText.toLowerCase();
+      const isUrgent = urgentKeywords.some(kw => msgLower.includes(kw));
+      if (isUrgent) {
+        try {
+          const watchAreas = await storage.getAllMapWatchAreas();
+          const notified = new Set<string>();
+          for (const area of watchAreas) {
+            if (area.userId === userId || notified.has(area.userId)) continue;
+            const recipient = await storage.getUser(area.userId);
+            if (!recipient || recipient.mapNotificationsEnabled === false) continue;
+            notified.add(area.userId);
+            await sendPushToUser(area.userId, {
+              title: 'Upozorenje u chatu!',
+              body: `${user.mapNickname}: ${trimmedText.slice(0, 80)}`,
+              icon: '/icons/icon-192x192.png',
+              tag: 'chat-urgent',
+              url: '/map-hack',
+            }).catch(() => {});
+          }
+        } catch (_) {
+          // push failure is non-critical
+        }
+      }
 
       res.json(msg);
     } catch (error) {
