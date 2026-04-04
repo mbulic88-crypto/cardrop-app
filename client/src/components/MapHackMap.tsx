@@ -70,9 +70,9 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
   if (locked) {
     path = `<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
   } else if (type === "zlatni_minut") {
-    path = `<path d="M3 9l2-5h14l2 5v6H3V9z"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/>`;
+    path = `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`;
   } else if (type === "pauk") {
-    path = `<rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`;
+    path = `<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`;
   } else if (type === "stek") {
     path = `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
   } else if (type === "safe_zone") {
@@ -319,14 +319,15 @@ export function MapHackMap({
             <Layer
               id="safe-zone-fill"
               type="fill"
-              paint={{ "fill-color": "#22c55e", "fill-opacity": 0.08 }}
+              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.12 }}
             />
             <Layer
               id="safe-zone-line"
               type="line"
               paint={{
-                "line-color": "#22c55e",
+                "line-color": "#4ade80",
                 "line-width": 2,
+                "line-opacity": 0.9,
                 "line-dasharray": [6, 4],
               }}
             />
@@ -339,14 +340,15 @@ export function MapHackMap({
             <Layer
               id="watch-area-fill"
               type="fill"
-              paint={{ "fill-color": "#22c55e", "fill-opacity": 0.06 }}
+              paint={{ "fill-color": "#fbbf24", "fill-opacity": 0.08 }}
             />
             <Layer
               id="watch-area-line"
               type="line"
               paint={{
-                "line-color": "#22c55e",
+                "line-color": "#fbbf24",
                 "line-width": 2,
+                "line-opacity": 0.85,
                 "line-dasharray": [5, 5],
               }}
             />

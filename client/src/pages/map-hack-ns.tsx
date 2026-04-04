@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Truck, Car, Home, Smartphone, Navigation, Search, Plus, RadioTower } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, RefreshCw, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, Home, Smartphone, Navigation, Search, Plus, RadioTower } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -641,12 +641,12 @@ export default function MapHackNS() {
         const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
         if (!apiKey) return;
         const resp = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&type=street&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=6&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=10&apiKey=${apiKey}`
         );
         const data = await resp.json();
         const NS_LAT = 45.2671;
         const NS_LNG = 19.8335;
-        const suggestions = (data.features ?? []).map((f: any) => {
+        const rawSuggestions = (data.features ?? []).map((f: { geometry: { coordinates: [number, number] }; properties: Record<string, string> }) => {
           const p = f.properties;
           const street = p.street ?? p.name ?? "";
           const housenumber = p.housenumber ? ` ${p.housenumber}` : "";
@@ -654,14 +654,18 @@ export default function MapHackNS() {
           const text = street ? `${street}${housenumber}, ${city}` : (p.formatted ?? "");
           const lat = f.geometry.coordinates[1];
           const lng = f.geometry.coordinates[0];
-          return { text, lat, lng };
+          const isOutskirts = !!(p.suburb || p.village || p.district);
+          return { text, lat, lng, isOutskirts };
         });
-        suggestions.sort((a, b) => {
+        rawSuggestions.sort((a, b) => {
+          if (a.isOutskirts !== b.isOutskirts) return a.isOutskirts ? 1 : -1;
           const dA = haversineMeters(a.lat, a.lng, NS_LAT, NS_LNG);
           const dB = haversineMeters(b.lat, b.lng, NS_LAT, NS_LNG);
           return dA - dB;
         });
-        setSearchSuggestions(suggestions);
+        setSearchSuggestions(
+          rawSuggestions.slice(0, 6).map(({ text, lat, lng }) => ({ text, lat, lng }))
+        );
       } catch (_) {
         setSearchSuggestions([]);
       }
@@ -1467,7 +1471,7 @@ export default function MapHackNS() {
                   border: `1.5px solid ${isActive ? "#f97316" : "rgba(249,115,22,0.7)"}`,
                 }}>
                 <div className="relative">
-                  <Car size={18} style={{ color: isActive ? "#fff" : "#fed7aa" }} />
+                  <Clock size={18} style={{ color: isActive ? "#fff" : "#fed7aa" }} />
                   {count > 0 && (
                     <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                       style={{ width: 14, height: 14, background: "#fff", color: "#c2410c", fontSize: 7 }}>{count}</span>
@@ -1494,7 +1498,7 @@ export default function MapHackNS() {
                   border: `1.5px solid ${isActive ? "#ef4444" : "rgba(239,68,68,0.75)"}`,
                 }}>
                 <div className="relative">
-                  <Truck size={18} style={{ color: isActive ? "#fff" : "#fca5a5" }} />
+                  <AlertTriangle size={18} style={{ color: isActive ? "#fff" : "#fca5a5" }} />
                   {count > 0 && (
                     <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                       style={{ width: 14, height: 14, background: "#fff", color: "#991b1b", fontSize: 7 }}>{count}</span>
@@ -1625,19 +1629,27 @@ export default function MapHackNS() {
               const dashIdx = msg.text.indexOf(" — ");
               const baseText = dashIdx !== -1 ? msg.text.slice(0, dashIdx) : msg.text;
               const commentText = dashIdx !== -1 ? msg.text.slice(dashIdx + 3) : null;
+              const isZlatniMinut = msg.text.includes("Zlatni Minut");
+              const isPauk = msg.text.includes("Pauk Radar");
+              const isRadar = msg.text.includes("Radar") && !isPauk;
+              const TypeIcon = isZlatniMinut ? Clock : isPauk ? AlertTriangle : isRadar ? RadioTower : MessageSquare;
+              const typeColor = isZlatniMinut ? "#f97316" : isPauk ? "#ef4444" : isRadar ? "#8b5cf6" : "#6b7280";
               return (
-                <div key={msg.id} className="flex justify-center my-1">
-                  <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.10)" }}>
-                    <Bell size={10} style={{ flexShrink: 0, color: "#f97316" }} />
-                    <span>{baseText}</span>
+                <div key={msg.id} className="flex items-start gap-2 my-2">
+                  <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                    style={{ background: typeColor + "22", border: `1px solid ${typeColor}44` }}>
+                    <TypeIcon size={13} style={{ color: typeColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-1.5 mb-0.5">
+                      <span className="font-bold" style={{ color: typeColor, fontSize: 11 }}>CarDrop Bot</span>
+                      <span style={{ color: "#4b5563", fontSize: 10 }}>{formatChatTime(msg.createdAt)}</span>
+                    </div>
+                    <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.4 }}>{baseText}</p>
                     {commentText && (
-                      <>
-                        <span style={{ color: "rgba(255,255,255,0.25)" }}>—</span>
-                        <span style={{ color: "#e5e7eb", fontStyle: "italic" }}>{commentText}</span>
-                      </>
+                      <p style={{ color: "#d1d5db", fontStyle: "italic", fontSize: 12, lineHeight: 1.4, marginTop: 2 }}>{commentText}</p>
                     )}
-                  </span>
+                  </div>
                 </div>
               );
             }
@@ -1750,10 +1762,10 @@ export default function MapHackNS() {
                     }`,
                   }}>
                   {pendingPlacement.type === "pauk"
-                    ? <Truck size={15} style={{ color: "#f87171" }} />
+                    ? <AlertTriangle size={15} style={{ color: "#f87171" }} />
                     : pendingPlacement.type === "radar"
                     ? <RadioTower size={15} style={{ color: "#a78bfa" }} />
-                    : <Car size={15} style={{ color: "#fb923c" }} />
+                    : <Clock size={15} style={{ color: "#fb923c" }} />
                   }
                 </div>
                 <div>
