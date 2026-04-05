@@ -403,6 +403,7 @@ export default function MapHackNS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; lat: number; lng: number }>>([]);
+  const [chatFullscreen, setChatFullscreen] = useState(false);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -693,34 +694,18 @@ export default function MapHackNS() {
     }
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const apiKey = import.meta.env.VITE_GEOAPIFY_API_KEY;
-        if (!apiKey) return;
+        const token = import.meta.env.VITE_MAPBOX_TOKEN as string;
+        if (!token) return;
         const resp = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(searchQuery)}&filter=circle:19.8335,45.2671,15000&bias=proximity:19.8335,45.2671&lang=sr&limit=10&apiKey=${apiKey}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${token}&country=rs&proximity=19.8335,45.2671&limit=6&language=sr`
         );
         const data = await resp.json();
-        const NS_LAT = 45.2671;
-        const NS_LNG = 19.8335;
-        const rawSuggestions = (data.features ?? []).map((f: { geometry: { coordinates: [number, number] }; properties: Record<string, string> }) => {
-          const p = f.properties;
-          const street = p.street ?? p.name ?? "";
-          const housenumber = p.housenumber ? ` ${p.housenumber}` : "";
-          const city = p.city ?? p.town ?? p.village ?? "Novi Sad";
-          const text = street ? `${street}${housenumber}, ${city}` : (p.formatted ?? "");
-          const lat = f.geometry.coordinates[1];
-          const lng = f.geometry.coordinates[0];
-          const isOutskirts = !!(p.suburb || p.village || p.district);
-          return { text, lat, lng, isOutskirts };
-        });
-        rawSuggestions.sort((a, b) => {
-          if (a.isOutskirts !== b.isOutskirts) return a.isOutskirts ? 1 : -1;
-          const dA = haversineMeters(a.lat, a.lng, NS_LAT, NS_LNG);
-          const dB = haversineMeters(b.lat, b.lng, NS_LAT, NS_LNG);
-          return dA - dB;
-        });
-        setSearchSuggestions(
-          rawSuggestions.slice(0, 6).map(({ text, lat, lng }) => ({ text, lat, lng }))
-        );
+        const suggestions = (data.features ?? []).map((f: { place_name: string; center: [number, number] }) => ({
+          text: f.place_name,
+          lat: f.center[1],
+          lng: f.center[0],
+        }));
+        setSearchSuggestions(suggestions);
       } catch (_) {
         setSearchSuggestions([]);
       }
@@ -1403,10 +1388,8 @@ export default function MapHackNS() {
                 onClick={() => isInstallable ? installApp() : setShowPwaModal(true)}
                 title="Instaliraj aplikaciju"
                 className="relative flex items-center justify-center"
-                style={{ width: 34, height: 34, borderRadius: "50%",
-                  background: "rgba(16,185,129,0.15)",
-                  border: "1px solid rgba(16,185,129,0.4)" }}>
-                <Download size={15} style={{ color: "#34d399" }} />
+                style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none" }}>
+                <Download size={15} style={{ color: "#fff" }} />
               </button>
             )}
 
@@ -1424,11 +1407,10 @@ export default function MapHackNS() {
               }}
               className="relative flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%",
-                background: alarmActive ? "rgba(239,68,68,0.18)" : "rgba(251,191,36,0.12)",
-                border: `1px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(251,191,36,0.3)"}` }}>
+                background: alarmActive ? "#b91c1c" : "#b45309", border: "none" }}>
               {(user.mapNotificationsEnabled ?? true)
-                ? <Bell size={15} style={{ color: alarmActive ? "#fca5a5" : "#fbbf24" }} />
-                : <BellOff size={15} style={{ color: "rgba(251,191,36,0.4)" }} />
+                ? <Bell size={15} style={{ color: "#fff" }} />
+                : <BellOff size={15} style={{ color: "rgba(255,255,255,0.6)" }} />
               }
               {(alarmActive || showTrialBanner) && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
@@ -1439,21 +1421,19 @@ export default function MapHackNS() {
               )}
             </button>
 
-            {/* Chat indicator */}
+            {/* Chat — fullscreen toggle */}
             <button
               data-testid="btn-chat-indicator"
               onClick={() => {
                 clearUnread();
-                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                setChatFullscreen(true);
               }}
               className="relative flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: "rgba(59,130,246,0.18)",
-                border: "1px solid rgba(59,130,246,0.45)" }}>
-              <MessageSquare size={15} style={{ color: "#60a5fa" }} />
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#1d4ed8", border: "none" }}>
+              <MessageSquare size={15} style={{ color: "#fff" }} />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                  style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8 }}>
+                  style={{ width: 16, height: 16, background: "#ef4444", fontSize: 8 }}>
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
@@ -1464,10 +1444,8 @@ export default function MapHackNS() {
               data-testid="btn-legend"
               onClick={() => setLegendOpen(true)}
               className="flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: "rgba(139,92,246,0.15)",
-                border: "1px solid rgba(139,92,246,0.35)" }}>
-              <Info size={15} style={{ color: "#a78bfa" }} />
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#6d28d9", border: "none" }}>
+              <Info size={15} style={{ color: "#fff" }} />
             </button>
 
             {/* Profile edit */}
@@ -1480,17 +1458,15 @@ export default function MapHackNS() {
                 setProfileEditOpen(true);
               }}
               className="flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: "rgba(20,184,166,0.15)",
-                border: "1px solid rgba(20,184,166,0.35)" }}>
-              <User size={15} style={{ color: "#2dd4bf" }} />
+              style={{ width: 34, height: 34, borderRadius: "50%", background: "#0f766e", border: "none" }}>
+              <User size={15} style={{ color: "#fff" }} />
             </button>
           </div>
         </div>
       </div>
       {/* ── Filter tabs row ── */}
       <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto"
-        style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
+        style={{ display: chatFullscreen ? "none" : undefined, background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
         {([
           { key: "zlatni_minut", label: "Parking", icon: "🅿" },
           { key: "pauk",         label: "Pauk",    icon: "🚛" },
@@ -1577,7 +1553,7 @@ export default function MapHackNS() {
         </button>
       </div>
       {/* ── Map area ── */}
-      <div className="relative flex-shrink-0" style={{ height: "36vh", minHeight: 180 }}>
+      <div className="relative flex-shrink-0" style={{ height: "36vh", minHeight: 180, display: chatFullscreen ? "none" : undefined }}>
         <MapHackMap
           markers={mapMarkers}
           activeFilters={activeFilters}
@@ -1805,6 +1781,20 @@ export default function MapHackNS() {
       {/* ── Chat panel ── */}
       <div className="flex-1 flex flex-col overflow-hidden" data-testid="panel-chat"
         style={{ background: "#0d1117" }}>
+        {chatFullscreen && (
+          <div className="flex items-center justify-between px-3 py-2 flex-shrink-0"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <span className="text-sm font-semibold" style={{ color: "#e5e7eb" }}>Chat</span>
+            <button
+              data-testid="btn-chat-fullscreen-close"
+              onClick={() => setChatFullscreen(false)}
+              className="flex items-center justify-center"
+              style={{ width: 32, height: 32, borderRadius: "50%", background: "#374151", border: "none" }}
+              title="Zatvori fullscreen chat">
+              <X size={16} style={{ color: "#fff" }} />
+            </button>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
           {chatMessages.length === 0 && (
             <p className="text-xs text-center py-6" style={{ color: "#4b5563" }}>Nema poruka. Budi prvi!</p>
@@ -1830,6 +1820,7 @@ export default function MapHackNS() {
                   onClick={() => {
                     if (!hasCoords) return;
                     setFlyToLocation({ lat: parseFloat(msg.lat!), lng: parseFloat(msg.lng!) });
+                    setChatFullscreen(false);
                   }}
                   title={hasCoords ? "Tapni da vidiš na mapi" : undefined}
                 >
