@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { usePWA } from "@/hooks/use-pwa";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -402,6 +404,8 @@ export default function MapHackNS() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; lat: number; lng: number }>>([]);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [showPwaModal, setShowPwaModal] = useState(false);
+  const { isInstallable, isInstalled, installApp } = usePWA();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1294,21 +1298,24 @@ export default function MapHackNS() {
           </div>
         </div>
       )}
-      {/* ── Header: back arrow + plan badge + search + bell + chat ── */}
+      {/* ── Header: logo back + plan badge + search + actions ── */}
       <div className="flex-shrink-0 z-30" style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex items-center justify-between px-3 py-3">
-          {/* Left: back arrow + plan badge */}
+        <div className="flex items-center justify-between px-3 py-2.5">
+
+          {/* Left: CarDrop logo (back to landing) + plan badge */}
           <div className="flex items-center gap-2">
             <Link href="/">
               <button
                 data-testid="btn-back-home"
-                className="flex items-center justify-center"
-                style={{ width: 34, height: 34, borderRadius: "50%",
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.12)" }}>
-                <ArrowLeft size={16} style={{ color: "#d1d5db" }} />
+                className="flex items-center gap-1 px-1.5 py-1 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.11)" }}
+                title="Nazad na početnu stranicu"
+              >
+                <ChevronLeft size={13} style={{ color: "#6b7280" }} />
+                <img src={parkInLogo} alt="CarDrop" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover" }} />
               </button>
             </Link>
+
             {/* Plan badge pill */}
             {(() => {
               const plan = user.isAdmin ? "admin" : (mapStatus?.plan ?? "free");
@@ -1327,12 +1334,7 @@ export default function MapHackNS() {
                   data-testid="btn-plan-badge"
                   onClick={() => setPremiumUpsellOpen(true)}
                   className="flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
-                  style={{
-                    background: s.color + "18",
-                    border: `1px solid ${s.border}`,
-                    color: s.color,
-                    cursor: "pointer",
-                  }}
+                  style={{ background: s.color + "18", border: `1px solid ${s.border}`, color: s.color, cursor: "pointer" }}
                 >
                   {s.text}
                 </button>
@@ -1387,87 +1389,99 @@ export default function MapHackNS() {
             </button>
           )}
 
-          {/* Right: bell + separator + chat + info + user */}
-        <div className="flex items-center gap-2">
-          {/* Bell — notifications toggle; alarm badge stays */}
-          <button
-            data-testid="btn-notifications-toggle"
-            onClick={async () => {
-              const newEnabled = !(user.mapNotificationsEnabled ?? true);
-              try {
-                await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
-                await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-              } catch {
-                toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
+          {/* Right: PWA install + bell + chat + info + user */}
+          <div className="flex items-center gap-1.5">
+
+            {/* PWA Install — shown only if not yet installed */}
+            {!isInstalled && (
+              <button
+                data-testid="btn-pwa-install"
+                onClick={() => isInstallable ? installApp() : setShowPwaModal(true)}
+                title="Instaliraj aplikaciju"
+                className="relative flex items-center justify-center"
+                style={{ width: 34, height: 34, borderRadius: "50%",
+                  background: "rgba(16,185,129,0.15)",
+                  border: "1px solid rgba(16,185,129,0.4)" }}>
+                <Download size={15} style={{ color: "#34d399" }} />
+              </button>
+            )}
+
+            {/* Bell — notifications toggle */}
+            <button
+              data-testid="btn-notifications-toggle"
+              onClick={async () => {
+                const newEnabled = !(user.mapNotificationsEnabled ?? true);
+                try {
+                  await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
+                  await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                } catch {
+                  toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
+                }
+              }}
+              className="relative flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: alarmActive ? "rgba(239,68,68,0.18)" : "rgba(251,191,36,0.12)",
+                border: `1px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(251,191,36,0.3)"}` }}>
+              {(user.mapNotificationsEnabled ?? true)
+                ? <Bell size={15} style={{ color: alarmActive ? "#fca5a5" : "#fbbf24" }} />
+                : <BellOff size={15} style={{ color: "rgba(251,191,36,0.4)" }} />
               }
-            }}
-            className="relative flex items-center justify-center"
-            style={{ width: 34, height: 34, borderRadius: "50%",
-              background: alarmActive ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.07)",
-              border: `1px solid ${alarmActive ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)"}` }}>
-            {(user.mapNotificationsEnabled ?? true)
-              ? <Bell size={15} style={{ color: alarmActive ? "#fca5a5" : "#9ca3af" }} />
-              : <BellOff size={15} style={{ color: "#6b7280" }} />
-            }
-            {(alarmActive || showTrialBanner) && (
-              <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                style={{ width: 16, height: 16, fontSize: 8,
-                  background: alarmActive ? "#ef4444" : "#f59e0b" }}>
-                {alarmActive ? paukInZone.length : mapStatus?.daysLeft}
-              </span>
-            )}
-          </button>
+              {(alarmActive || showTrialBanner) && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
+                  style={{ width: 16, height: 16, fontSize: 8,
+                    background: alarmActive ? "#ef4444" : "#f59e0b" }}>
+                  {alarmActive ? paukInZone.length : mapStatus?.daysLeft}
+                </span>
+              )}
+            </button>
 
-          {/* Separator */}
-          <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.12)" }} />
+            {/* Chat indicator */}
+            <button
+              data-testid="btn-chat-indicator"
+              onClick={() => {
+                clearUnread();
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="relative flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: "rgba(59,130,246,0.18)",
+                border: "1px solid rgba(59,130,246,0.45)" }}>
+              <MessageSquare size={15} style={{ color: "#60a5fa" }} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
+                  style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8 }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
 
-          {/* Chat indicator — shows unread count, click to scroll to bottom */}
-          <button
-            data-testid="btn-chat-indicator"
-            onClick={() => {
-              clearUnread();
-              chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="relative flex items-center justify-center"
-            style={{ width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(59,130,246,0.15)",
-              border: "1px solid rgba(59,130,246,0.35)" }}>
-            <MessageSquare size={15} style={{ color: "#93c5fd" }} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                style={{ width: 16, height: 16, background: "#3b82f6", fontSize: 8 }}>
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
+            {/* Legend / Info */}
+            <button
+              data-testid="btn-legend"
+              onClick={() => setLegendOpen(true)}
+              className="flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: "rgba(139,92,246,0.15)",
+                border: "1px solid rgba(139,92,246,0.35)" }}>
+              <Info size={15} style={{ color: "#a78bfa" }} />
+            </button>
 
-          {/* Legend info button */}
-          <button
-            data-testid="btn-legend"
-            onClick={() => setLegendOpen(true)}
-            className="flex items-center justify-center"
-            style={{ width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)" }}>
-            <Info size={15} style={{ color: "#9ca3af" }} />
-          </button>
-
-          {/* Profile edit button */}
-          <button
-            data-testid="btn-profile-edit"
-            onClick={() => {
-              setEditNickname(user.mapNickname ?? "");
-              setEditAvatarId(user.mapAvatarId ?? 1);
-              setProfileEditError("");
-              setProfileEditOpen(true);
-            }}
-            className="flex items-center justify-center"
-            style={{ width: 34, height: 34, borderRadius: "50%",
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)" }}>
-            <User size={15} style={{ color: "#9ca3af" }} />
-          </button>
-        </div>
+            {/* Profile edit */}
+            <button
+              data-testid="btn-profile-edit"
+              onClick={() => {
+                setEditNickname(user.mapNickname ?? "");
+                setEditAvatarId(user.mapAvatarId ?? 1);
+                setProfileEditError("");
+                setProfileEditOpen(true);
+              }}
+              className="flex items-center justify-center"
+              style={{ width: 34, height: 34, borderRadius: "50%",
+                background: "rgba(20,184,166,0.15)",
+                border: "1px solid rgba(20,184,166,0.35)" }}>
+              <User size={15} style={{ color: "#2dd4bf" }} />
+            </button>
+          </div>
         </div>
       </div>
       {/* ── Filter tabs row ── */}
@@ -2634,6 +2648,46 @@ export default function MapHackNS() {
           </div>
         </div>
       )}
+
+      {/* ── PWA iOS Install Modal ── */}
+      <Dialog open={showPwaModal} onOpenChange={setShowPwaModal}>
+        <DialogContent className="max-w-sm" data-testid="modal-pwa-install">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-emerald-400" />
+              Instalacija na iPhone
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              iOS ne podržava automatsku instalaciju. Pratite ove korake u Safari-ju:
+            </p>
+            <ol className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center">1</span>
+                <p className="text-sm text-foreground pt-0.5">Otvori ovu stranicu u <strong>Safari-ju</strong> (ne Chrome ili drugi pretraživač)</p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center">2</span>
+                <p className="text-sm text-foreground pt-0.5">
+                  Tapni dugme za deljenje <Share className="inline w-4 h-4 align-text-bottom text-emerald-400" /> (na dnu ekrana)
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center">3</span>
+                <p className="text-sm text-foreground pt-0.5">Izaberi <strong>"Dodaj na početni ekran"</strong></p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center">4</span>
+                <p className="text-sm text-foreground pt-0.5">Tapni <strong>"Dodaj"</strong> u gornjem desnom uglu</p>
+              </li>
+            </ol>
+            <Button className="w-full mt-2" onClick={() => setShowPwaModal(false)} data-testid="button-pwa-modal-close">
+              Razumeo/la sam
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

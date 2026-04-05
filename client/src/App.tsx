@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackPageView } from "@/lib/metaPixel";
+import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Terms from "@/pages/terms";
@@ -35,10 +36,24 @@ function usePageViewTracking() {
   }, [location]);
 }
 
+function MapHackRedirect() {
+  const { user, isLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+  useEffect(() => {
+    if (isLoading) return;
+    if (user?.mapNickname && (location === "/" || location === "/home")) {
+      setLocation("/map-hack");
+    }
+  }, [user, isLoading, location, setLocation]);
+  return null;
+}
+
 function Router() {
   usePageViewTracking();
   return (
-    <Switch>
+    <>
+      <MapHackRedirect />
+      <Switch>
       <Route path="/auth" component={AuthPage} />
       <Route path="/" component={Landing} />
       <Route path="/terms" component={Terms} />
@@ -60,7 +75,8 @@ function Router() {
       <Route path="/map-hack" component={MapHackNS} />
       <Route path="/map-hack/subscribe" component={MapHackSubscribe} />
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </>
   );
 }
 
