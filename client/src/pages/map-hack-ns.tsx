@@ -1296,7 +1296,7 @@ export default function MapHackNS() {
             <Link href="/">
               <button
                 data-testid="btn-back-home"
-                className="flex items-center gap-1 px-1.5 py-1 rounded-xl"
+                className="kraft-btn flex items-center gap-1 px-1.5 py-1 rounded-xl"
                 style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.11)" }}
                 title="Nazad na početnu stranicu"
               >
@@ -1322,7 +1322,7 @@ export default function MapHackNS() {
                 <button
                   data-testid="btn-plan-badge"
                   onClick={() => setPremiumUpsellOpen(true)}
-                  className="flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
+                  className="kraft-btn flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
                   style={{ background: s.color + "18", border: `1px solid ${s.border}`, color: s.color, cursor: "pointer" }}
                 >
                   {s.text}
@@ -1370,7 +1370,7 @@ export default function MapHackNS() {
             <button
               data-testid="btn-map-search"
               onClick={() => setSearchOpen(true)}
-              className="flex items-center justify-center"
+              className="kraft-btn flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%",
                 background: "rgba(255,255,255,0.07)",
                 border: "1px solid rgba(255,255,255,0.12)" }}>
@@ -1387,7 +1387,7 @@ export default function MapHackNS() {
                 data-testid="btn-pwa-install"
                 onClick={() => isInstallable ? installApp() : setShowPwaModal(true)}
                 title="Instaliraj aplikaciju"
-                className="relative flex items-center justify-center"
+                className="kraft-btn relative flex items-center justify-center"
                 style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none" }}>
                 <Download size={15} style={{ color: "#fff" }} />
               </button>
@@ -1405,7 +1405,7 @@ export default function MapHackNS() {
                   toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
                 }
               }}
-              className="relative flex items-center justify-center"
+              className="kraft-btn relative flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%",
                 background: alarmActive ? "#b91c1c" : "#b45309", border: "none" }}>
               {(user.mapNotificationsEnabled ?? true)
@@ -1428,7 +1428,7 @@ export default function MapHackNS() {
                 clearUnread();
                 setChatFullscreen(true);
               }}
-              className="relative flex items-center justify-center"
+              className="kraft-btn relative flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%", background: "#1d4ed8", border: "none" }}>
               <MessageSquare size={15} style={{ color: "#fff" }} />
               {unreadCount > 0 && (
@@ -1443,7 +1443,7 @@ export default function MapHackNS() {
             <button
               data-testid="btn-legend"
               onClick={() => setLegendOpen(true)}
-              className="flex items-center justify-center"
+              className="kraft-btn flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%", background: "#6d28d9", border: "none" }}>
               <Info size={15} style={{ color: "#fff" }} />
             </button>
@@ -1457,7 +1457,7 @@ export default function MapHackNS() {
                 setProfileEditError("");
                 setProfileEditOpen(true);
               }}
-              className="flex items-center justify-center"
+              className="kraft-btn flex items-center justify-center"
               style={{ width: 34, height: 34, borderRadius: "50%", background: "#0f766e", border: "none" }}>
               <User size={15} style={{ color: "#fff" }} />
             </button>
@@ -1484,7 +1484,7 @@ export default function MapHackNS() {
                   return next.length === 0 ? ["sve"] : next;
                 });
               }}
-              className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 background: isActive ? markerColor(f.key) + "22" : "rgba(255,255,255,0.05)",
                 border: `1px solid ${isActive ? markerColor(f.key) + "66" : "rgba(255,255,255,0.1)"}`,
@@ -1508,7 +1508,7 @@ export default function MapHackNS() {
                   return next.length === 0 ? ["sve"] : next;
                 });
               }}
-              className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 background: isActive ? "#8b5cf622" : "rgba(255,255,255,0.05)",
                 border: `1px solid ${isActive ? "#8b5cf666" : "rgba(255,255,255,0.1)"}`,
@@ -1532,7 +1532,7 @@ export default function MapHackNS() {
                   return next.length === 0 ? ["sve"] : next;
                 });
               }}
-              className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 background: isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
                 border: `1px solid ${isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
@@ -1547,7 +1547,7 @@ export default function MapHackNS() {
         <button
           data-testid="btn-filter-aktivno"
           onClick={() => setAktivnoOpen(p => !p)}
-          className="flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ml-auto"
+          className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ml-auto"
           style={{ background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.4)", color: "#f97316" }}>
           Aktivno ▾
         </button>
@@ -1625,7 +1625,7 @@ export default function MapHackNS() {
                 key="zlatni_minut"
                 data-testid="action-bar-zlatni_minut"
                 onClick={() => { setAddMode(isActive ? null : "zlatni_minut"); setActiveTab("zlatni_minut"); setWatchZonePlaceMode(false); }}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
                   background: isActive ? "#c2410c" : "rgba(234,88,12,0.55)",
@@ -1652,7 +1652,7 @@ export default function MapHackNS() {
                 key="pauk"
                 data-testid="action-bar-pauk"
                 onClick={() => { setAddMode(isActive ? null : "pauk"); setActiveTab("pauk"); setWatchZonePlaceMode(false); }}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
                   background: isActive ? "#991b1b" : "rgba(185,28,28,0.55)",
@@ -1680,7 +1680,7 @@ export default function MapHackNS() {
                 key="stek"
                 data-testid="action-bar-stek"
                 onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setPremiumUpsellOpen(true); } }}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
                   background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#15803d" : "rgba(21,128,61,0.55)",
@@ -1712,7 +1712,7 @@ export default function MapHackNS() {
                 key="radar"
                 data-testid="action-bar-radar"
                 onClick={() => { setAddMode(isActive ? null : "radar"); setActiveTab("radar"); setWatchZonePlaceMode(false); }}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
                   background: isActive ? "#6d28d9" : "rgba(109,40,217,0.55)",
@@ -1734,7 +1734,7 @@ export default function MapHackNS() {
           <button
             data-testid="btn-sms-parking"
             onClick={openSmsModal}
-            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
             style={{ width: 58, height: 58, background: "rgba(79,70,229,0.5)", border: "1.5px solid rgba(99,102,241,0.75)" }}>
             <Smartphone size={18} style={{ color: "#c7d2fe" }} />
             <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS plaćanje</span>
@@ -1749,7 +1749,7 @@ export default function MapHackNS() {
               <button
                 data-testid="btn-watch-zone"
                 onClick={() => { if (!locked) setWatchZoneOpen(true); else setPremiumUpsellOpen(true); }}
-                className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
                   background: locked ? "rgba(255,255,255,0.05)" : (hasZone || isPlacing) ? "#92400e" : "rgba(161,67,6,0.5)",
@@ -1771,7 +1771,7 @@ export default function MapHackNS() {
           <button
             data-testid="btn-izdaj-parking"
             onClick={() => setLocation("/select-category")}
-            className="flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
             style={{ width: 58, height: 58, background: "rgba(7,89,133,0.55)", border: "1.5px solid rgba(14,165,233,0.7)" }}>
             <Plus size={18} style={{ color: "#7dd3fc" }} />
             <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
@@ -1788,7 +1788,7 @@ export default function MapHackNS() {
             <button
               data-testid="btn-chat-fullscreen-close"
               onClick={() => setChatFullscreen(false)}
-              className="flex items-center justify-center"
+              className="kraft-btn flex items-center justify-center"
               style={{ width: 32, height: 32, borderRadius: "50%", background: "#374151", border: "none" }}
               title="Zatvori fullscreen chat">
               <X size={16} style={{ color: "#fff" }} />
@@ -1866,8 +1866,8 @@ export default function MapHackNS() {
                 <button
                   data-testid={`btn-reply-${msg.id}`}
                   onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.text })}
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ color: "#6b7280", padding: "2px 4px", marginTop: 2 }}
+                  className="kraft-btn flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: "#6b7280", padding: "2px 4px", marginTop: 2, background: "transparent", border: "none" }}
                   title="Odgovori">
                   <MessageSquare size={12} />
                 </button>
