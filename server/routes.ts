@@ -425,6 +425,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ─── Map Hack NS — Markers ────────────────────────────────────────────────
 
+  function hasAcceptedMapHackPrivacy(user: any): boolean {
+    if (user.isAdmin) return true;
+    return !!user.mapPrivacyAcceptedAt;
+  }
+
   function hasActiveMapHackPlan(user: any): boolean {
     if (user.isAdmin) return true;
     if (user.mapHackPlan === 'free') return true;
@@ -458,6 +463,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      if (!hasAcceptedMapHackPrivacy(user)) {
+        return res.status(403).json({ code: "privacy_required", message: "Potrebno je prihvatiti Politiku privatnosti" });
       }
       const now = new Date();
       const markersWithNick = await db
@@ -498,6 +506,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      if (!hasAcceptedMapHackPrivacy(user)) {
+        return res.status(403).json({ code: "privacy_required", message: "Potrebno je prihvatiti Politiku privatnosti" });
       }
 
       const { type, lat, lng } = req.body;
@@ -740,6 +751,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
+      if (!hasAcceptedMapHackPrivacy(user)) {
+        return res.status(403).json({ code: "privacy_required", message: "Potrebno je prihvatiti Politiku privatnosti" });
+      }
       const messages = await storage.getMapChatMessages();
       res.json(messages);
     } catch (error) {
@@ -757,6 +771,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       if (!user || !hasActiveMapHackPlan(user)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      if (!hasAcceptedMapHackPrivacy(user)) {
+        return res.status(403).json({ code: "privacy_required", message: "Potrebno je prihvatiti Politiku privatnosti" });
       }
       if (!user.mapNickname) {
         return res.status(400).json({ message: "Potreban je Map Hack profil" });
