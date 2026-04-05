@@ -321,15 +321,15 @@ export function MapHackMap({
             <Layer
               id="safe-zone-fill"
               type="fill"
-              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.22 }}
+              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.25 }}
             />
             <Layer
               id="safe-zone-glow"
               type="line"
               paint={{
                 "line-color": "#4ade80",
-                "line-width": 10,
-                "line-opacity": 0.18,
+                "line-width": 8,
+                "line-opacity": 0.15,
                 "line-blur": 6,
               }}
             />
