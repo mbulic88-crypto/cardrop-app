@@ -405,7 +405,11 @@ export default function MapHackNS() {
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; lat: number; lng: number }>>([]);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
+  const [isIos, setIsIos] = useState(false);
   const { isInstallable, isInstalled, installApp } = usePWA();
+  useEffect(() => {
+    setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
+  }, []);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1392,8 +1396,8 @@ export default function MapHackNS() {
           {/* Right: PWA install + bell + chat + info + user */}
           <div className="flex items-center gap-1.5">
 
-            {/* PWA Install — shown only if not yet installed */}
-            {!isInstalled && (
+            {/* PWA Install — shown on Android (installable) or iOS; hidden once installed */}
+            {!isInstalled && (isInstallable || isIos) && (
               <button
                 data-testid="btn-pwa-install"
                 onClick={() => isInstallable ? installApp() : setShowPwaModal(true)}
