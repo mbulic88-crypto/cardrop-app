@@ -1628,8 +1628,8 @@ export default function MapHackNS() {
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: isActive ? "#c2410c" : "rgba(234,88,12,0.55)",
-                  border: `1.5px solid ${isActive ? "#f97316" : "rgba(249,115,22,0.7)"}`,
+                  background: isActive ? "#c2410c" : "#9a3a05",
+                  border: `1.5px solid ${isActive ? "#f97316" : "#d45a10"}`,
                 }}>
                 <div className="relative">
                   <Clock size={18} style={{ color: isActive ? "#fff" : "#fed7aa" }} />
@@ -1655,8 +1655,8 @@ export default function MapHackNS() {
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: isActive ? "#991b1b" : "rgba(185,28,28,0.55)",
-                  border: `1.5px solid ${isActive ? "#ef4444" : "rgba(239,68,68,0.75)"}`,
+                  background: isActive ? "#991b1b" : "#7a1212",
+                  border: `1.5px solid ${isActive ? "#ef4444" : "#c42020"}`,
                 }}>
                 <div className="relative">
                   <AlertTriangle size={18} style={{ color: isActive ? "#fff" : "#fca5a5" }} />
@@ -1683,8 +1683,8 @@ export default function MapHackNS() {
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: locked ? "rgba(255,255,255,0.05)" : isActive ? "#15803d" : "rgba(21,128,61,0.55)",
-                  border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : isActive ? "#22c55e" : "rgba(34,197,94,0.7)"}`,
+                  background: locked ? "#1f2937" : isActive ? "#15803d" : "#0e5c28",
+                  border: `1.5px solid ${locked ? "#374151" : isActive ? "#22c55e" : "#1a8a3e"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
                 {locked ? <Lock size={18} style={{ color: "#6b7280" }} /> : (
@@ -1715,8 +1715,8 @@ export default function MapHackNS() {
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: isActive ? "#6d28d9" : "rgba(109,40,217,0.55)",
-                  border: `1.5px solid ${isActive ? "#8b5cf6" : "rgba(139,92,246,0.75)"}`,
+                  background: isActive ? "#6d28d9" : "#4c1d95",
+                  border: `1.5px solid ${isActive ? "#8b5cf6" : "#7c3aed"}`,
                 }}>
                 <div className="relative">
                   <RadioTower size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
@@ -1735,7 +1735,7 @@ export default function MapHackNS() {
             data-testid="btn-sms-parking"
             onClick={openSmsModal}
             className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ width: 58, height: 58, background: "rgba(79,70,229,0.5)", border: "1.5px solid rgba(99,102,241,0.75)" }}>
+            style={{ width: 58, height: 58, background: "#312e81", border: "1.5px solid #4f46e5" }}>
             <Smartphone size={18} style={{ color: "#c7d2fe" }} />
             <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS plaćanje</span>
           </button>
@@ -1752,8 +1752,8 @@ export default function MapHackNS() {
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: locked ? "rgba(255,255,255,0.05)" : (hasZone || isPlacing) ? "#92400e" : "rgba(161,67,6,0.5)",
-                  border: `1.5px solid ${locked ? "rgba(255,255,255,0.1)" : (hasZone || isPlacing) ? "#f59e0b" : "rgba(245,158,11,0.7)"}`,
+                  background: locked ? "#1f2937" : (hasZone || isPlacing) ? "#92400e" : "#6b2d02",
+                  border: `1.5px solid ${locked ? "#374151" : (hasZone || isPlacing) ? "#f59e0b" : "#b45309"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
                 {locked
@@ -1772,7 +1772,7 @@ export default function MapHackNS() {
             data-testid="btn-izdaj-parking"
             onClick={() => setLocation("/select-category")}
             className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ width: 58, height: 58, background: "rgba(7,89,133,0.55)", border: "1.5px solid rgba(14,165,233,0.7)" }}>
+            style={{ width: 58, height: 58, background: "#0c4a6e", border: "1.5px solid #0ea5e9" }}>
             <Plus size={18} style={{ color: "#7dd3fc" }} />
             <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
           </button>
