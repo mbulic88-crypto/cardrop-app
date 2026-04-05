@@ -1316,22 +1316,22 @@ export default function MapHackNS() {
               const BADGE_STYLES: Record<string, { color: string; border: string; text: string }> = {
                 admin:             { color: "#14b8a6", border: "rgba(20,184,166,0.35)", text: "ADMIN" },
                 free:              { color: "#94a3b8", border: "rgba(148,163,184,0.25)", text: "FREE" },
-                premium:           { color: "#f59e0b", border: "rgba(245,158,11,0.35)", text: daysLeft != null ? `PRO · ${daysLeft}d` : "PRO" },
-                day_pass:          { color: "#ef4444", border: "rgba(239,68,68,0.35)",   text: daysLeft != null ? `DAY · ${daysLeft}d` : "DAY PASS" },
-                godisnji_premium:  { color: "#818cf8", border: "rgba(129,140,248,0.35)", text: daysLeft != null ? `GOD · ${daysLeft}d` : "GODIŠNJI" },
+                premium:           { color: "#DAA520", border: "rgba(218,165,32,0.40)",  text: daysLeft != null ? `PREMIUM · ${daysLeft}d` : "PREMIUM" },
+                day_pass:          { color: "#ef4444", border: "rgba(239,68,68,0.35)",   text: daysLeft != null ? `DAY PASS · ${daysLeft}d` : "DAY PASS" },
+                godisnji_premium:  { color: "#818cf8", border: "rgba(129,140,248,0.35)", text: daysLeft != null ? `GODIŠNJI · ${daysLeft}d` : "GODIŠNJI" },
                 firma:             { color: "#14b8a6", border: "rgba(20,184,166,0.35)",  text: "FIRMA" },
               };
               const s = BADGE_STYLES[plan] ?? BADGE_STYLES["free"];
               return (
                 <button
                   data-testid="btn-plan-badge"
-                  onClick={() => { if (plan === "free" || plan === "admin") setPremiumUpsellOpen(true); }}
+                  onClick={() => setPremiumUpsellOpen(true)}
                   className="flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
                   style={{
                     background: s.color + "18",
                     border: `1px solid ${s.border}`,
                     color: s.color,
-                    cursor: plan === "free" ? "pointer" : "default",
+                    cursor: "pointer",
                   }}
                 >
                   {s.text}

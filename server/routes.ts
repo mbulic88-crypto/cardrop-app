@@ -298,6 +298,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!plan || !validPlans.includes(plan)) {
         return res.status(400).json({ message: "Nevalidan plan" });
       }
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser?.mapPrivacyAcceptedAt) {
+        return res.status(403).json({ message: "Morate prihvatiti Politiku privatnosti pre ulaska na mapu" });
+      }
       if (plan !== 'free') {
         return res.status(400).json({ message: "Plaćanje za ovaj plan uskoro — info@cardrop.app" });
       }
@@ -327,6 +331,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!plan || !validPlans[plan]) {
         return res.status(400).json({ message: "Nevalidan plan" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser?.mapPrivacyAcceptedAt) {
+        return res.status(403).json({ message: "Morate prihvatiti Politiku privatnosti pre kupovine plana" });
       }
 
       const planDef = validPlans[plan];
@@ -364,6 +373,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!sessionId) {
         return res.status(400).json({ message: "Nedostaju parametri" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser?.mapPrivacyAcceptedAt) {
+        return res.status(403).json({ message: "Morate prihvatiti Politiku privatnosti pre aktivacije plana" });
       }
 
       const alreadyConsumed = await storage.isStripeSessionConsumed(sessionId);
