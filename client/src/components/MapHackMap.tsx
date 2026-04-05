@@ -166,6 +166,7 @@ export function MapHackMap({
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -175,13 +176,13 @@ export function MapHackMap({
   onCenterChangeRef.current = onCenterChange;
 
   useEffect(() => {
-    if (!flyToLocation || !mapRef.current) return;
+    if (!flyToLocation || !mapLoaded || !mapRef.current) return;
     mapRef.current.flyTo({
       center: [flyToLocation.lng, flyToLocation.lat],
       zoom: 16,
       duration: 1000,
     });
-  }, [flyToLocation]);
+  }, [flyToLocation, mapLoaded]);
 
   const handleClick = useCallback((e: MapLayerMouseEvent) => {
     setParkingPopup(null);
@@ -199,6 +200,7 @@ export function MapHackMap({
 
   const handleMapLoad = useCallback((e: MapboxEvent) => {
     e.target.setConfigProperty("basemap", "lightPreset", "night");
+    setMapLoaded(true);
   }, []);
 
   const filtered = activeFilters.includes("sve")
@@ -319,16 +321,26 @@ export function MapHackMap({
             <Layer
               id="safe-zone-fill"
               type="fill"
-              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.12 }}
+              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.22 }}
+            />
+            <Layer
+              id="safe-zone-glow"
+              type="line"
+              paint={{
+                "line-color": "#4ade80",
+                "line-width": 10,
+                "line-opacity": 0.18,
+                "line-blur": 6,
+              }}
             />
             <Layer
               id="safe-zone-line"
               type="line"
               paint={{
                 "line-color": "#4ade80",
-                "line-width": 2,
-                "line-opacity": 0.9,
-                "line-dasharray": [6, 4],
+                "line-width": 3,
+                "line-opacity": 1,
+                "line-dasharray": [6, 3],
               }}
             />
           </Source>
