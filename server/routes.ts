@@ -88,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Izaberi avatar (1–10)" });
       }
 
+      // Handle privacy acceptance flag embedded in profile save
+      const acceptedPrivacy: boolean = req.body.acceptedPrivacy === true;
+
       const existing = await storage.getUserByMapNickname(trimmed);
       if (existing && existing.id !== userId) {
         return res.status(409).json({ message: "Ovaj nadimak je već zauzet" });
@@ -118,6 +121,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const updated = await storage.updateMapHackProfile(userId, profileData);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      // If privacy was accepted in this request, record it
+      if (acceptedPrivacy && !currentUser?.mapPrivacyAcceptedAt) {
+        await storage.acceptMapHackPrivacy(userId);
+      }
       const { passwordHash, ...safeUser } = updated;
       res.json(safeUser);
     } catch (error) {
@@ -145,6 +152,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error resetting map hack profile:", error);
       res.status(500).json({ message: "Greška pri resetovanju profila" });
+    }
+  });
+
+  // Map Hack NS - accept privacy policy
+  app.post('/api/map-hack/accept-privacy', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const updated = await storage.acceptMapHackPrivacy(userId);
+      if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
+      const { passwordHash, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error accepting privacy:", error);
+      res.status(500).json({ message: "Greška pri prihvatanju politike privatnosti" });
     }
   });
 
@@ -521,6 +542,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             replyToId: null,
             replyToNickname: null,
             replyToText: null,
+            lat: String(latNum),
+            lng: String(lngNum),
           });
         } catch (_) {
           // system message failure is non-critical

@@ -1,553 +1,326 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
-import { Shield, Lock, Eye, Globe, Bell, Users, Server, Baby, Mail, CreditCard, Cookie, FileText, ArrowLeft } from "lucide-react";
+import { Shield, Lock, Eye, Globe, Users, Server, Mail, CreditCard, FileText, ArrowLeft, AlertTriangle, MapPin } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background" data-testid="page-privacy-policy">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b bg-card sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
-              <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
-              <span className="text-2xl font-bold">CarDrop</span>
-            </div>
+            <Button variant="ghost" size="icon" data-testid="link-back">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
           </Link>
+          <div className="flex items-center gap-2">
+            <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-lg" />
+            <span className="text-lg font-bold">CarDrop</span>
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <Shield className="w-8 h-8 text-primary" />
-              <CardTitle className="text-3xl">Politika Privatnosti</CardTitle>
-            </div>
-            <p className="text-muted-foreground">
-              Poslednje ažurirano: Februar 2026
-            </p>
-          </CardHeader>
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-primary" />
+            <h1 className="text-3xl font-bold">Politika Privatnosti</h1>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            Poslednje ažurirano: April 2026 &nbsp;·&nbsp; CarDrop LLC
+          </p>
+        </div>
 
-          <CardContent className="space-y-8">
-            <div className="bg-muted/50 border rounded-lg p-6">
-              <p className="text-sm text-muted-foreground">
-                Ova Politika privatnosti opisuje kako Ai Me IT LLC ("mi", "nas", "naš"), operater platforme CarDrop,
-                prikuplja, koristi, čuva i štiti vaše lične podatke. CarDrop je oglasna tabla (classified ads board)
-                koja povezuje vlasnike parking mesta sa korisnicima koji traže parking. Molimo vas da pažljivo
-                pročitate ovu politiku kako biste razumeli naše prakse u vezi sa vašim podacima.
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-4 mb-8">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              <strong>Važno:</strong> Sve parkirne, radar i saobraćajne informacije prikazane u aplikaciji su isključivo korisničke (crowdsourced). CarDrop nije odgovoran za tačnost, ažurnost ni potpunost tih podataka. Korisnici snose punu odgovornost za sopstvene odluke.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-10">
+
+          {/* 1. Ko smo */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Globe className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">1. Ko smo mi</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                CarDrop platformu vodi kompanija <strong className="text-foreground">CarDrop LLC</strong>, registrovana u Sjedinjenim Američkim Državama. Platforma primarno posluje na teritoriji Srbije i šire regije, pružajući usluge korisnicima u Evropskoj uniji.
+              </p>
+              <ul className="space-y-1.5 list-none pl-0">
+                <li><strong className="text-foreground">Naziv:</strong> CarDrop LLC</li>
+                <li><strong className="text-foreground">Email:</strong>{" "}
+                  <a href="mailto:info@cardrop.app" className="text-primary underline" data-testid="link-contact-email">info@cardrop.app</a>
+                </li>
+              </ul>
+              <p>
+                Kao kompanija registrovana u SAD koja pruža usluge korisnicima u EU, poštujemo i primenljive odredbe Opšte uredbe o zaštiti podataka (<strong className="text-foreground">GDPR — Uredba (EU) 2016/679</strong>), kao i relevantne amerčke propise o privatnosti (CCPA i dr.).
               </p>
             </div>
+          </section>
 
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Globe className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">1. Ko smo mi / O nama</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  CarDrop platformu vodi i njome upravlja kompanija <strong className="text-foreground">Ai Me IT LLC</strong>,
-                  registrovana u Sjedinjenim Američkim Državama.
-                </p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong className="text-foreground">Naziv kompanije:</strong> Ai Me IT LLC</li>
-                  <li><strong className="text-foreground">Adresa:</strong> 1209 Mountain Road PL NE, STE N, Albuquerque, NM 87110, USA</li>
-                  <li><strong className="text-foreground">Email kontakt:</strong> info@cardropp.app</li>
-                </ul>
-                <p>
-                  Iako je kompanija registrovana u SAD-u, CarDrop platforma primarno posluje na teritoriji
-                  Srbije i regiona Balkana. Kao rezultat toga, poštujemo kako američke zakone o privatnosti
-                  (uključujući CCPA - California Consumer Privacy Act), tako i evropske standarde zaštite podataka
-                  (GDPR - General Data Protection Regulation), primenjujući uvek viši standard zaštite.
-                </p>
-                <p>
-                  CarDrop funkcioniše isključivo kao <strong className="text-foreground">oglasna tabla (classified ads board)</strong> -
-                  platforma koja omogućava korisnicima da oglašavaju i pronalaze parking mesta. Mi nismo strana
-                  u bilo kojoj transakciji ili dogovoru između korisnika i ne preuzimamo odgovornost za ishod
-                  takvih aranžmana.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Eye className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">2. Koje podatke prikupljamo</h3>
-              </div>
-              <div className="space-y-4 text-muted-foreground">
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">2.1 Lični podaci (podaci o identitetu)</h4>
-                  <p className="mb-2">
-                    Prilikom registracije na platformi, prikupljamo:
-                  </p>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Korisnički ID (jedinstveni identifikator)</li>
-                    <li>Korisničko ime (display name)</li>
-                    <li>URL adresa profilne slike</li>
-                  </ul>
-                  <p className="mt-2 text-sm">
-                    Napomena: Lozinke se čuvaju u šifrovanom obliku i nikada se ne skladište u čistom tekstu.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">2.2 Podaci o lokaciji</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>GPS koordinate parking mesta (geografska širina i dužina)</li>
-                    <li>Adresa parking mesta</li>
-                    <li>Izbor grada (Beograd, Novi Sad, Niš, Kragujevac i drugi)</li>
-                    <li>Podaci o lokaciji vašeg uređaja (samo uz vašu eksplicitnu dozvolu, za funkciju "parking u blizini")</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">2.3 Podaci o oglasima i sadržaju</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Fotografije parking mesta (čuvaju se u cloud skladištu)</li>
-                    <li>Opis parking mesta, cena, uslovi korišćenja</li>
-                    <li>Recenzije i ocene</li>
-                    <li>Direktne poruke između korisnika</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">2.4 Podaci o uređaju i korišćenju</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Tip uređaja i operativni sistem</li>
-                    <li>Tip i verzija web pregledača</li>
-                    <li>IP adresa</li>
-                    <li>Podaci o push notifikaciji pretplati (endpoint, VAPID ključevi)</li>
-                    <li>Podaci o korišćenju platforme (koje stranice posećujete, kada pristupate platformi)</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">2.5 Podaci o transakcijama</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Istorija rezervacija i njihov status</li>
-                    <li>Podaci o plaćanjima (ID transakcija, iznos, status) - bez kartičnih podataka</li>
-                    <li>Stripe Customer ID i Payment Intent ID</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">3. Kako koristimo vaše podatke</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>Vaše podatke koristimo u sledeće svrhe:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong className="text-foreground">Pružanje usluge:</strong> Omogućavanje objavljivanja i pretraživanja oglasa za parking mesta, upravljanje rezervacijama i komunikacijom između korisnika</li>
-                  <li><strong className="text-foreground">Autentifikacija:</strong> Identifikacija korisnika i upravljanje korisničkim nalozima</li>
-                  <li><strong className="text-foreground">Obrada plaćanja:</strong> Prosleđivanje potrebnih podataka Stripe platformi za sigurnu obradu plaćanja</li>
-                  <li><strong className="text-foreground">Lokacijske usluge:</strong> Prikazivanje parking mesta na mapi i funkcija pronalaženja parkinga u blizini</li>
-                  <li><strong className="text-foreground">Komunikacija:</strong> Slanje push notifikacija o statusu rezervacija, novih poruka i drugih relevantnih ažuriranja</li>
-                  <li><strong className="text-foreground">Poboljšanje platforme:</strong> Analiza korišćenja platforme radi unapređenja korisničkog iskustva</li>
-                  <li><strong className="text-foreground">Bezbednost:</strong> Sprečavanje prevara, zloupotreba i neovlašćenog pristupa</li>
-                  <li><strong className="text-foreground">Zakonske obaveze:</strong> Ispunjavanje pravnih obaveza i odgovaranje na zakonske zahteve</li>
-                </ul>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">4. Pravni osnov za obradu podataka</h3>
-              </div>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  Vaše podatke obrađujemo na osnovu sledećih pravnih osnova, u skladu sa GDPR regulativom
-                  i relevantnim američkim zakonima o privatnosti:
-                </p>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">4.1 Saglasnost (član 6(1)(a) GDPR)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Push notifikacije - šaljemo ih samo uz vašu eksplicitnu dozvolu</li>
-                    <li>Pristup lokaciji vašeg uređaja</li>
-                    <li>Kolačići koji nisu striktno neophodni</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">4.2 Izvršenje ugovora (član 6(1)(b) GDPR)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Kreiranje i upravljanje vašim nalogom</li>
-                    <li>Obrada rezervacija i transakcija</li>
-                    <li>Omogućavanje komunikacije između korisnika</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">4.3 Legitimni interes (član 6(1)(f) GDPR)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Poboljšanje i zaštita platforme</li>
-                    <li>Prevencija prevara i zloupotreba</li>
-                    <li>Analitika korišćenja u cilju unapređenja korisničkog iskustva</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">4.4 Zakonska obaveza (član 6(1)(c) GDPR)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Čuvanje podataka o transakcijama u skladu sa poreskim zakonima</li>
-                    <li>Odgovaranje na zakonske zahteve nadležnih organa</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">4.5 Američki zakoni o privatnosti</h4>
-                  <p>
-                    Pored GDPR standarda, poštujemo i relevantne američke zakone o privatnosti,
-                    uključujući California Consumer Privacy Act (CCPA) i druge državne propise o
-                    zaštiti potrošača. Detalje o vašim pravima prema CCPA možete pronaći u odeljku 10.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">5. Stripe plaćanja</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <div className="bg-muted/50 border rounded-lg p-4">
-                  <p className="font-semibold text-foreground mb-2">
-                    CarDrop nikada ne vidi, ne prikuplja i ne čuva vaše kartične podatke.
-                  </p>
-                  <p className="text-sm">
-                    Sva plaćanja se obrađuju isključivo putem Stripe platne platforme, koja je
-                    sertifikovana prema PCI DSS Level 1 standardu - najvišem nivou bezbednosti
-                    u industriji plaćanja.
-                  </p>
-                </div>
-                <p>Kada izvršite plaćanje na CarDrop platformi:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li>Vaši kartični podaci (broj kartice, CVV, datum isteka) se unose direktno na Stripe-ov siguran formular</li>
-                  <li>CarDrop serveri nikada ne primaju, ne obrađuju niti čuvaju vaše kartične podatke</li>
-                  <li>Mi primamo samo potvrdu o uspešnoj transakciji, ID transakcije i iznos</li>
-                  <li>Stripe kreira siguran Customer ID koji koristimo za povezivanje transakcija sa vašim nalogom</li>
-                </ul>
-                <p>
-                  Za više informacija o tome kako Stripe obrađuje vaše podatke, posetite{" "}
-                  <a
-                    href="https://stripe.com/privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline"
-                    data-testid="link-stripe-privacy"
-                  >
-                    Stripe Politiku privatnosti
-                  </a>.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Cookie className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">6. Kolačići i tehnologije praćenja</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>CarDrop koristi sledeće tehnologije:</p>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">6.1 Neophodni kolačići</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li><strong className="text-foreground">Sesijski kolačići:</strong> Održavanje vaše prijave na platformu</li>
-                    <li><strong className="text-foreground">CSRF zaštita:</strong> Sprečavanje Cross-Site Request Forgery napada</li>
-                    <li><strong className="text-foreground">Podešavanja teme:</strong> Čuvanje vašeg izbora svetle/tamne teme</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">6.2 Funkcionalni kolačići</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li><strong className="text-foreground">Izbor grada:</strong> Pamćenje vašeg poslednjeg izabranog grada</li>
-                    <li><strong className="text-foreground">Korisničke preference:</strong> Čuvanje podešavanja filtera i prikaza</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">6.3 Treće strane</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li><strong className="text-foreground">Stripe:</strong> Koristi sopstvene kolačiće za sigurnu obradu plaćanja</li>
-                  </ul>
-                </div>
-
-                <p>
-                  Možete upravljati kolačićima putem podešavanja vašeg web pregledača. Imajte u vidu
-                  da onemogućavanje neophodnih kolačića može uticati na funkcionalnost platforme.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">7. Deljenje podataka sa trećim stranama</h3>
-              </div>
-              <div className="space-y-4 text-muted-foreground">
-                <p>
-                  Vaše podatke ne prodajemo trećim stranama. Delimo podatke samo sa sledećim
-                  pružaocima usluga koji su neophodni za funkcionisanje platforme:
-                </p>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">7.1 Stripe (obrada plaćanja)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Sedište: San Francisco, CA, SAD</li>
-                    <li>Svrha: Sigurna obrada online plaćanja</li>
-                    <li>Podaci: Podaci neophodni za obradu transakcije (bez direktnog prenosa kartičnih podataka sa naše strane)</li>
-                    <li>Privatnost: <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline">stripe.com/privacy</a></li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">7.2 Geoapify (mapiranje i geolokacija)</h4>
-                  <ul className="space-y-1 list-disc list-inside">
-                    <li>Svrha: Prikaz mapa, geokodiranje adresa, pretraga lokacija</li>
-                    <li>Podaci: Koordinate lokacija, upiti za pretragu adresa</li>
-                    <li>Privatnost: <a href="https://www.geoapify.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary underline">geoapify.com/privacy-policy</a></li>
-                  </ul>
-                </div>
-
-                <p>
-                  Takođe možemo deliti vaše podatke ukoliko je to zakonski potrebno, na primer
-                  na zahtev nadležnih državnih organa ili sudskih institucija.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Globe className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">8. Međunarodni prenos podataka</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  S obzirom da je Ai Me IT LLC registrovana u SAD-u, a CarDrop platforma primarno
-                  posluje u Srbiji i regionu Balkana, vaši podaci mogu biti preneti i obrađeni u
-                  Sjedinjenim Američkim Državama.
-                </p>
-                <p>Kako štitimo vaše podatke prilikom međunarodnog prenosa:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li>Primenjujemo odgovarajuće tehničke i organizacione mere zaštite</li>
-                  <li>Koristimo šifrovane komunikacione kanale (HTTPS/TLS) za sav prenos podataka</li>
-                  <li>Naši pružaoci usluga (Stripe i drugi) imaju sopstvene mehanizme usklađenosti sa GDPR regulativom, uključujući standardne ugovorne klauzule (SCC)</li>
-                  <li>Primenjujemo principe minimizacije podataka - prikupljamo samo podatke koji su neophodni za funkcionisanje platforme</li>
-                </ul>
-                <p>
-                  Korišćenjem CarDrop platforme, saglasni ste sa prenosom vaših podataka u SAD
-                  u skladu sa merama zaštite opisanim u ovoj politici.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Server className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">9. Čuvanje i brisanje podataka</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>Vaše podatke čuvamo samo onoliko dugo koliko je potrebno za ispunjenje svrha opisanih u ovoj politici:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong className="text-foreground">Podaci o nalogu:</strong> Čuvaju se dok je vaš nalog aktivan. Nakon brisanja naloga, podaci se brišu u roku od 30 dana</li>
-                  <li><strong className="text-foreground">Oglasi za parking mesta:</strong> Čuvaju se dok su aktivni. Istekli ili uklonjeni oglasi mogu biti zadržani do 90 dana u arhivi</li>
-                  <li><strong className="text-foreground">Podaci o transakcijama:</strong> Čuvaju se najmanje 5 godina u skladu sa zakonskim obavezama za finansijsku dokumentaciju</li>
-                  <li><strong className="text-foreground">Poruke između korisnika:</strong> Čuvaju se dok korisnici ne zatraže brisanje ili dok je nalog aktivan</li>
-                  <li><strong className="text-foreground">Fotografije parking mesta:</strong> Brišu se kada se obriše odgovarajući oglas</li>
-                  <li><strong className="text-foreground">Push notifikacija pretplate:</strong> Brišu se kada korisnik odjavi notifikacije ili obriše nalog</li>
-                  <li><strong className="text-foreground">Log podaci:</strong> Čuvaju se do 12 meseci</li>
-                </ul>
-                <p>
-                  Možete zatražiti brisanje vaših podataka kontaktiranjem na info@cardropp.app.
-                  Obradićemo vaš zahtev u roku od 30 dana.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">10. Vaša prava</h3>
-              </div>
-              <div className="space-y-4 text-muted-foreground">
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">10.1 Prava prema GDPR regulativi</h4>
-                  <p className="mb-2">Kao korisnik, imate sledeća prava u vezi sa vašim ličnim podacima:</p>
-                  <ul className="space-y-2 list-disc list-inside">
-                    <li><strong className="text-foreground">Pravo na pristup:</strong> Imate pravo da zatražite kopiju svih podataka koje čuvamo o vama</li>
-                    <li><strong className="text-foreground">Pravo na ispravku:</strong> Možete zatražiti ispravku netačnih ili nepotpunih podataka</li>
-                    <li><strong className="text-foreground">Pravo na brisanje ("pravo na zaborav"):</strong> Možete zatražiti brisanje vaših ličnih podataka, osim kada postoji zakonska obaveza čuvanja</li>
-                    <li><strong className="text-foreground">Pravo na ograničenje obrade:</strong> Možete zatražiti da ograničimo obradu vaših podataka u određenim okolnostima</li>
-                    <li><strong className="text-foreground">Pravo na prenosivost podataka:</strong> Imate pravo da primite vaše podatke u strukturiranom, mašinski čitljivom formatu</li>
-                    <li><strong className="text-foreground">Pravo na prigovor:</strong> Možete se usprotiviti obradi vaših podataka na osnovu legitimnog interesa</li>
-                    <li><strong className="text-foreground">Pravo na povlačenje saglasnosti:</strong> Možete povući saglasnost za obradu podataka u bilo kom trenutku</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">10.2 Prava prema California Consumer Privacy Act (CCPA)</h4>
-                  <p className="mb-2">
-                    Ukoliko ste rezident Kalifornije, imate dodatna prava:
-                  </p>
-                  <ul className="space-y-2 list-disc list-inside">
-                    <li><strong className="text-foreground">Pravo na informisanje:</strong> Pravo da znate koje kategorije ličnih podataka prikupljamo i u koje svrhe</li>
-                    <li><strong className="text-foreground">Pravo na brisanje:</strong> Pravo da zatražite brisanje vaših ličnih podataka</li>
-                    <li><strong className="text-foreground">Pravo da se ne diskriminiše:</strong> Nećete biti diskriminisani zbog ostvarivanja vaših prava na privatnost</li>
-                    <li><strong className="text-foreground">Pravo na odjavu od prodaje:</strong> Ne prodajemo vaše lične podatke trećim stranama</li>
-                  </ul>
-                </div>
-
-                <p>
-                  Da biste ostvarili bilo koje od navedenih prava, kontaktirajte nas na{" "}
-                  <a href="mailto:info@cardropp.app" className="text-primary underline" data-testid="link-contact-rights">
-                    info@cardropp.app
-                  </a>.
-                  Odgovorićemo na vaš zahtev u roku od 30 dana.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Bell className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">11. Push notifikacije</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  CarDrop koristi Web Push tehnologiju za slanje notifikacija. Ova funkcija
-                  je potpuno opciona i zahteva vašu eksplicitnu saglasnost.
-                </p>
-                <p>Kada omogućite push notifikacije:</p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li>Vaš pregledač generiše jedinstvenu push pretplatu (subscription endpoint)</li>
-                  <li>Koristimo VAPID (Voluntary Application Server Identification) ključeve za sigurnu komunikaciju</li>
-                  <li>Podaci o pretplati se čuvaju u našoj bazi podataka</li>
-                  <li>Šaljemo notifikacije o: novim porukama, promenama statusa rezervacija, i drugim relevantnim ažuriranjima</li>
-                </ul>
-                <p>
-                  Možete onemogućiti push notifikacije u bilo kom trenutku putem podešavanja
-                  vašeg web pregledača ili putem CarDrop platforme. Nakon onemogućavanja,
-                  vaši podaci o pretplati se brišu iz naše baze podataka.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Lock className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">12. Bezbednost podataka</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  Preduzimamo odgovarajuće tehničke i organizacione mere za zaštitu vaših
-                  ličnih podataka od neovlašćenog pristupa, izmene, otkrivanja ili uništenja:
-                </p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong className="text-foreground">Šifrovanje u prenosu:</strong> Sva komunikacija sa platformom koristi HTTPS/TLS protokol</li>
-                  <li><strong className="text-foreground">Sigurna autentifikacija:</strong> Koristimo sigurne metode autentifikacije sa šifrovanim lozinkama i Google OAuth</li>
-                  <li><strong className="text-foreground">Sigurna obrada plaćanja:</strong> Stripe PCI DSS Level 1 sertifikacija garantuje najviši nivo zaštite finansijskih podataka</li>
-                  <li><strong className="text-foreground">Kontrola pristupa:</strong> Pristup ličnim podacima je ograničen na ovlašćene osobe</li>
-                  <li><strong className="text-foreground">Sigurno skladištenje:</strong> Baza podataka i cloud skladište fajlova koriste šifrovanje</li>
-                  <li><strong className="text-foreground">Redovni pregledi:</strong> Redovno proveravamo naše bezbednosne prakse</li>
-                </ul>
-                <p>
-                  Uprkos našim naporima, nijedan sistem za prenos ili skladištenje podataka
-                  nije potpuno bezbedan. U slučaju bezbednosnog incidenta, obavestićemo
-                  pogođene korisnike i nadležne organe u skladu sa zakonskim obavezama.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Baby className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">13. Privatnost dece</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  CarDrop platforma je namenjena isključivo osobama starijim od 18 godina.
-                  Ne prikupljamo svesno lične podatke od dece mlađe od 18 godina.
-                </p>
-                <p>
-                  Ukoliko saznamo da smo prikupili lične podatke od osobe mlađe od 18 godina,
-                  preduzećemo korake da odmah obrišemo te podatke. Ako verujete da smo možda
-                  prikupili informacije od maloletne osobe, kontaktirajte nas na{" "}
-                  <a href="mailto:info@cardropp.app" className="text-primary underline" data-testid="link-contact-children">
-                    info@cardropp.app
-                  </a>.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">14. Izmene politike privatnosti</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  Zadržavamo pravo da ažuriramo ovu Politiku privatnosti u bilo kom trenutku.
-                  O značajnim izmenama ćemo vas obavestiti putem:
-                </p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li>Obaveštenja na platformi (push notifikacija, ukoliko ste ih omogućili)</li>
-                  <li>Istaknutog obaveštenja na web stranici</li>
-                  <li>Ažuriranja datuma "Poslednje ažurirano" na vrhu ovog dokumenta</li>
-                </ul>
-                <p>
-                  Nastavak korišćenja CarDrop platforme nakon objave izmena smatraće se
-                  vašim prihvatanjem ažurirane Politike privatnosti. Preporučujemo da
-                  povremeno proveravate ovu stranicu radi eventualnih promena.
-                </p>
-              </div>
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-                <h3 className="text-xl font-semibold">15. Kontakt informacije</h3>
-              </div>
-              <div className="space-y-3 text-muted-foreground">
-                <p>
-                  Za sva pitanja, zahteve ili pritužbe u vezi sa ovom Politikom privatnosti
-                  ili obradom vaših ličnih podataka, kontaktirajte nas:
-                </p>
-                <ul className="space-y-2 list-disc list-inside">
-                  <li><strong className="text-foreground">Kompanija:</strong> Ai Me IT LLC</li>
-                  <li><strong className="text-foreground">Adresa:</strong> 1209 Mountain Road PL NE, STE N, Albuquerque, NM 87110, USA</li>
-                  <li>
-                    <strong className="text-foreground">Email:</strong>{" "}
-                    <a href="mailto:info@cardropp.app" className="text-primary underline" data-testid="link-contact-email">
-                      info@cardropp.app
-                    </a>
-                  </li>
-                </ul>
-                <p>
-                  Potrudićemo se da odgovorimo na vaš zahtev u roku od 30 dana. Ukoliko
-                  niste zadovoljni našim odgovorom, imate pravo da podnesete pritužbu
-                  nadležnom organu za zaštitu podataka.
-                </p>
-              </div>
-            </section>
-
-            <div className="pt-6 border-t">
-              <Link href="/">
-                <Button variant="outline" data-testid="button-back">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Nazad na Početnu
-                </Button>
-              </Link>
+          {/* 2. Šta je CarDrop Map Hack */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">2. Šta je Map Hack NS</h2>
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                Map Hack NS je funkcionalnost unutar platforme CarDrop koja korisnicima omogućava da <strong className="text-foreground">međusobno razmenjuju informacije</strong> o parkiranju, prisustvu pauka (evakuatora), policijskim radarima i slobodnim "štek" mestima u Novom Sadu.
+              </p>
+              <p>
+                CarDrop je isključivo <strong className="text-foreground">tehnička platforma i posrednik</strong>. Mi ne generišemo, ne verifikujemo i ne garantujemo tačnost informacija koje korisnici postavljaju. Sav sadržaj je korisnički (crowdsourced).
+              </p>
+            </div>
+          </section>
+
+          {/* 3. Odricanje od odgovornosti */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+              <h2 className="text-xl font-semibold">3. Odricanje od odgovornosti</h2>
+            </div>
+            <div className="space-y-4 text-muted-foreground text-sm leading-relaxed">
+              <div className="bg-muted/60 rounded-md p-4 space-y-3">
+                <p>
+                  <strong className="text-foreground">3.1 Tačnost podataka.</strong>{" "}
+                  Sve informacije o pauku, radarima, parkirnim mestima i slobodnim lokacijama prikazane u aplikaciji su isključivo korisničke i mogu biti netačne, zastarele ili nepotpune. CarDrop ne garantuje tačnost, ažurnost ni potpunost bilo koje objave.
+                </p>
+                <p>
+                  <strong className="text-foreground">3.2 Odgovornost za štetu.</strong>{" "}
+                  CarDrop LLC, njeni zaposleni, direktori, partneri ni saradnici nisu odgovorni za bilo kakvu direktnu ili indirektnu štetu, uključujući ali ne ograničavajući se na: novčane kazne za neispravno parkiranje, troškove šlepanja vozila, oštećenje vozila, gubitak prihoda ili bilo koji drugi finansijski ili nefinansijski gubitak nastao oslanjanjem na podatke prikazane u aplikaciji.
+                </p>
+                <p>
+                  <strong className="text-foreground">3.3 Korišćenje na sopstvenu odgovornost.</strong>{" "}
+                  Korisnik prihvata da koristi sve informacije i funkcionalnosti aplikacije isključivo na sopstvenu odgovornost. Preporučujemo da uvek proverite aktuelno stanje na licu mesta.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* 4. Prikupljeni podaci */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Eye className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">4. Koje podatke prikupljamo</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>Prikupljamo samo podatke neophodne za funkcionisanje platforme:</p>
+              <ul className="space-y-2 list-disc list-inside">
+                <li><strong className="text-foreground">Email adresa</strong> — za autentifikaciju i komunikaciju</li>
+                <li><strong className="text-foreground">Nadimak (nickname) i avatar</strong> — vidljivi svim korisnicima u chatu i na mapi</li>
+                <li><strong className="text-foreground">Sadržaj chat poruka</strong> — javne poruke unutar Map Hack chat-a</li>
+                <li><strong className="text-foreground">Koordinate postavljenih markera</strong> — lokacije koje korisnici sami unose (pauk, radar, štek, zlatni minut). <em>Mi ne prikupljamo realtime GPS lokaciju uređaja korisnika.</em></li>
+                <li><strong className="text-foreground">Podaci o pretplati</strong> — plan, datum aktivacije i isteka</li>
+                <li><strong className="text-foreground">Push notifikacija endpoint</strong> — za slanje obaveštenja (samo uz eksplicitnu dozvolu)</li>
+                <li><strong className="text-foreground">Podaci o sesiji</strong> — tehnički kolačići za prijavu</li>
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                Napomena: Lozinke se čuvaju isključivo u hashovanom obliku (bcrypt) i nikada u čistom tekstu.
+              </p>
+            </div>
+          </section>
+
+          {/* 5. Plaćanje i pretplata */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">5. Plaćanje i pretplata</h2>
+            </div>
+            <div className="space-y-4 text-muted-foreground text-sm leading-relaxed">
+              <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md p-4">
+                <div className="flex items-start gap-2 mb-2">
+                  <Lock className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                  <p className="font-semibold text-green-800 dark:text-green-200 text-sm">
+                    Sva plaćanja obrađuje Stripe — jedan od najsigurnijih platnih procesora na svetu.
+                  </p>
+                </div>
+                <p className="text-green-700 dark:text-green-300 text-xs">
+                  Stripe je sertifikovan prema <strong>PCI DSS Level 1</strong> standardu (najviši nivo bezbednosti u industriji platnog prometa) i obrađuje plaćanja za Amazon, Google, Microsoft i milione drugih kompanija. CarDrop nikada ne vidi, ne prikuplja i ne čuva podatke o vašoj platnoj kartici — svi podaci idu direktno Stripe-u.
+                </p>
+              </div>
+
+              <p><strong className="text-foreground">Dostupni paketi (cene u RSD):</strong></p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 pr-4 font-semibold text-foreground">Paket</th>
+                      <th className="text-left py-2 pr-4 font-semibold text-foreground">Cena</th>
+                      <th className="text-left py-2 font-semibold text-foreground">Trajanje</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    <tr>
+                      <td className="py-2 pr-4">Besplatan</td>
+                      <td className="py-2 pr-4">0 RSD</td>
+                      <td className="py-2">Neograničeno</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">Premium (mesečno)</td>
+                      <td className="py-2 pr-4">390 RSD</td>
+                      <td className="py-2">30 dana</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">Day Pass</td>
+                      <td className="py-2 pr-4">120 RSD</td>
+                      <td className="py-2">24 sata</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">Godišnji Premium</td>
+                      <td className="py-2 pr-4">3.500 RSD</td>
+                      <td className="py-2">365 dana</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pr-4">Za Firme</td>
+                      <td className="py-2 pr-4">Na upit</td>
+                      <td className="py-2"><a href="mailto:info@cardrop.app" className="text-primary underline">info@cardrop.app</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="bg-muted/50 rounded-md p-3 space-y-1.5 text-xs">
+                <p><strong className="text-foreground">Automatska pretplata:</strong> Premium (mesečni) i Godišnji paketi se automatski obnavljaju na kraju perioda, osim ako korisnik ne otkaže pre isteka.</p>
+                <p><strong className="text-foreground">Otkazivanje:</strong> Pretplatu možete otkazati u bilo kom trenutku direktno u aplikaciji ili slanjem zahteva na <a href="mailto:info@cardrop.app" className="text-primary underline">info@cardrop.app</a>. Otkazivanje stupa na snagu na kraju tekućeg obračunskog perioda.</p>
+                <p><strong className="text-foreground">Day Pass:</strong> Jednokratna uplata, bez automatskog obnavljanja.</p>
+              </div>
+
+              <p>
+                Za detalje o tome kako Stripe obrađuje vaše podatke, pogledajte{" "}
+                <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline" data-testid="link-stripe-privacy">
+                  Stripe Politiku privatnosti
+                </a>.
+              </p>
+            </div>
+          </section>
+
+          {/* 6. GDPR prava */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Shield className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">6. Vaša prava (GDPR)</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>Korisnicima u EU garantujemo sledeća prava u pogledu ličnih podataka:</p>
+              <ul className="space-y-2 list-disc list-inside">
+                <li><strong className="text-foreground">Pravo na pristup</strong> — možete zatražiti kopiju svih podataka koje čuvamo o vama</li>
+                <li><strong className="text-foreground">Pravo na ispravku</strong> — možete zatražiti ispravku netačnih podataka</li>
+                <li><strong className="text-foreground">Pravo na brisanje ("pravo na zaborav")</strong> — možete zatražiti brisanje vaših podataka, osim u slučaju zakonske obaveze čuvanja</li>
+                <li><strong className="text-foreground">Pravo na prenosivost</strong> — možete primiti vaše podatke u strukturiranom, mašinski čitljivom formatu</li>
+                <li><strong className="text-foreground">Pravo na prigovor</strong> — možete se usprotiviti obradi na osnovu legitimnog interesa</li>
+                <li><strong className="text-foreground">Pravo na povlačenje saglasnosti</strong> — možete u svakom trenutku povući saglasnost za obradu</li>
+              </ul>
+              <p>
+                Sve zahteve šaljite na: <a href="mailto:info@cardrop.app" className="text-primary underline">info@cardrop.app</a>. Odgovaramo u roku od 30 dana.
+              </p>
+            </div>
+          </section>
+
+          {/* 7. Kolačići */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">7. Kolačići (Cookies)</h2>
+            </div>
+            <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                Koristimo isključivo <strong className="text-foreground">neophodne tehničke kolačiće</strong> za funkcionisanje sesije i autentifikacije. Ne koristimo reklamne, analitičke ni kolačiće trećih strana osim Stripe-a (za obradu plaćanja).
+              </p>
+            </div>
+          </section>
+
+          {/* 8. Deljenje podataka */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">8. Deljenje podataka sa trećim stranama</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>Vaše podatke <strong className="text-foreground">ne prodajemo</strong> trećim stranama. Delimo ih samo sa:</p>
+              <ul className="space-y-2 list-disc list-inside">
+                <li><strong className="text-foreground">Stripe Inc.</strong> (SAD) — za obradu plaćanja</li>
+                <li><strong className="text-foreground">Mapbox Inc.</strong> (SAD) — za prikaz mape (koordinate markera)</li>
+                <li><strong className="text-foreground">Nadležni organi</strong> — isključivo na zakonski utemeljen zahtev</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* 9. Prenos podataka */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Server className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">9. Međunarodni prenos podataka</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                Kao kompanija registrovana u SAD, vaši podaci se obrađuju i čuvaju na serverima u SAD. Naši pružaoci usluga (Stripe, Mapbox) poseduju odgovarajuće mehanizme usklađenosti sa GDPR regulativom (standardne ugovorne klauzule — SCC). Sav prenos podataka odvija se putem šifrovanih kanala (HTTPS/TLS).
+              </p>
+            </div>
+          </section>
+
+          {/* 10. Čuvanje podataka */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Lock className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">10. Čuvanje i brisanje podataka</h2>
+            </div>
+            <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
+              <ul className="space-y-2 list-disc list-inside">
+                <li><strong className="text-foreground">Nalog i profil:</strong> čuvaju se dok je nalog aktivan; brišu se u roku od 30 dana po zahtevu</li>
+                <li><strong className="text-foreground">Chat poruke i markeri:</strong> čuvaju se dok su aktivni ili dok se ne zatraži brisanje</li>
+                <li><strong className="text-foreground">Finansijski podaci:</strong> minimum 5 godina u skladu sa zakonskim obavezama</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* 11. Primenljivo pravo */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">11. Primenljivo pravo i nadležnost</h2>
+            </div>
+            <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                Ova politika podleže zakonima Republike Srbije i, gde je primenljivo, Opštoj uredbi EU o zaštiti podataka (GDPR). Za korisnike iz SAD primenljivi su savezni i državni propisi o privatnosti (uključujući CCPA). U slučaju spora, primenjuje se uvek viši standard zaštite korisnika.
+              </p>
+            </div>
+          </section>
+
+          {/* 12. Kontakt */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Mail className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">12. Kontakt i DPO</h2>
+            </div>
+            <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
+              <p>Za sva pitanja u vezi sa privatnošću, zahteve za pristup ili brisanje podataka, kontaktirajte nas:</p>
+              <p>
+                <strong className="text-foreground">Email:</strong>{" "}
+                <a href="mailto:info@cardrop.app" className="text-primary underline font-medium" data-testid="link-dpo-email">
+                  info@cardrop.app
+                </a>
+              </p>
+              <p className="text-xs">CarDrop LLC odgovara na sve zahteve u roku od 30 dana od prijema.</p>
+            </div>
+          </section>
+
+        </div>
+
+        <div className="mt-12 pt-6 border-t text-center">
+          <p className="text-xs text-muted-foreground">
+            &copy; 2026 CarDrop LLC &nbsp;·&nbsp;
+            <Link href="/terms" className="underline hover:text-foreground" data-testid="link-terms">Uslovi korišćenja</Link>
+            &nbsp;·&nbsp;
+            <a href="mailto:info@cardrop.app" className="underline hover:text-foreground">info@cardrop.app</a>
+          </p>
+        </div>
       </div>
     </div>
   );

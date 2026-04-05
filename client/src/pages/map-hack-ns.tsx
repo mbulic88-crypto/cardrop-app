@@ -334,6 +334,7 @@ export default function MapHackNS() {
   const [nickname, setNickname] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [legendOpen, setLegendOpen] = useState(false);
@@ -624,7 +625,11 @@ export default function MapHackNS() {
       const profileRes = await fetch("/api/map-hack/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: nick, avatarId: selectedAvatar }),
+        body: JSON.stringify({
+          nickname: nick,
+          avatarId: selectedAvatar,
+          ...(privacyAccepted && !user.mapPrivacyAcceptedAt ? { acceptedPrivacy: true } : {}),
+        }),
       });
       const profileData = await profileRes.json();
       if (!profileRes.ok) { setError(profileData.message || "Greška pri čuvanju profila"); return; }
@@ -641,8 +646,12 @@ export default function MapHackNS() {
   async function handleChoosePlan() {
     setError("");
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
+    if (!user.mapPrivacyAcceptedAt && !privacyAccepted) { setError("Prihvati politiku privatnosti"); return; }
     setIsSaving(true);
     try {
+      if (privacyAccepted && !user.mapPrivacyAcceptedAt) {
+        await apiRequest("POST", "/api/map-hack/accept-privacy", {});
+      }
       await savePlan(selectedPlan);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
@@ -725,11 +734,14 @@ export default function MapHackNS() {
 
   if (viewMode === "onboarding_full") {
     const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\-]+$/.test(nickname.trim());
-    const canSubmit = nickOk && selectedAvatar !== null && selectedPlan !== null;
+    const alreadyAcceptedPrivacy = !!user.mapPrivacyAcceptedAt;
+    const privacyOk = alreadyAcceptedPrivacy || privacyAccepted;
+    const canSubmit = nickOk && selectedAvatar !== null && selectedPlan !== null && privacyOk;
     let hint = "";
     if (!selectedAvatar) hint = "Izaberi avatar";
     else if (!nickOk) hint = "Unesi nadimak (min. 3 znaka)";
     else if (!selectedPlan) hint = "Izaberi paket";
+    else if (!privacyOk) hint = "Prihvati politiku privatnosti";
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -809,6 +821,29 @@ export default function MapHackNS() {
               />
             </div>
 
+            {/* Politika privatnosti */}
+            {!alreadyAcceptedPrivacy && (
+              <div className="py-4 border-t border-border">
+                <label className="flex items-start gap-3 cursor-pointer" data-testid="label-privacy-full">
+                  <input
+                    type="checkbox"
+                    data-testid="checkbox-privacy-full"
+                    checked={privacyAccepted}
+                    onChange={e => setPrivacyAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded accent-green-600 flex-shrink-0"
+                  />
+                  <span className="text-xs text-muted-foreground leading-relaxed">
+                    Prihvatam{" "}
+                    <Link href="/privacy-policy" className="text-green-600 dark:text-green-400 underline underline-offset-2">
+                      Politiku privatnosti
+                    </Link>
+                    {" "}i razumem da su podaci na karti crowdsource informacije korisnika. CarDrop ne garantuje tačnost
+                    podataka i ne preuzima odgovornost za odluke donete na osnovu informacija na mapi.
+                  </span>
+                </label>
+              </div>
+            )}
+
             {error && (
               <p className="text-sm text-destructive font-medium py-2" data-testid="text-error">
                 {error}
@@ -841,7 +876,9 @@ export default function MapHackNS() {
   }
 
   if (viewMode === "onboarding_plan_only") {
-    const canSubmit = selectedPlan !== null;
+    const alreadyAcceptedPrivacy = !!user.mapPrivacyAcceptedAt;
+    const privacyOk = alreadyAcceptedPrivacy || privacyAccepted;
+    const canSubmit = selectedPlan !== null && privacyOk;
 
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -883,6 +920,29 @@ export default function MapHackNS() {
               />
             </div>
 
+            {/* Politika privatnosti */}
+            {!alreadyAcceptedPrivacy && (
+              <div className="py-4 border-t border-border">
+                <label className="flex items-start gap-3 cursor-pointer" data-testid="label-privacy-plan">
+                  <input
+                    type="checkbox"
+                    data-testid="checkbox-privacy-plan"
+                    checked={privacyAccepted}
+                    onChange={e => setPrivacyAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded accent-green-600 flex-shrink-0"
+                  />
+                  <span className="text-xs text-muted-foreground leading-relaxed">
+                    Prihvatam{" "}
+                    <Link href="/privacy-policy" className="text-green-600 dark:text-green-400 underline underline-offset-2">
+                      Politiku privatnosti
+                    </Link>
+                    {" "}i razumem da su podaci na karti crowdsource informacije korisnika. CarDrop ne garantuje tačnost
+                    podataka i ne preuzima odgovornost za odluke donete na osnovu informacija na mapi.
+                  </span>
+                </label>
+              </div>
+            )}
+
             {error && (
               <p className="text-sm text-destructive font-medium py-2" data-testid="text-error-plan">
                 {error}
@@ -894,7 +954,9 @@ export default function MapHackNS() {
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t px-4 py-3">
           <div className="max-w-md mx-auto">
             {!canSubmit && !isSaving && (
-              <p className="text-xs text-muted-foreground text-center mb-2">Izaberi paket</p>
+              <p className="text-xs text-muted-foreground text-center mb-2">
+                {selectedPlan === null ? "Izaberi paket" : "Prihvati politiku privatnosti"}
+              </p>
             )}
             <Button
               className="w-full"
@@ -1232,20 +1294,51 @@ export default function MapHackNS() {
           </div>
         </div>
       )}
-      {/* ── Header: back arrow + search + bell + chat ── */}
+      {/* ── Header: back arrow + plan badge + search + bell + chat ── */}
       <div className="flex-shrink-0 z-30" style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between px-3 py-3">
-          {/* Left: back arrow */}
-          <Link href="/">
-            <button
-              data-testid="btn-back-home"
-              className="flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.12)" }}>
-              <ArrowLeft size={16} style={{ color: "#d1d5db" }} />
-            </button>
-          </Link>
+          {/* Left: back arrow + plan badge */}
+          <div className="flex items-center gap-2">
+            <Link href="/">
+              <button
+                data-testid="btn-back-home"
+                className="flex items-center justify-center"
+                style={{ width: 34, height: 34, borderRadius: "50%",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.12)" }}>
+                <ArrowLeft size={16} style={{ color: "#d1d5db" }} />
+              </button>
+            </Link>
+            {/* Plan badge pill */}
+            {(() => {
+              const plan = user.isAdmin ? "admin" : (mapStatus?.plan ?? "free");
+              const daysLeft = mapStatus?.daysLeft;
+              const BADGE_STYLES: Record<string, { color: string; border: string; text: string }> = {
+                admin:             { color: "#14b8a6", border: "rgba(20,184,166,0.35)", text: "ADMIN" },
+                free:              { color: "#94a3b8", border: "rgba(148,163,184,0.25)", text: "FREE" },
+                premium:           { color: "#f59e0b", border: "rgba(245,158,11,0.35)", text: daysLeft != null ? `PRO · ${daysLeft}d` : "PRO" },
+                day_pass:          { color: "#ef4444", border: "rgba(239,68,68,0.35)",   text: daysLeft != null ? `DAY · ${daysLeft}d` : "DAY PASS" },
+                godisnji_premium:  { color: "#818cf8", border: "rgba(129,140,248,0.35)", text: daysLeft != null ? `GOD · ${daysLeft}d` : "GODIŠNJI" },
+                firma:             { color: "#14b8a6", border: "rgba(20,184,166,0.35)",  text: "FIRMA" },
+              };
+              const s = BADGE_STYLES[plan] ?? BADGE_STYLES["free"];
+              return (
+                <button
+                  data-testid="btn-plan-badge"
+                  onClick={() => { if (plan === "free" || plan === "admin") setPremiumUpsellOpen(true); }}
+                  className="flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
+                  style={{
+                    background: s.color + "18",
+                    border: `1px solid ${s.border}`,
+                    color: s.color,
+                    cursor: plan === "free" ? "pointer" : "default",
+                  }}
+                >
+                  {s.text}
+                </button>
+              );
+            })()}
+          </div>
 
           {/* Center: search button or search input */}
           {searchOpen ? (
@@ -1704,13 +1797,24 @@ export default function MapHackNS() {
               const baseText = dashIdx !== -1 ? msg.text.slice(0, dashIdx) : msg.text;
               const commentText = dashIdx !== -1 ? msg.text.slice(dashIdx + 3) : null;
               const isZlatniMinut = msg.text.includes("Zlatni Minut");
-              const isPauk = msg.text.includes("Pauk Radar");
-              const isRadar = msg.text.includes("Radar") && !isPauk;
+              const isPaukMsg = msg.text.includes("Pauk Radar");
+              const isRadarMsg = msg.text.includes("Radar") && !isPaukMsg;
               const isKomentar = msg.text.includes("komentar");
-              const TypeIcon = isZlatniMinut ? Clock : isPauk ? AlertTriangle : isRadar ? RadioTower : isKomentar ? MessageSquare : MessageSquare;
-              const typeColor = isZlatniMinut ? "#f97316" : isPauk ? "#ef4444" : isRadar ? "#8b5cf6" : "#6b7280";
+              const TypeIcon = isZlatniMinut ? Clock : isPaukMsg ? AlertTriangle : isRadarMsg ? RadioTower : isKomentar ? MessageSquare : MessageSquare;
+              const typeColor = isZlatniMinut ? "#f97316" : isPaukMsg ? "#ef4444" : isRadarMsg ? "#8b5cf6" : "#6b7280";
+              const hasCoords = msg.lat != null && msg.lng != null;
               return (
-                <div key={msg.id} className="flex items-start gap-2 my-2">
+                <div
+                  key={msg.id}
+                  data-testid={`chat-system-msg-${msg.id}`}
+                  className="flex items-start gap-2 my-2"
+                  style={{ cursor: hasCoords ? "pointer" : "default" }}
+                  onClick={() => {
+                    if (!hasCoords) return;
+                    setFlyToLocation({ lat: parseFloat(msg.lat!), lng: parseFloat(msg.lng!) });
+                  }}
+                  title={hasCoords ? "Tapni da vidiš na mapi" : undefined}
+                >
                   <div className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
                     style={{ background: typeColor + "22", border: `1px solid ${typeColor}44` }}>
                     <TypeIcon size={13} style={{ color: typeColor }} />
@@ -1718,6 +1822,9 @@ export default function MapHackNS() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-1.5 mb-0.5">
                       <span style={{ color: "#4b5563", fontSize: 10 }}>{formatChatTime(msg.createdAt)}</span>
+                      {hasCoords && (
+                        <MapPin size={9} style={{ color: "#6b7280", flexShrink: 0 }} />
+                      )}
                     </div>
                     <p style={{ color: "#9ca3af", fontSize: 12, lineHeight: 1.4 }}>{baseText}</p>
                     {commentText && (

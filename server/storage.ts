@@ -43,6 +43,7 @@ export interface IStorage {
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
   updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }): Promise<User | undefined>;
   resetMapHackProfile(userId: string): Promise<User | undefined>;
+  acceptMapHackPrivacy(userId: string): Promise<User | undefined>;
   updateMapHackPlan(userId: string, plan: string, expiresAt: Date | null, stripeSessionId?: string): Promise<User | undefined>;
   isStripeSessionConsumed(stripeSessionId: string): Promise<boolean>;
   recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void>;
@@ -175,6 +176,15 @@ export class DatabaseStorage implements IStorage {
         mapHackTrialStartedAt: null,
         updatedAt: new Date(),
       })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async acceptMapHackPrivacy(userId: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ mapPrivacyAcceptedAt: new Date(), updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     return user;

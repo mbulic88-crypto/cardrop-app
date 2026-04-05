@@ -78,7 +78,7 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
   } else if (type === "safe_zone") {
     path = `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
   } else if (type === "radar") {
-    path = `<circle cx="12" cy="19" r="2"/><line x1="12" y1="17" x2="12" y2="10"/><path d="M8 13.5a5.5 5.5 0 0 1 8 0"/><path d="M4.5 10.5a10 10 0 0 1 15 0"/>`;
+    path = `<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="10" x2="12" y2="3"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>`;
   } else {
     path = `<circle cx="12" cy="12" r="10"/>`;
   }

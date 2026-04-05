@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   mapHackStripeSessionId: varchar("map_hack_stripe_session_id"),
   mapProfileLastChangedAt: timestamp("map_profile_last_changed_at"),
   mapNotificationsEnabled: boolean("map_notifications_enabled").notNull().default(true),
+  mapPrivacyAcceptedAt: timestamp("map_privacy_accepted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -417,6 +418,8 @@ export const mapChatMessages = pgTable("map_chat_messages", {
   replyToId: varchar("reply_to_id"),
   replyToNickname: varchar("reply_to_nickname", { length: 30 }),
   replyToText: varchar("reply_to_text", { length: 120 }),
+  lat: decimal("lat", { precision: 10, scale: 7 }),
+  lng: decimal("lng", { precision: 10, scale: 7 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
