@@ -1908,7 +1908,7 @@ export default function MapHackNS() {
               maxLength={280}
               disabled={chatCooldown > 0}
             />
-            <Button size="icon" data-testid="btn-send-chat"
+            <Button size="icon" data-testid="btn-send-chat" className="kraft-btn"
               onClick={() => {
                 if (chatInput.trim() && !chatCooldown) {
                   sendChatMutation.mutate({
