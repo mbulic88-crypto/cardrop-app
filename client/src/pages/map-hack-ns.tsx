@@ -310,7 +310,7 @@ function CompactHero({ title = "Map Hack NS" }: { title?: string }) {
             style={{ background: "transparent" }}
             data-testid="button-back-home"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
         </Link>
         <div className="flex items-center gap-2">
