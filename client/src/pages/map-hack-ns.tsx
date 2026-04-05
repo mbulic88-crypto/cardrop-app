@@ -1614,7 +1614,7 @@ export default function MapHackNS() {
       </div>
       {/* ── Action bar below map ── */}
       <div className="flex-shrink-0 px-3 py-2.5"
-        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {/* Zlatni Minut */}
           {(() => {
