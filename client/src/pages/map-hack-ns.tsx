@@ -403,7 +403,7 @@ export default function MapHackNS() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; lat: number; lng: number }>>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; sub: string; lat: number; lng: number }>>([]);
   const [chatFullscreen, setChatFullscreen] = useState(false);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
@@ -702,7 +702,8 @@ export default function MapHackNS() {
         );
         const data = await resp.json();
         const suggestions = (data.features ?? []).map((f: { place_name: string; center: [number, number] }) => ({
-          text: f.place_name,
+          text: f.place_name.split(",")[0].trim(),
+          sub: f.place_name.split(",").slice(1).join(",").trim(),
           lat: f.center[1],
           lng: f.center[0],
         }));
@@ -1346,8 +1347,8 @@ export default function MapHackNS() {
                   style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.16)", color: "#e5e7eb" }}
                 />
                 {searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
-                    style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                  <div className="absolute top-full left-0 mt-1 rounded-xl overflow-hidden z-50"
+                    style={{ minWidth: 280, background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
                     {searchSuggestions.map((s, i) => (
                       <button
                         key={i}
@@ -1358,10 +1359,13 @@ export default function MapHackNS() {
                           setSearchQuery("");
                           setSearchSuggestions([]);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm"
-                        style={{ color: "#d1d5db", borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                        <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
-                        <span className="text-left truncate">{s.text}</span>
+                        className="w-full flex items-start gap-2 px-3 py-2.5 text-left"
+                        style={{ borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                        <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0, marginTop: 3 }} />
+                        <div className="flex flex-col gap-0.5">
+                          <span style={{ color: "#e5e7eb", fontSize: 13, lineHeight: 1.3 }}>{s.text}</span>
+                          {s.sub && <span style={{ color: "#9ca3af", fontSize: 11, lineHeight: 1.3 }}>{s.sub}</span>}
+                        </div>
                       </button>
                     ))}
                   </div>
