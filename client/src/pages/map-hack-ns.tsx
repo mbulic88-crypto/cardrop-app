@@ -1347,8 +1347,8 @@ export default function MapHackNS() {
                   style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.16)", color: "#e5e7eb" }}
                 />
                 {searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 mt-1 rounded-xl overflow-visible z-50"
-                    style={{ minWidth: 280, background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                  <div className="absolute top-full mt-1 rounded-xl overflow-visible z-50"
+                    style={{ minWidth: 280, left: "50%", transform: "translateX(-50%)", background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
                     {searchSuggestions.map((s, i) => (
                       <button
                         key={i}
