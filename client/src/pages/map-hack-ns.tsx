@@ -1293,17 +1293,16 @@ export default function MapHackNS() {
 
           {/* Left: CarDrop logo (back to landing) + plan badge */}
           <div className="flex items-center gap-2">
-            <Link href="/">
-              <button
-                data-testid="btn-back-home"
-                className="kraft-btn flex items-center gap-1 px-1.5 py-1 rounded-xl"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.11)" }}
-                title="Nazad na početnu stranicu"
-              >
-                <ChevronLeft size={13} style={{ color: "#6b7280" }} />
-                <img src={parkInLogo} alt="CarDrop" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover" }} />
-              </button>
-            </Link>
+            <button
+              data-testid="btn-back-home"
+              className="kraft-btn flex items-center gap-1 px-1.5 py-1 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.11)" }}
+              title="Nazad na početnu stranicu"
+              onClick={() => { sessionStorage.setItem("bypassMapHackRedirect", "1"); setLocation("/"); }}
+            >
+              <ChevronLeft size={13} style={{ color: "#6b7280" }} />
+              <img src={parkInLogo} alt="CarDrop" style={{ width: 26, height: 26, borderRadius: 7, objectFit: "cover" }} />
+            </button>
 
             {/* Plan badge pill */}
             {(() => {
@@ -1331,52 +1330,53 @@ export default function MapHackNS() {
             })()}
           </div>
 
-          {/* Center: search button or search input */}
-          {searchOpen ? (
-            <div className="flex-1 mx-2 relative">
-              <input
-                autoFocus
-                data-testid="input-map-search"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); setSearchSuggestions([]); } }}
-                placeholder="Pretraži ulicu ili adresu..."
-                className="w-full text-sm rounded-xl px-3 py-1.5 outline-none"
-                style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.16)", color: "#e5e7eb" }}
-              />
-              {searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
-                  style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
-                  {searchSuggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      data-testid={`search-result-${i}`}
-                      onClick={() => {
-                        setFlyToLocation({ lat: s.lat, lng: s.lng });
-                        setSearchOpen(false);
-                        setSearchQuery("");
-                        setSearchSuggestions([]);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm"
-                      style={{ color: "#d1d5db", borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                      <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
-                      <span className="text-left">{s.text}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <button
-              data-testid="btn-map-search"
-              onClick={() => setSearchOpen(true)}
-              className="kraft-btn flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.12)" }}>
-              <Search size={15} style={{ color: "#9ca3af" }} />
-            </button>
-          )}
+          {/* Center: search — always flex-1 so it fills available space */}
+          <div className="flex-1 mx-2 relative min-w-0">
+            {searchOpen ? (
+              <>
+                <input
+                  autoFocus
+                  data-testid="input-map-search"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); setSearchSuggestions([]); } }}
+                  placeholder="Pretraži ulicu ili adresu..."
+                  className="w-full text-sm rounded-xl px-3 py-1.5 outline-none"
+                  style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.16)", color: "#e5e7eb" }}
+                />
+                {searchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
+                    style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+                    {searchSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        data-testid={`search-result-${i}`}
+                        onClick={() => {
+                          setFlyToLocation({ lat: s.lat, lng: s.lng });
+                          setSearchOpen(false);
+                          setSearchQuery("");
+                          setSearchSuggestions([]);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm"
+                        style={{ color: "#d1d5db", borderBottom: i < searchSuggestions.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                        <MapPin size={12} style={{ color: "#6b7280", flexShrink: 0 }} />
+                        <span className="text-left truncate">{s.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <button
+                data-testid="btn-map-search"
+                onClick={() => setSearchOpen(true)}
+                className="kraft-btn flex items-center justify-center w-full rounded-xl px-3 py-1.5 gap-2"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                <Search size={14} style={{ color: "#9ca3af", flexShrink: 0 }} />
+                <span className="text-xs truncate" style={{ color: "#6b7280" }}>Pretraži ulicu ili adresu...</span>
+              </button>
+            )}
+          </div>
 
           {/* Right: PWA install + bell + chat + info + user */}
           <div className="flex items-center gap-1.5">
@@ -1659,7 +1659,7 @@ export default function MapHackNS() {
                   border: `1.5px solid ${isActive ? "#ef4444" : "#c42020"}`,
                 }}>
                 <div className="relative">
-                  <AlertTriangle size={18} style={{ color: isActive ? "#fff" : "#fca5a5" }} />
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>🕷️</span>
                   {count > 0 && (
                     <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
                       style={{ width: 14, height: 14, background: "#fff", color: "#991b1b", fontSize: 7 }}>{count}</span>

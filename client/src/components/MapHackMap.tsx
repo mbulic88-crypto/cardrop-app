@@ -72,7 +72,7 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
   } else if (type === "zlatni_minut") {
     path = `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`;
   } else if (type === "pauk") {
-    path = `<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`;
+    path = `<circle cx="12" cy="10" r="3"/><circle cx="12" cy="16" r="4"/><line x1="12" y1="7" x2="8" y2="3"/><line x1="12" y1="7" x2="16" y2="3"/><line x1="9" y1="9" x2="4" y2="7"/><line x1="15" y1="9" x2="20" y2="7"/><line x1="8" y1="14" x2="3" y2="13"/><line x1="16" y1="14" x2="21" y2="13"/><line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>`;
   } else if (type === "stek") {
     path = `<path d="M3 9.5 L12 2 L21 9.5 V20 A1 1 0 0 1 20 21 H15 V15 H9 V21 H4 A1 1 0 0 1 3 20 Z"/>`;
   } else if (type === "safe_zone") {
@@ -97,7 +97,7 @@ export function markerColor(type: MarkerType | string): string {
 
 export function markerEmoji(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "⏱";
-  if (type === "pauk") return "🚛";
+  if (type === "pauk") return "🕷️";
   if (type === "stek") return "🏠";
   if (type === "safe_zone") return "🛡";
   if (type === "radar") return "📡";
@@ -321,26 +321,35 @@ export function MapHackMap({
             <Layer
               id="safe-zone-fill"
               type="fill"
-              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.25 }}
+              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.45 }}
             />
             <Layer
               id="safe-zone-glow"
               type="line"
               paint={{
                 "line-color": "#4ade80",
-                "line-width": 8,
-                "line-opacity": 0.15,
-                "line-blur": 6,
+                "line-width": 14,
+                "line-opacity": 0.45,
+                "line-blur": 8,
+              }}
+            />
+            <Layer
+              id="safe-zone-line-solid"
+              type="line"
+              paint={{
+                "line-color": "#22c55e",
+                "line-width": 3,
+                "line-opacity": 0.55,
               }}
             />
             <Layer
               id="safe-zone-line"
               type="line"
               paint={{
-                "line-color": "#4ade80",
-                "line-width": 3,
-                "line-opacity": 1,
-                "line-dasharray": [6, 3],
+                "line-color": "#ffffff",
+                "line-width": 2,
+                "line-opacity": 0.90,
+                "line-dasharray": [5, 4],
               }}
             />
           </Source>

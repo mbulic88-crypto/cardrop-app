@@ -42,6 +42,10 @@ function MapHackRedirect() {
   useEffect(() => {
     if (isLoading) return;
     if (user?.mapNickname && (location === "/" || location === "/home")) {
+      if (sessionStorage.getItem("bypassMapHackRedirect") === "1") {
+        sessionStorage.removeItem("bypassMapHackRedirect");
+        return;
+      }
       setLocation("/map-hack");
     }
   }, [user, isLoading, location, setLocation]);
