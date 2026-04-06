@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -340,6 +340,7 @@ export default function MapHackNS() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [legendOpen, setLegendOpen] = useState(false);
+  const [burgerMenuOpen, setBurgerMenuOpen] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editAvatarId, setEditAvatarId] = useState(1);
@@ -1378,7 +1379,7 @@ export default function MapHackNS() {
             )}
           </div>
 
-          {/* Right: PWA install + bell + chat + info + user */}
+          {/* Right: PWA install + burger menu */}
           <div className="flex items-center gap-1.5">
 
             {/* PWA Install — shown on Android (installable) or iOS; hidden once installed */}
@@ -1393,74 +1394,103 @@ export default function MapHackNS() {
               </button>
             )}
 
-            {/* Bell — notifications toggle */}
-            <button
-              data-testid="btn-notifications-toggle"
-              onClick={async () => {
-                const newEnabled = !(user.mapNotificationsEnabled ?? true);
-                try {
-                  await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
-                  await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                } catch {
-                  toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
-                }
-              }}
-              className="kraft-btn relative flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%",
-                background: alarmActive ? "#b91c1c" : "#b45309", border: "none" }}>
-              {(user.mapNotificationsEnabled ?? true)
-                ? <Bell size={15} style={{ color: "#fff" }} />
-                : <BellOff size={15} style={{ color: "rgba(255,255,255,0.6)" }} />
-              }
-              {(alarmActive || showTrialBanner) && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                  style={{ width: 16, height: 16, fontSize: 8,
-                    background: alarmActive ? "#ef4444" : "#f59e0b" }}>
-                  {alarmActive ? paukInZone.length : mapStatus?.daysLeft}
-                </span>
+            {/* Burger menu */}
+            <div className="relative">
+              <button
+                data-testid="btn-burger-menu"
+                onClick={() => setBurgerMenuOpen(prev => !prev)}
+                className="kraft-btn relative flex items-center justify-center"
+                style={{ width: 34, height: 34, borderRadius: "50%", background: "#4f46e5", border: "none" }}>
+                <Menu size={16} style={{ color: "#fff" }} />
+                {(alarmActive || showTrialBanner) && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
+                    style={{ width: 16, height: 16, fontSize: 8,
+                      background: alarmActive ? "#ef4444" : "#f59e0b" }}>
+                    {alarmActive ? paukInZone.length : mapStatus?.daysLeft}
+                  </span>
+                )}
+              </button>
+
+              {/* Burger dropdown */}
+              {burgerMenuOpen && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setBurgerMenuOpen(false)}
+                  />
+                  {/* Panel */}
+                  <div
+                    className="absolute right-0 top-full mt-2 z-50 rounded-2xl overflow-hidden"
+                    style={{
+                      minWidth: 200,
+                      background: "#1a1f2e",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                    }}>
+                    {/* Profile */}
+                    <button
+                      data-testid="btn-profile-edit"
+                      onClick={() => {
+                        setBurgerMenuOpen(false);
+                        setEditNickname(user.mapNickname ?? "");
+                        setEditAvatarId(user.mapAvatarId ?? 1);
+                        setProfileEditError("");
+                        setProfileEditOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
+                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center justify-center rounded-full"
+                        style={{ width: 28, height: 28, background: "#0f766e" }}>
+                        <User size={14} style={{ color: "#fff" }} />
+                      </div>
+                      <span>Profil</span>
+                    </button>
+
+                    {/* Legend */}
+                    <button
+                      data-testid="btn-legend"
+                      onClick={() => {
+                        setBurgerMenuOpen(false);
+                        setLegendOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
+                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center justify-center rounded-full"
+                        style={{ width: 28, height: 28, background: "#6d28d9" }}>
+                        <Info size={14} style={{ color: "#fff" }} />
+                      </div>
+                      <span>Legenda</span>
+                    </button>
+
+                    {/* Notifications toggle */}
+                    <button
+                      data-testid="btn-notifications-toggle"
+                      onClick={async () => {
+                        const newEnabled = !(user.mapNotificationsEnabled ?? true);
+                        setBurgerMenuOpen(false);
+                        try {
+                          await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
+                          await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+                        } catch {
+                          toast({ title: "Greška", description: "Promena notifikacija nije uspela", variant: "destructive" });
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
+                      style={{ color: "#e5e7eb" }}>
+                      <div className="flex items-center justify-center rounded-full"
+                        style={{ width: 28, height: 28, background: alarmActive ? "#b91c1c" : "#b45309" }}>
+                        {(user.mapNotificationsEnabled ?? true)
+                          ? <Bell size={14} style={{ color: "#fff" }} />
+                          : <BellOff size={14} style={{ color: "rgba(255,255,255,0.6)" }} />
+                        }
+                      </div>
+                      <span>Notifikacije {(user.mapNotificationsEnabled ?? true) ? "ukl." : "uklj."}</span>
+                    </button>
+                  </div>
+                </>
               )}
-            </button>
-
-            {/* Chat — fullscreen toggle */}
-            <button
-              data-testid="btn-chat-indicator"
-              onClick={() => {
-                clearUnread();
-                setChatFullscreen(true);
-              }}
-              className="kraft-btn relative flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%", background: "#1d4ed8", border: "none" }}>
-              <MessageSquare size={15} style={{ color: "#fff" }} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full text-white font-bold"
-                  style={{ width: 16, height: 16, background: "#ef4444", fontSize: 8 }}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {/* Legend / Info */}
-            <button
-              data-testid="btn-legend"
-              onClick={() => setLegendOpen(true)}
-              className="kraft-btn flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%", background: "#6d28d9", border: "none" }}>
-              <Info size={15} style={{ color: "#fff" }} />
-            </button>
-
-            {/* Profile edit */}
-            <button
-              data-testid="btn-profile-edit"
-              onClick={() => {
-                setEditNickname(user.mapNickname ?? "");
-                setEditAvatarId(user.mapAvatarId ?? 1);
-                setProfileEditError("");
-                setProfileEditOpen(true);
-              }}
-              className="kraft-btn flex items-center justify-center"
-              style={{ width: 34, height: 34, borderRadius: "50%", background: "#0f766e", border: "none" }}>
-              <User size={15} style={{ color: "#fff" }} />
-            </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1616,6 +1646,28 @@ export default function MapHackNS() {
       <div className="flex-shrink-0 px-3 py-2.5"
         style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {/* Chat */}
+          <button
+            data-testid="action-bar-chat"
+            onClick={() => { clearUnread(); setChatFullscreen(true); }}
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl relative"
+            style={{
+              width: 58, height: 58,
+              background: "#1d4ed8",
+              border: "1.5px solid #3b82f6",
+            }}>
+            <div className="relative">
+              <MessageSquare size={18} style={{ color: "#bfdbfe" }} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                  style={{ width: 14, height: 14, background: "#ef4444", color: "#fff", fontSize: 7 }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </div>
+            <span className="font-bold text-center" style={{ color: "#bfdbfe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Chat</span>
+          </button>
+
           {/* Zlatni Minut */}
           {(() => {
             const count = mapMarkers.filter(m => m.type === "zlatni_minut").length;

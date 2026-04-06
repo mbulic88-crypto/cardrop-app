@@ -321,13 +321,13 @@ export function MapHackMap({
             <Layer
               id="safe-zone-fill"
               type="fill"
-              paint={{ "fill-color": "#4ade80", "fill-opacity": 0.45 }}
+              paint={{ "fill-color": "#f97316", "fill-opacity": 0.45 }}
             />
             <Layer
               id="safe-zone-glow"
               type="line"
               paint={{
-                "line-color": "#4ade80",
+                "line-color": "#f97316",
                 "line-width": 14,
                 "line-opacity": 0.45,
                 "line-blur": 8,
@@ -337,7 +337,7 @@ export function MapHackMap({
               id="safe-zone-line-solid"
               type="line"
               paint={{
-                "line-color": "#22c55e",
+                "line-color": "#ea580c",
                 "line-width": 3,
                 "line-opacity": 0.55,
               }}
@@ -346,7 +346,7 @@ export function MapHackMap({
               id="safe-zone-line"
               type="line"
               paint={{
-                "line-color": "#ffffff",
+                "line-color": "#f97316",
                 "line-width": 2,
                 "line-opacity": 0.90,
                 "line-dasharray": [5, 4],
