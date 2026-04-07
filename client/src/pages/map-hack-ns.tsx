@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -341,6 +341,7 @@ export default function MapHackNS() {
   const [error, setError] = useState("");
   const [legendOpen, setLegendOpen] = useState(false);
   const [burgerMenuOpen, setBurgerMenuOpen] = useState(false);
+  const [mapExpanded, setMapExpanded] = useState(false);
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [editNickname, setEditNickname] = useState("");
   const [editAvatarId, setEditAvatarId] = useState(1);
@@ -1587,7 +1588,10 @@ export default function MapHackNS() {
         </button>
       </div>
       {/* ── Map area ── */}
-      <div className="relative flex-shrink-0" style={{ height: "36vh", minHeight: 180, display: chatFullscreen ? "none" : undefined }}>
+      <div
+        className={mapExpanded ? "relative flex-1" : "relative flex-shrink-0"}
+        style={{ height: mapExpanded ? undefined : "36vh", minHeight: 180, display: chatFullscreen ? "none" : undefined }}
+      >
         <MapHackMap
           markers={mapMarkers}
           activeFilters={activeFilters}
@@ -1622,6 +1626,23 @@ export default function MapHackNS() {
           onParkingClick={user.isAdmin ? setSelectedParking : undefined}
         />
 
+        {/* Map expand/collapse toggle button */}
+        <button
+          data-testid="btn-map-expand"
+          onClick={() => setMapExpanded(prev => !prev)}
+          className="kraft-btn flex items-center justify-center"
+          style={{
+            position: "absolute", top: 8, left: 8, zIndex: 10,
+            width: 34, height: 34, borderRadius: "50%",
+            background: "rgba(13,17,23,0.75)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          }}>
+          {mapExpanded
+            ? <Minimize2 size={15} style={{ color: "#fff" }} />
+            : <Maximize2 size={15} style={{ color: "#fff" }} />
+          }
+        </button>
+
         {/* Add-mode banner */}
         {addMode && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium"
@@ -1650,28 +1671,6 @@ export default function MapHackNS() {
       <div className="flex-shrink-0 px-3 py-2.5"
         style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-          {/* Chat */}
-          <button
-            data-testid="action-bar-chat"
-            onClick={() => { clearUnread(); setChatFullscreen(true); }}
-            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl relative"
-            style={{
-              width: 58, height: 58,
-              background: "#1d4ed8",
-              border: "1.5px solid #3b82f6",
-            }}>
-            <div className="relative">
-              <MessageSquare size={18} style={{ color: "#bfdbfe" }} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
-                  style={{ width: 14, height: 14, background: "#ef4444", color: "#fff", fontSize: 7 }}>
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </div>
-            <span className="font-bold text-center" style={{ color: "#bfdbfe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Chat</span>
-          </button>
-
           {/* Zlatni Minut */}
           {(() => {
             const count = mapMarkers.filter(m => m.type === "zlatni_minut").length;
@@ -1832,11 +1831,29 @@ export default function MapHackNS() {
             <Plus size={18} style={{ color: "#7dd3fc" }} />
             <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
           </button>
+
+          {/* Chat — na kraju action bara */}
+          <button
+            data-testid="action-bar-chat"
+            onClick={() => { clearUnread(); setChatFullscreen(true); }}
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl relative"
+            style={{ width: 58, height: 58, background: "#1d4ed8", border: "1.5px solid #3b82f6" }}>
+            <div className="relative">
+              <MessageSquare size={18} style={{ color: "#bfdbfe" }} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                  style={{ width: 14, height: 14, background: "#ef4444", color: "#fff", fontSize: 7 }}>
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </div>
+            <span className="font-bold text-center" style={{ color: "#bfdbfe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Chat</span>
+          </button>
         </div>
       </div>
       {/* ── Chat panel ── */}
       <div className="flex-1 flex flex-col overflow-hidden" data-testid="panel-chat"
-        style={{ background: "#0d1117" }}>
+        style={{ background: "#0d1117", display: mapExpanded ? "none" : undefined }}>
         {chatFullscreen && (
           <div className="flex items-center justify-between px-3 py-2 flex-shrink-0"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

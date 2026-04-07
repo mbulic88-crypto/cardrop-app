@@ -3,6 +3,7 @@ import Map, {
   Marker,
   Popup,
   NavigationControl,
+  GeolocateControl,
   Source,
   Layer,
 } from "react-map-gl";
@@ -250,6 +251,12 @@ export function MapHackMap({
         attributionControl={false}
       >
         <NavigationControl position="top-right" showCompass={false} />
+        <GeolocateControl
+          position="bottom-right"
+          trackUserLocation={true}
+          showUserHeading={true}
+          showAccuracyCircle={true}
+        />
 
         {/* Compass / reset button */}
         <div
