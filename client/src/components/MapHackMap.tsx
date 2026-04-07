@@ -94,6 +94,7 @@ export function markerColor(type: MarkerType | string): string {
   if (type === "stek") return "#22c55e";
   if (type === "safe_zone") return "#3b82f6";
   if (type === "radar") return "#8b5cf6";
+  if (type === "parking") return "#3b82f6";
   return "#6b7280";
 }
 
@@ -448,8 +449,8 @@ export function MapHackMap({
           );
         })}
 
-        {/* Parking markers */}
-        {(parkingListings ?? []).map((spot) => {
+        {/* Parking markers — shown when "sve" or "parking" filter is active */}
+        {(activeFilters.includes("sve") || activeFilters.includes("parking")) && (parkingListings ?? []).map((spot) => {
           const lat = parseFloat(spot.latitude);
           const lng = parseFloat(spot.longitude);
           if (isNaN(lat) || isNaN(lng)) return null;

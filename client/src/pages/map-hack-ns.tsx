@@ -1790,9 +1790,9 @@ export default function MapHackNS() {
       <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto"
         style={{ display: chatFullscreen ? "none" : undefined, background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
         {([
-          { key: "zlatni_minut", label: "Parking", icon: "🅿" },
-          { key: "pauk",         label: "Pauk",    icon: "🚛" },
-          { key: "stek",        label: "Štek",    icon: "🏠" },
+          { key: "zlatni_minut", label: "Zlatni Minut", icon: "⏱" },
+          { key: "pauk",         label: "Pauk",         icon: "🚛" },
+          { key: "stek",         label: "Štek",         icon: "🏠" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
           return (
@@ -1848,11 +1848,15 @@ export default function MapHackNS() {
               key="safe_zone"
               data-testid="filter-tab-safe_zone"
               onClick={() => {
+                const willActivate = !activeFilters.includes("safe_zone");
                 setActiveFilters(prev => {
                   const without = prev.filter(x => x !== "sve" && x !== "safe_zone");
                   const next = prev.includes("safe_zone") ? without : [...without, "safe_zone"];
                   return next.length === 0 ? ["sve"] : next;
                 });
+                if (willActivate && safeZone?.lat && safeZone?.lng) {
+                  setFlyToLocation({ lat: parseFloat(safeZone.lat), lng: parseFloat(safeZone.lng) });
+                }
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
@@ -1862,6 +1866,30 @@ export default function MapHackNS() {
               }}>
               <span>🛡</span>
               <span>Safe Zone</span>
+            </button>
+          );
+        })()}
+        {(() => {
+          const isActive = activeFilters.includes("parking");
+          return (
+            <button
+              key="parking"
+              data-testid="filter-tab-parking"
+              onClick={() => {
+                setActiveFilters(prev => {
+                  const without = prev.filter(x => x !== "sve" && x !== "parking");
+                  const next = prev.includes("parking") ? without : [...without, "parking"];
+                  return next.length === 0 ? ["sve"] : next;
+                });
+              }}
+              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: isActive ? markerColor("parking") + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isActive ? markerColor("parking") + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isActive ? markerColor("parking") : "#9ca3af",
+              }}>
+              <span>🅿</span>
+              <span>Parking</span>
             </button>
           );
         })()}
