@@ -671,14 +671,9 @@ export default function MapHackNS() {
   const setSafeZoneMutation = useMutation({
     mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
       apiRequest("PUT", "/api/map-hack/safe-zone", data),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
       toast({ title: "Safe Zone postavljena" });
-      if (mapFlyToRef.current) {
-        mapFlyToRef.current.flyTo(variables.lat, variables.lng);
-      } else {
-        setFlyToLocation({ lat: variables.lat, lng: variables.lng });
-      }
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -1854,21 +1849,11 @@ export default function MapHackNS() {
               key="safe_zone"
               data-testid="filter-tab-safe_zone"
               onClick={() => {
-                const willActivate = !activeFilters.includes("safe_zone");
                 setActiveFilters(prev => {
                   const without = prev.filter(x => x !== "sve" && x !== "safe_zone");
                   const next = prev.includes("safe_zone") ? without : [...without, "safe_zone"];
                   return next.length === 0 ? ["sve"] : next;
                 });
-                if (willActivate && safeZone?.lat && safeZone?.lng) {
-                  const lat = parseFloat(safeZone.lat);
-                  const lng = parseFloat(safeZone.lng);
-                  if (mapFlyToRef.current) {
-                    mapFlyToRef.current.flyTo(lat, lng);
-                  } else {
-                    setFlyToLocation({ lat, lng });
-                  }
-                }
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
