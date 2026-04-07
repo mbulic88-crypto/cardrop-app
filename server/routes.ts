@@ -8,7 +8,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
-import { getStripePriceId, type ProductCategory } from "./stripeProducts";
+import { getStripePriceId, getMapHackPriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable } from "@shared/schema";
@@ -340,20 +340,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const planDef = validPlans[plan];
       const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const priceId = getMapHackPriceId(plan);
+
+      const lineItems = priceId
+        ? [{ price: priceId, quantity: 1 }]
+        : [{
+            price_data: {
+              currency: 'rsd',
+              product_data: { name: planDef.name, description: planDef.description },
+              unit_amount: planDef.amount,
+            },
+            quantity: 1,
+          }];
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'rsd',
-            product_data: { name: planDef.name, description: planDef.description },
-            unit_amount: planDef.amount,
-          },
-          quantity: 1,
-        }],
+        line_items: lineItems,
         mode: 'payment',
         success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/map-hack`,
+        cancel_url: `${baseUrl}/map-hack/subscribe`,
         metadata: { userId, plan },
       });
 

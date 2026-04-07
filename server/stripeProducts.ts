@@ -12,6 +12,13 @@ interface ProductDefinition {
   priceRSD: number;
 }
 
+interface MapHackPlanDefinition {
+  planId: string;
+  name: string;
+  description: string;
+  priceRSD: number;
+}
+
 const PRODUCT_DEFINITIONS: ProductDefinition[] = [
   { category: 'private', tier: 'silver', name: 'CarDrop - Privatni Parking - Silver', description: 'Silver plan za privatne parkinge i garaže', priceRSD: 800 },
   { category: 'private', tier: 'gold', name: 'CarDrop - Privatni Parking - Gold', description: 'Gold plan za privatne parkinge i garaže', priceRSD: 1200 },
@@ -27,7 +34,14 @@ const PRODUCT_DEFINITIONS: ProductDefinition[] = [
   { category: 'sale', tier: 'gold', name: 'CarDrop - Prodaja - Gold', description: 'Gold plan za oglase prodaje', priceRSD: 1200 },
 ];
 
+const MAP_HACK_PLAN_DEFINITIONS: MapHackPlanDefinition[] = [
+  { planId: 'premium', name: 'CarDrop Map Hack NS — Premium', description: 'Premium plan — 30 dana pristupa mapi, štek mestima i crvenim zonama', priceRSD: 390 },
+  { planId: 'day_pass', name: 'CarDrop Map Hack NS — Day Pass', description: 'Day Pass — 24 sata pristupa svim Premium funkcijama', priceRSD: 120 },
+  { planId: 'godisnji_premium', name: 'CarDrop Map Hack NS — Godišnji Premium', description: 'Godišnji Premium — 365 dana pristupa, ušteda 2 meseca', priceRSD: 3500 },
+];
+
 const priceIdCache: Map<string, string> = new Map();
+const mapHackPriceIdCache: Map<string, string> = new Map();
 
 function getCacheKey(category: ProductCategory, tier: ProductTier): string {
   return `${category}_${tier}`;
@@ -35,6 +49,10 @@ function getCacheKey(category: ProductCategory, tier: ProductTier): string {
 
 export function getStripePriceId(category: ProductCategory, tier: ProductTier): string | undefined {
   return priceIdCache.get(getCacheKey(category, tier));
+}
+
+export function getMapHackPriceId(planId: string): string | undefined {
+  return mapHackPriceIdCache.get(planId);
 }
 
 export async function syncStripeProducts(): Promise<void> {
@@ -93,7 +111,47 @@ export async function syncStripeProducts(): Promise<void> {
       console.log(`Created: ${def.name} -> ${price.id}`);
     }
 
-    console.log('Stripe products synced successfully. Products:', priceIdCache.size);
+    for (const def of MAP_HACK_PLAN_DEFINITIONS) {
+      const existing = existingProducts.data.find(
+        (p) => p.metadata?.app === 'cardrop' && p.metadata?.type === 'map_hack' && p.metadata?.plan_id === def.planId
+      );
+
+      if (existing) {
+        const prices = await stripe.prices.list({ product: existing.id, active: true, limit: 1 });
+        if (prices.data.length > 0) {
+          mapHackPriceIdCache.set(def.planId, prices.data[0].id);
+          console.log(`Found existing Map Hack: ${def.name} -> ${prices.data[0].id}`);
+          continue;
+        }
+      }
+
+      console.log(`Creating Map Hack product: ${def.name}`);
+      const product = await stripe.products.create({
+        name: def.name,
+        description: def.description,
+        metadata: {
+          app: 'cardrop',
+          type: 'map_hack',
+          plan_id: def.planId,
+        },
+      });
+
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: def.priceRSD * 100,
+        currency: 'rsd',
+        metadata: {
+          app: 'cardrop',
+          type: 'map_hack',
+          plan_id: def.planId,
+        },
+      });
+
+      mapHackPriceIdCache.set(def.planId, price.id);
+      console.log(`Created Map Hack: ${def.name} -> ${price.id}`);
+    }
+
+    console.log(`Stripe products synced. Parking: ${priceIdCache.size}, Map Hack: ${mapHackPriceIdCache.size}`);
   } catch (error) {
     console.error('Error syncing Stripe products:', error);
   }

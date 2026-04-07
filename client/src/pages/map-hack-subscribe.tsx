@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ export default function MapHackSubscribe() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [checkoutPending, setCheckoutPending] = useState<string | null>(null);
 
   const { data: mapStatus } = useQuery<MapHackStatus>({
     queryKey: ["/api/map-hack/status"],
@@ -56,11 +57,35 @@ export default function MapHackSubscribe() {
     },
   });
 
-  function handlePaidPlan(planName: string) {
-    toast({
-      title: "Uskoro dostupno",
-      description: `Plaćanje za ${planName} — info@cardrop.app`,
-    });
+  async function handlePaidPlan(planId: string) {
+    setCheckoutPending(planId);
+    try {
+      const res = await fetch("/api/map-hack/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const data = await res.json() as { url?: string; message?: string };
+      if (!res.ok) {
+        toast({
+          title: "Greška",
+          description: data.message || "Pokušaj ponovo.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      toast({
+        title: "Greška",
+        description: "Nema konekcije. Pokušaj ponovo.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutPending(null);
+    }
   }
 
   if (isLoading) {
@@ -160,11 +185,13 @@ export default function MapHackSubscribe() {
             </p>
             <Button
               className="w-full"
-              onClick={() => handlePaidPlan("Premium")}
-              disabled={currentPlan === "premium"}
+              onClick={() => handlePaidPlan("premium")}
+              disabled={currentPlan === "premium" || checkoutPending !== null}
               data-testid="button-subscribe-premium"
             >
-              {currentPlan === "premium" ? "Aktivan" : "Izaberi Premium"}
+              {checkoutPending === "premium" ? (
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
+              ) : currentPlan === "premium" ? "Aktivan" : "Izaberi Premium"}
             </Button>
           </CardContent>
         </Card>
@@ -180,7 +207,7 @@ export default function MapHackSubscribe() {
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
-                99 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+                120 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
             </div>
           </CardHeader>
@@ -194,11 +221,13 @@ export default function MapHackSubscribe() {
             <Button
               className="w-full"
               variant="outline"
-              onClick={() => handlePaidPlan("Day Pass")}
-              disabled={currentPlan === "day_pass"}
+              onClick={() => handlePaidPlan("day_pass")}
+              disabled={currentPlan === "day_pass" || checkoutPending !== null}
               data-testid="button-subscribe-day-pass"
             >
-              {currentPlan === "day_pass" ? "Aktivan" : "Kupi Day Pass"}
+              {checkoutPending === "day_pass" ? (
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
+              ) : currentPlan === "day_pass" ? "Aktivan" : "Kupi Day Pass"}
             </Button>
           </CardContent>
         </Card>
@@ -215,7 +244,7 @@ export default function MapHackSubscribe() {
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
-                3500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+                3.500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
             </div>
           </CardHeader>
@@ -224,16 +253,18 @@ export default function MapHackSubscribe() {
               Sve iz PREMIUM paketa na godinu dana.
             </p>
             <p className="text-xs text-muted-foreground">
-              Ušteda preko 1000 RSD (2 meseca gratis).
+              Ušteda preko 1.000 RSD (2 meseca gratis).
             </p>
             <Button
               className="w-full"
               variant="outline"
-              onClick={() => handlePaidPlan("Godišnji Premium")}
-              disabled={currentPlan === "godisnji_premium"}
+              onClick={() => handlePaidPlan("godisnji_premium")}
+              disabled={currentPlan === "godisnji_premium" || checkoutPending !== null}
               data-testid="button-subscribe-godisnji"
             >
-              {currentPlan === "godisnji_premium" ? "Aktivan" : "Izaberi Godišnji"}
+              {checkoutPending === "godisnji_premium" ? (
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
+              ) : currentPlan === "godisnji_premium" ? "Aktivan" : "Izaberi Godišnji"}
             </Button>
           </CardContent>
         </Card>
@@ -272,7 +303,7 @@ export default function MapHackSubscribe() {
         </Card>
 
         <p className="text-xs text-muted-foreground text-center pb-4" data-testid="text-payment-note">
-          Plaćanje karticom ili virmanski. Pitanja: info@cardrop.app
+          Plaćanje karticom putem Stripe. Pitanja: info@cardrop.app
         </p>
       </div>
     </div>
