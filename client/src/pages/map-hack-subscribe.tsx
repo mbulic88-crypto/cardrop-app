@@ -189,6 +189,12 @@ export default function MapHackSubscribe() {
             <p className="text-sm text-muted-foreground">
               Potpuna zaštita i najbrži parking u gradu.
             </p>
+            <ul className="text-xs text-muted-foreground space-y-0.5 pl-1">
+              <li>Radar detekcija</li>
+              <li>Safe Zone — push alarm kada se nesto desi u tvojoj zoni</li>
+              <li>Watch Area nadzor</li>
+              <li>Istorija prijavljenih mesta</li>
+            </ul>
             <Button
               className="w-full"
               onClick={() => handlePaidPlan("premium")}
@@ -222,7 +228,7 @@ export default function MapHackSubscribe() {
               Sve iz PREMIUM paketa na 24h.
             </p>
             <p className="text-xs text-muted-foreground">
-              Idealno za goste grada ili subotnji izlazak u centar.
+              Radar, Safe Zone alarm, Watch Area — idealno za subotnji izlazak.
             </p>
             <Button
               className="w-full"
@@ -258,6 +264,12 @@ export default function MapHackSubscribe() {
             <p className="text-sm text-muted-foreground">
               Sve iz PREMIUM paketa na godinu dana.
             </p>
+            <ul className="text-xs text-muted-foreground space-y-0.5 pl-1">
+              <li>Radar detekcija</li>
+              <li>Safe Zone — push alarm kada se nesto desi u tvojoj zoni</li>
+              <li>Watch Area nadzor</li>
+              <li>Istorija prijavljenih mesta</li>
+            </ul>
             <p className="text-xs text-muted-foreground">
               Ušteda preko 1.000 RSD (2 meseca gratis).
             </p>

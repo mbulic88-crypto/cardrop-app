@@ -607,6 +607,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (_) {
             // push failure is non-critical
           }
+
+          // Push notifications to premium users whose Safe Zone contains this marker
+          try {
+            const safeZones = await storage.getAllMapSafeZones();
+            for (const zone of safeZones) {
+              if (zone.userId === userId) continue; // skip self
+              const owner = await storage.getUser(zone.userId);
+              if (!owner || !hasPremiumMapHackPlan(owner)) continue;
+              if (owner.mapNotificationsEnabled === false) continue;
+              const dist = haversineMetersServer(
+                parseFloat(zone.lat), parseFloat(zone.lng),
+                latNum, lngNum
+              );
+              if (dist <= zone.radiusMeters) {
+                const pushTitle = type === 'pauk'
+                  ? 'Pauk u tvojoj Safe Zoni!'
+                  : type === 'radar'
+                  ? 'Radar u tvojoj Safe Zoni!'
+                  : type === 'stek'
+                  ? 'Štek u tvojoj Safe Zoni!'
+                  : 'Zlatni Minut u tvojoj Safe Zoni!';
+                const pushBody = type === 'pauk'
+                  ? 'Evakuator prijavljen unutar tvoje Safe Zone.'
+                  : type === 'radar'
+                  ? 'Policijski radar prijavljen unutar tvoje Safe Zone.'
+                  : type === 'stek'
+                  ? 'Novo štek mesto prijavljeno unutar tvoje Safe Zone.'
+                  : 'Slobodan parking prijavljen unutar tvoje Safe Zone!';
+                await sendPushToUser(zone.userId, {
+                  title: pushTitle,
+                  body: pushBody,
+                  icon: '/icons/icon-192x192.png',
+                  tag: `safe-zone-${type}`,
+                  url: '/map-hack',
+                }).catch(() => {});
+              }
+            }
+          } catch (_) {
+            // push failure is non-critical
+          }
       }
 
       res.json(marker);

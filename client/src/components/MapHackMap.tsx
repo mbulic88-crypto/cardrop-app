@@ -342,9 +342,9 @@ export function MapHackMap({
           </Source>
         ))}
 
-        {/* Safe zone */}
+        {/* Safe zone — key tied to coordinates so Source remounts when location changes */}
         {safeZoneGeoJSON && (
-          <Source id="safe-zone" type="geojson" data={safeZoneGeoJSON}>
+          <Source key={`sz-${safeZone?.lat}-${safeZone?.lng}`} id="safe-zone" type="geojson" data={safeZoneGeoJSON}>
             <Layer
               id="safe-zone-fill"
               type="fill"

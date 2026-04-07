@@ -671,9 +671,14 @@ export default function MapHackNS() {
   const setSafeZoneMutation = useMutation({
     mutationFn: (data: { lat: number; lng: number; radiusMeters: number }) =>
       apiRequest("PUT", "/api/map-hack/safe-zone", data),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
       toast({ title: "Safe Zone postavljena" });
+      if (mapFlyToRef.current) {
+        mapFlyToRef.current.flyTo(variables.lat, variables.lng);
+      } else {
+        setFlyToLocation({ lat: variables.lat, lng: variables.lng });
+      }
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });

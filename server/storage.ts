@@ -106,6 +106,7 @@ export interface IStorage {
   createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage>;
   deleteMapChatMessage(id: string): Promise<void>;
   getMapSafeZone(userId: string): Promise<MapSafeZone | undefined>;
+  getAllMapSafeZones(): Promise<MapSafeZone[]>;
   upsertMapSafeZone(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapSafeZone>;
   getMapWatchArea(userId: string): Promise<MapWatchArea | undefined>;
   upsertMapWatchArea(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapWatchArea>;
@@ -559,6 +560,10 @@ export class DatabaseStorage implements IStorage {
       .from(mapSafeZones)
       .where(eq(mapSafeZones.userId, userId));
     return zone;
+  }
+
+  async getAllMapSafeZones(): Promise<MapSafeZone[]> {
+    return db.select().from(mapSafeZones);
   }
 
   async upsertMapSafeZone(
