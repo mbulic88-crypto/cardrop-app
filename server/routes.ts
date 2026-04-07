@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -841,68 +841,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ─── Map Hack NS — Voice Upload ───────────────────────────────────────────
+  // ─── Map Hack NS — Voice Upload (server-side, single step) ──────────────
 
-  app.post('/api/map-hack/chat/voice-upload', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.session.userId;
-      const user = await storage.getUser(userId);
-      if (!user || !hasActiveMapHackPlan(user)) {
-        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+  app.post(
+    '/api/map-hack/chat/voice',
+    isAuthenticated,
+    express.raw({ type: ['audio/*', 'application/octet-stream'], limit: '5mb' }),
+    async (req: any, res) => {
+      try {
+        const userId = req.session.userId;
+        const user = await storage.getUser(userId);
+        if (!user || !hasActiveMapHackPlan(user)) {
+          return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+        }
+        if (!hasAcceptedMapHackPrivacy(user)) {
+          return res.status(403).json({ code: "privacy_required", message: "Potrebno je prihvatiti Politiku privatnosti" });
+        }
+        if (!user.mapNickname) {
+          return res.status(400).json({ message: "Potreban je Map Hack profil" });
+        }
+
+        const lastSent = chatRateLimitMap.get(userId) ?? 0;
+        const elapsed = Date.now() - lastSent;
+        if (elapsed < CHAT_RATE_LIMIT_MS) {
+          const retryAfter = Math.ceil((CHAT_RATE_LIMIT_MS - elapsed) / 1000);
+          return res.status(429).json({ message: `Sačekaj ${retryAfter}s pre sledeće poruke`, retryAfter });
+        }
+
+        const audioBuffer: Buffer = req.body;
+        if (!Buffer.isBuffer(audioBuffer) || audioBuffer.length < 1000) {
+          return res.status(400).json({ message: "Audio fajl je previše mali ili nije validan" });
+        }
+        if (audioBuffer.length > 5 * 1024 * 1024) {
+          return res.status(413).json({ message: "Audio fajl je prevelik (max 5MB)" });
+        }
+
+        const contentType = req.get('Content-Type') || 'audio/webm';
+        const replyToId = req.get('X-Reply-To-Id') || null;
+        const replyToNickname = req.get('X-Reply-To-Nickname') || null;
+        const replyToText = req.get('X-Reply-To-Text') || null;
+
+        const objectStorageService = new ObjectStorageService();
+        const audioUrl = await objectStorageService.uploadVoiceBuffer(audioBuffer, contentType);
+
+        chatRateLimitMap.set(userId, Date.now());
+        const msg = await storage.createMapChatMessage({
+          userId,
+          mapNickname: user.mapNickname,
+          avatarId: user.mapAvatarId || 1,
+          audioUrl,
+          isSystem: false,
+          replyToId: replyToId || null,
+          replyToNickname: replyToNickname || null,
+          replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
+        });
+
+        res.json(msg);
+      } catch (error) {
+        console.error("Error uploading voice message:", error);
+        res.status(500).json({ message: "Greška pri slanju glasovne poruke" });
       }
-      const objectStorageService = new ObjectStorageService();
-      const { uploadURL, objectPath } = await objectStorageService.getVoiceUploadURL();
-      res.json({ uploadURL, objectPath });
-    } catch (error) {
-      console.error("Error getting voice upload URL:", error);
-      res.status(500).json({ message: "Greška pri pripremi uploada" });
     }
-  });
-
-  app.post('/api/map-hack/chat/voice-confirm', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.session.userId;
-      const user = await storage.getUser(userId);
-      if (!user || !hasActiveMapHackPlan(user)) {
-        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
-      }
-
-      const now = Date.now();
-      const lastMsg = chatRateLimitMap.get(userId);
-      if (lastMsg && now - lastMsg < 60_000) {
-        const retryAfter = Math.ceil((60_000 - (now - lastMsg)) / 1000);
-        return res.status(429).json({ message: "Sačekaj malo pre sledeće poruke", retryAfter });
-      }
-
-      const { objectPath, replyToId, replyToNickname, replyToText } = req.body;
-      if (!objectPath || typeof objectPath !== "string" || !objectPath.startsWith("/objects/voice/")) {
-        return res.status(400).json({ message: "Nevalidan objectPath" });
-      }
-
-      const objectStorageService = new ObjectStorageService();
-      await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
-        owner: userId,
-        visibility: "private",
-      });
-
-      chatRateLimitMap.set(userId, Date.now());
-      const msg = await storage.createMapChatMessage({
-        userId,
-        mapNickname: user.mapNickname ?? "",
-        avatarId: user.mapAvatarId || 1,
-        audioUrl: objectPath,
-        isSystem: false,
-        replyToId: replyToId || null,
-        replyToNickname: replyToNickname || null,
-        replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
-      });
-
-      res.json(msg);
-    } catch (error) {
-      console.error("Error confirming voice message:", error);
-      res.status(500).json({ message: "Greška pri potvrdi glasovne poruke" });
-    }
-  });
+  );
 
   // ─── Map Hack NS — Voice stream (auth-gated) ─────────────────────────────
 

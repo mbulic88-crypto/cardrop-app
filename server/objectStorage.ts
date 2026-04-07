@@ -119,14 +119,21 @@ export class ObjectStorageService {
     }
   }
 
-  async getVoiceUploadURL(): Promise<{ uploadURL: string; objectPath: string }> {
+  async uploadVoiceBuffer(
+    audioBuffer: Buffer,
+    contentType: string
+  ): Promise<string> {
     const privateObjectDir = this.getPrivateObjectDir();
     const { randomUUID } = await import("crypto");
     const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/voice/${objectId}`;
     const { bucketName, objectName } = parseObjectPath(fullPath);
-    const uploadURL = await signObjectURL({ bucketName, objectName, method: "PUT", ttlSec: 900 });
-    return { uploadURL, objectPath: `/objects/voice/${objectId}` };
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    await file.save(audioBuffer, { contentType, resumable: false });
+    const objectPath = `/objects/voice/${objectId}`;
+    await setObjectAclPolicy(file, { owner: "system", visibility: "private" });
+    return objectPath;
   }
 
   async getObjectEntityUploadURL(): Promise<string> {

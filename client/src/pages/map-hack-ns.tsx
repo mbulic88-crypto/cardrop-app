@@ -580,14 +580,23 @@ export default function MapHackNS() {
         if (blob.size < 1000) { setVoiceState("idle"); setVoiceSecondsLeft(60); return; }
         setVoiceState("uploading");
         try {
-          const voiceUploadRes = await apiRequest("POST", "/api/map-hack/chat/voice-upload", {}) as { uploadURL: string; objectPath: string };
-          const { uploadURL, objectPath } = voiceUploadRes;
-          const putRes = await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": resolvedMime } });
-          if (!putRes.ok) throw new Error(`Upload nije uspeo (${putRes.status})`);
-          await apiRequest("POST", "/api/map-hack/chat/voice-confirm", {
-            objectPath,
-            ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+          const headers: Record<string, string> = { "Content-Type": resolvedMime };
+          if (replyingTo) {
+            headers["X-Reply-To-Id"] = replyingTo.id;
+            headers["X-Reply-To-Nickname"] = replyingTo.nickname;
+            headers["X-Reply-To-Text"] = replyingTo.text.slice(0, 120);
+          }
+          const voiceRes = await fetch("/api/map-hack/chat/voice", {
+            method: "POST",
+            body: blob,
+            headers,
+            credentials: "include",
           });
+          if (!voiceRes.ok) {
+            const errJson = await voiceRes.json().catch(() => ({}));
+            if (errJson.retryAfter) { startCooldown(errJson.retryAfter); }
+            throw new Error(errJson.message || `Greška pri slanju (${voiceRes.status})`);
+          }
           setReplyingTo(null);
           queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
           startCooldown(60);
