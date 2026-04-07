@@ -1853,7 +1853,7 @@ export default function MapHackNS() {
       </div>
       {/* ── Chat panel ── */}
       <div className="flex-1 flex flex-col overflow-hidden" data-testid="panel-chat"
-        style={{ background: "#0d1117", display: mapExpanded ? "none" : undefined }}>
+        style={{ background: "#0d1117", display: mapExpanded && !chatFullscreen ? "none" : undefined }}>
         {chatFullscreen && (
           <div className="flex items-center justify-between px-3 py-2 flex-shrink-0"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
