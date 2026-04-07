@@ -252,7 +252,7 @@ export function MapHackMap({
       >
         <NavigationControl position="top-right" showCompass={false} />
         <GeolocateControl
-          position="bottom-left"
+          position="bottom-right"
           trackUserLocation={true}
           showUserHeading={true}
           showAccuracyCircle={true}
@@ -262,7 +262,7 @@ export function MapHackMap({
         <div
           style={{
             position: "absolute",
-            bottom: 12,
+            bottom: 62,
             right: 12,
             width: 44,
             height: 44,
