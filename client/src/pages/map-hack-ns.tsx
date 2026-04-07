@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,7 +28,7 @@ type MapHackStatus = {
 };
 
 type PlanId = "free" | "premium" | "day_pass" | "godisnji_premium";
-type ViewMode = "loading" | "onboarding_full" | "onboarding_plan_only" | "map_view";
+type ViewMode = "loading" | "onboarding_full" | "onboarding_plan_only" | "permissions" | "map_view";
 
 function planLabel(plan: string | null): string {
   if (plan === "admin") return "Admin";
@@ -349,6 +349,10 @@ export default function MapHackNS() {
   const [profileEditSaving, setProfileEditSaving] = useState(false);
   const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
   const [upsellPending, setUpsellPending] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
+  const [permMicStatus, setPermMicStatus] = useState<"idle" | "granted" | "denied">("idle");
+  const [permRequesting, setPermRequesting] = useState(false);
 
   const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
 
@@ -364,9 +368,35 @@ export default function MapHackNS() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
+  // For returning users: check if we need to show the permissions screen
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !user || !hasProfile || statusLoading || !mapStatus) return;
+    if (mapStatus.phase === "trial_expired" || mapStatus.phase === "plan_expired") return;
+    if (localStorage.getItem("cardrop_perms_asked")) return;
+    // Check existing permission states without triggering browser dialog
+    async function checkExisting() {
+      try {
+        const [locPerm, micPerm] = await Promise.all([
+          navigator.permissions.query({ name: "geolocation" }),
+          navigator.permissions.query({ name: "microphone" as PermissionName }),
+        ]);
+        if (locPerm.state === "granted" && micPerm.state === "granted") {
+          localStorage.setItem("cardrop_perms_asked", "1");
+          return;
+        }
+      } catch {
+        // Permissions API not supported — just show the screen
+      }
+      setShowPermissions(true);
+    }
+    checkExisting();
+  }, [isLoading, isAuthenticated, user, hasProfile, statusLoading, mapStatus]);
+
   let viewMode: ViewMode = "loading";
   if (!isLoading && isAuthenticated && user) {
-    if (!hasProfile) {
+    if (showPermissions) {
+      viewMode = "permissions";
+    } else if (!hasProfile) {
       viewMode = "onboarding_full";
     } else if (statusLoading || !mapStatus) {
       viewMode = "loading";
@@ -645,6 +675,8 @@ export default function MapHackNS() {
       const profileData = await profileRes.json();
       if (!profileRes.ok) { setError(profileData.message || "Greška pri čuvanju profila"); return; }
       await savePlan(selectedPlan);
+      // After onboarding, show permissions screen before entering map
+      setShowPermissions(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
       setError(msg);
@@ -865,6 +897,144 @@ export default function MapHackNS() {
                 : <><ChevronRight className="w-4 h-4 mr-2" />Uđi na mapu</>
               }
             </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewMode === "permissions") {
+    async function handleRequestPermissions() {
+      setPermRequesting(true);
+      // Location
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => { setPermLocStatus("granted"); resolve(); },
+          () => { setPermLocStatus("denied"); resolve(); },
+          { timeout: 15000 }
+        );
+      });
+      // Microphone
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        setPermMicStatus("granted");
+      } catch {
+        setPermMicStatus("denied");
+      }
+      setPermRequesting(false);
+      localStorage.setItem("cardrop_perms_asked", "1");
+      setShowPermissions(false);
+    }
+
+    function handleSkipPermissions() {
+      localStorage.setItem("cardrop_perms_asked", "1");
+      setShowPermissions(false);
+    }
+
+    const bothRequested = permLocStatus !== "idle" || permMicStatus !== "idle";
+
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <CompactHero />
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-md mx-auto px-4 pt-8 pb-24">
+            <h2 className="text-lg font-bold text-foreground mb-1">Dozvoli pristup</h2>
+            <p className="text-sm text-muted-foreground mb-8">
+              CarDrop koristi dve dozvole za puno iskustvo. Možeš ih odobriti sada ili kada ti zatreba svaka funkcija posebno.
+            </p>
+
+            {/* Location row */}
+            <div className="flex items-start gap-4 p-4 rounded-md border border-border bg-card mb-3">
+              <div className="w-10 h-10 rounded-md bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Lokacija</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  GPS plava tačka na mapi. Vidimo samo gde si dok koristiš aplikaciju.
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex items-center pt-0.5">
+                {permLocStatus === "idle" && (
+                  <span className="text-xs text-muted-foreground">Čeka</span>
+                )}
+                {permLocStatus === "granted" && (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 font-medium">
+                    <Check className="w-3.5 h-3.5" /> Odobreno
+                  </span>
+                )}
+                {permLocStatus === "denied" && (
+                  <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium">
+                    <X className="w-3.5 h-3.5" /> Odbijeno
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Microphone row */}
+            <div className="flex items-start gap-4 p-4 rounded-md border border-border bg-card mb-8">
+              <div className="w-10 h-10 rounded-md bg-orange-100 dark:bg-orange-950 flex items-center justify-center flex-shrink-0">
+                <Mic className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Mikrofon</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  Glasovne poruke u live chatu. Snimamo samo dok držiš dugme.
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex items-center pt-0.5">
+                {permMicStatus === "idle" && (
+                  <span className="text-xs text-muted-foreground">Čeka</span>
+                )}
+                {permMicStatus === "granted" && (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 font-medium">
+                    <Check className="w-3.5 h-3.5" /> Odobreno
+                  </span>
+                )}
+                {permMicStatus === "denied" && (
+                  <span className="inline-flex items-center gap-1 text-xs text-destructive font-medium">
+                    <X className="w-3.5 h-3.5" /> Odbijeno
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!bothRequested && (
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                Browser će prikazati standardni popup za svaku dozvolu.
+              </p>
+            )}
+            {bothRequested && (
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                Možeš promeniti dozvole u podešavanjima browsera u svakom trenutku.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Sticky bottom */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t px-4 py-3">
+          <div className="max-w-md mx-auto flex flex-col gap-2">
+            <Button
+              className="w-full"
+              onClick={handleRequestPermissions}
+              disabled={permRequesting}
+              data-testid="button-allow-permissions"
+            >
+              {permRequesting
+                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Čekamo odgovor...</>
+                : <><Check className="w-4 h-4 mr-2" />Dozvoli i uđi na mapu</>
+              }
+            </Button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground text-center py-1 hover:text-foreground transition-colors"
+              onClick={handleSkipPermissions}
+              data-testid="button-skip-permissions"
+            >
+              Preskoči — pitaće me kad bude trebalo
+            </button>
           </div>
         </div>
       </div>
