@@ -453,6 +453,7 @@ export default function MapHackNS() {
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; sub: string; lat: number; lng: number }>>([]);
   const [chatFullscreen, setChatFullscreen] = useState(false);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const mapFlyToRef = useRef<{ flyTo: (lat: number, lng: number) => void } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const { isInstallable, isInstalled, installApp } = usePWA();
@@ -1855,7 +1856,13 @@ export default function MapHackNS() {
                   return next.length === 0 ? ["sve"] : next;
                 });
                 if (willActivate && safeZone?.lat && safeZone?.lng) {
-                  setFlyToLocation({ lat: parseFloat(safeZone.lat), lng: parseFloat(safeZone.lng) });
+                  const lat = parseFloat(safeZone.lat);
+                  const lng = parseFloat(safeZone.lng);
+                  if (mapFlyToRef.current) {
+                    mapFlyToRef.current.flyTo(lat, lng);
+                  } else {
+                    setFlyToLocation({ lat, lng });
+                  }
                 }
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
@@ -1940,6 +1947,7 @@ export default function MapHackNS() {
           flyToLocation={flyToLocation}
           onParkingClick={user.isAdmin ? setSelectedParking : undefined}
           sizeKey={mapExpanded}
+          onMapReady={(controls) => { mapFlyToRef.current = controls; }}
         />
 
         {/* Map expand/collapse toggle button */}

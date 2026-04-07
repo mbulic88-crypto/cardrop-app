@@ -53,6 +53,7 @@ export interface MapHackMapProps {
   flyToLocation?: { lat: number; lng: number } | null;
   onParkingClick?: (listing: ParkingListing) => void;
   sizeKey?: boolean | number;
+  onMapReady?: (controls: { flyTo: (lat: number, lng: number) => void }) => void;
 }
 
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN as string) || "";
@@ -167,6 +168,7 @@ export function MapHackMap({
   flyToLocation,
   onParkingClick,
   sizeKey,
+  onMapReady,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
@@ -213,7 +215,14 @@ export function MapHackMap({
   const handleMapLoad = useCallback((e: MapboxEvent) => {
     e.target.setConfigProperty("basemap", "lightPreset", "night");
     setMapLoaded(true);
-  }, []);
+    if (onMapReady) {
+      onMapReady({
+        flyTo: (lat: number, lng: number) => {
+          mapRef.current?.flyTo({ center: [lng, lat], zoom: 16, duration: 1000 });
+        },
+      });
+    }
+  }, [onMapReady]);
 
   const filtered = activeFilters.includes("sve")
     ? markers
