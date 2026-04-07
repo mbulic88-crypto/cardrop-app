@@ -108,6 +108,7 @@ export interface IStorage {
   getMapSafeZone(userId: string): Promise<MapSafeZone | undefined>;
   getAllMapSafeZones(): Promise<MapSafeZone[]>;
   upsertMapSafeZone(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapSafeZone>;
+  deleteMapSafeZone(userId: string): Promise<void>;
   getMapWatchArea(userId: string): Promise<MapWatchArea | undefined>;
   upsertMapWatchArea(userId: string, data: { lat: string; lng: string; radiusMeters: number }): Promise<MapWatchArea>;
   deleteMapWatchArea(userId: string): Promise<void>;
@@ -564,6 +565,10 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMapSafeZones(): Promise<MapSafeZone[]> {
     return db.select().from(mapSafeZones);
+  }
+
+  async deleteMapSafeZone(userId: string): Promise<void> {
+    await db.delete(mapSafeZones).where(eq(mapSafeZones.userId, userId));
   }
 
   async upsertMapSafeZone(

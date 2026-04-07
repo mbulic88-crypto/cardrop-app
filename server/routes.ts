@@ -1029,6 +1029,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/map-hack/safe-zone', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      await storage.deleteMapSafeZone(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting safe zone:", error);
+      res.status(500).json({ message: "Greška pri brisanju safe zone" });
+    }
+  });
+
   // ─── Map Hack NS — Watch Area ─────────────────────────────────────────────
 
   app.get('/api/map-hack/watch-area', isAuthenticated, async (req: any, res) => {

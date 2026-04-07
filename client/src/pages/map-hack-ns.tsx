@@ -695,6 +695,17 @@ export default function MapHackNS() {
     },
   });
 
+  const deleteSafeZoneMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", "/api/map-hack/safe-zone"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
+      toast({ title: "Safe Zone uklonjena" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
   const deleteWatchAreaMutation = useMutation({
     mutationFn: () => apiRequest("DELETE", "/api/map-hack/watch-area"),
     onSuccess: () => {
@@ -1876,6 +1887,25 @@ export default function MapHackNS() {
             </button>
           );
         })()}
+        {safeZone && (
+          <button
+            key="safe_zone_delete"
+            data-testid="btn-delete-safe-zone"
+            onClick={() => deleteSafeZoneMutation.mutate()}
+            disabled={deleteSafeZoneMutation.isPending}
+            title="Ukloni Safe Zonu"
+            className="kraft-btn flex-shrink-0 flex items-center justify-center rounded-full"
+            style={{
+              width: 26, height: 26,
+              background: "rgba(239,68,68,0.15)",
+              border: "1px solid rgba(239,68,68,0.4)",
+              color: "#f87171",
+            }}>
+            {deleteSafeZoneMutation.isPending
+              ? <Loader2 size={11} className="animate-spin" />
+              : <Trash2 size={11} />}
+          </button>
+        )}
         {(() => {
           const isActive = activeFilters.includes("parking");
           return (
