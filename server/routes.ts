@@ -882,7 +882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const objectStorageService = new ObjectStorageService();
       await objectStorageService.trySetObjectEntityAclPolicy(objectPath, {
         owner: userId,
-        visibility: "public",
+        visibility: "private",
       });
 
       chatRateLimitMap.set(userId, Date.now());
@@ -901,6 +901,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error confirming voice message:", error);
       res.status(500).json({ message: "Greška pri potvrdi glasovne poruke" });
+    }
+  });
+
+  // ─── Map Hack NS — Voice stream (auth-gated) ─────────────────────────────
+
+  app.get('/api/map-hack/chat/voice/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const objectPath = `/objects/voice/${req.params.id}`;
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(objectPath);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      console.error("Error streaming voice message:", error);
+      return res.sendStatus(500);
     }
   });
 

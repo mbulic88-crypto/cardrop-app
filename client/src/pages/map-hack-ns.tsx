@@ -582,7 +582,8 @@ export default function MapHackNS() {
         try {
           const voiceUploadRes = await apiRequest("POST", "/api/map-hack/chat/voice-upload", {}) as { uploadURL: string; objectPath: string };
           const { uploadURL, objectPath } = voiceUploadRes;
-          await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": resolvedMime } });
+          const putRes = await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": resolvedMime } });
+          if (!putRes.ok) throw new Error(`Upload nije uspeo (${putRes.status})`);
           await apiRequest("POST", "/api/map-hack/chat/voice-confirm", {
             objectPath,
             ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
@@ -2217,7 +2218,9 @@ export default function MapHackNS() {
                     <div className="mt-0.5 flex items-center gap-2 rounded-lg px-3 py-2"
                       style={{ background: "#1e3a5f", border: "1px solid rgba(59,130,246,0.3)", maxWidth: 240 }}>
                       <Mic size={13} style={{ color: "#60a5fa", flexShrink: 0 }} />
-                      <audio controls src={msg.audioUrl} preload="none"
+                      <audio controls
+                        src={`/api/map-hack/chat/voice/${msg.audioUrl.split("/").pop()}`}
+                        preload="none"
                         style={{ height: 28, minWidth: 0, flex: 1 }} />
                     </div>
                   ) : (
