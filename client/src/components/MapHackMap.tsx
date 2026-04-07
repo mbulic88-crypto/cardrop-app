@@ -52,6 +52,7 @@ export interface MapHackMapProps {
   parkingListings?: ParkingListing[];
   flyToLocation?: { lat: number; lng: number } | null;
   onParkingClick?: (listing: ParkingListing) => void;
+  sizeKey?: boolean | number;
 }
 
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN as string) || "";
@@ -164,6 +165,7 @@ export function MapHackMap({
   parkingListings,
   flyToLocation,
   onParkingClick,
+  sizeKey,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
@@ -184,6 +186,14 @@ export function MapHackMap({
       duration: 1000,
     });
   }, [flyToLocation, mapLoaded]);
+
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const t = setTimeout(() => {
+      mapRef.current?.resize();
+    }, 50);
+    return () => clearTimeout(t);
+  }, [sizeKey, mapLoaded]);
 
   const handleClick = useCallback((e: MapLayerMouseEvent) => {
     setParkingPopup(null);

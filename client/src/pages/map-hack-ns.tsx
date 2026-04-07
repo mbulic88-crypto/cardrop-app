@@ -1624,6 +1624,7 @@ export default function MapHackNS() {
           parkingListings={parkingListings}
           flyToLocation={flyToLocation}
           onParkingClick={user.isAdmin ? setSelectedParking : undefined}
+          sizeKey={mapExpanded}
         />
 
         {/* Map expand/collapse toggle button */}
