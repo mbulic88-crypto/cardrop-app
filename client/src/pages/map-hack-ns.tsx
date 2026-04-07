@@ -431,6 +431,8 @@ export default function MapHackNS() {
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
+  const [voiceState, setVoiceState] = useState<"idle" | "recording" | "uploading">("idle");
+  const [voiceSecondsLeft, setVoiceSecondsLeft] = useState(60);
   const [smsOpen, setSmsOpen] = useState(false);
   const [watchZoneOpen, setWatchZoneOpen] = useState(false);
   const [watchZonePlaceMode, setWatchZonePlaceMode] = useState(false);
@@ -460,6 +462,9 @@ export default function MapHackNS() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const voiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isMapView = viewMode === "map_view";
 
@@ -550,6 +555,78 @@ export default function MapHackNS() {
       });
     }, 1000);
   }
+
+  async function startVoiceRecording() {
+    if (voiceState !== "idle" || chatCooldown > 0) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (voiceTimerRef.current) { clearInterval(voiceTimerRef.current); voiceTimerRef.current = null; }
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        audioChunksRef.current = [];
+        if (blob.size < 1000) { setVoiceState("idle"); setVoiceSecondsLeft(60); return; }
+        setVoiceState("uploading");
+        try {
+          const voiceUploadRes = await apiRequest("POST", "/api/map-hack/chat/voice-upload", {}) as { uploadURL: string; objectPath: string };
+          const { uploadURL, objectPath } = voiceUploadRes;
+          await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": "audio/webm" } });
+          await apiRequest("POST", "/api/map-hack/chat/voice-confirm", {
+            objectPath,
+            ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+          });
+          setReplyingTo(null);
+          queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+          startCooldown(60);
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : "Greška pri slanju glasovne poruke";
+          toast({ title: "Greška", description: errMsg, variant: "destructive" });
+        } finally {
+          setVoiceState("idle");
+          setVoiceSecondsLeft(60);
+        }
+      };
+      mr.start();
+      setVoiceState("recording");
+      setVoiceSecondsLeft(60);
+      let secs = 60;
+      voiceTimerRef.current = setInterval(() => {
+        secs -= 1;
+        setVoiceSecondsLeft(secs);
+        if (secs <= 0) {
+          if (voiceTimerRef.current) { clearInterval(voiceTimerRef.current); voiceTimerRef.current = null; }
+          mediaRecorderRef.current?.stop();
+        }
+      }, 1000);
+    } catch {
+      toast({ title: "Greška", description: "Mikrofon nije dostupan", variant: "destructive" });
+      setVoiceState("idle");
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (voiceState !== "recording") return;
+    if (voiceTimerRef.current) { clearInterval(voiceTimerRef.current); voiceTimerRef.current = null; }
+    mediaRecorderRef.current?.stop();
+  }
+
+  const deleteChatMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/map-hack/chat/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+      toast({ title: "Poruka obrisana" });
+    },
+    onError: (err: unknown) => {
+      const errMsg = err instanceof Error ? err.message : "Greška";
+      toast({ title: "Greška", description: errMsg, variant: "destructive" });
+    },
+  });
 
   const sendChatMutation = useMutation({
     mutationFn: (payload: { text: string; replyToId?: string; replyToNickname?: string; replyToText?: string }) =>
@@ -2069,13 +2146,14 @@ export default function MapHackNS() {
           )}
           {chatMessages.map(msg => {
             if (msg.isSystem) {
-              const dashIdx = msg.text.indexOf(" — ");
-              const baseText = dashIdx !== -1 ? msg.text.slice(0, dashIdx) : msg.text;
-              const commentText = dashIdx !== -1 ? msg.text.slice(dashIdx + 3) : null;
-              const isZlatniMinut = msg.text.includes("Zlatni Minut");
-              const isPaukMsg = msg.text.includes("Pauk Radar");
-              const isRadarMsg = msg.text.includes("Radar") && !isPaukMsg;
-              const isKomentar = msg.text.includes("komentar");
+              const rawText = msg.text ?? "";
+              const dashIdx = rawText.indexOf(" — ");
+              const baseText = dashIdx !== -1 ? rawText.slice(0, dashIdx) : rawText;
+              const commentText = dashIdx !== -1 ? rawText.slice(dashIdx + 3) : null;
+              const isZlatniMinut = rawText.includes("Zlatni Minut");
+              const isPaukMsg = rawText.includes("Pauk Radar");
+              const isRadarMsg = rawText.includes("Radar") && !isPaukMsg;
+              const isKomentar = rawText.includes("komentar");
               const TypeIcon = isZlatniMinut ? Clock : isPaukMsg ? AlertTriangle : isRadarMsg ? RadioTower : isKomentar ? MessageSquare : MessageSquare;
               const typeColor = isZlatniMinut ? "#f97316" : isPaukMsg ? "#ef4444" : isRadarMsg ? "#8b5cf6" : "#6b7280";
               const hasCoords = msg.lat != null && msg.lng != null;
@@ -2129,16 +2207,37 @@ export default function MapHackNS() {
                       <span className="ml-1 truncate">{msg.replyToText.slice(0, 60)}{msg.replyToText.length > 60 ? "…" : ""}</span>
                     </div>
                   )}
-                  <p className="text-sm break-words mt-0.5" style={{ color: "#e5e7eb" }}>{msg.text}</p>
+                  {msg.audioUrl ? (
+                    <div className="mt-0.5 flex items-center gap-2 rounded-lg px-3 py-2"
+                      style={{ background: "#1e3a5f", border: "1px solid rgba(59,130,246,0.3)", maxWidth: 240 }}>
+                      <Mic size={13} style={{ color: "#60a5fa", flexShrink: 0 }} />
+                      <audio controls src={msg.audioUrl} preload="none"
+                        style={{ height: 28, minWidth: 0, flex: 1 }} />
+                    </div>
+                  ) : (
+                    <p className="text-sm break-words mt-0.5" style={{ color: "#e5e7eb" }}>{msg.text}</p>
+                  )}
                 </div>
-                <button
-                  data-testid={`btn-reply-${msg.id}`}
-                  onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.text })}
-                  className="kraft-btn flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ color: "#6b7280", padding: "2px 4px", marginTop: 2, background: "transparent", border: "none" }}
-                  title="Odgovori">
-                  <MessageSquare size={12} />
-                </button>
+                <div className="flex flex-col gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ marginTop: 2 }}>
+                  <button
+                    data-testid={`btn-reply-${msg.id}`}
+                    onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.audioUrl ? "Glasovna poruka" : (msg.text ?? "") })}
+                    className="kraft-btn"
+                    style={{ color: "#6b7280", padding: "2px 4px", background: "transparent", border: "none" }}
+                    title="Odgovori">
+                    <MessageSquare size={12} />
+                  </button>
+                  {user?.isAdmin && (
+                    <button
+                      data-testid={`btn-admin-delete-msg-${msg.id}`}
+                      onClick={() => deleteChatMutation.mutate(msg.id)}
+                      className="kraft-btn"
+                      style={{ color: "#ef4444", padding: "2px 4px", background: "transparent", border: "none" }}
+                      title="Obriši (Admin)">
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -2157,38 +2256,76 @@ export default function MapHackNS() {
               </button>
             </div>
           )}
+          {voiceState === "recording" && (
+            <div className="flex items-center gap-2 px-3 pt-2 pb-0"
+              style={{ animation: "none" }}>
+              <div className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: "#ef4444", boxShadow: "0 0 6px #ef4444", animation: "pulse 1s infinite" }} />
+              <span className="text-xs font-semibold" style={{ color: "#ef4444" }}>
+                Snima se... {voiceSecondsLeft}s
+              </span>
+              <span className="text-xs" style={{ color: "#6b7280" }}>Pusti za slanje</span>
+            </div>
+          )}
+          {voiceState === "uploading" && (
+            <div className="flex items-center gap-2 px-3 pt-2 pb-0">
+              <Loader2 size={12} className="animate-spin" style={{ color: "#60a5fa" }} />
+              <span className="text-xs" style={{ color: "#60a5fa" }}>Šalje se glasovna poruka...</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 px-3 py-2.5">
-            <Input
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === "Enter" && chatInput.trim() && !chatCooldown) {
-                  sendChatMutation.mutate({
-                    text: chatInput,
-                    ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
-                  });
-                }
-              }}
-              placeholder={chatCooldown > 0 ? `Čekaj ${chatCooldown}s...` : "Napiši poruku... (1/min)"}
-              data-testid="input-chat-message"
-              className="h-9 text-sm"
-              style={{ background: "#12161e", border: "1px solid rgba(255,255,255,0.12)", color: "#e5e7eb" }}
-              maxLength={280}
-              disabled={chatCooldown > 0}
-            />
-            <Button size="icon" data-testid="btn-send-chat" className="kraft-btn"
-              onClick={() => {
-                if (chatInput.trim() && !chatCooldown) {
-                  sendChatMutation.mutate({
-                    text: chatInput,
-                    ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
-                  });
-                }
-              }}
-              disabled={sendChatMutation.isPending || !chatInput.trim() || chatCooldown > 0}
-              style={{ background: chatCooldown > 0 ? "#374151" : "#f97316", flexShrink: 0 }}>
-              {chatCooldown > 0 ? <span style={{ fontSize: 9, fontWeight: 700 }}>{chatCooldown}</span> : <Send size={14} />}
+            {voiceState === "idle" && (
+              <Input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && chatInput.trim() && !chatCooldown) {
+                    sendChatMutation.mutate({
+                      text: chatInput,
+                      ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+                    });
+                  }
+                }}
+                placeholder={chatCooldown > 0 ? `Čekaj ${chatCooldown}s...` : "Napiši poruku... (1/min)"}
+                data-testid="input-chat-message"
+                className="h-9 text-sm"
+                style={{ background: "#12161e", border: "1px solid rgba(255,255,255,0.12)", color: "#e5e7eb" }}
+                maxLength={280}
+                disabled={chatCooldown > 0}
+              />
+            )}
+            {voiceState !== "idle" && (
+              <div className="flex-1" />
+            )}
+            <Button size="icon" data-testid="btn-voice-chat"
+              onMouseDown={voiceState === "idle" ? startVoiceRecording : undefined}
+              onMouseUp={voiceState === "recording" ? stopVoiceRecording : undefined}
+              onMouseLeave={voiceState === "recording" ? stopVoiceRecording : undefined}
+              onTouchStart={voiceState === "idle" ? (e) => { e.preventDefault(); startVoiceRecording(); } : undefined}
+              onTouchEnd={voiceState === "recording" ? (e) => { e.preventDefault(); stopVoiceRecording(); } : undefined}
+              disabled={chatCooldown > 0 || voiceState === "uploading"}
+              style={{
+                background: voiceState === "recording" ? "#ef4444" : chatCooldown > 0 ? "#374151" : "#1e3a5f",
+                border: voiceState === "recording" ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(59,130,246,0.3)",
+                flexShrink: 0,
+              }}>
+              <Mic size={14} style={{ color: voiceState === "recording" ? "#fff" : "#60a5fa" }} />
             </Button>
+            {voiceState === "idle" && (
+              <Button size="icon" data-testid="btn-send-chat" className="kraft-btn"
+                onClick={() => {
+                  if (chatInput.trim() && !chatCooldown) {
+                    sendChatMutation.mutate({
+                      text: chatInput,
+                      ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
+                    });
+                  }
+                }}
+                disabled={sendChatMutation.isPending || !chatInput.trim() || chatCooldown > 0}
+                style={{ background: chatCooldown > 0 ? "#374151" : "#f97316", flexShrink: 0 }}>
+                {chatCooldown > 0 ? <span style={{ fontSize: 9, fontWeight: 700 }}>{chatCooldown}</span> : <Send size={14} />}
+              </Button>
+            )}
           </div>
         </div>
       </div>
