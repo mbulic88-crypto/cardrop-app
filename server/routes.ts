@@ -338,24 +338,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Morate prihvatiti Politiku privatnosti pre kupovine plana" });
       }
 
-      const planDef = validPlans[plan];
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const priceId = getMapHackPriceId(plan);
 
-      const lineItems = priceId
-        ? [{ price: priceId, quantity: 1 }]
-        : [{
-            price_data: {
-              currency: 'rsd',
-              product_data: { name: planDef.name, description: planDef.description },
-              unit_amount: planDef.amount,
-            },
-            quantity: 1,
-          }];
+      if (!priceId) {
+        return res.status(503).json({ message: "Plan trenutno nije dostupan za plaćanje. Pokušaj ponovo za nekoliko minuta ili kontaktiraj info@cardrop.app" });
+      }
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: lineItems,
+        line_items: [{ price: priceId, quantity: 1 }],
         mode: 'payment',
         success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/map-hack/subscribe`,

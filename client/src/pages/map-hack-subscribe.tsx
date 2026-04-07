@@ -76,6 +76,12 @@ export default function MapHackSubscribe() {
       }
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        toast({
+          title: "Greška",
+          description: "Nije moguće otvoriti stranicu za plaćanje. Pokušaj ponovo.",
+          variant: "destructive",
+        });
       }
     } catch {
       toast({
