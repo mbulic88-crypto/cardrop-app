@@ -353,6 +353,10 @@ export default function MapHackNS() {
   const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
   const [permMicStatus, setPermMicStatus] = useState<"idle" | "granted" | "denied">("idle");
   const [permRequesting, setPermRequesting] = useState(false);
+  // Prevents map flash while async permissions check runs for returning users
+  const [permCheckLoading, setPermCheckLoading] = useState<boolean>(
+    () => !localStorage.getItem("cardrop_perms_asked")
+  );
 
   const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
 
@@ -371,8 +375,14 @@ export default function MapHackNS() {
   // For returning users: check if we need to show the permissions screen
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user || !hasProfile || statusLoading || !mapStatus) return;
-    if (mapStatus.phase === "trial_expired" || mapStatus.phase === "plan_expired") return;
-    if (localStorage.getItem("cardrop_perms_asked")) return;
+    if (mapStatus.phase === "trial_expired" || mapStatus.phase === "plan_expired") {
+      setPermCheckLoading(false);
+      return;
+    }
+    if (localStorage.getItem("cardrop_perms_asked")) {
+      setPermCheckLoading(false);
+      return;
+    }
     // Check existing permission states without triggering browser dialog
     async function checkExisting() {
       try {
@@ -382,11 +392,15 @@ export default function MapHackNS() {
         ]);
         if (locPerm.state === "granted" && micPerm.state === "granted") {
           localStorage.setItem("cardrop_perms_asked", "1");
+          setPermCheckLoading(false);
           return;
         }
       } catch {
         // Permissions API not supported — just show the screen
       }
+      setPermLocStatus("idle");
+      setPermMicStatus("idle");
+      setPermCheckLoading(false);
       setShowPermissions(true);
     }
     checkExisting();
@@ -398,7 +412,7 @@ export default function MapHackNS() {
       viewMode = "permissions";
     } else if (!hasProfile) {
       viewMode = "onboarding_full";
-    } else if (statusLoading || !mapStatus) {
+    } else if (statusLoading || !mapStatus || permCheckLoading) {
       viewMode = "loading";
     } else if (mapStatus.phase === "trial_expired" || mapStatus.phase === "plan_expired") {
       viewMode = "onboarding_plan_only";
@@ -907,28 +921,38 @@ export default function MapHackNS() {
     async function handleRequestPermissions() {
       setPermRequesting(true);
       // Location
-      await new Promise<void>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => { setPermLocStatus("granted"); resolve(); },
-          () => { setPermLocStatus("denied"); resolve(); },
-          { timeout: 15000 }
-        );
-      });
+      if (navigator.geolocation) {
+        await new Promise<void>((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            () => { setPermLocStatus("granted"); resolve(); },
+            () => { setPermLocStatus("denied"); resolve(); },
+            { timeout: 15000 }
+          );
+        });
+      } else {
+        setPermLocStatus("denied");
+      }
       // Microphone
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-        setPermMicStatus("granted");
-      } catch {
+      if (navigator.mediaDevices?.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(t => t.stop());
+          setPermMicStatus("granted");
+        } catch {
+          setPermMicStatus("denied");
+        }
+      } else {
         setPermMicStatus("denied");
       }
       setPermRequesting(false);
       localStorage.setItem("cardrop_perms_asked", "1");
+      setPermCheckLoading(false);
       setShowPermissions(false);
     }
 
     function handleSkipPermissions() {
       localStorage.setItem("cardrop_perms_asked", "1");
+      setPermCheckLoading(false);
       setShowPermissions(false);
     }
 
