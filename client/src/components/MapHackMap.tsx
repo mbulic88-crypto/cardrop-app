@@ -252,7 +252,7 @@ export function MapHackMap({
       >
         <NavigationControl position="top-right" showCompass={false} />
         <GeolocateControl
-          position="bottom-right"
+          position="bottom-left"
           trackUserLocation={true}
           showUserHeading={true}
           showAccuracyCircle={true}
