@@ -910,7 +910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      if (!user || user.email !== "m.bulic88@gmail.com") {
+      if (!user || (!user.isAdmin && !ADMIN_EMAIL_LIST.includes(user.email || ''))) {
         return res.status(403).json({ message: "Nemate dozvolu" });
       }
       await storage.deleteMapChatMessage(req.params.id);

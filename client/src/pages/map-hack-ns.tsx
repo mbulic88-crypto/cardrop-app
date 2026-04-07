@@ -561,7 +561,13 @@ export default function MapHackNS() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
-      const mr = new MediaRecorder(stream);
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "";
+      const mr = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const resolvedMime = mr.mimeType || "audio/webm";
       mediaRecorderRef.current = mr;
       mr.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -569,14 +575,14 @@ export default function MapHackNS() {
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
         if (voiceTimerRef.current) { clearInterval(voiceTimerRef.current); voiceTimerRef.current = null; }
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(audioChunksRef.current, { type: resolvedMime });
         audioChunksRef.current = [];
         if (blob.size < 1000) { setVoiceState("idle"); setVoiceSecondsLeft(60); return; }
         setVoiceState("uploading");
         try {
           const voiceUploadRes = await apiRequest("POST", "/api/map-hack/chat/voice-upload", {}) as { uploadURL: string; objectPath: string };
           const { uploadURL, objectPath } = voiceUploadRes;
-          await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": "audio/webm" } });
+          await fetch(uploadURL, { method: "PUT", body: blob, headers: { "Content-Type": resolvedMime } });
           await apiRequest("POST", "/api/map-hack/chat/voice-confirm", {
             objectPath,
             ...(replyingTo ? { replyToId: replyingTo.id, replyToNickname: replyingTo.nickname, replyToText: replyingTo.text } : {}),
@@ -605,7 +611,7 @@ export default function MapHackNS() {
         }
       }, 1000);
     } catch {
-      toast({ title: "Greška", description: "Mikrofon nije dostupan", variant: "destructive" });
+      toast({ title: "Greška", description: "Dozvoli mikrofon u podešavanjima browsera", variant: "destructive" });
       setVoiceState("idle");
     }
   }
