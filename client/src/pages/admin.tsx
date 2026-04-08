@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity } from "lucide-react";
+import Map, { Marker as MapMarkerPin, NavigationControl } from "react-map-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import type { User, ParkingSpot, SalesListing, MapMarker } from "@shared/schema";
 import {
   AlertDialog,
@@ -498,7 +500,7 @@ export default function Admin() {
           <TabsContent value="maphack">
             <div className="space-y-4">
               {/* Stats row */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {(["zlatni_minut", "pauk", "stek", "radar"] as const).map((t) => {
                   const count = mapMarkersList?.filter(m => m.type === t).length || 0;
                   const labels: Record<string, string> = {
@@ -516,7 +518,90 @@ export default function Admin() {
                     </Card>
                   );
                 })}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <Activity className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Aktivni korisnici</p>
+                    </div>
+                    <p className="text-2xl font-bold text-foreground" data-testid="stat-active-users">
+                      {mapMarkersList
+                        ? new Set(
+                            mapMarkersList
+                              .filter(m => !m.expiresAt || new Date(m.expiresAt) > new Date())
+                              .map(m => m.userId)
+                          ).size
+                        : 0}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* Interactive map */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mapa markera</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 overflow-hidden rounded-b-md">
+                  <div style={{ height: 360 }}>
+                    <Map
+                      mapboxAccessToken={(import.meta.env.VITE_MAPBOX_TOKEN as string) || ""}
+                      initialViewState={{ longitude: 19.845, latitude: 45.267, zoom: 12 }}
+                      style={{ width: "100%", height: "100%" }}
+                      mapStyle="mapbox://styles/mapbox/dark-v11"
+                      data-testid="admin-map-maphack"
+                    >
+                      <NavigationControl position="top-right" />
+                      {(mapMarkersList || []).map((marker) => {
+                        const colorMap: Record<string, string> = {
+                          zlatni_minut: "#f59e0b",
+                          pauk: "#ef4444",
+                          stek: "#22c55e",
+                          radar: "#3b82f6",
+                          safe_zone: "#a855f7",
+                        };
+                        const color = colorMap[marker.type] || "#6b7280";
+                        const isExpired = marker.expiresAt ? new Date(marker.expiresAt) < new Date() : false;
+                        return (
+                          <MapMarkerPin
+                            key={marker.id}
+                            longitude={parseFloat(marker.lng)}
+                            latitude={parseFloat(marker.lat)}
+                          >
+                            <div
+                              style={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: "50%",
+                                background: color,
+                                opacity: isExpired ? 0.35 : 0.9,
+                                border: "2px solid rgba(255,255,255,0.5)",
+                                boxShadow: isExpired ? "none" : `0 0 6px ${color}`,
+                              }}
+                              title={`${marker.type} — ${marker.userId}`}
+                            />
+                          </MapMarkerPin>
+                        );
+                      })}
+                    </Map>
+                  </div>
+                  <div className="flex flex-wrap gap-3 p-3 border-t border-border">
+                    {[
+                      { type: "zlatni_minut", label: "Zlatni Minut", color: "#f59e0b" },
+                      { type: "pauk", label: "Pauk", color: "#ef4444" },
+                      { type: "stek", label: "Štek", color: "#22c55e" },
+                      { type: "radar", label: "Radar", color: "#3b82f6" },
+                      { type: "safe_zone", label: "Safe Zone", color: "#a855f7" },
+                    ].map(({ type, label, color }) => (
+                      <div key={type} className="flex items-center gap-1.5">
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: color }} />
+                        <span className="text-xs text-muted-foreground">{label}</span>
+                      </div>
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-auto">Izbledeli = istekli markeri</span>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Marker list */}
               <Card>
