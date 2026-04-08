@@ -538,12 +538,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expiresAt = new Date(Date.now() + 45 * 60 * 1000);
       }
 
+      const ipAddress = (
+        req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
+        req.socket?.remoteAddress ||
+        null
+      );
+
       const marker = await storage.createMapMarker({
         userId,
         type,
         lat: String(latNum),
         lng: String(lngNum),
         label: label || null,
+        ipAddress,
         expiresAt,
       });
 
@@ -2169,6 +2176,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling sales listing:", error);
       res.status(500).json({ message: "Failed to toggle sales listing" });
+    }
+  });
+
+  // Admin Map Hack NS routes
+  app.get('/api/admin/map-hack/markers', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const markers = await storage.getAllMapMarkers();
+      res.json(markers);
+    } catch (error) {
+      console.error("Error fetching admin map markers:", error);
+      res.status(500).json({ message: "Failed to fetch map markers" });
+    }
+  });
+
+  app.delete('/api/admin/map-hack/markers/:id', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      await storage.deleteMapMarker(req.params.id);
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error deleting map marker:", error);
+      res.status(500).json({ message: "Failed to delete map marker" });
     }
   });
 

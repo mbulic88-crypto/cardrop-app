@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
 import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin } from "lucide-react";
-import type { User, ParkingSpot, SalesListing } from "@shared/schema";
+import type { User, ParkingSpot, SalesListing, MapMarker } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +55,11 @@ export default function Admin() {
 
   const { data: salesListings, isLoading: listingsLoading } = useQuery<SalesListing[]>({
     queryKey: ["/api/admin/sales-listings"],
+    enabled: !!currentUser?.isAdmin,
+  });
+
+  const { data: mapMarkersList, isLoading: markersLoading } = useQuery<MapMarker[]>({
+    queryKey: ["/api/admin/map-hack/markers"],
     enabled: !!currentUser?.isAdmin,
   });
 
@@ -122,6 +127,19 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Greška pri promeni statusa", variant: "destructive" });
+    },
+  });
+
+  const deleteMapMarkerMutation = useMutation({
+    mutationFn: async (markerId: string) => {
+      await apiRequest("DELETE", `/api/admin/map-hack/markers/${markerId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/map-hack/markers"] });
+      toast({ title: "Marker je obrisan" });
+    },
+    onError: () => {
+      toast({ title: "Greška pri brisanju markera", variant: "destructive" });
     },
   });
 
@@ -194,7 +212,7 @@ export default function Admin() {
 
       <main className="container mx-auto p-4 max-w-6xl">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="h-4 w-4" />
               Korisnici ({users?.length || 0})
@@ -206,6 +224,10 @@ export default function Admin() {
             <TabsTrigger value="sales" className="flex items-center gap-2" data-testid="tab-sales">
               <ShoppingBag className="h-4 w-4" />
               Prodaja ({salesListings?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="maphack" className="flex items-center gap-2" data-testid="tab-maphack">
+              <MapPin className="h-4 w-4" />
+              Map Hack ({mapMarkersList?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -471,6 +493,129 @@ export default function Admin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="maphack">
+            <div className="space-y-4">
+              {/* Stats row */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {(["zlatni_minut", "pauk", "stek", "radar"] as const).map((t) => {
+                  const count = mapMarkersList?.filter(m => m.type === t).length || 0;
+                  const labels: Record<string, string> = {
+                    zlatni_minut: "Zlatni Minut",
+                    pauk: "Pauk",
+                    stek: "Štek",
+                    radar: "Radar",
+                  };
+                  return (
+                    <Card key={t}>
+                      <CardContent className="p-4">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">{labels[t]}</p>
+                        <p className="text-2xl font-bold text-foreground" data-testid={`stat-marker-${t}`}>{count}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Marker list */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Svi markeri ({mapMarkersList?.length || 0})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {markersLoading ? (
+                    <div className="flex justify-center p-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : mapMarkersList && mapMarkersList.length > 0 ? (
+                    <div className="space-y-2">
+                      {mapMarkersList.map((marker) => {
+                        const typeLabels: Record<string, string> = {
+                          zlatni_minut: "Zlatni Minut",
+                          pauk: "Pauk",
+                          stek: "Štek",
+                          radar: "Radar",
+                          safe_zone: "Safe Zone",
+                        };
+                        const isExpired = marker.expiresAt ? new Date(marker.expiresAt) < new Date() : false;
+                        return (
+                          <div
+                            key={marker.id}
+                            className={`flex items-center justify-between gap-3 p-3 rounded-md border ${
+                              isExpired ? "bg-muted/30 border-border/50" : "bg-surface border-border"
+                            }`}
+                            data-testid={`row-marker-${marker.id}`}
+                          >
+                            <div className="flex-1 min-w-0 space-y-0.5">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant={isExpired ? "secondary" : "outline"} className="text-xs">
+                                  {typeLabels[marker.type] || marker.type}
+                                </Badge>
+                                {isExpired && (
+                                  <Badge variant="secondary" className="text-xs">Istekao</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground font-mono">
+                                {parseFloat(marker.lat).toFixed(5)}, {parseFloat(marker.lng).toFixed(5)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                User: <span className="font-mono">{marker.userId}</span>
+                              </p>
+                              {marker.ipAddress && (
+                                <p className="text-xs text-muted-foreground">
+                                  IP: <span className="font-mono">{marker.ipAddress}</span>
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(marker.createdAt).toLocaleString("sr-RS")}
+                                {marker.expiresAt && (
+                                  <> — ističe: {new Date(marker.expiresAt).toLocaleString("sr-RS")}</>
+                                )}
+                              </p>
+                              {marker.label && (
+                                <p className="text-xs text-foreground">"{marker.label}"</p>
+                              )}
+                            </div>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  disabled={deleteMapMarkerMutation.isPending}
+                                  data-testid={`button-delete-marker-${marker.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Obrisati marker?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Ovaj {typeLabels[marker.type] || marker.type} marker ce biti trajno obrisan.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Otkazi</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMapMarkerMutation.mutate(marker.id)}
+                                    className="bg-destructive text-destructive-foreground"
+                                  >
+                                    Obrisi
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">Nema markera</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </main>

@@ -99,7 +99,9 @@ export interface IStorage {
 
   // Map Hack NS operations
   getActiveMapMarkers(): Promise<MapMarker[]>;
+  getAllMapMarkers(): Promise<MapMarker[]>;
   createMapMarker(data: InsertMapMarker): Promise<MapMarker>;
+  deleteMapMarker(id: string): Promise<void>;
   expireMapMarker(id: string): Promise<void>;
   updateMapMarkerLabel(id: string, label: string | null): Promise<MapMarker>;
   getMapChatMessages(limit?: number): Promise<MapChatMessage[]>;
@@ -514,9 +516,20 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(mapMarkers.createdAt));
   }
 
+  async getAllMapMarkers(): Promise<MapMarker[]> {
+    return await db
+      .select()
+      .from(mapMarkers)
+      .orderBy(desc(mapMarkers.createdAt));
+  }
+
   async createMapMarker(data: InsertMapMarker): Promise<MapMarker> {
     const [marker] = await db.insert(mapMarkers).values(data).returning();
     return marker;
+  }
+
+  async deleteMapMarker(id: string): Promise<void> {
+    await db.delete(mapMarkers).where(eq(mapMarkers.id, id));
   }
 
   async expireMapMarker(id: string): Promise<void> {
