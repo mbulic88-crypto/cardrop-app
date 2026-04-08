@@ -2791,7 +2791,7 @@ export default function MapHackNS() {
                 <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>Tipovi markera</p>
                 <div className="space-y-2.5">
                   {[
-                    { icon: <Clock size={14} />, color: "#f97316", label: "Zlatni Minut", desc: "Slobodno parking mesto — ističe za 45 min", badge: "Free" },
+                    { icon: <Clock size={14} />, color: "#f97316", label: "Zlatni Minut", desc: "Slobodno parking mesto ili dojava da neko izlazi — ističe za 45 min", badge: "Free" },
                     { icon: (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="12" cy="10" r="3"/><circle cx="12" cy="16" r="4"/>
@@ -2800,12 +2800,12 @@ export default function MapHackNS() {
                           <line x1="8" y1="14" x2="3" y2="13"/><line x1="16" y1="14" x2="21" y2="13"/>
                           <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
                         </svg>
-                      ), color: "#ef4444", label: "Pauk Radar", desc: "Evakuator primećen u blizini — upozorenje!", badge: "Free" },
-                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno ili povoljno parking mesto", badge: "Premium" },
-                    { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Postavi svoju zonu — push alarm za svaki marker u krugu 300m (pauk, radar, zlatni minut, štek)", badge: "Premium" },
-                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje", desc: "Plati parking putem SMS-a — 1 klik, bez gotovine", badge: "Free" },
-                    { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili fotoredar na putu", badge: "Premium" },
-                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinge", desc: "Pregled privatnih parkinga za iznajmljivanje u NS", badge: "Free" },
+                      ), color: "#ef4444", label: "Pauk Radar", desc: "Pauk primećen u blizini — upozorenje!", badge: "Free" },
+                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno, skriveni ili povoljno parking mesto", badge: "Premium" },
+                    { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)", badge: "Premium" },
+                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje", desc: "Plati parking putem SMS-a — 1 klik", badge: "Free" },
+                    { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili patrola na putu", badge: "Premium" },
+                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinzi", desc: "Pregled privatnih parkinga za iznajmljivanje u NS", badge: "Free" },
                   ].map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: item.color + "22", border: `1px solid ${item.color}44` }}>
