@@ -184,7 +184,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <GoldRow ok text="Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)" />
           <GoldRow ok text="Push Notifikacije: instant alarm — ne moraš gledati u mapu" />
           <GoldRow ok text="Štek Lokacije: otključana baza skrivenih parkinga" />
-          <GoldRow ok text="Radar Markeri: označi policijski radar i fotoredar na mapi" />
+          <GoldRow ok text="Radar Markeri: označi policijski radar i patrolu na mapi" />
           <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
         </div>
       </button>
@@ -2838,7 +2838,7 @@ export default function MapHackNS() {
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Planovi</p>
                 <div className="space-y-2">
                   {[
-                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje zone (1 klik)", "Privatni parkinge za najam", "Live Chat"] },
+                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje zone (1 klik)", "Privatni parkinzi za najam", "Live Chat"] },
                     { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"] },
                     { plan: "Day Pass — 120 RSD", items: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"] },
                   ].map(p => (

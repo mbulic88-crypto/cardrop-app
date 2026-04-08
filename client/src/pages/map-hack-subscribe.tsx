@@ -162,7 +162,7 @@ export default function MapHackSubscribe() {
                 "Mapa NS sa parking zonama i ulicama",
                 "Zlatni Minut i Pauk markeri",
                 "Smart SMS plaćanje zone (1 klik)",
-                "Privatni parkinge za najam",
+                "Privatni parkinzi za najam",
                 "Live Chat sa zajednicom",
               ].map(f => (
                 <li key={f} className="flex items-center gap-1.5">
@@ -208,7 +208,7 @@ export default function MapHackSubscribe() {
                 "Sve Free funkcije +",
                 "Safe Zone alarm — push za svaki marker u 300m krugu",
                 "Štek parking lokacije (skrivena baza)",
-                "Radar markeri (policija i fotoredar)",
+                "Radar markeri (policija i patrola)",
                 "Push notifikacije — ne moraš gledati u mapu",
                 "Pauk heatmap analitika",
               ].map(f => (
@@ -292,7 +292,7 @@ export default function MapHackSubscribe() {
                 "Sve Free funkcije +",
                 "Safe Zone alarm — push za svaki marker u 300m krugu",
                 "Štek parking lokacije (skrivena baza)",
-                "Radar markeri (policija i fotoredar)",
+                "Radar markeri (policija i patrola)",
                 "Push notifikacije — ne moraš gledati u mapu",
                 "365 dana · ušteda preko 1.000 RSD",
               ].map(f => (
