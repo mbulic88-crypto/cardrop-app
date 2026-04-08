@@ -2910,7 +2910,7 @@ export default function MapHackNS() {
                       <span className="text-yellow-950 font-extrabold text-base tracking-wide">PREMIUM</span>
                       <span className="bg-yellow-950/15 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Preporučeno</span>
                     </div>
-                    <p className="text-yellow-900/70 text-xs mt-0.5">Štek, Watch Area, Radar, Push notifikacije</p>
+                    <p className="text-yellow-900/70 text-xs mt-0.5">Safe Zone, Štek, Radar, Push notifikacije</p>
                   </div>
                   <div className="text-right">
                     <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
