@@ -229,7 +229,7 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="maphack" className="flex items-center gap-2" data-testid="tab-maphack">
               <MapPin className="h-4 w-4" />
-              Map Hack ({mapMarkersList?.length || 0})
+              Map Hack NS ({mapMarkersList?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -500,14 +500,15 @@ export default function Admin() {
           <TabsContent value="maphack">
             <div className="space-y-4">
               {/* Stats row */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {(["zlatni_minut", "pauk", "stek", "radar"] as const).map((t) => {
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                {(["zlatni_minut", "pauk", "stek", "radar", "safe_zone"] as const).map((t) => {
                   const count = mapMarkersList?.filter(m => m.type === t).length || 0;
                   const labels: Record<string, string> = {
                     zlatni_minut: "Zlatni Minut",
                     pauk: "Pauk",
                     stek: "Štek",
                     radar: "Radar",
+                    safe_zone: "Safe Zone",
                   };
                   return (
                     <Card key={t}>

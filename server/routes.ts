@@ -539,6 +539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const ipAddress = (
+        req.ip ||
         req.headers['x-forwarded-for']?.toString().split(',')[0].trim() ||
         req.socket?.remoteAddress ||
         null
