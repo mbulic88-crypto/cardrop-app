@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Check, ChevronDown, ChevronUp, Clock, Home, Shield, Smartphone, RadioTower, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -157,6 +157,20 @@ export default function MapHackSubscribe() {
             <p className="text-sm text-muted-foreground">
               Osnovni pristup zajednici i mapi Novog Sada.
             </p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              {[
+                "Mapa NS sa parking zonama i ulicama",
+                "Zlatni Minut i Pauk markeri",
+                "Smart SMS plaćanje zone (1 klik)",
+                "Privatni parkinge za najam",
+                "Live Chat sa zajednicom",
+              ].map(f => (
+                <li key={f} className="flex items-center gap-1.5">
+                  <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
             <Button
               className="w-full"
               variant="outline"
@@ -189,11 +203,20 @@ export default function MapHackSubscribe() {
             <p className="text-sm text-muted-foreground">
               Potpuna zaštita i najbrži parking u gradu.
             </p>
-            <ul className="text-xs text-muted-foreground space-y-0.5 pl-1">
-              <li>Radar detekcija</li>
-              <li>Safe Zone — push alarm kada se nesto desi u tvojoj zoni</li>
-              <li>Watch Area nadzor</li>
-              <li>Istorija prijavljenih mesta</li>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              {[
+                "Sve Free funkcije +",
+                "Safe Zone alarm — push za svaki marker u 300m krugu",
+                "Štek parking lokacije (skrivena baza)",
+                "Radar markeri (policija i fotoredar)",
+                "Push notifikacije — ne moraš gledati u mapu",
+                "Pauk heatmap analitika",
+              ].map(f => (
+                <li key={f} className="flex items-center gap-1.5">
+                  <Check className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
             </ul>
             <Button
               className="w-full"
@@ -228,7 +251,7 @@ export default function MapHackSubscribe() {
               Sve iz PREMIUM paketa na 24h.
             </p>
             <p className="text-xs text-muted-foreground">
-              Radar, Safe Zone alarm, Watch Area — idealno za subotnji izlazak.
+              Safe Zone alarm, Štek, Radar — idealno za subotnji izlazak u centar.
             </p>
             <Button
               className="w-full"
@@ -264,11 +287,20 @@ export default function MapHackSubscribe() {
             <p className="text-sm text-muted-foreground">
               Sve iz PREMIUM paketa na godinu dana.
             </p>
-            <ul className="text-xs text-muted-foreground space-y-0.5 pl-1">
-              <li>Radar detekcija</li>
-              <li>Safe Zone — push alarm kada se nesto desi u tvojoj zoni</li>
-              <li>Watch Area nadzor</li>
-              <li>Istorija prijavljenih mesta</li>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              {[
+                "Sve Free funkcije +",
+                "Safe Zone alarm — push za svaki marker u 300m krugu",
+                "Štek parking lokacije (skrivena baza)",
+                "Radar markeri (policija i fotoredar)",
+                "Push notifikacije — ne moraš gledati u mapu",
+                "365 dana · ušteda preko 1.000 RSD",
+              ].map(f => (
+                <li key={f} className="flex items-center gap-1.5">
+                  <Check className="w-3 h-3 text-indigo-400 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
             </ul>
             <p className="text-xs text-muted-foreground">
               Ušteda preko 1.000 RSD (2 meseca gratis).
@@ -320,10 +352,139 @@ export default function MapHackSubscribe() {
           </CardContent>
         </Card>
 
+        {/* ── Legenda funkcija ── */}
+        <LegendSection />
+
         <p className="text-xs text-muted-foreground text-center pb-4" data-testid="text-payment-note">
           Plaćanje karticom putem Stripe. Pitanja: info@cardrop.app
         </p>
       </div>
     </div>
+  );
+}
+
+function FeatureRow({ icon, color, label, desc, badge }: {
+  icon: ReactNode;
+  color: string;
+  label: string;
+  desc: string;
+  badge: "Free" | "Premium";
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center"
+        style={{ background: color + "22", border: `1px solid ${color}44` }}>
+        <span style={{ color }}>{icon}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-foreground text-sm">{label}</span>
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-1.5 py-0"
+            style={badge === "Premium" ? { background: "rgba(218,165,32,0.15)", color: "#DAA520" } : undefined}
+          >
+            {badge}
+          </Badge>
+        </div>
+        <p className="text-xs mt-0.5 text-muted-foreground">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function LegendSection() {
+  const [open, setOpen] = useState(false);
+
+  const items: Array<{ icon: ReactNode; color: string; label: string; desc: string; badge: "Free" | "Premium" }> = [
+    {
+      icon: <Clock size={14} />,
+      color: "#f97316",
+      label: "Zlatni Minut",
+      desc: "Slobodno parking mesto — ističe za 45 min",
+      badge: "Free",
+    },
+    {
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="10" r="3"/><circle cx="12" cy="16" r="4"/>
+          <line x1="12" y1="7" x2="8" y2="3"/><line x1="12" y1="7" x2="16" y2="3"/>
+          <line x1="9" y1="9" x2="4" y2="7"/><line x1="15" y1="9" x2="20" y2="7"/>
+          <line x1="8" y1="14" x2="3" y2="13"/><line x1="16" y1="14" x2="21" y2="13"/>
+          <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
+        </svg>
+      ),
+      color: "#ef4444",
+      label: "Pauk Radar",
+      desc: "Evakuator primećen u blizini — upozorenje!",
+      badge: "Free",
+    },
+    {
+      icon: <Home size={14} />,
+      color: "#22c55e",
+      label: "Štek Parking",
+      desc: "Tajno ili povoljno parking mesto",
+      badge: "Premium",
+    },
+    {
+      icon: <Shield size={14} />,
+      color: "#3b82f6",
+      label: "Safe Zone",
+      desc: "Postavi svoju zonu — push alarm za svaki marker u krugu 300m (pauk, radar, zlatni minut, štek)",
+      badge: "Premium",
+    },
+    {
+      icon: <Smartphone size={14} />,
+      color: "#6366f1",
+      label: "SMS Plaćanje",
+      desc: "Plati parking putem SMS-a — 1 klik, bez gotovine",
+      badge: "Free",
+    },
+    {
+      icon: <RadioTower size={14} />,
+      color: "#8b5cf6",
+      label: "Radar",
+      desc: "Policijski radar ili fotoredar na putu",
+      badge: "Premium",
+    },
+    {
+      icon: <Car size={14} />,
+      color: "#14b8a6",
+      label: "Privatni Parkinge",
+      desc: "Pregled privatnih parkinga za iznajmljivanje u NS",
+      badge: "Free",
+    },
+  ];
+
+  return (
+    <Card data-testid="card-legend">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
+        <span className="text-sm font-bold text-foreground">Legenda funkcija mape</span>
+        <Button
+          size="icon"
+          variant="ghost"
+          data-testid="button-legend-toggle"
+          onClick={() => setOpen(o => !o)}
+        >
+          {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </Button>
+      </CardHeader>
+      {open && (
+        <CardContent className="flex flex-col gap-3">
+          <p className="text-xs text-muted-foreground">Svaka funkcija na mapi — šta je Free a šta Premium.</p>
+          <div className="space-y-3">
+            {items.map(item => (
+              <FeatureRow key={item.label} {...item} />
+            ))}
+          </div>
+          <div className="rounded-md px-3 py-2.5 border border-border bg-muted/40">
+            <p className="text-xs font-semibold text-foreground mb-1">Push notifikacije (Premium)</p>
+            <p className="text-xs text-muted-foreground">
+              Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push odmah — ne moraš stalno gledati u mapu.
+            </p>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   );
 }

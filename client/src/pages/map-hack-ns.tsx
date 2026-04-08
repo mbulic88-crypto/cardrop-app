@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -181,8 +181,8 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         </div>
         <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">Sve iz Free PLUS:</p>
         <div className="flex flex-col gap-1.5">
-          <GoldRow ok text="Push Notifikacije: instant obaveštenje za Pauka i Zlatni minut" />
-          <GoldRow ok text="Safe Zone Alarm: 'Sidro' marker → AUTO-PUSH u krugu 300m sa sirenom" />
+          <GoldRow ok text="Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)" />
+          <GoldRow ok text="Push Notifikacije: instant alarm — ne moraš gledati u mapu" />
           <GoldRow ok text="Štek Lokacije: otključana baza skrivenih parkinga" />
           <GoldRow ok text="Radar Markeri: označi policijski radar i fotoredar na mapi" />
           <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
@@ -1968,6 +1968,7 @@ export default function MapHackNS() {
             addMarkerMutation.mutate({ type: addMode, lat, lng });
           }}
           onContextMenu={(lat, lng) => {
+            if (!isPremium) { setPremiumUpsellOpen(true); return; }
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
@@ -2791,11 +2792,20 @@ export default function MapHackNS() {
                 <div className="space-y-2.5">
                   {[
                     { icon: <Clock size={14} />, color: "#f97316", label: "Zlatni Minut", desc: "Slobodno parking mesto — ističe za 45 min", badge: "Free" },
-                    { icon: <AlertTriangle size={14} />, color: "#ef4444", label: "Pauk Radar", desc: "Evakuator primećen u blizini — upozorenje!", badge: "Free" },
+                    { icon: (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="10" r="3"/><circle cx="12" cy="16" r="4"/>
+                          <line x1="12" y1="7" x2="8" y2="3"/><line x1="12" y1="7" x2="16" y2="3"/>
+                          <line x1="9" y1="9" x2="4" y2="7"/><line x1="15" y1="9" x2="20" y2="7"/>
+                          <line x1="8" y1="14" x2="3" y2="13"/><line x1="16" y1="14" x2="21" y2="13"/>
+                          <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
+                        </svg>
+                      ), color: "#ef4444", label: "Pauk Radar", desc: "Evakuator primećen u blizini — upozorenje!", badge: "Free" },
                     { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno ili povoljno parking mesto", badge: "Premium" },
-                    { icon: <Bell size={14} />, color: "#4ade80", label: "Safe Zone", desc: "Tvoja lična zona — alarm kad pauk uđe (300m)", badge: "Free" },
-                    { icon: <Target size={14} />, color: "#fbbf24", label: "Watch Area", desc: "Zona praćenja — push alarm 300m radius", badge: "Premium" },
+                    { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Postavi svoju zonu — push alarm za svaki marker u krugu 300m (pauk, radar, zlatni minut, štek)", badge: "Premium" },
+                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje", desc: "Plati parking putem SMS-a — 1 klik, bez gotovine", badge: "Free" },
                     { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili fotoredar na putu", badge: "Premium" },
+                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinge", desc: "Pregled privatnih parkinga za iznajmljivanje u NS", badge: "Free" },
                   ].map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: item.color + "22", border: `1px solid ${item.color}44` }}>
@@ -2818,7 +2828,7 @@ export default function MapHackNS() {
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Push notifikacije</p>
                 <div className="rounded-xl px-3 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                   <p className="text-sm text-white mb-1 font-medium">Automatska upozorenja</p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>Kada neko prijavi Pauka ili Zlatni Minut u tvojoj Safe Zoni dobijaš push obaveštenje odmah. Zahteva: postavljenu Safe Zonu i dozvolu u browseru.</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push obaveštenje odmah. Zahteva: postavljenu Safe Zonu (Premium) i dozvolu u browseru.</p>
                   <p className="text-xs mt-2" style={{ color: "#6b7280" }}>Notifikacije možeš isključiti klikom na zvonce u hederu.</p>
                 </div>
               </div>
@@ -2828,8 +2838,8 @@ export default function MapHackNS() {
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Planovi</p>
                 <div className="space-y-2">
                   {[
-                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "Safe Zona alarm", "Live Chat", "Pregled parkinga"] },
-                    { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Štek lokacije", "Watch Area", "Radar markeri", "Push notifikacije"] },
+                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje zone (1 klik)", "Privatni parkinge za najam", "Live Chat"] },
+                    { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"] },
                     { plan: "Day Pass — 120 RSD", items: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"] },
                   ].map(p => (
                     <div key={p.plan} className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -2865,7 +2875,7 @@ export default function MapHackNS() {
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div>
                 <span className="font-bold text-white text-sm">Otključaj Premium</span>
-                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Štek lokacije, Watch Area, Radar, Push notifikacije</p>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Safe Zone, Štek lokacije, Radar, Push notifikacije</p>
               </div>
               <button
                 onClick={() => setPremiumUpsellOpen(false)}
