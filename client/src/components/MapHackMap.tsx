@@ -373,9 +373,9 @@ export function MapHackMap({
               id="safe-zone-line"
               type="line"
               paint={{
-                "line-color": "#f97316",
-                "line-width": 2,
-                "line-opacity": 0.95,
+                "line-color": "#22c55e",
+                "line-width": 2.5,
+                "line-opacity": 1.0,
                 "line-dasharray": [4, 5],
               }}
             />
