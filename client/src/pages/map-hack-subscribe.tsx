@@ -161,7 +161,7 @@ export default function MapHackSubscribe() {
               {[
                 "Mapa NS sa parking zonama i ulicama",
                 "Zlatni Minut i Pauk markeri",
-                "Smart SMS plaćanje zone (1 klik)",
+                "Smart SMS plaćanje javnih zona (1 klik)",
                 "Privatni parkinzi za najam",
                 "Live Chat sa zajednicom",
               ].map(f => (
@@ -436,8 +436,8 @@ function LegendSection() {
     {
       icon: <Smartphone size={14} />,
       color: "#6366f1",
-      label: "SMS Plaćanje",
-      desc: "Plati parking putem SMS-a — 1 klik",
+      label: "SMS Plaćanje javnih",
+      desc: "Plati javni parking putem SMS-a — 1 klik",
       badge: "Free",
     },
     {

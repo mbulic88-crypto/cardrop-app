@@ -140,7 +140,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         <div className="flex flex-col gap-1.5 mt-3">
           <FreeRow ok text="Brza Mapa NS sa zonama i ulicama" />
           <FreeRow ok text="Live Chat (pisanje i čitanje u realnom vremenu)" />
-          <FreeRow ok text="Smart SMS plaćanje zone (1 klik)" />
+          <FreeRow ok text="Smart SMS plaćanje javnih zona (1 klik)" />
           <FreeRow ok text="Pregled privatnih parkinga za najam" />
           <FreeRow ok text="Vizuelni markeri za Pauka i 'Zlatni minut'" />
           <FreeRow ok={false} text="Push notifikacije (moraš stalno gledati u mapu)" />
@@ -2147,7 +2147,7 @@ export default function MapHackNS() {
             className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
             style={{ width: 58, height: 58, background: "#312e81", border: "1.5px solid #4f46e5" }}>
             <Smartphone size={18} style={{ color: "#c7d2fe" }} />
-            <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS plaćanje</span>
+            <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS javnih</span>
           </button>
 
           {/* Zona upozorenja */}
@@ -2803,7 +2803,7 @@ export default function MapHackNS() {
                       ), color: "#ef4444", label: "Pauk Radar", desc: "Pauk primećen u blizini — upozorenje!", badge: "Free" },
                     { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno, skriveni ili povoljno parking mesto", badge: "Premium" },
                     { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)", badge: "Premium" },
-                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje", desc: "Plati parking putem SMS-a — 1 klik", badge: "Free" },
+                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje javnih", desc: "Plati javni parking putem SMS-a — 1 klik", badge: "Free" },
                     { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili patrola na putu", badge: "Premium" },
                     { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinzi", desc: "Pregled privatnih parkinga za iznajmljivanje u NS", badge: "Free" },
                   ].map(item => (
@@ -2838,7 +2838,7 @@ export default function MapHackNS() {
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Planovi</p>
                 <div className="space-y-2">
                   {[
-                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje zone (1 klik)", "Privatni parkinzi za najam", "Live Chat"] },
+                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje javnih zona (1 klik)", "Privatni parkinzi za najam", "Live Chat"] },
                     { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"] },
                     { plan: "Day Pass — 120 RSD", items: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"] },
                   ].map(p => (
