@@ -2147,7 +2147,7 @@ export default function MapHackNS() {
             className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
             style={{ width: 58, height: 58, background: "#312e81", border: "1.5px solid #4f46e5" }}>
             <Smartphone size={18} style={{ color: "#c7d2fe" }} />
-            <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS javnih</span>
+            <span className="font-bold text-center" style={{ color: "#c7d2fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>SMS plaćanje javnih</span>
           </button>
 
           {/* Zona upozorenja */}
