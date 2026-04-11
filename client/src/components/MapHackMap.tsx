@@ -365,8 +365,8 @@ export function MapHackMap({
               type="line"
               paint={{
                 "line-color": "#ea580c",
-                "line-width": 5,
-                "line-opacity": 0.95,
+                "line-width": 2,
+                "line-opacity": 0.5,
               }}
             />
             <Layer
@@ -374,9 +374,9 @@ export function MapHackMap({
               type="line"
               paint={{
                 "line-color": "#22c55e",
-                "line-width": 2.5,
+                "line-width": 5,
                 "line-opacity": 1.0,
-                "line-dasharray": [4, 5],
+                "line-dasharray": [4, 4],
               }}
             />
           </Source>
