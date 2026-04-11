@@ -1506,13 +1506,16 @@ export default function MapHackNS() {
           >
             {/* Panel header */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.18)", border: "1.5px solid rgba(59,130,246,0.7)" }}>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: "rgba(59,130,246,0.18)", border: "1.5px solid rgba(59,130,246,0.7)" }}>
                   <span className="font-bold text-xs" style={{ color: "#93c5fd" }}>P</span>
                 </div>
-                <span className="font-bold text-white text-sm truncate" style={{ maxWidth: 220 }}>{selectedParking.title}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-bold text-white text-sm truncate">{selectedParking.title}</span>
+                  <span className="text-xs font-semibold" style={{ color: "#14b8a6" }}>Privatni parking</span>
+                </div>
               </div>
-              <button onClick={() => setSelectedParking(null)}>
+              <button onClick={() => setSelectedParking(null)} className="flex-shrink-0 ml-2">
                 <X size={16} style={{ color: "#9ca3af" }} />
               </button>
             </div>
@@ -1560,10 +1563,15 @@ export default function MapHackNS() {
             {(selectedParking.phone || selectedParking.contactEmail) && (
               <div className="flex flex-col gap-1">
                 {selectedParking.phone && (
-                  <div className="flex items-center gap-2">
-                    <Smartphone size={12} style={{ color: "#6b7280" }} />
-                    <span className="text-xs" style={{ color: "#9ca3af" }}>{selectedParking.phone}</span>
-                  </div>
+                  <a
+                    href={`tel:${selectedParking.phone}`}
+                    className="flex items-center gap-2 py-2 px-3 rounded-xl"
+                    style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)" }}
+                    data-testid="link-parking-phone"
+                  >
+                    <Smartphone size={13} style={{ color: "#4ade80" }} />
+                    <span className="text-sm font-semibold" style={{ color: "#4ade80" }}>{selectedParking.phone}</span>
+                  </a>
                 )}
                 {selectedParking.contactEmail && (
                   <div className="flex items-center gap-2">
@@ -1802,9 +1810,10 @@ export default function MapHackNS() {
       <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto"
         style={{ display: chatFullscreen ? "none" : undefined, background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
         {([
-          { key: "zlatni_minut", label: "Zlatni Minut", icon: "⏱" },
-          { key: "pauk",         label: "Pauk",         icon: "🚛" },
-          { key: "stek",         label: "Štek",         icon: "🏠" },
+          { key: "zlatni_minut", label: "Zlatni Minut",     icon: "⏱" },
+          { key: "pauk",         label: "Pauk",             icon: "🚛" },
+          { key: "stek",         label: "Štek",             icon: "🏠" },
+          { key: "parking",      label: "Privatan Parking", icon: "🅿" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
           return (
@@ -1906,30 +1915,6 @@ export default function MapHackNS() {
               : <Trash2 size={11} />}
           </button>
         )}
-        {(() => {
-          const isActive = activeFilters.includes("parking");
-          return (
-            <button
-              key="parking"
-              data-testid="filter-tab-parking"
-              onClick={() => {
-                setActiveFilters(prev => {
-                  const without = prev.filter(x => x !== "sve" && x !== "parking");
-                  const next = prev.includes("parking") ? without : [...without, "parking"];
-                  return next.length === 0 ? ["sve"] : next;
-                });
-              }}
-              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
-              style={{
-                background: isActive ? markerColor("parking") + "22" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isActive ? markerColor("parking") + "66" : "rgba(255,255,255,0.1)"}`,
-                color: isActive ? markerColor("parking") : "#9ca3af",
-              }}>
-              <span>🅿</span>
-              <span>Parking</span>
-            </button>
-          );
-        })()}
         {/* Aktivno dropdown */}
         <button
           data-testid="btn-filter-aktivno"
@@ -1976,7 +1961,7 @@ export default function MapHackNS() {
           onChatClick={undefined}
           parkingListings={parkingListings}
           flyToLocation={flyToLocation}
-          onParkingClick={user.isAdmin ? setSelectedParking : undefined}
+          onParkingClick={setSelectedParking}
           sizeKey={mapExpanded}
           onMapReady={(controls) => { mapFlyToRef.current = controls; }}
         />
