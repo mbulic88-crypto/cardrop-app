@@ -46,6 +46,8 @@ export const users = pgTable("users", {
   mapProfileLastChangedAt: timestamp("map_profile_last_changed_at"),
   mapNotificationsEnabled: boolean("map_notifications_enabled").notNull().default(true),
   mapPrivacyAcceptedAt: timestamp("map_privacy_accepted_at"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -17,6 +17,7 @@ interface MapHackPlanDefinition {
   name: string;
   description: string;
   priceRSD: number;
+  recurringInterval?: 'month' | 'year';
 }
 
 const PRODUCT_DEFINITIONS: ProductDefinition[] = [
@@ -35,13 +36,14 @@ const PRODUCT_DEFINITIONS: ProductDefinition[] = [
 ];
 
 const MAP_HACK_PLAN_DEFINITIONS: MapHackPlanDefinition[] = [
-  { planId: 'premium', name: 'CarDrop Map Hack NS — Premium', description: 'Premium plan — 30 dana pristupa mapi, štek mestima i crvenim zonama', priceRSD: 390 },
+  { planId: 'premium', name: 'CarDrop Map Hack NS — Premium', description: 'Premium plan — mesečna pretplata, štek mesta i crvene zone', priceRSD: 390, recurringInterval: 'month' },
   { planId: 'day_pass', name: 'CarDrop Map Hack NS — Day Pass', description: 'Day Pass — 24 sata pristupa svim Premium funkcijama', priceRSD: 120 },
-  { planId: 'godisnji_premium', name: 'CarDrop Map Hack NS — Godišnji Premium', description: 'Godišnji Premium — 365 dana pristupa, ušteda 2 meseca', priceRSD: 3500 },
+  { planId: 'godisnji_premium', name: 'CarDrop Map Hack NS — Godišnji Premium', description: 'Godišnji Premium — godišnja pretplata, ušteda 2 meseca', priceRSD: 3500, recurringInterval: 'year' },
 ];
 
 const priceIdCache: Map<string, string> = new Map();
 const mapHackPriceIdCache: Map<string, string> = new Map();
+const mapHackRecurringPriceIdCache: Map<string, string> = new Map();
 
 function getCacheKey(category: ProductCategory, tier: ProductTier): string {
   return `${category}_${tier}`;
@@ -53,6 +55,10 @@ export function getStripePriceId(category: ProductCategory, tier: ProductTier): 
 
 export function getMapHackPriceId(planId: string): string | undefined {
   return mapHackPriceIdCache.get(planId);
+}
+
+export function getMapHackRecurringPriceId(planId: string): string | undefined {
+  return mapHackRecurringPriceIdCache.get(planId);
 }
 
 export async function syncStripeProducts(): Promise<void> {
@@ -116,13 +122,55 @@ export async function syncStripeProducts(): Promise<void> {
         (p) => p.metadata?.app === 'cardrop' && p.metadata?.type === 'map_hack' && p.metadata?.plan_id === def.planId
       );
 
+      let productId: string;
+
       if (existing) {
-        const prices = await stripe.prices.list({ product: existing.id, active: true, limit: 1 });
+        productId = existing.id;
+        // Find one-time price (for day_pass) or any price for caching
+        const prices = await stripe.prices.list({ product: existing.id, active: true, limit: 10 });
         if (prices.data.length > 0) {
-          mapHackPriceIdCache.set(def.planId, prices.data[0].id);
-          console.log(`Found existing Map Hack: ${def.name} -> ${prices.data[0].id}`);
-          continue;
+          if (!def.recurringInterval) {
+            // day_pass: use first available price
+            const oneTimePrices = prices.data.filter(p => p.type === 'one_time');
+            const priceToUse = oneTimePrices[0] ?? prices.data[0];
+            mapHackPriceIdCache.set(def.planId, priceToUse.id);
+            console.log(`Found existing Map Hack (one-time): ${def.name} -> ${priceToUse.id}`);
+          } else {
+            // Find existing recurring price
+            const recurringPrices = prices.data.filter(
+              p => p.type === 'recurring' && p.recurring?.interval === def.recurringInterval
+            );
+            if (recurringPrices.length > 0) {
+              mapHackRecurringPriceIdCache.set(def.planId, recurringPrices[0].id);
+              console.log(`Found existing Map Hack (recurring): ${def.name} -> ${recurringPrices[0].id}`);
+              // Also set the one-time cache as fallback
+              const oneTimePrices = prices.data.filter(p => p.type === 'one_time');
+              if (oneTimePrices.length > 0) mapHackPriceIdCache.set(def.planId, oneTimePrices[0].id);
+            } else {
+              // Create recurring price for this product
+              console.log(`Creating recurring price for existing Map Hack product: ${def.name}`);
+              const recurringPrice = await stripe.prices.create({
+                product: productId,
+                unit_amount: def.priceRSD * 100,
+                currency: 'rsd',
+                recurring: { interval: def.recurringInterval },
+                metadata: {
+                  app: 'cardrop',
+                  type: 'map_hack',
+                  plan_id: def.planId,
+                  price_type: 'recurring',
+                },
+              });
+              mapHackRecurringPriceIdCache.set(def.planId, recurringPrice.id);
+              console.log(`Created recurring price: ${def.name} -> ${recurringPrice.id}`);
+              // Set one-time cache too
+              const oneTimePrices = prices.data.filter(p => p.type === 'one_time');
+              if (oneTimePrices.length > 0) mapHackPriceIdCache.set(def.planId, oneTimePrices[0].id);
+            }
+            continue;
+          }
         }
+        continue;
       }
 
       console.log(`Creating Map Hack product: ${def.name}`);
@@ -135,23 +183,42 @@ export async function syncStripeProducts(): Promise<void> {
           plan_id: def.planId,
         },
       });
+      productId = product.id;
 
-      const price = await stripe.prices.create({
-        product: product.id,
-        unit_amount: def.priceRSD * 100,
-        currency: 'rsd',
-        metadata: {
-          app: 'cardrop',
-          type: 'map_hack',
-          plan_id: def.planId,
-        },
-      });
-
-      mapHackPriceIdCache.set(def.planId, price.id);
-      console.log(`Created Map Hack: ${def.name} -> ${price.id}`);
+      if (def.recurringInterval) {
+        // Create recurring price for subscription plans
+        const recurringPrice = await stripe.prices.create({
+          product: productId,
+          unit_amount: def.priceRSD * 100,
+          currency: 'rsd',
+          recurring: { interval: def.recurringInterval },
+          metadata: {
+            app: 'cardrop',
+            type: 'map_hack',
+            plan_id: def.planId,
+            price_type: 'recurring',
+          },
+        });
+        mapHackRecurringPriceIdCache.set(def.planId, recurringPrice.id);
+        console.log(`Created Map Hack (recurring): ${def.name} -> ${recurringPrice.id}`);
+      } else {
+        // Create one-time price for day_pass
+        const price = await stripe.prices.create({
+          product: productId,
+          unit_amount: def.priceRSD * 100,
+          currency: 'rsd',
+          metadata: {
+            app: 'cardrop',
+            type: 'map_hack',
+            plan_id: def.planId,
+          },
+        });
+        mapHackPriceIdCache.set(def.planId, price.id);
+        console.log(`Created Map Hack (one-time): ${def.name} -> ${price.id}`);
+      }
     }
 
-    console.log(`Stripe products synced. Parking: ${priceIdCache.size}, Map Hack: ${mapHackPriceIdCache.size}`);
+    console.log(`Stripe products synced. Parking: ${priceIdCache.size}, Map Hack one-time: ${mapHackPriceIdCache.size}, Map Hack recurring: ${mapHackRecurringPriceIdCache.size}`);
   } catch (error) {
     console.error('Error syncing Stripe products:', error);
   }

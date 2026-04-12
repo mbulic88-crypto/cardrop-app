@@ -351,6 +351,8 @@ export default function MapHackNS() {
   const [upsellContext, setUpsellContext] = useState<string>("");
   const [upsellFeature, setUpsellFeature] = useState<"stek" | "safe_zone" | null>(null);
   const [upsellPending, setUpsellPending] = useState(false);
+  const [mojPaketOpen, setMojPaketOpen] = useState(false);
+  const [portalPending, setPortalPending] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
   const [permMicStatus, setPermMicStatus] = useState<"idle" | "granted" | "denied">("idle");
@@ -1641,10 +1643,19 @@ export default function MapHackNS() {
                 firma:             { color: "#14b8a6", border: "rgba(20,184,166,0.35)",  text: "FIRMA" },
               };
               const s = BADGE_STYLES[plan] ?? BADGE_STYLES["free"];
+              const isSubscriptionPlan = plan === "premium" || plan === "godisnji_premium";
               return (
                 <button
                   data-testid="btn-plan-badge"
-                  onClick={() => { setUpsellFeature(null); setUpsellContext(""); setPremiumUpsellOpen(true); }}
+                  onClick={() => {
+                    if (isSubscriptionPlan) {
+                      setMojPaketOpen(true);
+                    } else {
+                      setUpsellFeature(null);
+                      setUpsellContext("");
+                      setPremiumUpsellOpen(true);
+                    }
+                  }}
                   className="kraft-btn flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
                   style={{ background: s.color + "18", border: `1px solid ${s.border}`, color: s.color, cursor: "pointer" }}
                 >
@@ -2873,6 +2884,95 @@ export default function MapHackNS() {
               </div>
 
               <div className="pb-2" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Moj Paket Modal (for premium/godisnji subscribers) ── */}
+      {mojPaketOpen && user && (
+        <div className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setMojPaketOpen(false)}>
+          <div
+            className="w-full max-w-md rounded-t-2xl overflow-y-auto"
+            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "80vh" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div>
+                <span className="font-bold text-white text-sm">Moj paket</span>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Upravljaj svojom pretplatom</p>
+              </div>
+              <button
+                onClick={() => setMojPaketOpen(false)}
+                className="flex items-center justify-center rounded-full"
+                style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
+                <X size={14} style={{ color: "#9ca3af" }} />
+              </button>
+            </div>
+            <div className="px-4 py-4 flex flex-col gap-4">
+              {/* Plan info card */}
+              <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#6b7280" }}>Aktivna pretplata</span>
+                  {mapStatus?.plan === "premium" && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(218,165,32,0.15)", color: "#DAA520", border: "1px solid rgba(218,165,32,0.3)" }}>PREMIUM</span>
+                  )}
+                  {mapStatus?.plan === "godisnji_premium" && (
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(129,140,248,0.15)", color: "#818cf8", border: "1px solid rgba(129,140,248,0.3)" }}>GODIŠNJI</span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: "#9ca3af" }}>Plan</span>
+                    <span className="text-sm font-semibold text-white">
+                      {mapStatus?.plan === "premium" ? "Premium mesečni · 390 RSD/mes" : "Godišnji Premium · 3.500 RSD/god"}
+                    </span>
+                  </div>
+                  {mapStatus?.planExpiresAt && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm" style={{ color: "#9ca3af" }}>Sledeće obnavljanje</span>
+                      <span className="text-sm font-semibold text-white">
+                        {new Date(mapStatus.planExpiresAt).toLocaleDateString("sr-RS", { day: "numeric", month: "long", year: "numeric" })}
+                      </span>
+                    </div>
+                  )}
+                  {mapStatus?.daysLeft != null && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm" style={{ color: "#9ca3af" }}>Preostalo</span>
+                      <span className="text-sm font-semibold" style={{ color: mapStatus.daysLeft <= 3 ? "#ef4444" : "#22c55e" }}>
+                        {mapStatus.daysLeft} {mapStatus.daysLeft === 1 ? "dan" : "dana"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Manage subscription button */}
+              <button
+                data-testid="btn-manage-subscription"
+                disabled={portalPending}
+                onClick={async () => {
+                  setPortalPending(true);
+                  try {
+                    const res = await fetch("/api/map-hack/customer-portal", { method: "POST", headers: { "Content-Type": "application/json" } });
+                    const data = await res.json() as { url?: string; message?: string };
+                    if (!res.ok) throw new Error(data.message || "Greška");
+                    window.open(data.url!, "_blank");
+                  } catch (err) {
+                    toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
+                  } finally {
+                    setPortalPending(false);
+                  }
+                }}
+                className="w-full py-3 rounded-xl font-bold text-sm transition-all"
+                style={{ background: "rgba(255,255,255,0.08)", color: "#e5e7eb", border: "1px solid rgba(255,255,255,0.12)", opacity: portalPending ? 0.7 : 1 }}>
+                {portalPending ? "Učitava..." : "Upravljaj pretplatom →"}
+              </button>
+
+              <p className="text-center text-xs" style={{ color: "#4b5563" }}>
+                Stripe portal — otkaži ili promeni plan · Sigurno i brzo
+              </p>
             </div>
           </div>
         </div>

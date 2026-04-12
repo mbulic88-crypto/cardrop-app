@@ -39,6 +39,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByMapNickname(nickname: string): Promise<User | undefined>;
+  getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
+  updateMapHackSubscription(userId: string, data: { stripeCustomerId?: string | null; stripeSubscriptionId?: string | null }): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
   updateMapHackProfile(userId: string, data: { mapNickname: string; mapAvatarId: number; mapHackTrialStartedAt?: Date; mapProfileLastChangedAt?: Date }): Promise<User | undefined>;
@@ -130,6 +132,20 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByMapNickname(nickname: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.mapNickname, nickname));
+    return user;
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+    return user;
+  }
+
+  async updateMapHackSubscription(userId: string, data: { stripeCustomerId?: string | null; stripeSubscriptionId?: string | null }): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
     return user;
   }
 

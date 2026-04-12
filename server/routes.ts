@@ -8,7 +8,7 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
-import { getStripePriceId, getMapHackPriceId, type ProductCategory } from "./stripeProducts";
+import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable } from "@shared/schema";
@@ -339,20 +339,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const priceId = getMapHackPriceId(plan);
+
+      const isSubscriptionPlan = plan === 'premium' || plan === 'godisnji_premium';
+
+      let priceId: string | undefined;
+      if (isSubscriptionPlan) {
+        priceId = getMapHackRecurringPriceId(plan);
+      } else {
+        priceId = getMapHackPriceId(plan);
+      }
 
       if (!priceId) {
         return res.status(503).json({ message: "Plan trenutno nije dostupan za plaćanje. Pokušaj ponovo za nekoliko minuta ili kontaktiraj info@cardrop.app" });
       }
 
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: 'payment',
-        success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/map-hack/subscribe`,
-        metadata: { userId, plan },
-      });
+      let sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0];
+
+      if (isSubscriptionPlan) {
+        // Find or create Stripe customer for this user
+        let stripeCustomerId = currentUser.stripeCustomerId ?? undefined;
+        if (!stripeCustomerId) {
+          const customer = await stripe.customers.create({
+            email: currentUser.email ?? undefined,
+            name: currentUser.mapNickname ?? (`${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || undefined),
+            metadata: { userId },
+          });
+          stripeCustomerId = customer.id;
+          await storage.updateMapHackSubscription(userId, { stripeCustomerId });
+        }
+
+        sessionParams = {
+          payment_method_types: ['card'],
+          customer: stripeCustomerId,
+          line_items: [{ price: priceId, quantity: 1 }],
+          mode: 'subscription',
+          subscription_data: {
+            metadata: { userId, plan },
+          },
+          success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/map-hack/subscribe`,
+          metadata: { userId, plan },
+        };
+      } else {
+        sessionParams = {
+          payment_method_types: ['card'],
+          line_items: [{ price: priceId, quantity: 1 }],
+          mode: 'payment',
+          success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${baseUrl}/map-hack/subscribe`,
+          metadata: { userId, plan },
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
       res.json({ url: session.url });
     } catch (error: unknown) {
@@ -411,11 +450,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.activateMapHackPlanWithSession(userId, verifiedPlan, expiresAt, sessionId);
       if (!updated) return res.status(404).json({ message: "Korisnik nije pronađen" });
 
+      // For subscription plans, save the subscription ID
+      if ((verifiedPlan === 'premium' || verifiedPlan === 'godisnji_premium') && session.subscription) {
+        const subscriptionId = typeof session.subscription === 'string'
+          ? session.subscription
+          : session.subscription.id;
+        await storage.updateMapHackSubscription(userId, { stripeSubscriptionId: subscriptionId });
+      }
+
       const { passwordHash, ...safeUser } = updated;
       res.json({ success: true, plan: verifiedPlan, user: safeUser });
     } catch (error: unknown) {
       console.error("Error verifying map hack payment:", error);
       const msg = error instanceof Error ? error.message : "Greška pri verifikaciji";
+      res.status(500).json({ message: msg });
+    }
+  });
+
+  // ─── Map Hack NS — Customer Portal ────────────────────────────────────────
+
+  app.post('/api/map-hack/customer-portal', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const currentUser = await storage.getUser(userId);
+
+      if (!currentUser?.stripeCustomerId) {
+        return res.status(400).json({ message: "Nema aktivne pretplate za upravljanje" });
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const portalSession = await stripe.billingPortal.sessions.create({
+        customer: currentUser.stripeCustomerId,
+        return_url: `${baseUrl}/map-hack`,
+      });
+
+      res.json({ url: portalSession.url });
+    } catch (error: unknown) {
+      console.error("Error creating customer portal session:", error);
+      const msg = error instanceof Error ? error.message : "Greška pri otvaranju portala";
       res.status(500).json({ message: msg });
     }
   });
@@ -599,7 +672,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ? 'Radar prijavljen!'
                   : 'Zlatni Minut!';
                 const pushBody = type === 'pauk'
-                  ? 'Evakuator prijavljen u tvojoj zoni.'
+                  ? 'Pauk prijavljen u tvojoj zoni.'
                   : type === 'radar'
                   ? 'Policijski radar prijavljen u tvojoj zoni.'
                   : 'Prijavljen u tvojoj zoni. Brzi!';
@@ -638,7 +711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? 'Štek u tvojoj Safe Zoni!'
               : 'Zlatni Minut u tvojoj Safe Zoni!';
             const pushBody = type === 'pauk'
-              ? 'Evakuator prijavljen unutar tvoje Safe Zone.'
+              ? 'Pauk prijavljen unutar tvoje Safe Zone.'
               : type === 'radar'
               ? 'Policijski radar prijavljen unutar tvoje Safe Zone.'
               : type === 'stek'

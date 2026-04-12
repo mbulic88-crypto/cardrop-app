@@ -1,4 +1,52 @@
 import { getStripeSync } from './stripeClient';
+import { storage } from './storage';
+
+async function handleMapHackWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object;
+    const metadata = subscription.metadata as Record<string, string> | undefined;
+    const userId = metadata?.userId;
+    if (!userId) return;
+
+    const user = await storage.getUser(userId);
+    if (!user) return;
+
+    // Only reset if the subscription ID matches
+    const subId = subscription.id as string | undefined;
+    if (subId && user.stripeSubscriptionId && user.stripeSubscriptionId !== subId) return;
+
+    await storage.updateMapHackPlan(userId, 'free', null);
+    await storage.updateMapHackSubscription(userId, { stripeSubscriptionId: null });
+    console.log(`[MapHack Webhook] Subscription cancelled for user ${userId}, plan reset to free`);
+  } else if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object;
+    const subscriptionId = invoice.subscription as string | undefined;
+    if (!subscriptionId) return;
+
+    // Only handle subscription invoices (not one-time payments)
+    const billingReason = invoice.billing_reason as string | undefined;
+    if (billingReason !== 'subscription_cycle' && billingReason !== 'subscription_create') return;
+
+    // Look up user by subscription metadata — need to find via customer
+    const customerId = invoice.customer as string | undefined;
+    if (!customerId) return;
+
+    const user = await storage.getUserByStripeCustomerId(customerId);
+    if (!user) return;
+
+    // Determine plan from current user state (subscription metadata may not be on invoice)
+    const plan = user.mapHackPlan;
+    if (plan !== 'premium' && plan !== 'godisnji_premium') return;
+
+    const now = new Date();
+    const expiresAt = plan === 'godisnji_premium'
+      ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    await storage.updateMapHackPlan(user.id, plan, expiresAt);
+    console.log(`[MapHack Webhook] Subscription renewed for user ${user.id}, plan=${plan}, expires=${expiresAt.toISOString()}`);
+  }
+}
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
@@ -13,5 +61,14 @@ export class WebhookHandlers {
 
     const sync = await getStripeSync();
     await sync.processWebhook(payload, signature);
+
+    // After the Replit sync has verified the signature and processed its events,
+    // also handle Map Hack subscription events.
+    try {
+      const event = JSON.parse(payload.toString()) as { type: string; data: { object: Record<string, unknown> } };
+      await handleMapHackWebhookEvent(event);
+    } catch (err) {
+      console.error('[MapHack Webhook] Error handling Map Hack event:', err);
+    }
   }
 }
