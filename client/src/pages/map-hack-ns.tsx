@@ -349,6 +349,7 @@ export default function MapHackNS() {
   const [profileEditSaving, setProfileEditSaving] = useState(false);
   const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<string>("");
+  const [upsellFeature, setUpsellFeature] = useState<"stek" | "safe_zone" | null>(null);
   const [upsellPending, setUpsellPending] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
@@ -1836,7 +1837,8 @@ export default function MapHackNS() {
               data-testid={`filter-tab-${f.key}`}
               onClick={() => {
                 if (isLocked) {
-                  setUpsellContext("Štek lokacije su dostupne Premium korisnicima");
+                  setUpsellFeature("stek");
+                  setUpsellContext("");
                   setPremiumUpsellOpen(true);
                   return;
                 }
@@ -1848,12 +1850,12 @@ export default function MapHackNS() {
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
-                background: isLocked ? "rgba(255,255,255,0.03)" : isActive ? markerColor(f.key) + "22" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor(f.key) + "66" : "rgba(255,255,255,0.1)"}`,
-                color: isLocked ? "#4b5563" : isActive ? markerColor(f.key) : "#9ca3af",
-                opacity: isLocked ? 0.65 : 1,
+                background: isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor(f.key) + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isLocked ? "rgba(255,255,255,0.15)" : isActive ? markerColor(f.key) + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isLocked ? "#6b7280" : isActive ? markerColor(f.key) : "#9ca3af",
+                opacity: isLocked ? 0.78 : 1,
               }}>
-              {isLocked ? <Lock size={11} style={{ color: "#4b5563" }} /> : <span>{f.icon}</span>}
+              {isLocked ? <Lock size={11} style={{ color: "#6b7280" }} /> : <span>{f.icon}</span>}
               <span>{f.label}</span>
             </button>
           );
@@ -1891,7 +1893,8 @@ export default function MapHackNS() {
               data-testid="filter-tab-safe_zone"
               onClick={() => {
                 if (isLocked) {
-                  setUpsellContext("Safe Zone alarm dostupan je Premium korisnicima");
+                  setUpsellFeature("safe_zone");
+                  setUpsellContext("");
                   setPremiumUpsellOpen(true);
                   return;
                 }
@@ -1913,12 +1916,12 @@ export default function MapHackNS() {
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
-                background: isLocked ? "rgba(255,255,255,0.03)" : isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
-                color: isLocked ? "#4b5563" : isActive ? markerColor("safe_zone") : "#9ca3af",
-                opacity: isLocked ? 0.65 : 1,
+                background: isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isLocked ? "rgba(255,255,255,0.15)" : isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isLocked ? "#6b7280" : isActive ? markerColor("safe_zone") : "#9ca3af",
+                opacity: isLocked ? 0.78 : 1,
               }}>
-              {isLocked ? <Lock size={11} style={{ color: "#4b5563" }} /> : <span>🛡</span>}
+              {isLocked ? <Lock size={11} style={{ color: "#6b7280" }} /> : <span>🛡</span>}
               <span>Safe Zone</span>
             </button>
           );
@@ -2879,7 +2882,7 @@ export default function MapHackNS() {
       {premiumUpsellOpen && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.75)" }}
-          onClick={() => setPremiumUpsellOpen(false)}>
+          onClick={() => { setPremiumUpsellOpen(false); setUpsellFeature(null); }}>
           <div
             className="w-full max-w-md rounded-t-2xl overflow-y-auto"
             style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "90vh" }}
@@ -2892,13 +2895,58 @@ export default function MapHackNS() {
                 </p>
               </div>
               <button
-                onClick={() => setPremiumUpsellOpen(false)}
+                onClick={() => { setPremiumUpsellOpen(false); setUpsellFeature(null); }}
                 className="flex items-center justify-center rounded-full"
                 style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
                 <X size={14} style={{ color: "#9ca3af" }} />
               </button>
             </div>
             <div className="px-4 py-4 flex flex-col gap-3">
+
+              {/* Feature-specific card — shown only when opened from a filter tab */}
+              {upsellFeature === "stek" && (
+                <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #0e3b20 0%, #0f4d28 100%)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center justify-center rounded-lg" style={{ width: 36, height: 36, background: "rgba(34,197,94,0.15)" }}>
+                      <Home size={18} style={{ color: "#22c55e" }} />
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-white text-sm tracking-wide">Štek Parkinzi</span>
+                      <p className="text-xs" style={{ color: "#4ade80" }}>Samo za Premium članove</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "#d1fae5" }}>
+                    Štek mesta su <span className="font-bold text-white">skrivena parkirna mesta</span> koja lokalni vozači dele međusobno — uglavnom besplatna, diskretna, i uvek u blizini centra. Dok drugi kruže u potrazi za mestom, ti direktno parkirate na proverenom steku.
+                  </p>
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Besplatna mesta</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Deli zajednica</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Uvek ažurno</span>
+                  </div>
+                </div>
+              )}
+
+              {upsellFeature === "safe_zone" && (
+                <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #1a1a3e 0%, #1e1b4b 100%)", border: "1px solid rgba(99,102,241,0.3)" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center justify-center rounded-lg" style={{ width: 36, height: 36, background: "rgba(99,102,241,0.2)" }}>
+                      <Shield size={18} style={{ color: "#818cf8" }} />
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-white text-sm tracking-wide">Safe Zone Alarm</span>
+                      <p className="text-xs" style={{ color: "#a5b4fc" }}>Instant push notifikacija</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "#e0e7ff" }}>
+                    Postavi svoju Safe Zonu na mapi — čim <span className="font-bold text-white">pauk, radar ili zlatni minut</span> uđe u tvoju zonu, dobijaš instant push notifikaciju na telefon. Više ne moraš da stojiš uz prozor i gledaš u auto.
+                  </p>
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Pauk alarm</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Radar alarm</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Zlatni minut alarm</span>
+                  </div>
+                </div>
+              )}
 
               {/* Premium card */}
               <button
