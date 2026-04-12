@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Android bottom nav bar color — matches theme-color so both bars are green */
+html {
+  background-color: #1B4332;
+}
+
 /* LIGHT MODE - WhatsApp cream theme */
 :root {
   --button-outline: rgba(0,0,0, .10);

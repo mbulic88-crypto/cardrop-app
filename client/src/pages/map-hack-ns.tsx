@@ -143,7 +143,8 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <FreeRow ok text="Smart SMS plaćanje javnih zona (1 klik)" />
           <FreeRow ok text="Pregled privatnih parkinga za najam" />
           <FreeRow ok text="Vizuelni markeri za Pauka i 'Zlatni minut'" />
-          <FreeRow ok={false} text="Push notifikacije (moraš stalno gledati u mapu)" />
+          <FreeRow ok text="Pauk i Zlatni Minut push notifikacije (u Safe Zoni)" />
+          <FreeRow ok={false} text="Safe Zone alarm i Radar notifikacije (samo Premium)" />
           <FreeRow ok={false} text="Štek lokacije (zaključane)" />
         </div>
       </button>
@@ -349,7 +350,7 @@ export default function MapHackNS() {
   const [profileEditSaving, setProfileEditSaving] = useState(false);
   const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<string>("");
-  const [upsellFeature, setUpsellFeature] = useState<"stek" | "safe_zone" | null>(null);
+  const [upsellFeature, setUpsellFeature] = useState<"stek" | "safe_zone" | "radar" | null>(null);
   const [upsellPending, setUpsellPending] = useState(false);
   const [mojPaketOpen, setMojPaketOpen] = useState(false);
   const [portalPending, setPortalPending] = useState(false);
@@ -2115,7 +2116,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature(null); setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature("stek"); setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -2139,29 +2140,38 @@ export default function MapHackNS() {
             );
           })()}
 
-          {/* Radar — premium only */}
-          {isPremium && (() => {
+          {/* Radar — locked za free, vidljiv ali zaključan */}
+          {(() => {
+            const locked = !isPremium;
             const count = mapMarkers.filter(m => m.type === "radar").length;
             const isActive = addMode === "radar";
             return (
               <button
                 key="radar"
                 data-testid="action-bar-radar"
-                onClick={() => { setAddMode(isActive ? null : "radar"); setActiveTab("radar"); setWatchZonePlaceMode(false); }}
+                onClick={() => {
+                  if (!locked) { setAddMode(isActive ? null : "radar"); setActiveTab("radar"); setWatchZonePlaceMode(false); }
+                  else { setUpsellFeature("radar"); setUpsellContext("Radar markeri dostupni su Premium korisnicima"); setPremiumUpsellOpen(true); }
+                }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
-                  background: isActive ? "#6d28d9" : "#4c1d95",
-                  border: `1.5px solid ${isActive ? "#8b5cf6" : "#7c3aed"}`,
+                  background: locked ? "#1f2937" : isActive ? "#6d28d9" : "#4c1d95",
+                  border: `1.5px solid ${locked ? "#374151" : isActive ? "#8b5cf6" : "#7c3aed"}`,
+                  opacity: locked ? 0.5 : 1,
                 }}>
-                <div className="relative">
-                  <RadioTower size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
-                  {count > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
-                      style={{ width: 14, height: 14, background: "#fff", color: "#6d28d9", fontSize: 7 }}>{count}</span>
-                  )}
-                </div>
-                <span className="font-bold" style={{ color: isActive ? "#fff" : "#ddd6fe", fontSize: 10, letterSpacing: "0.02em" }}>Radar</span>
+                {locked ? <Lock size={18} style={{ color: "#6b7280" }} /> : (
+                  <div className="relative">
+                    <RadioTower size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
+                    {count > 0 && (
+                      <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                        style={{ width: 14, height: 14, background: "#fff", color: "#6d28d9", fontSize: 7 }}>{count}</span>
+                    )}
+                  </div>
+                )}
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                  {locked ? "Premium" : "Radar"}
+                </span>
               </button>
             );
           })()}
@@ -2184,7 +2194,7 @@ export default function MapHackNS() {
             return (
               <button
                 data-testid="btn-watch-zone"
-                onClick={() => { if (!locked) setWatchZoneOpen(true); else { setUpsellFeature(null); setUpsellContext("Watch zona dostupna je Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) setWatchZoneOpen(true); else { setUpsellFeature("safe_zone"); setUpsellContext("Safe Zone alarm dostupna je Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -3044,6 +3054,28 @@ export default function MapHackNS() {
                     <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Pauk alarm</span>
                     <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Radar alarm</span>
                     <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(99,102,241,0.2)", color: "#a5b4fc" }}>Zlatni minut alarm</span>
+                  </div>
+                </div>
+              )}
+
+              {upsellFeature === "radar" && (
+                <div className="rounded-xl p-4" style={{ background: "linear-gradient(135deg, #2e1065 0%, #4c1d95 100%)", border: "1px solid rgba(139,92,246,0.3)" }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center justify-center rounded-lg" style={{ width: 36, height: 36, background: "rgba(139,92,246,0.2)" }}>
+                      <RadioTower size={18} style={{ color: "#a78bfa" }} />
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-white text-sm tracking-wide">Radar Markeri</span>
+                      <p className="text-xs" style={{ color: "#c4b5fd" }}>Samo za Premium članove</p>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: "#ede9fe" }}>
+                    Označi <span className="font-bold text-white">policijski radar i saobraćajnu patrolu</span> na mapi u realnom vremenu. Ostali Premium vozači odmah dobijaju upozorenje pre nego što prođu tim mestom.
+                  </p>
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(139,92,246,0.2)", color: "#c4b5fd" }}>Policijski radar</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(139,92,246,0.2)", color: "#c4b5fd" }}>Patrola</span>
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(139,92,246,0.2)", color: "#c4b5fd" }}>Instant alarm</span>
                   </div>
                 </div>
               )}

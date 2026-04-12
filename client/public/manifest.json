@@ -4,7 +4,7 @@
   "description": "Pronađite i iznajmite parking mesta u Srbiji. Brza i sigurna rezervacija.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#212529",
+  "background_color": "#1B4332",
   "theme_color": "#1B4332",
   "orientation": "portrait-primary",
   "icons": [

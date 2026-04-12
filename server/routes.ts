@@ -607,9 +607,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set expiry based on type
       let expiresAt: Date | null = null;
       if (type === 'zlatni_minut') {
-        expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        expiresAt = new Date(Date.now() + 60 * 60 * 1000);       // 1 sat
       } else if (type === 'pauk' || type === 'radar') {
-        expiresAt = new Date(Date.now() + 45 * 60 * 1000);
+        expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000);  // 4 sata
       }
 
       const ipAddress = (
@@ -653,14 +653,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // system message failure is non-critical
         }
 
-        // Push notifications to premium users with watch areas near this marker (zlatni_minut + pauk)
+        // Push notifications to users with watch areas near this marker (pauk/zlatni_minut for all, radar premium only)
         try {
             const watchAreas = await storage.getAllMapWatchAreas();
             for (const area of watchAreas) {
               if (area.userId === userId) continue; // skip self
-              // Re-check premium entitlement to avoid sending to downgraded users
               const watcher = await storage.getUser(area.userId);
-              if (!watcher || !hasPremiumMapHackPlan(watcher)) continue;
+              const isFreeMarkerType = type === 'pauk' || type === 'zlatni_minut';
+              if (!watcher) continue;
+              if (!isFreeMarkerType && !hasPremiumMapHackPlan(watcher)) continue;
               if (watcher.mapNotificationsEnabled === false) continue; // user muted notifications
               const dist = haversineMetersServer(
                 parseFloat(area.lat), parseFloat(area.lng),
@@ -691,13 +692,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
       }
 
-      // Push notifications to premium users whose Safe Zone contains this marker (all types)
+      // Push notifications for Safe Zone — pauk/zlatni_minut for all users, radar/stek premium only
       try {
         const safeZones = await storage.getAllMapSafeZones();
         for (const zone of safeZones) {
           if (zone.userId === userId) continue; // skip self
           const owner = await storage.getUser(zone.userId);
-          if (!owner || !hasPremiumMapHackPlan(owner)) continue;
+          const isFreeMarkerType = type === 'pauk' || type === 'zlatni_minut';
+          if (!owner) continue;
+          if (!isFreeMarkerType && !hasPremiumMapHackPlan(owner)) continue;
           if (owner.mapNotificationsEnabled === false) continue;
           const dist = haversineMetersServer(
             parseFloat(zone.lat), parseFloat(zone.lng),
