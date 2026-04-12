@@ -90,24 +90,30 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
-export function parkingPinStyle(subscriptionType?: string | null): { bg: string; border: string; text: string; shadow: string } {
+export function parkingPinStyle(subscriptionType?: string | null): { bg: string; border: string; text: string; shadow: string; size: number; zIndex: number } {
   if (subscriptionType === "gold") return {
-    bg: "rgba(218,165,32,0.22)",
-    border: "rgba(218,165,32,0.9)",
-    text: "#fef08a",
-    shadow: "rgba(218,165,32,0.4)",
+    bg: "#B8860B",
+    border: "#FFD700",
+    text: "#fff",
+    shadow: "rgba(218,165,32,0.65)",
+    size: 38,
+    zIndex: 30,
   };
   if (subscriptionType === "silver") return {
-    bg: "rgba(148,163,184,0.22)",
-    border: "rgba(148,163,184,0.85)",
-    text: "#e2e8f0",
-    shadow: "rgba(148,163,184,0.35)",
+    bg: "rgba(148,163,184,0.85)",
+    border: "#94a3b8",
+    text: "#fff",
+    shadow: "rgba(148,163,184,0.5)",
+    size: 32,
+    zIndex: 20,
   };
   return {
-    bg: "rgba(59,130,246,0.22)",
-    border: "rgba(59,130,246,0.8)",
+    bg: "rgba(59,130,246,0.35)",
+    border: "rgba(59,130,246,0.6)",
     text: "#93c5fd",
-    shadow: "rgba(59,130,246,0.3)",
+    shadow: "rgba(59,130,246,0.25)",
+    size: 26,
+    zIndex: 10,
   };
 }
 
@@ -481,7 +487,10 @@ export function MapHackMap({
         })}
 
         {/* Parking markers — shown when "sve" or "parking" filter is active */}
-        {(activeFilters.includes("sve") || activeFilters.includes("parking")) && (parkingListings ?? []).map((spot) => {
+        {(activeFilters.includes("sve") || activeFilters.includes("parking")) && [...(parkingListings ?? [])].sort((a, b) => {
+          const tierOrder = (t?: string | null) => t === "gold" ? 2 : t === "silver" ? 1 : 0;
+          return tierOrder(a.subscriptionType) - tierOrder(b.subscriptionType);
+        }).map((spot) => {
           const lat = parseFloat(spot.latitude);
           const lng = parseFloat(spot.longitude);
           if (isNaN(lat) || isNaN(lng)) return null;
@@ -505,20 +514,22 @@ export function MapHackMap({
                   }
                 }}
                 style={{
-                  width: 30,
-                  height: 30,
+                  width: pinStyle.size,
+                  height: pinStyle.size,
                   borderRadius: "50%",
                   background: pinStyle.bg,
                   border: `2px solid ${pinStyle.border}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: `0 2px 8px ${pinStyle.shadow}`,
+                  boxShadow: `0 2px 12px ${pinStyle.shadow}`,
                   cursor: "pointer",
                   fontWeight: 700,
                   color: pinStyle.text,
-                  fontSize: 13,
+                  fontSize: Math.round(pinStyle.size * 0.37),
                   fontFamily: "system-ui,sans-serif",
+                  position: "relative",
+                  zIndex: pinStyle.zIndex,
                 }}
               >
                 P
