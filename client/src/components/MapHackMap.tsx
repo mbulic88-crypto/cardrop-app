@@ -90,6 +90,27 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 }
 
+export function parkingPinStyle(subscriptionType?: string | null): { bg: string; border: string; text: string; shadow: string } {
+  if (subscriptionType === "gold") return {
+    bg: "rgba(218,165,32,0.22)",
+    border: "rgba(218,165,32,0.9)",
+    text: "#fef08a",
+    shadow: "rgba(218,165,32,0.4)",
+  };
+  if (subscriptionType === "silver") return {
+    bg: "rgba(148,163,184,0.22)",
+    border: "rgba(148,163,184,0.85)",
+    text: "#e2e8f0",
+    shadow: "rgba(148,163,184,0.35)",
+  };
+  return {
+    bg: "rgba(59,130,246,0.22)",
+    border: "rgba(59,130,246,0.8)",
+    text: "#93c5fd",
+    shadow: "rgba(59,130,246,0.3)",
+  };
+}
+
 export function markerColor(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "#f97316";
   if (type === "pauk") return "#ef4444";
@@ -464,11 +485,7 @@ export function MapHackMap({
           const lat = parseFloat(spot.latitude);
           const lng = parseFloat(spot.longitude);
           if (isNaN(lat) || isNaN(lng)) return null;
-          const price = parseFloat(spot.pricePerHour).toFixed(0);
-          const unit = spot.pricingType === "hourly" ? "/h"
-            : spot.pricingType === "daily" ? "/dan"
-            : spot.pricingType === "monthly" ? "/mes"
-            : "/dan";
+          const pinStyle = parkingPinStyle(spot.subscriptionType);
           return (
             <Marker
               key={`parking-${spot.id}`}
@@ -491,15 +508,15 @@ export function MapHackMap({
                   width: 30,
                   height: 30,
                   borderRadius: "50%",
-                  background: "rgba(59,130,246,0.22)",
-                  border: "2px solid rgba(59,130,246,0.8)",
+                  background: pinStyle.bg,
+                  border: `2px solid ${pinStyle.border}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(59,130,246,0.3)",
+                  boxShadow: `0 2px 8px ${pinStyle.shadow}`,
                   cursor: "pointer",
                   fontWeight: 700,
-                  color: "#93c5fd",
+                  color: pinStyle.text,
                   fontSize: 13,
                   fontFamily: "system-ui,sans-serif",
                 }}

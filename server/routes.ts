@@ -754,8 +754,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      if (!user || !hasActiveMapHackPlan(user)) {
-        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      if (!user) {
+        return res.status(403).json({ message: "Niste prijavljeni" });
       }
       const spots = await storage.getAllParkingSpots();
       const listings = spots

@@ -11,7 +11,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
-import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters } from "@/components/MapHackMap";
+import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters, parkingPinStyle } from "@/components/MapHackMap";
 import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
@@ -494,8 +494,8 @@ export default function MapHackNS() {
   const isPremiumForQuery = user?.isAdmin || ["premium", "day_pass", "godisnji_premium", "firma"].includes(mapStatus?.plan ?? "");
   const { data: parkingListings = [] } = useQuery<ParkingListing[]>({
     queryKey: ["/api/map-hack/parking-listings"],
-    enabled: isMapView && isPremiumForQuery,
-    refetchInterval: isMapView && isPremiumForQuery ? 120000 : false,
+    enabled: isMapView,
+    refetchInterval: isMapView ? 120000 : false,
   });
 
   const addMarkerMutation = useMutation({
@@ -1507,12 +1507,25 @@ export default function MapHackNS() {
             {/* Panel header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: "rgba(59,130,246,0.18)", border: "1.5px solid rgba(59,130,246,0.7)" }}>
-                  <span className="font-bold text-xs" style={{ color: "#93c5fd" }}>P</span>
-                </div>
+                {(() => {
+                  const ps = parkingPinStyle(selectedParking.subscriptionType);
+                  return (
+                    <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: ps.bg, border: `1.5px solid ${ps.border}` }}>
+                      <span className="font-bold text-xs" style={{ color: ps.text }}>P</span>
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-col min-w-0">
                   <span className="font-bold text-white text-sm truncate">{selectedParking.title}</span>
-                  <span className="text-xs font-semibold" style={{ color: "#14b8a6" }}>Privatni parking</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-xs font-semibold" style={{ color: "#14b8a6" }}>Privatni parking</span>
+                    {selectedParking.subscriptionType === "gold" && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(218,165,32,0.18)", color: "#fbbf24", border: "1px solid rgba(218,165,32,0.4)" }}>Gold</span>
+                    )}
+                    {selectedParking.subscriptionType === "silver" && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(148,163,184,0.18)", color: "#cbd5e1", border: "1px solid rgba(148,163,184,0.4)" }}>Silver</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button onClick={() => setSelectedParking(null)} className="flex-shrink-0 ml-2">
