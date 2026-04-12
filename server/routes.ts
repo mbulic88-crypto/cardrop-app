@@ -475,7 +475,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session.userId;
       const currentUser = await storage.getUser(userId);
 
-      if (!currentUser?.stripeCustomerId) {
+      const isSubscriptionPlan = currentUser?.mapHackPlan === 'premium' || currentUser?.mapHackPlan === 'godisnji_premium';
+      if (!currentUser?.stripeCustomerId || !isSubscriptionPlan) {
         return res.status(400).json({ message: "Nema aktivne pretplate za upravljanje" });
       }
 
