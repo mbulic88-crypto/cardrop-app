@@ -1644,7 +1644,7 @@ export default function MapHackNS() {
               return (
                 <button
                   data-testid="btn-plan-badge"
-                  onClick={() => { setUpsellContext(""); setPremiumUpsellOpen(true); }}
+                  onClick={() => { setUpsellFeature(null); setUpsellContext(""); setPremiumUpsellOpen(true); }}
                   className="kraft-btn flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
                   style={{ background: s.color + "18", border: `1px solid ${s.border}`, color: s.color, cursor: "pointer" }}
                 >
@@ -1983,7 +1983,7 @@ export default function MapHackNS() {
             addMarkerMutation.mutate({ type: addMode, lat, lng });
           }}
           onContextMenu={(lat, lng) => {
-            if (!isPremium) { setUpsellContext("Safe Zone alarm dostupan je Premium korisnicima"); setPremiumUpsellOpen(true); return; }
+            if (!isPremium) { setUpsellFeature(null); setUpsellContext("Safe Zone alarm dostupan je Premium korisnicima"); setPremiumUpsellOpen(true); return; }
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
@@ -2104,7 +2104,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature(null); setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -2173,7 +2173,7 @@ export default function MapHackNS() {
             return (
               <button
                 data-testid="btn-watch-zone"
-                onClick={() => { if (!locked) setWatchZoneOpen(true); else { setUpsellContext("Watch zona dostupna je Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) setWatchZoneOpen(true); else { setUpsellFeature(null); setUpsellContext("Watch zona dostupna je Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -2916,7 +2916,7 @@ export default function MapHackNS() {
                     </div>
                   </div>
                   <p className="text-sm leading-relaxed" style={{ color: "#d1fae5" }}>
-                    Štek mesta su <span className="font-bold text-white">skrivena parkirna mesta</span> koja lokalni vozači dele međusobno — uglavnom besplatna, diskretna, i uvek u blizini centra. Dok drugi kruže u potrazi za mestom, ti direktno parkirate na proverenom steku.
+                    Štek mesta su <span className="font-bold text-white">skrivena parkirna mesta</span> koja lokalni vozači dele međusobno — uglavnom besplatna, diskretna, i uvek u blizini centra. Dok drugi kruže u potrazi za mestom, ti direktno parkiraš na proverenom steku.
                   </p>
                   <div className="mt-3 flex gap-2 flex-wrap">
                     <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: "rgba(34,197,94,0.15)", color: "#4ade80" }}>Besplatna mesta</span>
