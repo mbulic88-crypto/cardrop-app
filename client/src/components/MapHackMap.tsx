@@ -34,6 +34,7 @@ export interface ParkingListing {
   is24Hours?: boolean | null;
   hasEvCharging?: boolean | null;
   hasSecurityCamera?: boolean | null;
+  subscriptionType?: string | null;
 }
 
 export interface MapHackMapProps {
