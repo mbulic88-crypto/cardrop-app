@@ -348,6 +348,7 @@ export default function MapHackNS() {
   const [profileEditError, setProfileEditError] = useState("");
   const [profileEditSaving, setProfileEditSaving] = useState(false);
   const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
+  const [upsellContext, setUpsellContext] = useState<string>("");
   const [upsellPending, setUpsellPending] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
@@ -1642,7 +1643,7 @@ export default function MapHackNS() {
               return (
                 <button
                   data-testid="btn-plan-badge"
-                  onClick={() => setPremiumUpsellOpen(true)}
+                  onClick={() => { setUpsellContext(""); setPremiumUpsellOpen(true); }}
                   className="kraft-btn flex items-center px-2 py-0.5 rounded-full text-xs font-bold tracking-wide"
                   style={{ background: s.color + "18", border: `1px solid ${s.border}`, color: s.color, cursor: "pointer" }}
                 >
@@ -1828,11 +1829,17 @@ export default function MapHackNS() {
           { key: "parking",      label: "Privatan Parking", icon: "🅿" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
+          const isLocked = f.key === "stek" && !isPremium;
           return (
             <button
               key={f.key}
               data-testid={`filter-tab-${f.key}`}
               onClick={() => {
+                if (isLocked) {
+                  setUpsellContext("Štek lokacije su dostupne Premium korisnicima");
+                  setPremiumUpsellOpen(true);
+                  return;
+                }
                 setActiveFilters(prev => {
                   const without = prev.filter(x => x !== "sve" && x !== f.key);
                   const next = prev.includes(f.key) ? without : [...without, f.key];
@@ -1841,11 +1848,12 @@ export default function MapHackNS() {
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
-                background: isActive ? markerColor(f.key) + "22" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isActive ? markerColor(f.key) + "66" : "rgba(255,255,255,0.1)"}`,
-                color: isActive ? markerColor(f.key) : "#9ca3af",
+                background: isLocked ? "rgba(255,255,255,0.03)" : isActive ? markerColor(f.key) + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor(f.key) + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isLocked ? "#4b5563" : isActive ? markerColor(f.key) : "#9ca3af",
+                opacity: isLocked ? 0.65 : 1,
               }}>
-              <span>{f.icon}</span>
+              {isLocked ? <Lock size={11} style={{ color: "#4b5563" }} /> : <span>{f.icon}</span>}
               <span>{f.label}</span>
             </button>
           );
@@ -1876,11 +1884,17 @@ export default function MapHackNS() {
         })()}
         {(() => {
           const isActive = activeFilters.includes("safe_zone");
+          const isLocked = !isPremium;
           return (
             <button
               key="safe_zone"
               data-testid="filter-tab-safe_zone"
               onClick={() => {
+                if (isLocked) {
+                  setUpsellContext("Safe Zone alarm dostupan je Premium korisnicima");
+                  setPremiumUpsellOpen(true);
+                  return;
+                }
                 const willActivate = !activeFilters.includes("safe_zone");
                 setActiveFilters(prev => {
                   const without = prev.filter(x => x !== "sve" && x !== "safe_zone");
@@ -1899,11 +1913,12 @@ export default function MapHackNS() {
               }}
               className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
               style={{
-                background: isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
-                color: isActive ? markerColor("safe_zone") : "#9ca3af",
+                background: isLocked ? "rgba(255,255,255,0.03)" : isActive ? markerColor("safe_zone") + "22" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isLocked ? "rgba(255,255,255,0.07)" : isActive ? markerColor("safe_zone") + "66" : "rgba(255,255,255,0.1)"}`,
+                color: isLocked ? "#4b5563" : isActive ? markerColor("safe_zone") : "#9ca3af",
+                opacity: isLocked ? 0.65 : 1,
               }}>
-              <span>🛡</span>
+              {isLocked ? <Lock size={11} style={{ color: "#4b5563" }} /> : <span>🛡</span>}
               <span>Safe Zone</span>
             </button>
           );
@@ -1965,7 +1980,7 @@ export default function MapHackNS() {
             addMarkerMutation.mutate({ type: addMode, lat, lng });
           }}
           onContextMenu={(lat, lng) => {
-            if (!isPremium) { setPremiumUpsellOpen(true); return; }
+            if (!isPremium) { setUpsellContext("Safe Zone alarm dostupan je Premium korisnicima"); setPremiumUpsellOpen(true); return; }
             setSafeZoneMutation.mutate({ lat, lng, radiusMeters: 300 });
           }}
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
@@ -2086,7 +2101,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -2155,7 +2170,7 @@ export default function MapHackNS() {
             return (
               <button
                 data-testid="btn-watch-zone"
-                onClick={() => { if (!locked) setWatchZoneOpen(true); else setPremiumUpsellOpen(true); }}
+                onClick={() => { if (!locked) setWatchZoneOpen(true); else { setUpsellContext("Watch zona dostupna je Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -2871,8 +2886,10 @@ export default function MapHackNS() {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div>
-                <span className="font-bold text-white text-sm">Otključaj Premium</span>
-                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Safe Zone, Štek lokacije, Radar, Push notifikacije</p>
+                <span className="font-bold text-white text-sm">Premium funkcija</span>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
+                  {upsellContext || "Safe Zone, Štek lokacije, Radar, Push notifikacije"}
+                </p>
               </div>
               <button
                 onClick={() => setPremiumUpsellOpen(false)}
@@ -2992,6 +3009,7 @@ export default function MapHackNS() {
                 </div>
               </button>
 
+              <p className="text-center text-xs" style={{ color: "#4b5563" }}>Otkaži bilo kada · Bez skrivenih troškova</p>
               <p className="text-center text-xs pb-2" style={{ color: "#4b5563" }}>Sigurno plaćanje putem Stripe-a · RSD</p>
             </div>
           </div>
