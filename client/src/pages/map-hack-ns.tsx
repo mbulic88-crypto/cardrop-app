@@ -491,7 +491,6 @@ export default function MapHackNS() {
     enabled: isMapView && (user?.isAdmin || ["premium","day_pass","godisnji_premium","firma"].includes(mapStatus?.plan ?? "")),
   });
 
-  const isPremiumForQuery = user?.isAdmin || ["premium", "day_pass", "godisnji_premium", "firma"].includes(mapStatus?.plan ?? "");
   const { data: parkingListings = [] } = useQuery<ParkingListing[]>({
     queryKey: ["/api/map-hack/parking-listings"],
     enabled: isMapView,
