@@ -1,27 +1,70 @@
 {
   "name": "CarDrop - Parking u Srbiji",
   "short_name": "CarDrop",
+  "id": "/",
   "description": "Pronađite i iznajmite parking mesta u Srbiji. Brza i sigurna rezervacija.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
   "background_color": "#1B4332",
   "theme_color": "#1B4332",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "categories": ["lifestyle", "utilities"],
+  "lang": "sr",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["lifestyle", "utilities"],
-  "lang": "sr",
-  "dir": "ltr"
+  "shortcuts": [
+    {
+      "name": "Map Hack NS",
+      "short_name": "Mapa",
+      "description": "Otvori interaktivnu parking mapu Novog Sada",
+      "url": "/map-hack-ns",
+      "icons": [
+        { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screen1.png",
+      "sizes": "540x1170",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "CarDrop Parking Mapa - Novi Sad"
+    },
+    {
+      "src": "/screenshots/screen2.png",
+      "sizes": "540x1170",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "CarDrop Chat i Upozorenja"
+    }
+  ]
 }
