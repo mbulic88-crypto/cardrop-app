@@ -36,7 +36,12 @@ export function usePushNotifications() {
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
-      setIsSubscribed(!!subscription);
+      if (subscription) {
+        setIsSubscribed(true);
+        apiRequest('POST', '/api/push/subscribe', { subscription: subscription.toJSON() }).catch(() => {});
+      } else {
+        setIsSubscribed(false);
+      }
     } catch (error) {
       console.error('Error checking subscription:', error);
     }

@@ -2,10 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Android bottom nav bar color — matches theme-color so both bars are green */
+/* Android bottom nav bar color — background-color read by Chrome for system nav bar */
 html {
   background-color: #1B4332;
-  color-scheme: dark;
 }
 
 /* LIGHT MODE - WhatsApp cream theme */

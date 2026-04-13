@@ -470,6 +470,17 @@ export default function MapHackNS() {
   }, []);
 
   useEffect(() => {
+    const prevBg = document.body.style.background;
+    const prevScheme = document.documentElement.style.colorScheme;
+    document.body.style.background = '#1B4332';
+    document.documentElement.style.colorScheme = 'dark';
+    return () => {
+      document.body.style.background = prevBg;
+      document.documentElement.style.colorScheme = prevScheme;
+    };
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated && pushSupported && !pushSubscribed) {
       const autoPrompted = sessionStorage.getItem('push-auto-prompted-map');
       if (!autoPrompted) {
