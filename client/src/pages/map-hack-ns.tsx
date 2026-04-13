@@ -461,28 +461,23 @@ export default function MapHackNS() {
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const mapFlyToRef = useRef<{ flyTo: (lat: number, lng: number) => void } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
+  const [pushBannerDismissed, setPushBannerDismissed] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const { isInstallable, isInstalled, installApp } = usePWA();
-  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: pushSubscribe, isLoading: pushLoading } = usePushNotifications();
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: pushSubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
   useEffect(() => {
     setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
 
   useEffect(() => {
-    const prev = document.body.style.background;
-    document.body.style.background = '#1B4332';
-    return () => { document.body.style.background = prev; };
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated && pushSupported && !pushSubscribed && !pushLoading) {
-      const autoPrompted = sessionStorage.getItem('push-auto-prompted');
+    if (isAuthenticated && pushSupported && !pushSubscribed) {
+      const autoPrompted = sessionStorage.getItem('push-auto-prompted-map');
       if (!autoPrompted) {
-        sessionStorage.setItem('push-auto-prompted', '1');
+        sessionStorage.setItem('push-auto-prompted-map', '1');
         pushSubscribe();
       }
     }
-  }, [isAuthenticated, pushSupported, pushSubscribed, pushLoading]);
+  }, [isAuthenticated, pushSupported, pushSubscribed]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1383,6 +1378,37 @@ export default function MapHackNS() {
 
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
+      {/* ── Push notification banner ── */}
+      {isAuthenticated && pushSupported && !pushSubscribed && pushPermission !== 'denied' && !pushBannerDismissed && (
+        <div
+          className="absolute top-0 left-0 right-0 z-50 flex items-center gap-2 px-3 py-2"
+          style={{ background: "#1B4332", borderBottom: "1px solid rgba(255,255,255,0.10)" }}
+        >
+          <Bell size={14} style={{ color: "#6ee7b7", flexShrink: 0 }} />
+          <span className="text-xs flex-1" style={{ color: "#d1fae5" }}>
+            Aktiviraj obavještenja za paukove i zlatne minute
+          </span>
+          <button
+            data-testid="btn-push-banner-activate"
+            onClick={async () => {
+              const ok = await pushSubscribe();
+              if (ok) setPushBannerDismissed(true);
+            }}
+            disabled={pushLoading}
+            className="text-xs font-semibold px-2 py-1 rounded-md flex-shrink-0"
+            style={{ background: "#059669", color: "#fff" }}
+          >
+            {pushLoading ? "..." : "Aktiviraj"}
+          </button>
+          <button
+            data-testid="btn-push-banner-dismiss"
+            onClick={() => setPushBannerDismissed(true)}
+            className="flex-shrink-0"
+          >
+            <X size={14} style={{ color: "#6b7280" }} />
+          </button>
+        </div>
+      )}
       {/* ── Marker Detail Panel ── */}
       {selectedMarker && (
         <div
