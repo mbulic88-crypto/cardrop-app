@@ -2505,7 +2505,9 @@ export default function MapHackNS() {
           </div>
         </div>
       </div>
-      {/* Green safe-area fill for Android navigation bar */}
+      {/* Green safe-area fill: sits at the physical bottom of the fixed container so
+          Android gesture-navigation bar zone renders green (#1B4332) instead of dark.
+          height=0 on devices without bottom inset — no visual change. */}
       <div aria-hidden="true" style={{ background: '#1B4332', flexShrink: 0, height: 'env(safe-area-inset-bottom, 0px)' }} />
       {/* ── Pending Placement Comment Modal ── */}
       {pendingPlacement && (
