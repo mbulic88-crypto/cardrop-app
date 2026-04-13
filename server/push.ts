@@ -8,7 +8,7 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webPush.setVapidDetails(
-    'mailto:info@cardropp.app',
+    'mailto:info@cardrop.app',
     VAPID_PUBLIC_KEY,
     VAPID_PRIVATE_KEY
   );
@@ -57,7 +57,7 @@ export async function removeSubscription(userId: string, endpoint: string) {
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    console.log('VAPID keys not configured, skipping push notification');
+    console.log('[PUSH] VAPID keys not configured, skipping');
     return;
   }
 
@@ -65,8 +65,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     .from(pushSubscriptions)
     .where(eq(pushSubscriptions.userId, userId));
 
+  if (subscriptions.length === 0) {
+    console.log(`[PUSH] No subscriptions for userId=${userId}`);
+    return;
+  }
+
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
+      const ep = sub.endpoint.slice(0, 60);
+      console.log(`[PUSH] Sending to userId=${userId} endpoint=${ep}...`);
       try {
         await webPush.sendNotification(
           {
@@ -75,10 +82,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
           },
           JSON.stringify(payload)
         );
+        console.log(`[PUSH] Success userId=${userId} endpoint=${ep}`);
       } catch (error: any) {
+        const status = error.statusCode ?? error.status ?? 'unknown';
         if (error.statusCode === 410 || error.statusCode === 404) {
+          console.log(`[PUSH ERROR 410] Deleted stale sub for userId=${userId} endpoint=${ep}`);
           await db.delete(pushSubscriptions)
             .where(eq(pushSubscriptions.id, sub.id));
+        } else {
+          console.error(`[PUSH ERROR] userId=${userId} status=${status} msg=${error.message} endpoint=${ep}`);
         }
         throw error;
       }
@@ -90,7 +102,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
 export async function sendPushToAll(payload: PushPayload) {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    console.log('VAPID keys not configured, skipping push notification');
+    console.log('[PUSH] VAPID keys not configured, skipping');
     return;
   }
 
@@ -98,6 +110,8 @@ export async function sendPushToAll(payload: PushPayload) {
 
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
+      const ep = sub.endpoint.slice(0, 60);
+      console.log(`[PUSH] Sending to userId=${sub.userId} endpoint=${ep}...`);
       try {
         await webPush.sendNotification(
           {
@@ -106,10 +120,15 @@ export async function sendPushToAll(payload: PushPayload) {
           },
           JSON.stringify(payload)
         );
+        console.log(`[PUSH] Success userId=${sub.userId} endpoint=${ep}`);
       } catch (error: any) {
+        const status = error.statusCode ?? error.status ?? 'unknown';
         if (error.statusCode === 410 || error.statusCode === 404) {
+          console.log(`[PUSH ERROR 410] Deleted stale sub for userId=${sub.userId} endpoint=${ep}`);
           await db.delete(pushSubscriptions)
             .where(eq(pushSubscriptions.id, sub.id));
+        } else {
+          console.error(`[PUSH ERROR] userId=${sub.userId} status=${status} msg=${error.message} endpoint=${ep}`);
         }
         throw error;
       }

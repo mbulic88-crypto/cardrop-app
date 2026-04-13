@@ -481,14 +481,10 @@ export default function MapHackNS() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated && pushSupported && !pushSubscribed) {
-      const autoPrompted = sessionStorage.getItem('push-auto-prompted-map');
-      if (!autoPrompted) {
-        sessionStorage.setItem('push-auto-prompted-map', '1');
-        pushSubscribe();
-      }
-    }
-  }, [isAuthenticated, pushSupported, pushSubscribed]);
+    if (!isAuthenticated || !pushSupported || pushSubscribed) return;
+    if (pushPermission === 'denied') return;
+    pushSubscribe();
+  }, [isAuthenticated, pushSupported, pushSubscribed, pushPermission]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
