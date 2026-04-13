@@ -2505,10 +2505,6 @@ export default function MapHackNS() {
           </div>
         </div>
       </div>
-      {/* Green safe-area fill: sits at the physical bottom of the fixed container so
-          Android gesture-navigation bar zone renders green (#1B4332) instead of dark.
-          height=0 on devices without bottom inset — no visual change. */}
-      <div aria-hidden="true" style={{ background: '#1B4332', flexShrink: 0, height: 'env(safe-area-inset-bottom, 0px)' }} />
       {/* ── Pending Placement Comment Modal ── */}
       {pendingPlacement && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center"
@@ -3436,6 +3432,22 @@ export default function MapHackNS() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Android nav bar safe-area fill: position:fixed garantuje fizičko dno ekrana,
+          nezavisno od flex layout-a. pointerEvents:none ne blokira klikove.
+          height=0 na uređajima bez gesture nav — nema vizualne promjene. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 'env(safe-area-inset-bottom, 0px)',
+          background: '#1B4332',
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 }
