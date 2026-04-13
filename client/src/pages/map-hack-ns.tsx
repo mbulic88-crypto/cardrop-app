@@ -2050,8 +2050,8 @@ export default function MapHackNS() {
         )}
       </div>
       {/* ── Action bar below map ── */}
-      <div className="flex-shrink-0 px-3 py-2.5"
-        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined }}>
+      <div className="flex-shrink-0 px-3 pt-2.5"
+        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {/* Zlatni Minut */}
           {(() => {
@@ -2124,17 +2124,16 @@ export default function MapHackNS() {
                   border: `1.5px solid ${locked ? "#374151" : isActive ? "#22c55e" : "#1a8a3e"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
-                {locked ? <Lock size={18} style={{ color: "#6b7280" }} /> : (
-                  <div className="relative">
-                    <Home size={18} style={{ color: isActive ? "#fff" : "#86efac" }} />
-                    {count > 0 && (
-                      <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
-                        style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
-                    )}
-                  </div>
-                )}
+                <div className="relative">
+                  <Home size={18} style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac" }} />
+                  {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
+                  {!locked && count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                      style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
+                  )}
+                </div>
                 <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  {locked ? "Premium" : "Štek parking"}
+                  Štek
                 </span>
               </button>
             );
@@ -2160,17 +2159,16 @@ export default function MapHackNS() {
                   border: `1.5px solid ${locked ? "#374151" : isActive ? "#8b5cf6" : "#7c3aed"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
-                {locked ? <Lock size={18} style={{ color: "#6b7280" }} /> : (
-                  <div className="relative">
-                    <RadioTower size={18} style={{ color: isActive ? "#fff" : "#ddd6fe" }} />
-                    {count > 0 && (
-                      <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
-                        style={{ width: 14, height: 14, background: "#fff", color: "#6d28d9", fontSize: 7 }}>{count}</span>
-                    )}
-                  </div>
-                )}
+                <div className="relative">
+                  <RadioTower size={18} style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe" }} />
+                  {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
+                  {!locked && count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                      style={{ width: 14, height: 14, background: "#fff", color: "#6d28d9", fontSize: 7 }}>{count}</span>
+                  )}
+                </div>
                 <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  {locked ? "Premium" : "Radar"}
+                  Radar
                 </span>
               </button>
             );
@@ -2202,12 +2200,12 @@ export default function MapHackNS() {
                   border: `1.5px solid ${locked ? "#374151" : (hasZone || isPlacing) ? "#f59e0b" : "#b45309"}`,
                   opacity: locked ? 0.5 : 1,
                 }}>
-                {locked
-                  ? <Lock size={18} style={{ color: "#6b7280" }} />
-                  : <Bell size={18} style={{ color: (hasZone || isPlacing) ? "#fde68a" : "#fbbf24" }} />
-                }
+                <div className="relative">
+                  <Bell size={18} style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24" }} />
+                  {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
+                </div>
                 <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  {locked ? "Premium" : "Safe zona"}
+                  Safe zona
                 </span>
               </button>
             );

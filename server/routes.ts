@@ -11,7 +11,7 @@ import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
-import { mapMarkers as mapMarkersTable, users as usersTable } from "@shared/schema";
+import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -653,85 +653,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // system message failure is non-critical
         }
 
-        // Push notifications to users with watch areas near this marker (pauk/zlatni_minut for all, radar premium only)
-        try {
-            const watchAreas = await storage.getAllMapWatchAreas();
-            for (const area of watchAreas) {
-              if (area.userId === userId) continue; // skip self
-              const watcher = await storage.getUser(area.userId);
-              const isFreeMarkerType = type === 'pauk' || type === 'zlatni_minut';
-              if (!watcher) continue;
-              if (!isFreeMarkerType && !hasPremiumMapHackPlan(watcher)) continue;
-              if (watcher.mapNotificationsEnabled === false) continue; // user muted notifications
-              const dist = haversineMetersServer(
-                parseFloat(area.lat), parseFloat(area.lng),
-                latNum, lngNum
-              );
-              if (dist <= area.radiusMeters) {
-                const pushTitle = type === 'pauk'
-                  ? 'Pauk u blizini!'
-                  : type === 'radar'
-                  ? 'Radar prijavljen!'
-                  : 'Zlatni Minut!';
-                const pushBody = type === 'pauk'
-                  ? 'Pauk prijavljen u tvojoj zoni.'
-                  : type === 'radar'
-                  ? 'Policijski radar prijavljen u tvojoj zoni.'
-                  : 'Prijavljen u tvojoj zoni. Brzi!';
-                await sendPushToUser(area.userId, {
-                  title: pushTitle,
-                  body: pushBody,
-                  icon: '/icons/icon-192x192.png',
-                  tag: `watch-area-${type}`,
-                  url: '/map-hack',
-                }).catch(() => {});
-              }
-            }
+        // Pauk / Zlatni Minut — broadcast to ALL subscribed users (free + premium), excluding sender
+        if (type === 'pauk' || type === 'zlatni_minut') {
+          try {
+            const allSubs = await db.select().from(pushSubscriptionsTable);
+            const uniqueUserIds = [...new Set(allSubs.map(s => s.userId))].filter(uid => uid !== userId);
+            const pushTitle = type === 'pauk' ? 'Pauk u NS!' : 'Zlatni Minut u NS!';
+            const pushBody = type === 'pauk'
+              ? 'Pauk prijavljen u Novom Sadu — proveri mapu!'
+              : 'Slobodan parking prijavljen — brži ko brži!';
+            await Promise.allSettled(uniqueUserIds.map(async uid => {
+              const u = await storage.getUser(uid);
+              if (!u || u.mapNotificationsEnabled === false) return;
+              await sendPushToUser(uid, {
+                title: pushTitle,
+                body: pushBody,
+                icon: '/icons/icon-192x192.png',
+                tag: `broadcast-${type}`,
+                url: '/map-hack',
+              }).catch(() => {});
+            }));
           } catch (_) {
             // push failure is non-critical
           }
-      }
-
-      // Push notifications for Safe Zone — pauk/zlatni_minut for all users, radar/stek premium only
-      try {
-        const safeZones = await storage.getAllMapSafeZones();
-        for (const zone of safeZones) {
-          if (zone.userId === userId) continue; // skip self
-          const owner = await storage.getUser(zone.userId);
-          const isFreeMarkerType = type === 'pauk' || type === 'zlatni_minut';
-          if (!owner) continue;
-          if (!isFreeMarkerType && !hasPremiumMapHackPlan(owner)) continue;
-          if (owner.mapNotificationsEnabled === false) continue;
-          const dist = haversineMetersServer(
-            parseFloat(zone.lat), parseFloat(zone.lng),
-            latNum, lngNum
-          );
-          if (dist <= zone.radiusMeters) {
-            const pushTitle = type === 'pauk'
-              ? 'Pauk u tvojoj Safe Zoni!'
-              : type === 'radar'
-              ? 'Radar u tvojoj Safe Zoni!'
-              : type === 'stek'
-              ? 'Štek u tvojoj Safe Zoni!'
-              : 'Zlatni Minut u tvojoj Safe Zoni!';
-            const pushBody = type === 'pauk'
-              ? 'Pauk prijavljen unutar tvoje Safe Zone.'
-              : type === 'radar'
-              ? 'Policijski radar prijavljen unutar tvoje Safe Zone.'
-              : type === 'stek'
-              ? 'Novo štek mesto prijavljeno unutar tvoje Safe Zone.'
-              : 'Slobodan parking prijavljen unutar tvoje Safe Zone!';
-            await sendPushToUser(zone.userId, {
-              title: pushTitle,
-              body: pushBody,
-              icon: '/icons/icon-192x192.png',
-              tag: `safe-zone-${type}`,
-              url: '/map-hack',
-            }).catch(() => {});
-          }
         }
-      } catch (_) {
-        // push failure is non-critical
+
+        // Radar / Štek — zone-based, premium users only (watch area + safe zone)
+        if (type === 'radar' || type === 'stek') {
+          try {
+            const watchAreas = await storage.getAllMapWatchAreas();
+            for (const area of watchAreas) {
+              if (area.userId === userId) continue;
+              const watcher = await storage.getUser(area.userId);
+              if (!watcher || !hasPremiumMapHackPlan(watcher)) continue;
+              if (watcher.mapNotificationsEnabled === false) continue;
+              const dist = haversineMetersServer(parseFloat(area.lat), parseFloat(area.lng), latNum, lngNum);
+              if (dist <= area.radiusMeters) {
+                const pushTitle = type === 'radar' ? 'Radar u tvojoj zoni!' : 'Štek u tvojoj zoni!';
+                const pushBody = type === 'radar'
+                  ? 'Policijski radar prijavljen u tvojoj Watch zoni.'
+                  : 'Novo štek mesto prijavljeno u tvojoj Watch zoni.';
+                await sendPushToUser(area.userId, { title: pushTitle, body: pushBody, icon: '/icons/icon-192x192.png', tag: `watch-area-${type}`, url: '/map-hack' }).catch(() => {});
+              }
+            }
+          } catch (_) { }
+
+          try {
+            const safeZones = await storage.getAllMapSafeZones();
+            for (const zone of safeZones) {
+              if (zone.userId === userId) continue;
+              const owner = await storage.getUser(zone.userId);
+              if (!owner || !hasPremiumMapHackPlan(owner)) continue;
+              if (owner.mapNotificationsEnabled === false) continue;
+              const dist = haversineMetersServer(parseFloat(zone.lat), parseFloat(zone.lng), latNum, lngNum);
+              if (dist <= zone.radiusMeters) {
+                const pushTitle = type === 'radar' ? 'Radar u tvojoj Safe Zoni!' : 'Štek u tvojoj Safe Zoni!';
+                const pushBody = type === 'radar'
+                  ? 'Policijski radar prijavljen unutar tvoje Safe Zone.'
+                  : 'Novo štek mesto prijavljeno unutar tvoje Safe Zone.';
+                await sendPushToUser(zone.userId, { title: pushTitle, body: pushBody, icon: '/icons/icon-192x192.png', tag: `safe-zone-${type}`, url: '/map-hack' }).catch(() => {});
+              }
+            }
+          } catch (_) { }
+        }
       }
 
       res.json(marker);
