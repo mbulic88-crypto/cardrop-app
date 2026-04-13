@@ -475,14 +475,14 @@ export default function MapHackNS() {
   }, []);
 
   useEffect(() => {
-    if (pushSupported && !pushSubscribed && !pushLoading) {
+    if (isAuthenticated && pushSupported && !pushSubscribed && !pushLoading) {
       const autoPrompted = sessionStorage.getItem('push-auto-prompted');
       if (!autoPrompted) {
         sessionStorage.setItem('push-auto-prompted', '1');
         pushSubscribe();
       }
     }
-  }, [pushSupported, pushSubscribed, pushLoading]);
+  }, [isAuthenticated, pushSupported, pushSubscribed, pushLoading]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
