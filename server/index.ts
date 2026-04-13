@@ -168,14 +168,13 @@ async function clearSpotExpiry() {
   app.use((req, res, next) => {
     if (req.path.match(/\.(js|css|woff2?|ttf|eot|png|jpg|jpeg|webp|svg|ico|gif)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    } else if (req.path === '/sw.js' || req.path === '/manifest.json' || req.path === '/robots.txt') {
+    } else if (req.path === '/sw.js' || req.path === '/robots.txt') {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
     next();
   });
 
-  // Dedicated route for manifest.json: sets Content-Type to application/manifest+json
-  // MUST be registered before Vite/express.static so it wins and sends the file directly.
+  // Serve manifest.json with the correct PWA MIME type before Vite/static middleware.
   const manifestFilePath = app.get("env") === "development"
     ? nodePath.resolve(import.meta.dirname, '../client/public/manifest.json')
     : nodePath.resolve(import.meta.dirname, 'public/manifest.json');
