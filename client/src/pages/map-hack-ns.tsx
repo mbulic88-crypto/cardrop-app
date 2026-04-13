@@ -1465,7 +1465,7 @@ export default function MapHackNS() {
             </div>
 
             {/* Comment / info text */}
-            {(selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek" || selectedMarker.type === "pauk") && (
+            {(selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek" || selectedMarker.type === "pauk" || selectedMarker.type === "kamera") && (
               <>
                 {selectedMarker.label && markerLabelEdit === null && (
                   <div className="px-3 py-2 rounded-xl text-sm" style={{ background: "rgba(255,255,255,0.05)", color: "#d1d5db", lineHeight: 1.5 }}>
@@ -1481,7 +1481,13 @@ export default function MapHackNS() {
                       onChange={(e) => setMarkerLabelEdit(e.target.value)}
                       maxLength={120}
                       rows={3}
-                      placeholder={selectedMarker.type === "zlatni_minut" ? "Dodaj komentar o parking mestu..." : "Dodaj informaciju o štek lokaciji..."}
+                      placeholder={
+                        selectedMarker.type === "zlatni_minut"
+                          ? "Dodaj komentar o parking mestu..."
+                          : selectedMarker.type === "kamera"
+                          ? "Dodaj opis kamere..."
+                          : "Dodaj informaciju o štek lokaciji..."
+                      }
                       className="w-full text-sm rounded-xl px-3 py-2 resize-none"
                       style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb", outline: "none" }}
                     />
