@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import nodePath from 'path';
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -170,10 +171,19 @@ async function clearSpotExpiry() {
     } else if (req.path === '/sw.js' || req.path === '/manifest.json' || req.path === '/robots.txt') {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
-    if (req.path === '/manifest.json') {
-      res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
-    }
     next();
+  });
+
+  // Dedicated route for manifest.json: sets Content-Type to application/manifest+json
+  // MUST be registered before Vite/express.static so it wins and sends the file directly.
+  const manifestFilePath = app.get("env") === "development"
+    ? nodePath.resolve(import.meta.dirname, '../client/public/manifest.json')
+    : nodePath.resolve(import.meta.dirname, 'public/manifest.json');
+
+  app.get('/manifest.json', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+    res.sendFile(manifestFilePath);
   });
 
   if (app.get("env") === "development") {
