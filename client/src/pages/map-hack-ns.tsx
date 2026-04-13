@@ -1381,7 +1381,7 @@ export default function MapHackNS() {
       {/* ── Push notification banner ── */}
       {isAuthenticated && pushSupported && !pushSubscribed && pushPermission !== 'denied' && !pushBannerDismissed && (
         <div
-          className="absolute top-0 left-0 right-0 z-50 flex items-center gap-2 px-3 py-2"
+          className="flex-shrink-0 flex items-center gap-2 px-3 py-2"
           style={{ background: "#1B4332", borderBottom: "1px solid rgba(255,255,255,0.10)" }}
         >
           <Bell size={14} style={{ color: "#6ee7b7", flexShrink: 0 }} />
