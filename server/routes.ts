@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isPremiumUser = hasPremiumMapHackPlan(user);
       const filtered = isPremiumUser
         ? markersWithNick
-        : markersWithNick.filter(m => m.type !== 'radar');
+        : markersWithNick.filter(m => m.type !== 'radar' && m.type !== 'stek');
       res.json(filtered);
     } catch (error) {
       console.error("Error fetching map markers:", error);

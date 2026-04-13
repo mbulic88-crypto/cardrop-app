@@ -456,9 +456,8 @@ export function MapHackMap({
         {/* Map markers */}
         {filtered.map((marker) => {
           const color = markerColor(marker.type);
-          const isLocked = marker.type === "stek" && !isPremium;
-          const bgColor = isLocked ? "rgba(30,35,50,0.85)" : hexToRgba(color, 0.28);
-          const borderColor = isLocked ? "rgba(107,114,128,0.5)" : hexToRgba(color, 0.7);
+          const bgColor = hexToRgba(color, 0.28);
+          const borderColor = hexToRgba(color, 0.7);
           return (
             <Marker
               key={marker.id}
@@ -477,10 +476,10 @@ export function MapHackMap({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: `0 2px 10px ${isLocked ? "rgba(0,0,0,0.35)" : hexToRgba(color, 0.35)}`,
+                  boxShadow: `0 2px 10px ${hexToRgba(color, 0.35)}`,
                   cursor: "pointer",
                 }}
-                dangerouslySetInnerHTML={{ __html: markerSvgHtml(marker.type, isLocked) }}
+                dangerouslySetInnerHTML={{ __html: markerSvgHtml(marker.type, false) }}
               />
             </Marker>
           );

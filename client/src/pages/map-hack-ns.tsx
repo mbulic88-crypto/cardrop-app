@@ -465,6 +465,12 @@ export default function MapHackNS() {
   useEffect(() => {
     setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
+
+  useEffect(() => {
+    const prev = document.body.style.background;
+    document.body.style.background = '#1B4332';
+    return () => { document.body.style.background = prev; };
+  }, []);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
