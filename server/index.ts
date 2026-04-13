@@ -170,6 +170,9 @@ async function clearSpotExpiry() {
     } else if (req.path === '/sw.js' || req.path === '/manifest.json' || req.path === '/robots.txt') {
       res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
+    if (req.path === '/manifest.json') {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=UTF-8');
+    }
     next();
   });
 
