@@ -910,34 +910,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         replyToText: replyToText ? String(replyToText).slice(0, 120) : null,
       });
 
-      // Push notification to watch area users when message contains urgent keywords.
-      // Respects mapNotificationsEnabled — same filter pattern as marker push flow.
-      const urgentKeywords = ['pauk', 'evakuator', 'šlep', 'policija', 'radar'];
-      const msgLower = trimmedText.toLowerCase();
-      const isUrgent = urgentKeywords.some(kw => msgLower.includes(kw));
-      if (isUrgent) {
-        try {
-          const watchAreas = await storage.getAllMapWatchAreas();
-          const notified = new Set<string>();
-          for (const area of watchAreas) {
-            if (area.userId === userId || notified.has(area.userId)) continue;
-            const recipient = await storage.getUser(area.userId);
-            if (!recipient || recipient.mapNotificationsEnabled === false) continue;
-            notified.add(area.userId);
-            await sendPushToUser(area.userId, {
-              title: 'Upozorenje u chatu!',
-              body: `${user.mapNickname}: ${trimmedText.slice(0, 80)}`,
-              icon: '/icons/icon-192x192.png',
-              tag: 'chat-urgent',
-              url: '/map-hack',
-            }).catch(() => {});
-          }
-        } catch (_) {
-          // push failure is non-critical
-        }
-      }
-
       res.json(msg);
+
+      // Admin chat messages broadcast push to all subscribed users (excluding sender)
+      if (user.isAdmin) {
+        setImmediate(async () => {
+          try {
+            const allSubs = await db.select().from(pushSubscriptionsTable);
+            const uniqueUserIds = [...new Set(allSubs.map((s) => s.userId))].filter((uid) => uid !== userId);
+            await Promise.allSettled(uniqueUserIds.map(async (uid) => {
+              const u = await storage.getUser(uid);
+              if (!u || u.mapNotificationsEnabled === false) return;
+              await sendPushToUser(uid, {
+                title: `${user.mapNickname} u chatu`,
+                body: trimmedText.slice(0, 100),
+                icon: '/icons/icon-192x192.png',
+                tag: 'chat-message',
+                url: '/map-hack',
+              }).catch(() => {});
+            }));
+          } catch (_) {}
+        });
+      }
     } catch (error) {
       console.error("Error posting map chat message:", error);
       res.status(500).json({ message: "Greška pri slanju poruke" });
