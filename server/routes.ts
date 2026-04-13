@@ -586,9 +586,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const label: string | null = typeof req.body.label === 'string'
         ? req.body.label.trim().slice(0, 100) || null
         : null;
-      const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone', 'radar'];
+      const validTypes = ['zlatni_minut', 'pauk', 'stek', 'safe_zone', 'radar', 'kamera'];
       if (!type || !validTypes.includes(type)) {
         return res.status(400).json({ message: "Nevalidan tip markera" });
+      }
+      if (type === 'kamera' && !user.isAdmin) {
+        return res.status(403).json({ message: "Samo admin može dodati kamere" });
       }
       if ((type === 'stek' || type === 'radar') && !hasPremiumMapHackPlan(user)) {
         return res.status(403).json({ message: "Ova funkcija zahteva Premium plan" });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -2014,6 +2014,31 @@ export default function MapHackNS() {
               : <Trash2 size={11} />}
           </button>
         )}
+        {/* Kamere — vidljivo svima (free + premium) */}
+        {(() => {
+          const isActive = activeFilters.includes("kamera");
+          return (
+            <button
+              key="kamera"
+              data-testid="filter-tab-kamera"
+              onClick={() => {
+                setActiveFilters(prev => {
+                  const without = prev.filter(x => x !== "sve" && x !== "kamera");
+                  const next = prev.includes("kamera") ? without : [...without, "kamera"];
+                  return next.length === 0 ? ["sve"] : next;
+                });
+              }}
+              className="kraft-btn flex-shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: isActive ? "#0ea5e922" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${isActive ? "#0ea5e966" : "rgba(255,255,255,0.1)"}`,
+                color: isActive ? "#0ea5e9" : "#9ca3af",
+              }}>
+              <Camera size={11} />
+              <span>Kamere</span>
+            </button>
+          );
+        })()}
         {/* Aktivno dropdown */}
         <button
           data-testid="btn-filter-aktivno"
@@ -2044,7 +2069,7 @@ export default function MapHackNS() {
               return;
             }
             if (!addMode) return;
-            if (addMode === "zlatni_minut" || addMode === "pauk" || addMode === "radar") {
+            if (addMode === "zlatni_minut" || addMode === "pauk" || addMode === "radar" || addMode === "kamera") {
               setPendingPlacement({ type: addMode, lat, lng });
               setPendingComment("");
               return;
@@ -2227,6 +2252,33 @@ export default function MapHackNS() {
                 <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#ddd6fe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
                   Radar
                 </span>
+              </button>
+            );
+          })()}
+
+          {/* Kamera — samo admin */}
+          {user?.isAdmin && (() => {
+            const count = mapMarkers.filter(m => m.type === "kamera").length;
+            const isActive = addMode === "kamera";
+            return (
+              <button
+                key="kamera"
+                data-testid="action-bar-kamera"
+                onClick={() => { setAddMode(isActive ? null : "kamera"); setWatchZonePlaceMode(false); }}
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                style={{
+                  width: 58, height: 58,
+                  background: isActive ? "#0369a1" : "#0c4a6e",
+                  border: `1.5px solid ${isActive ? "#0ea5e9" : "#0284c7"}`,
+                }}>
+                <div className="relative">
+                  <Camera size={18} style={{ color: isActive ? "#fff" : "#7dd3fc" }} />
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                      style={{ width: 14, height: 14, background: "#fff", color: "#0369a1", fontSize: 7 }}>{count}</span>
+                  )}
+                </div>
+                <span className="font-bold text-center" style={{ color: isActive ? "#fff" : "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Kamera</span>
               </button>
             );
           })()}
@@ -2523,12 +2575,16 @@ export default function MapHackNS() {
                       ? "rgba(239,68,68,0.18)"
                       : pendingPlacement.type === "radar"
                       ? "rgba(139,92,246,0.18)"
+                      : pendingPlacement.type === "kamera"
+                      ? "rgba(14,165,233,0.18)"
                       : "rgba(249,115,22,0.18)",
                     border: `1px solid ${
                       pendingPlacement.type === "pauk"
                         ? "rgba(239,68,68,0.4)"
                         : pendingPlacement.type === "radar"
                         ? "rgba(139,92,246,0.4)"
+                        : pendingPlacement.type === "kamera"
+                        ? "rgba(14,165,233,0.4)"
                         : "rgba(249,115,22,0.4)"
                     }`,
                   }}>
@@ -2536,6 +2592,8 @@ export default function MapHackNS() {
                     ? <AlertTriangle size={15} style={{ color: "#f87171" }} />
                     : pendingPlacement.type === "radar"
                     ? <RadioTower size={15} style={{ color: "#a78bfa" }} />
+                    : pendingPlacement.type === "kamera"
+                    ? <Camera size={15} style={{ color: "#38bdf8" }} />
                     : <Clock size={15} style={{ color: "#fb923c" }} />
                   }
                 </div>
@@ -2545,6 +2603,8 @@ export default function MapHackNS() {
                       ? "Pauk Radar"
                       : pendingPlacement.type === "radar"
                       ? "Radar"
+                      : pendingPlacement.type === "kamera"
+                      ? "Saobraćajna Kamera"
                       : "Zlatni Minut"}
                   </p>
                   <p className="text-xs" style={{ color: "#9ca3af" }}>Dodaj komentar (opciono)</p>
@@ -2567,6 +2627,8 @@ export default function MapHackNS() {
                     ? "npr. Stoji tu već 30min, kruži po bloku..."
                     : pendingPlacement.type === "radar"
                     ? "npr. Mobilni radar na Bulevaru, pazi na 60..."
+                    : pendingPlacement.type === "kamera"
+                    ? "npr. Nadzorna kamera na raskrižju, radi 24h..."
                     : "npr. Slobodnih mesta ima, ali frka na uglu..."
                 }
                 rows={3}
@@ -2608,12 +2670,16 @@ export default function MapHackNS() {
                       ? "#991b1b"
                       : pendingPlacement.type === "radar"
                       ? "#6d28d9"
+                      : pendingPlacement.type === "kamera"
+                      ? "#0369a1"
                       : "#c2410c",
                     border: `1px solid ${
                       pendingPlacement.type === "pauk"
                         ? "#ef4444"
                         : pendingPlacement.type === "radar"
                         ? "#8b5cf6"
+                        : pendingPlacement.type === "kamera"
+                        ? "#0ea5e9"
                         : "#f97316"
                     }`,
                     color: "#fff",

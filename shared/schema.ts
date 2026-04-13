@@ -390,6 +390,7 @@ export const mapMarkerTypeEnum = pgEnum("map_marker_type", [
   "stek",
   "safe_zone",
   "radar",
+  "kamera",
 ]);
 
 export const mapMarkers = pgTable("map_markers", {

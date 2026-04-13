@@ -12,7 +12,7 @@ import type { MapboxEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 
-export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone" | "radar";
+export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone" | "radar" | "kamera";
 
 export interface ChatPreviewMsg {
   text: string;
@@ -83,6 +83,8 @@ function markerSvgHtml(type: MarkerType | string, locked: boolean): string {
     path = `<path d="M12 2 L20 6 V12 C20 16.5 16.5 20 12 22 C7.5 20 4 16.5 4 12 V6 Z"/>`;
   } else if (type === "radar") {
     path = `<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="10" x2="12" y2="3"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>`;
+  } else if (type === "kamera") {
+    path = `<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>`;
   } else {
     path = `<circle cx="12" cy="12" r="10"/>`;
   }
@@ -124,6 +126,7 @@ export function markerColor(type: MarkerType | string): string {
   if (type === "safe_zone") return "#3b82f6";
   if (type === "radar") return "#8b5cf6";
   if (type === "parking") return "#3b82f6";
+  if (type === "kamera") return "#0ea5e9";
   return "#6b7280";
 }
 
@@ -133,6 +136,7 @@ export function markerEmoji(type: MarkerType | string): string {
   if (type === "stek") return "🏠";
   if (type === "safe_zone") return "🛡";
   if (type === "radar") return "📡";
+  if (type === "kamera") return "📷";
   return "📍";
 }
 
@@ -142,6 +146,7 @@ export function markerLabel(type: MarkerType | string): string {
   if (type === "stek") return "Štek Lokacija";
   if (type === "safe_zone") return "Safe Zone Alarm";
   if (type === "radar") return "Radar";
+  if (type === "kamera") return "Saobraćajna Kamera";
   return type;
 }
 
