@@ -471,11 +471,14 @@ export default function MapHackNS() {
 
   useEffect(() => {
     const prevBg = document.body.style.background;
+    const prevHtmlBg = document.documentElement.style.background;
     const prevScheme = document.documentElement.style.colorScheme;
     document.body.style.background = '#1B4332';
+    document.documentElement.style.background = '#1B4332';
     document.documentElement.style.colorScheme = 'dark';
     return () => {
       document.body.style.background = prevBg;
+      document.documentElement.style.background = prevHtmlBg;
       document.documentElement.style.colorScheme = prevScheme;
     };
   }, []);
@@ -2105,7 +2108,7 @@ export default function MapHackNS() {
       </div>
       {/* ── Action bar below map ── */}
       <div className="flex-shrink-0 px-3 pt-2.5"
-        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
+        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: "10px" }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {/* Zlatni Minut */}
           {(() => {
@@ -2502,6 +2505,8 @@ export default function MapHackNS() {
           </div>
         </div>
       </div>
+      {/* Green safe-area fill for Android navigation bar */}
+      <div aria-hidden="true" style={{ background: '#1B4332', flexShrink: 0, height: 'env(safe-area-inset-bottom, 0px)' }} />
       {/* ── Pending Placement Comment Modal ── */}
       {pendingPlacement && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center"
