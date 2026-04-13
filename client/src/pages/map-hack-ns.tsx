@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePWA } from "@/hooks/use-pwa";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -462,6 +463,7 @@ export default function MapHackNS() {
   const [showPwaModal, setShowPwaModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const { isInstallable, isInstalled, installApp } = usePWA();
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: pushSubscribe, isLoading: pushLoading } = usePushNotifications();
   useEffect(() => {
     setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
@@ -471,6 +473,16 @@ export default function MapHackNS() {
     document.body.style.background = '#1B4332';
     return () => { document.body.style.background = prev; };
   }, []);
+
+  useEffect(() => {
+    if (pushSupported && !pushSubscribed && !pushLoading) {
+      const autoPrompted = sessionStorage.getItem('push-auto-prompted');
+      if (!autoPrompted) {
+        sessionStorage.setItem('push-auto-prompted', '1');
+        pushSubscribe();
+      }
+    }
+  }, [pushSupported, pushSubscribed, pushLoading]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1811,8 +1823,11 @@ export default function MapHackNS() {
                     <button
                       data-testid="btn-notifications-toggle"
                       onClick={async () => {
-                        const newEnabled = !(user.mapNotificationsEnabled ?? true);
                         setBurgerMenuOpen(false);
+                        if (!pushSubscribed) {
+                          await pushSubscribe();
+                        }
+                        const newEnabled = !(user.mapNotificationsEnabled ?? true);
                         try {
                           await apiRequest("PATCH", "/api/map-hack/notifications", { enabled: newEnabled });
                           await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
