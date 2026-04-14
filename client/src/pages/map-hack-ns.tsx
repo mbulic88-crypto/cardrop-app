@@ -445,6 +445,7 @@ export default function MapHackNS() {
   const [addMode, setAddMode] = useState<MarkerType | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<MapMarkerWithNickname | null>(null);
   const [selectedParking, setSelectedParking] = useState<ParkingListing | null>(null);
+  const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
@@ -1573,7 +1574,7 @@ export default function MapHackNS() {
         <div
           className="absolute inset-0 z-50 flex flex-col justify-end"
           style={{ background: "rgba(0,0,0,0.5)" }}
-          onClick={() => setSelectedParking(null)}
+          onClick={() => { setSelectedParking(null); setDescExpanded(false); }}
         >
           <div
             className="rounded-t-2xl px-4 pt-4 pb-6 flex flex-col gap-3"
@@ -1604,7 +1605,7 @@ export default function MapHackNS() {
                   </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedParking(null)} className="flex-shrink-0 ml-2">
+              <button onClick={() => { setSelectedParking(null); setDescExpanded(false); }} className="flex-shrink-0 ml-2">
                 <X size={16} style={{ color: "#9ca3af" }} />
               </button>
             </div>
@@ -1641,14 +1642,7 @@ export default function MapHackNS() {
               )}
             </div>
 
-            {/* Description */}
-            {selectedParking.description && (
-              <div className="px-3 py-2 rounded-xl text-xs" style={{ background: "rgba(255,255,255,0.04)", color: "#d1d5db", lineHeight: 1.6 }}>
-                {selectedParking.description}
-              </div>
-            )}
-
-            {/* Images gallery */}
+            {/* Images gallery — iznad opisa da bude uvijek vidljiva */}
             {selectedParking.imageUrls && selectedParking.imageUrls.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                 {selectedParking.imageUrls.map((url, i) => (
@@ -1660,6 +1654,35 @@ export default function MapHackNS() {
                     style={{ width: 120, height: 80, border: "1px solid rgba(255,255,255,0.10)" }}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* Description — truncated sa "Prikaži više" */}
+            {selectedParking.description && (
+              <div>
+                <div
+                  className="px-3 py-2 rounded-xl text-xs"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#d1d5db",
+                    lineHeight: 1.6,
+                    display: '-webkit-box',
+                    WebkitLineClamp: descExpanded ? undefined : 3,
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: descExpanded ? 'visible' : 'hidden',
+                  } as React.CSSProperties}
+                >
+                  {selectedParking.description}
+                </div>
+                {selectedParking.description.length > 120 && (
+                  <button
+                    onClick={() => setDescExpanded(prev => !prev)}
+                    className="text-xs mt-1 font-medium"
+                    style={{ color: "#14b8a6" }}
+                  >
+                    {descExpanded ? "Prikaži manje ▲" : "Prikaži više ▼"}
+                  </button>
+                )}
               </div>
             )}
 
