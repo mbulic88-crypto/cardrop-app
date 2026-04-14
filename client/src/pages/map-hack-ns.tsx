@@ -16,6 +16,7 @@ import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters, par
 import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
+import { SiViber, SiWhatsapp } from "react-icons/si";
 
 type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
 
@@ -328,6 +329,17 @@ function CompactHero({ title = "Map Hack NS" }: { title?: string }) {
       </p>
     </div>
   );
+}
+
+function formatPhoneForMessaging(phone: string): string {
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  if (cleaned.startsWith('0')) {
+    cleaned = '+381' + cleaned.substring(1);
+  }
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
 }
 
 export default function MapHackNS() {
@@ -1636,9 +1648,24 @@ export default function MapHackNS() {
               </div>
             )}
 
+            {/* Images gallery */}
+            {selectedParking.imageUrls && selectedParking.imageUrls.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                {selectedParking.imageUrls.map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`Parking slika ${i + 1}`}
+                    className="rounded-xl flex-shrink-0 object-cover"
+                    style={{ width: 120, height: 80, border: "1px solid rgba(255,255,255,0.10)" }}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Contact */}
             {(selectedParking.phone || selectedParking.contactEmail) && (
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-2">
                 {selectedParking.phone && (
                   <a
                     href={`tel:${selectedParking.phone}`}
@@ -1649,6 +1676,30 @@ export default function MapHackNS() {
                     <Smartphone size={13} style={{ color: "#4ade80" }} />
                     <span className="text-sm font-semibold" style={{ color: "#4ade80" }}>{selectedParking.phone}</span>
                   </a>
+                )}
+                {selectedParking.phone && (
+                  <div className="flex gap-2">
+                    <a
+                      href={`viber://chat?number=${encodeURIComponent(formatPhoneForMessaging(selectedParking.phone))}`}
+                      data-testid="link-parking-viber"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold"
+                      style={{ background: "rgba(115,96,242,0.12)", border: "1px solid rgba(115,96,242,0.30)", color: "#a78bfa" }}
+                    >
+                      <SiViber size={14} />
+                      Viber
+                    </a>
+                    <a
+                      href={`https://wa.me/${formatPhoneForMessaging(selectedParking.phone).replace('+', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="link-parking-whatsapp"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold"
+                      style={{ background: "rgba(37,211,102,0.12)", border: "1px solid rgba(37,211,102,0.30)", color: "#4ade80" }}
+                    >
+                      <SiWhatsapp size={14} />
+                      WhatsApp
+                    </a>
+                  </div>
                 )}
                 {selectedParking.contactEmail && (
                   <div className="flex items-center gap-2">
