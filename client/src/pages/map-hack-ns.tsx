@@ -1387,7 +1387,7 @@ export default function MapHackNS() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117" }}>
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117", paddingTop: 'env(safe-area-inset-top)' }}>
       {/* ── Push notification banner ── */}
       {isAuthenticated && pushSupported && !pushSubscribed && pushPermission !== 'denied' && !pushBannerDismissed && (
         <div
@@ -2139,7 +2139,7 @@ export default function MapHackNS() {
       </div>
       {/* ── Action bar below map ── */}
       <div className="flex-shrink-0 px-3 pt-2.5"
-        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: "10px" }}>
+        style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {/* Zlatni Minut */}
           {(() => {
@@ -3515,7 +3515,7 @@ export default function MapHackNS() {
           left: 0,
           right: 0,
           height: 'env(safe-area-inset-bottom, 0px)',
-          background: '#1B4332',
+          background: '#0d1117',
           zIndex: 1,
           pointerEvents: 'none',
         }}
