@@ -840,6 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: s.phone,
           contactEmail: s.contactEmail,
           subscriptionType: s.subscriptionType,
+          imageUrls: s.imageUrls,
         }));
       res.json(listings);
     } catch (error) {
