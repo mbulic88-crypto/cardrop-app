@@ -9,7 +9,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Map, { Marker as MapMarkerPin, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { User, ParkingSpot, SalesListing, MapMarker } from "@shared/schema";
@@ -37,6 +44,11 @@ export default function Admin() {
   const [editCoordSpot, setEditCoordSpot] = useState<ParkingSpot | null>(null);
   const [editLat, setEditLat] = useState("");
   const [editLng, setEditLng] = useState("");
+
+  // Grant plan state
+  const [grantEmail, setGrantEmail] = useState("");
+  const [grantPlan, setGrantPlan] = useState("premium");
+  const [grantHistory, setGrantHistory] = useState<{ email: string; plan: string; grantedAt: Date }[]>([]);
 
   const { data: currentUser, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
@@ -156,6 +168,31 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Greška pri ažuriranju koordinata", variant: "destructive" });
+    },
+  });
+
+  const planLabels: Record<string, string> = {
+    premium: "Premium (mesečni)",
+    godisnji_premium: "Godišnji Premium",
+    day_pass: "Day Pass (24h)",
+    firma: "Za Firme",
+  };
+
+  const grantPlanMutation = useMutation({
+    mutationFn: async ({ email, plan }: { email: string; plan: string }) => {
+      const res = await apiRequest("POST", "/api/admin/grant-map-hack-plan", { email, plan });
+      return res.json();
+    },
+    onSuccess: (data: { email: string; plan: string }) => {
+      setGrantHistory((prev) => [{ email: data.email, plan: data.plan, grantedAt: new Date() }, ...prev].slice(0, 20));
+      setGrantEmail("");
+      toast({ title: `Plan dodijeljen: ${data.email} → ${planLabels[data.plan] ?? data.plan}` });
+    },
+    onError: (error: Error) => {
+      // apiRequest throws Error("status: body") — extract message after colon if present
+      const raw = error.message ?? "";
+      const msg = raw.includes(": ") ? raw.split(": ").slice(1).join(": ") : raw || "Greška pri dodjeljivanju plana";
+      toast({ title: msg, variant: "destructive" });
     },
   });
 
@@ -499,6 +536,76 @@ export default function Admin() {
 
           <TabsContent value="maphack">
             <div className="space-y-4">
+              {/* Dodijeli Plan */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-primary" />
+                    Dodijeli Map Hack Plan
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-3 items-end">
+                    <div className="flex-1 min-w-48">
+                      <label className="text-xs text-muted-foreground mb-1 block">Email korisnika</label>
+                      <Input
+                        placeholder="korisnik@email.com"
+                        value={grantEmail}
+                        onChange={(e) => setGrantEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && grantEmail.trim()) {
+                            grantPlanMutation.mutate({ email: grantEmail.trim(), plan: grantPlan });
+                          }
+                        }}
+                        data-testid="input-grant-email"
+                      />
+                    </div>
+                    <div className="w-52">
+                      <label className="text-xs text-muted-foreground mb-1 block">Plan</label>
+                      <Select value={grantPlan} onValueChange={setGrantPlan}>
+                        <SelectTrigger data-testid="select-grant-plan">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="premium">Premium (mesečni)</SelectItem>
+                          <SelectItem value="godisnji_premium">Godišnji Premium</SelectItem>
+                          <SelectItem value="day_pass">Day Pass (24h)</SelectItem>
+                          <SelectItem value="firma">Za Firme</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={() => grantPlanMutation.mutate({ email: grantEmail.trim(), plan: grantPlan })}
+                      disabled={!grantEmail.trim() || grantPlanMutation.isPending}
+                      data-testid="button-grant-plan"
+                    >
+                      {grantPlanMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Gift className="h-4 w-4 mr-2" />
+                      )}
+                      Dodijeli
+                    </Button>
+                  </div>
+
+                  {/* Grant history */}
+                  {grantHistory.length > 0 && (
+                    <div className="space-y-1 pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground font-medium mb-2">Nedavno dodijeljeni planovi</p>
+                      {grantHistory.map((g, i) => (
+                        <div key={i} className="flex items-center justify-between gap-3 py-1.5 px-3 rounded-md bg-muted/40 text-sm" data-testid={`row-grant-${i}`}>
+                          <span className="text-foreground font-medium truncate">{g.email}</span>
+                          <Badge variant="outline" className="shrink-0">{planLabels[g.plan] ?? g.plan}</Badge>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {g.grantedAt.toLocaleTimeString("sr-RS", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Stats row */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {(["zlatni_minut", "pauk", "stek", "radar", "safe_zone"] as const).map((t) => {

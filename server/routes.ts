@@ -2257,6 +2257,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: ručno dodjeljivanje Map Hack plana korisniku
+  app.post('/api/admin/grant-map-hack-plan', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { email, plan } = req.body as { email: string; plan: string };
+      const validPlans = ["premium", "godisnji_premium", "day_pass", "firma"];
+      if (!email || !plan || !validPlans.includes(plan)) {
+        return res.status(400).json({ message: "Nevalidan email ili plan" });
+      }
+      const targetUser = await storage.getUserByEmail(email.trim().toLowerCase());
+      if (!targetUser) {
+        return res.status(404).json({ message: `Korisnik sa emailom ${email} nije pronađen` });
+      }
+      const expiresAt = plan === "day_pass" ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
+      await storage.updateMapHackPlan(targetUser.id, plan, expiresAt);
+      res.json({ success: true, userId: targetUser.id, email: targetUser.email, plan, expiresAt });
+    } catch (error) {
+      console.error("Error granting map hack plan:", error);
+      res.status(500).json({ message: "Greška pri dodjeljivanju plana" });
+    }
+  });
+
   // Sales listings routes
   app.get('/api/sales-listings', async (req, res) => {
     try {
