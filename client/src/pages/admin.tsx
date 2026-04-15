@@ -180,8 +180,7 @@ export default function Admin() {
 
   const grantPlanMutation = useMutation({
     mutationFn: async ({ email, plan }: { email: string; plan: string }) => {
-      const res = await apiRequest("POST", "/api/admin/grant-map-hack-plan", { email, plan });
-      return res.json();
+      return await apiRequest("POST", "/api/admin/grant-map-hack-plan", { email, plan });
     },
     onSuccess: (data: { email: string; plan: string }) => {
       setGrantHistory((prev) => [{ email: data.email, plan: data.plan, grantedAt: new Date() }, ...prev].slice(0, 20));
