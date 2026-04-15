@@ -186,6 +186,12 @@ interface ParkingPopupState {
   lng: number;
 }
 
+function isClusterFeature(
+  props: Supercluster.ClusterProperties | MapMarker
+): props is Supercluster.ClusterProperties {
+  return (props as Supercluster.ClusterProperties).cluster === true;
+}
+
 export function MapHackMap({
   markers,
   activeFilters,
@@ -249,6 +255,7 @@ export function MapHackMap({
     const map = mapRef.current?.getMap();
     if (!map) return;
     const b = map.getBounds();
+    if (!b) return;
     setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
     setZoom(map.getZoom());
   }, []);
@@ -263,7 +270,9 @@ export function MapHackMap({
     setMapLoaded(true);
     // Initialize bounds/zoom from loaded map
     const b = e.target.getBounds();
-    setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    if (b) {
+      setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    }
     setZoom(e.target.getZoom());
     if (onMapReady) {
       onMapReady({
@@ -281,7 +290,8 @@ export function MapHackMap({
 
   // Build supercluster index — rebuilt only when filtered markers change
   const supercluster = useMemo(() => {
-    const sc = new Supercluster<MapMarker>({ radius: 60, maxZoom: 17, minZoom: 0 });
+    // maxZoom:16 → at zoom ≥17 no clustering (all markers shown individually)
+    const sc = new Supercluster<MapMarker>({ radius: 60, maxZoom: 16, minZoom: 0 });
     sc.load(
       filtered.map((m) => ({
         type: "Feature" as const,
@@ -499,15 +509,15 @@ export function MapHackMap({
         {clusters.map((cluster) => {
           const [lng, lat] = cluster.geometry.coordinates;
 
-          if (cluster.properties.cluster) {
-            const count = (cluster.properties as Supercluster.ClusterProperties).point_count;
-            const clusterId = (cluster.properties as Supercluster.ClusterProperties).cluster_id;
+          if (isClusterFeature(cluster.properties)) {
+            const { point_count: count, cluster_id: clusterId } = cluster.properties;
             return (
               <Marker key={`cluster-${clusterId}`} latitude={lat} longitude={lng} anchor="center">
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    const expansionZoom = Math.min(supercluster.getClusterExpansionZoom(clusterId), 17);
+                    // Allow expansion up to zoom 18 so individual markers at zoom 17 are reachable
+                    const expansionZoom = Math.min(supercluster.getClusterExpansionZoom(clusterId), 18);
                     mapRef.current?.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 500 });
                   }}
                   style={{
