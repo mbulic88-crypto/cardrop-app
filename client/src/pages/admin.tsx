@@ -597,7 +597,7 @@ export default function Admin() {
                           <span className="text-foreground font-medium truncate">{g.email}</span>
                           <Badge variant="outline" className="shrink-0">{planLabels[g.plan] ?? g.plan}</Badge>
                           <span className="text-xs text-muted-foreground shrink-0">
-                            {g.grantedAt.toLocaleTimeString("sr-RS", { hour: "2-digit", minute: "2-digit" })}
+                            {g.grantedAt.toLocaleString("sr-RS", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                           </span>
                         </div>
                       ))}
