@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import Map, {
   Marker,
   Popup,
@@ -11,6 +11,7 @@ import type { MapRef, MapLayerMouseEvent, ViewStateChangeEvent } from "react-map
 import type { MapboxEvent } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
+import Supercluster from "supercluster";
 
 export type MarkerType = "zlatni_minut" | "pauk" | "stek" | "safe_zone" | "radar" | "kamera";
 
@@ -207,6 +208,8 @@ export function MapHackMap({
   const mapRef = useRef<MapRef>(null);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [zoom, setZoom] = useState(14);
+  const [bounds, setBounds] = useState<[number, number, number, number]>([19.50, 45.05, 20.20, 45.55]);
 
   const onMapClickRef = useRef(onMapClick);
   const onContextMenuRef = useRef(onContextMenu);
@@ -242,13 +245,26 @@ export function MapHackMap({
     onContextMenuRef.current(e.lngLat.lat, e.lngLat.lng);
   }, []);
 
+  const updateViewport = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    const b = map.getBounds();
+    setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    setZoom(map.getZoom());
+  }, []);
+
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     onCenterChangeRef.current?.(e.viewState.latitude, e.viewState.longitude);
-  }, []);
+    updateViewport();
+  }, [updateViewport]);
 
   const handleMapLoad = useCallback((e: MapboxEvent) => {
     e.target.setConfigProperty("basemap", "lightPreset", "night");
     setMapLoaded(true);
+    // Initialize bounds/zoom from loaded map
+    const b = e.target.getBounds();
+    setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    setZoom(e.target.getZoom());
     if (onMapReady) {
       onMapReady({
         flyTo: (lat: number, lng: number) => {
@@ -258,9 +274,29 @@ export function MapHackMap({
     }
   }, [onMapReady]);
 
-  const filtered = activeFilters.includes("sve")
-    ? markers
-    : markers.filter((m) => activeFilters.includes(m.type));
+  const filtered = useMemo(
+    () => activeFilters.includes("sve") ? markers : markers.filter((m) => activeFilters.includes(m.type)),
+    [markers, activeFilters]
+  );
+
+  // Build supercluster index — rebuilt only when filtered markers change
+  const supercluster = useMemo(() => {
+    const sc = new Supercluster<MapMarker>({ radius: 60, maxZoom: 17, minZoom: 0 });
+    sc.load(
+      filtered.map((m) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [parseFloat(m.lng), parseFloat(m.lat)] },
+        properties: m,
+      }))
+    );
+    return sc;
+  }, [filtered]);
+
+  // Recompute visible clusters on zoom/pan — getClusters is fast
+  const clusters = useMemo(
+    () => supercluster.getClusters(bounds, Math.round(zoom)),
+    [supercluster, zoom, bounds]
+  );
 
   const showHeatmap = activeFilters.includes("sve") || activeFilters.includes("pauk");
   const paukMarkers = markers.filter((m) => m.type === "pauk");
@@ -459,16 +495,53 @@ export function MapHackMap({
           </Marker>
         )}
 
-        {/* Map markers */}
-        {filtered.map((marker) => {
+        {/* Map markers with clustering */}
+        {clusters.map((cluster) => {
+          const [lng, lat] = cluster.geometry.coordinates;
+
+          if (cluster.properties.cluster) {
+            const count = (cluster.properties as Supercluster.ClusterProperties).point_count;
+            const clusterId = (cluster.properties as Supercluster.ClusterProperties).cluster_id;
+            return (
+              <Marker key={`cluster-${clusterId}`} latitude={lat} longitude={lng} anchor="center">
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const expansionZoom = Math.min(supercluster.getClusterExpansionZoom(clusterId), 17);
+                    mapRef.current?.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 500 });
+                  }}
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: "50%",
+                    background: "rgba(34,197,94,0.2)",
+                    border: "2px solid rgba(34,197,94,0.65)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#4ade80",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    fontFamily: "system-ui,sans-serif",
+                    boxShadow: "0 2px 10px rgba(34,197,94,0.28)",
+                  }}
+                >
+                  {count}
+                </div>
+              </Marker>
+            );
+          }
+
+          const marker = cluster.properties as MapMarker;
           const color = markerColor(marker.type);
           const bgColor = hexToRgba(color, 0.28);
           const borderColor = hexToRgba(color, 0.7);
           return (
             <Marker
               key={marker.id}
-              latitude={parseFloat(marker.lat)}
-              longitude={parseFloat(marker.lng)}
+              latitude={lat}
+              longitude={lng}
               anchor="center"
             >
               <div
