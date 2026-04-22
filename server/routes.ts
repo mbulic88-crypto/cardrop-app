@@ -1992,7 +1992,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       await storage.deleteUser(userId);
-      req.session.destroy(() => {
+      req.session.destroy((err: Error | null) => {
+        if (err) console.error("Session destroy error after account deletion:", err);
+        res.clearCookie('connect.sid');
         res.json({ ok: true });
       });
     } catch (error) {
