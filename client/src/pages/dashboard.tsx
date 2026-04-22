@@ -43,6 +43,7 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [accountDeletedInfo, setAccountDeletedInfo] = useState<{ hadSubscription: boolean } | null>(null);
   const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
 
   const handlePushToggle = async () => {
@@ -62,10 +63,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !accountDeletedInfo) {
       setLocation("/");
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+  }, [isAuthenticated, isLoading, setLocation, accountDeletedInfo]);
 
   useEffect(() => {
     if (isAuthenticated && pushSupported && !isSubscribed && !pushLoading) {
@@ -223,8 +224,8 @@ export default function Dashboard() {
   const deleteAccountMutation = useMutation({
     mutationFn: () => apiRequest("DELETE", "/api/users/me"),
     onSuccess: () => {
-      queryClient.clear();
-      setLocation("/");
+      const hadSubscription = !!(authUser?.stripeSubscriptionId);
+      setAccountDeletedInfo({ hadSubscription });
     },
     onError: () => {
       toast({ title: "Greška pri brisanju naloga", variant: "destructive" });
@@ -886,6 +887,32 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Post-deletion confirmation dialog */}
+      <AlertDialog open={accountDeletedInfo !== null}>
+        <AlertDialogContent data-testid="dialog-account-deleted">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nalog je obrisan</AlertDialogTitle>
+            <AlertDialogDescription>
+              {accountDeletedInfo?.hadSubscription
+                ? "Vaš nalog je uspješno obrisan. Vaša pretplata je automatski prekinuta — nećete biti dalje naplaćivani."
+                : "Vaš nalog je uspješno obrisan. Svi vaši podaci su trajno uklonjeni."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              data-testid="button-account-deleted-ok"
+              onClick={() => {
+                setAccountDeletedInfo(null);
+                queryClient.clear();
+                setLocation("/");
+              }}
+            >
+              U redu
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
