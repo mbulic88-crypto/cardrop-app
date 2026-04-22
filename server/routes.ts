@@ -6,6 +6,7 @@ import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, inser
 import { createHash } from "crypto";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
+import Stripe from "stripe";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
@@ -1991,15 +1992,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/users/me', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
+
+      // Cancel all active Stripe subscriptions before deleting the account
+      const currentUser = await storage.getUser(userId);
+      if (currentUser?.stripeCustomerId || currentUser?.stripeSubscriptionId) {
+        const stripe = await getUncachableStripeClient();
+
+        // Cancel by stored subscription ID first (fast path)
+        if (currentUser.stripeSubscriptionId) {
+          try {
+            await stripe.subscriptions.cancel(currentUser.stripeSubscriptionId);
+            console.log(`Cancelled Stripe subscription ${currentUser.stripeSubscriptionId} for user ${userId}`);
+          } catch (err: unknown) {
+            const stripeErr = err as Stripe.errors.StripeError;
+            const alreadyGone = stripeErr.code === 'resource_missing' ||
+              stripeErr.statusCode === 404 ||
+              stripeErr.message?.includes('No such subscription');
+            if (!alreadyGone) throw err;
+            console.warn(`Stripe subscription ${currentUser.stripeSubscriptionId} already gone for user ${userId}`);
+          }
+        }
+
+        // Always sweep by customer ID to cancel any additional or orphaned subscriptions
+        if (currentUser.stripeCustomerId) {
+          const billableStatuses: Stripe.SubscriptionListParams.Status[] = ['active', 'trialing', 'past_due', 'unpaid', 'paused'];
+          for (const status of billableStatuses) {
+            let startingAfter: string | undefined;
+            do {
+              const page: Stripe.ApiList<Stripe.Subscription> = await stripe.subscriptions.list({
+                customer: currentUser.stripeCustomerId,
+                status,
+                limit: 100,
+                ...(startingAfter ? { starting_after: startingAfter } : {}),
+              });
+              for (const sub of page.data) {
+                if (sub.id === currentUser.stripeSubscriptionId) continue;
+                try {
+                  await stripe.subscriptions.cancel(sub.id);
+                  console.log(`Cancelled additional Stripe subscription ${sub.id} for user ${userId}`);
+                } catch (err: unknown) {
+                  const sweepErr = err as Stripe.errors.StripeError;
+                  const alreadyGone = sweepErr.code === 'resource_missing' ||
+                    sweepErr.statusCode === 404 ||
+                    sweepErr.message?.includes('No such subscription');
+                  if (!alreadyGone) throw err;
+                  console.warn(`Stripe subscription ${sub.id} already gone during sweep for user ${userId}`);
+                }
+              }
+              startingAfter = page.has_more ? page.data[page.data.length - 1]?.id : undefined;
+            } while (startingAfter);
+          }
+        }
+      }
+
       await storage.deleteUser(userId);
       req.session.destroy((err: Error | null) => {
         if (err) console.error("Session destroy error after account deletion:", err);
         res.clearCookie('connect.sid');
         res.json({ ok: true });
       });
-    } catch (error) {
-      console.error("Error deleting user account:", error);
-      res.status(500).json({ message: "Greška pri brisanju naloga" });
+    } catch (error: unknown) {
+      const stripeErr = error as Stripe.errors.StripeError;
+      if (stripeErr?.type?.startsWith('Stripe')) {
+        console.error("Stripe error while cancelling subscription on account deletion:", error);
+        res.status(502).json({ message: "Nije moguće otkazati pretplatu. Pokušaj ponovo ili kontaktiraj podršku." });
+      } else {
+        console.error("Error deleting user account:", error);
+        res.status(500).json({ message: "Greška pri brisanju naloga" });
+      }
     }
   });
 

@@ -866,7 +866,7 @@ export default function Dashboard() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Sigurno želiš da obrišeš nalog?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Ova akcija je <strong>nepovratna</strong>. Svi tvoji podaci — parkinga, objave, poruke i podešavanja — biće trajno obrisani. Ako imaš aktivan Stripe pretplatu, otkaži je posebno u svom Stripe portalu.
+                      Ova akcija je <strong>nepovratna</strong>. Svi tvoji podaci — parkinga, objave, poruke i podešavanja — biće trajno obrisani. Ako imaš aktivnu Map Hack Premium pretplatu, biće automatski otkazana.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
