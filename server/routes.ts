@@ -1987,6 +1987,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Self-delete account (Google Play requirement)
+  app.delete('/api/users/me', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      await storage.deleteUser(userId);
+      req.session.destroy(() => {
+        res.json({ ok: true });
+      });
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      res.status(500).json({ message: "Greška pri brisanju naloga" });
+    }
+  });
+
   // Push notification subscription routes
   app.post('/api/push/subscribe', isAuthenticated, async (req: any, res) => {
     try {

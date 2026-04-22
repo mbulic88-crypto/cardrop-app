@@ -14,7 +14,18 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User, ParkingSpot, SalesListing, Message } from "@shared/schema";
-import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield } from "lucide-react";
+import { MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone, ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield, TriangleAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -206,6 +217,17 @@ export default function Dashboard() {
         description: "Nije moguće ažurirati profil",
         variant: "destructive",
       });
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", "/api/users/me"),
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/");
+    },
+    onError: () => {
+      toast({ title: "Greška pri brisanju naloga", variant: "destructive" });
     },
   });
 
@@ -818,6 +840,48 @@ export default function Dashboard() {
                   </div>
                 </form>
               </Form>
+            </Card>
+
+            {/* Opasna zona */}
+            <Card className="p-6 border-destructive/40">
+              <div className="flex items-center gap-2 mb-2">
+                <TriangleAlert className="h-5 w-5 text-destructive" />
+                <h3 className="text-base font-semibold text-destructive">Opasna zona</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Trajno brišeš svoj nalog i sve podatke. Ova akcija je nepovratna.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    data-testid="button-delete-account"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Obriši nalog
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Sigurno želiš da obrišeš nalog?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ova akcija je <strong>nepovratna</strong>. Svi tvoji podaci — parkinga, objave, poruke i podešavanja — biće trajno obrisani. Ako imaš aktivan Stripe pretplatu, otkaži je posebno u svom Stripe portalu.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-delete-account-cancel">Otkaži</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteAccountMutation.mutate()}
+                      disabled={deleteAccountMutation.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-delete-account-confirm"
+                    >
+                      {deleteAccountMutation.isPending ? "Brisanje..." : "Da, obriši nalog"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </Card>
           </TabsContent>
         </Tabs>
