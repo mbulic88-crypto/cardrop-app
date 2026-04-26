@@ -185,6 +185,16 @@ async function clearSpotExpiry() {
     res.sendFile(manifestFilePath);
   });
 
+  // Serve Digital Asset Links for Google Play domain verification
+  const assetLinksFilePath = app.get("env") === "development"
+    ? nodePath.resolve(import.meta.dirname, '../client/public/.well-known/assetlinks.json')
+    : nodePath.resolve(import.meta.dirname, 'public/.well-known/assetlinks.json');
+
+  app.get('/.well-known/assetlinks.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(assetLinksFilePath);
+  });
+
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {

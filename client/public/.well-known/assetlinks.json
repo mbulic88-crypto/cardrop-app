@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "cardrop.app",
+      "sha256_cert_fingerprints": [
+        "8A:78:4F:73:49:65:0D:08:84:D9:77:9F:2E:5F:4C:FE:7B:73:81:0C:43:C6:98:A5:A8:28:B4:4F:9D:46:AB:44"
+      ]
+    }
+  }
+]
