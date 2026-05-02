@@ -1,7 +1,7 @@
 {
   "name": "CarDrop - Parking u Srbiji",
   "short_name": "CarDrop",
-  "id": "/",
+  "id": "https://cardrop.app/",
   "description": "Pronađite i iznajmite parking mesta u Srbiji. Brza i sigurna rezervacija.",
   "start_url": "/",
   "scope": "/",
@@ -11,10 +11,35 @@
   "theme_color": "#1B4332",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=cardrop.app",
+      "id": "cardrop.app"
+    }
+  ],
   "categories": ["lifestyle", "utilities"],
   "lang": "sr",
   "dir": "ltr",
   "icons": [
+    {
+      "src": "/icons/icon-120x120.png",
+      "sizes": "120x120",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-180x180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
@@ -57,6 +82,7 @@
       "sizes": "540x1170",
       "type": "image/png",
       "platform": "narrow",
+      "form_factor": "narrow",
       "label": "CarDrop Parking Mapa - Novi Sad"
     },
     {
@@ -64,6 +90,7 @@
       "sizes": "540x1170",
       "type": "image/png",
       "platform": "narrow",
+      "form_factor": "narrow",
       "label": "CarDrop Chat i Upozorenja"
     }
   ]

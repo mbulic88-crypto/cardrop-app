@@ -547,9 +547,12 @@ export default function Landing() {
                 data-testid="button-install-iphone"
                 className={`rounded-md p-3 text-left transition-all hover-elevate cursor-pointer ${isIos ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
               >
-                <p className={`text-sm font-semibold mb-1 ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Smartphone className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                  <p className={`text-sm font-semibold ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
+                </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  {language === "sr" ? "Tapnite za uputstvo kako instalirati na iPhone." : "Tap for instructions on how to install on iPhone."}
+                  {language === "sr" ? "Uskoro na App Store. Tapnite za uputstvo — instalacija putem Safari-ja." : "Coming soon to App Store. Tap for Safari install guide."}
                 </p>
               </button>
             </div>
