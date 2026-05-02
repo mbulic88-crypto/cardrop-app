@@ -133,6 +133,8 @@ async function clearSpotExpiry() {
     "/api/map-hack",
     "/api/users",
     "/api/push",
+    "/api/messages",
+    "/api/bookings",
   ];
 
   app.use((req, res, next) => {

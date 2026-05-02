@@ -1339,14 +1339,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      // Replay protection: reject if this session was already applied to this spot
-      if ((existingSpot as any).stripeSessionId === sessionId && existingSpot.isActive) {
+      // Durable replay protection: reject if this session was already applied
+      const alreadyConsumed = await storage.isStripeSessionConsumed(sessionId);
+      if (alreadyConsumed) {
         return res.status(409).json({ message: "Session already consumed" });
       }
 
       const tier = session.metadata?.tier as 'silver' | 'gold';
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
+
+      await storage.recordConsumedStripeSession(sessionId, userId, `spot-${spotId}-${tier}`);
 
       const spot = await storage.updateParkingSpot(spotId, {
         isActive: true,
@@ -1520,14 +1523,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      // Replay protection: reject if listing is already active (session already consumed)
-      if (existingListing.isActive) {
+      // Durable replay protection: reject if this session was already applied
+      const alreadyConsumedListing = await storage.isStripeSessionConsumed(sessionId);
+      if (alreadyConsumedListing) {
         return res.status(409).json({ message: "Session already consumed" });
       }
 
       const tier = session.metadata?.tier as 'silver' | 'gold';
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
+
+      await storage.recordConsumedStripeSession(sessionId, userId, `listing-${listingId}-${tier}`);
 
       const listing = await storage.updateSalesListing(listingId, {
         isActive: true,
@@ -2547,6 +2553,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Editable fields for a sales listing — payment/activation fields are excluded
+  const salesListingEditSchema = insertSalesListingSchema
+    .omit({
+      isActive: true,
+      isPremium: true,
+      subscriptionType: true,
+      autoRenewal: true,
+    })
+    .partial();
+
   app.patch('/api/sales-listings/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
@@ -2554,7 +2570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!listing) return res.status(404).json({ message: "Listing not found" });
       if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
       const sanitizedBody = sanitizeObject(req.body);
-      const validatedData = insertSalesListingSchema.partial().parse(sanitizedBody);
+      const validatedData = salesListingEditSchema.parse(sanitizedBody);
       const updated = await storage.updateSalesListing(req.params.id, validatedData);
       res.json(updated);
     } catch (error: any) {
