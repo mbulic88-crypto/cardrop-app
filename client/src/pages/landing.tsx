@@ -539,26 +539,19 @@ export default function Landing() {
               {t.installApp}
             </Button>
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
-              <div
-                data-testid="button-install-android"
-                className={`rounded-md p-3 text-left flex flex-col gap-2 ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
+              <a
+                href="https://play.google.com/store/apps/details?id=cardrop.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-google-play"
+                className={`rounded-md flex items-center justify-center p-2 ${isAndroid ? "border-2 border-accent" : "border border-border/50"}`}
               >
-                <p className={`text-sm font-semibold ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
-                <a
-                  href="https://play.google.com/store/apps/details?id=cardrop.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="link-google-play"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-block"
-                >
-                  <img
-                    src={googlePlayBadgeImg}
-                    alt="Get it on Google Play"
-                    style={{ height: 44, width: "auto", maxWidth: "100%" }}
-                  />
-                </a>
-              </div>
+                <img
+                  src={googlePlayBadgeImg}
+                  alt="Get it on Google Play"
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
+              </a>
               <button
                 type="button"
                 onClick={() => setShowIosModal(true)}
