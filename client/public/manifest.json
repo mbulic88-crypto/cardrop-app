@@ -63,6 +63,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -79,19 +85,19 @@
   "screenshots": [
     {
       "src": "/screenshots/screen1.png",
-      "sizes": "540x1170",
+      "sizes": "1284x2778",
       "type": "image/png",
       "platform": "narrow",
       "form_factor": "narrow",
-      "label": "CarDrop Parking Mapa - Novi Sad"
+      "label": "CarDrop NS Map Hack - Interaktivna parking mapa"
     },
     {
       "src": "/screenshots/screen2.png",
-      "sizes": "540x1170",
+      "sizes": "1284x2778",
       "type": "image/png",
       "platform": "narrow",
       "form_factor": "narrow",
-      "label": "CarDrop Chat i Upozorenja"
+      "label": "CarDrop Live Chat - Parking info u realnom vremenu"
     }
   ]
 }

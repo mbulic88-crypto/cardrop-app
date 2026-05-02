@@ -1,9 +1,10 @@
-const CACHE_NAME = 'cardrop-v3';
+const CACHE_NAME = 'cardrop-v4';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/robots.txt'
+  '/robots.txt',
+  '/offline.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -125,7 +126,9 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => {
-        return caches.match('/') || new Response('Offline', { status: 503 });
+        return caches.match('/offline.html').then((offlinePage) => {
+          return offlinePage || caches.match('/') || new Response('Offline', { status: 503 });
+        });
       })
     );
     return;
