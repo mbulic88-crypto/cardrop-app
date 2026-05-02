@@ -35,12 +35,20 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
     let plan: string | undefined;
     let currentPeriodEnd: number | undefined;
 
+    // In newer Stripe API versions (basil) the subscription shape may differ;
+    // define only the fields we actually read to stay type-safe without `any`.
+    interface StripeSubscriptionFields {
+      metadata?: Record<string, string>;
+      current_period_end?: number;
+    }
+
     try {
       const stripe = await getUncachableStripeClient();
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const raw = await stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = raw as unknown as StripeSubscriptionFields;
       userId = subscription.metadata?.userId;
       plan = subscription.metadata?.plan;
-      currentPeriodEnd = (subscription as any).current_period_end;
+      currentPeriodEnd = subscription.current_period_end;
     } catch (err) {
       console.error('[MapHack Webhook] Could not fetch subscription for invoice.payment_succeeded:', err);
       return;

@@ -486,7 +486,7 @@ export class DatabaseStorage implements IStorage {
     } catch (err: any) {
       if (err?.code === '23505') {
         const [listing] = await db.select().from(salesListings).where(eq(salesListings.id, listingId));
-        return { listing, alreadyConsumed: false };
+        return { listing, alreadyConsumed: true };
       }
       throw err;
     }
