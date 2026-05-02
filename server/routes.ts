@@ -339,7 +339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ message: "Plan trenutno nije dostupan za plaćanje. Pokušaj ponovo za nekoliko minuta ili kontaktiraj info@cardrop.app" });
       }
 
-      let sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0];
+      let sessionParams: Stripe.Checkout.SessionCreateParams;
 
       if (isSubscriptionPlan) {
         // Find or create Stripe customer for this user
@@ -355,7 +355,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         sessionParams = {
-          payment_method_types: ['card'],
           customer: stripeCustomerId,
           line_items: [{ price: priceId, quantity: 1 }],
           mode: 'subscription',
@@ -368,7 +367,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         sessionParams = {
-          payment_method_types: ['card'],
           line_items: [{ price: priceId, quantity: 1 }],
           mode: 'payment',
           success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
@@ -649,7 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (type === 'pauk' || type === 'zlatni_minut') {
           try {
             const allSubs = await db.select().from(pushSubscriptionsTable);
-            const uniqueUserIds = [...new Set(allSubs.map(s => s.userId))].filter(uid => uid !== userId);
+            const uniqueUserIds = Array.from(new Set(allSubs.map(s => s.userId))).filter(uid => uid !== userId);
             const pushTitle = type === 'pauk' ? 'Pauk u NS!' : 'Zlatni Minut u NS!';
             const pushBody = type === 'pauk'
               ? 'Pauk prijavljen u Novom Sadu — proveri mapu!'
@@ -910,7 +908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         setImmediate(async () => {
           try {
             const allSubs = await db.select().from(pushSubscriptionsTable);
-            const uniqueUserIds = [...new Set(allSubs.map((s) => s.userId))].filter((uid) => uid !== userId);
+            const uniqueUserIds = Array.from(new Set(allSubs.map((s) => s.userId))).filter((uid) => uid !== userId);
             await Promise.allSettled(uniqueUserIds.map(async (uid) => {
               const u = await storage.getUser(uid);
               if (!u || u.mapNotificationsEnabled === false) return;

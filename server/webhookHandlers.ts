@@ -40,7 +40,7 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       userId = subscription.metadata?.userId;
       plan = subscription.metadata?.plan;
-      currentPeriodEnd = subscription.current_period_end;
+      currentPeriodEnd = (subscription as any).current_period_end;
     } catch (err) {
       console.error('[MapHack Webhook] Could not fetch subscription for invoice.payment_succeeded:', err);
       return;

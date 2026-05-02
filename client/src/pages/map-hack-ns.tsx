@@ -826,6 +826,7 @@ export default function MapHackNS() {
 
   async function handleEnterMap() {
     setError("");
+    if (!user) return;
     const nick = nickname.trim();
     if (nick.length < 3) { setError("Nadimak mora imati najmanje 3 znaka"); return; }
     if (!/^[a-zA-Z0-9_\-]+$/.test(nick)) { setError("Samo slova, brojevi, crtica i donja crta"); return; }
@@ -859,6 +860,7 @@ export default function MapHackNS() {
 
   async function handleChoosePlan() {
     setError("");
+    if (!user) return;
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
     if (!user.mapPrivacyAcceptedAt && !privacyAccepted) { setError("Prihvati politiku privatnosti"); return; }
     setIsSaving(true);
@@ -1075,7 +1077,7 @@ export default function MapHackNS() {
   }
 
   if (viewMode === "permissions") {
-    async function handleRequestPermissions() {
+    const handleRequestPermissions = async () => {
       setPermRequesting(true);
       // Location
       if (navigator.geolocation) {
@@ -1105,13 +1107,13 @@ export default function MapHackNS() {
       localStorage.setItem("cardrop_perms_asked", "1");
       setPermCheckLoading(false);
       setShowPermissions(false);
-    }
+    };
 
-    function handleSkipPermissions() {
+    const handleSkipPermissions = () => {
       localStorage.setItem("cardrop_perms_asked", "1");
       setPermCheckLoading(false);
       setShowPermissions(false);
-    }
+    };
 
     const bothRequested = permLocStatus !== "idle" || permMicStatus !== "idle";
 
