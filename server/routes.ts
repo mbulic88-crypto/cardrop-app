@@ -1706,28 +1706,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Monri payment routes
   app.post('/api/payments/monri/create', isAuthenticated, async (req: any, res) => {
     try {
-      const { bookingId, amount, currency } = req.body;
+      const { bookingId } = req.body;
       const userId = req.session.userId;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+
+      if (!bookingId) {
+        return res.status(400).json({ message: "bookingId je obavezan" });
       }
-      
-      // In production, these would come from environment variables
+
+      // Load booking server-side — never trust client-supplied amount
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Rezervacija nije pronađena" });
+      }
+
+      // Verify caller is the renter
+      if (booking.renterId !== userId) {
+        return res.status(403).json({ message: "Nemate dozvolu za ovu rezervaciju" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Korisnik nije pronađen" });
+      }
+
       const merchantKey = process.env.MONRI_MERCHANT_KEY || 'test_merchant_key';
       const authenticityToken = process.env.MONRI_AUTHENTICITY_TOKEN || 'test_authenticity_token';
       const timestamp = Date.now();
       const fullpath = '/v2/payment/new';
-      
-      const orderNumber = `PARK-${bookingId}-${Date.now()}`;
-      
+
+      // Use underscore separator so UUID hyphens don't break order-number parsing
+      const orderNumber = `PARK_${bookingId}_${timestamp}`;
+      const amountCents = Math.round(parseFloat(booking.totalPrice) * 100);
+      const currency = booking.currency || 'RSD';
+
       const body = {
         transaction_type: "purchase",
-        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
-        currency: currency || "RSD",
+        amount: amountCents,
+        currency,
         order_number: orderNumber,
-        order_info: `ParkShare Booking ${bookingId}`,
+        order_info: `CarDrop Booking ${bookingId}`,
         language: "sr",
         ch_full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown',
         ch_address: "N/A",
@@ -1735,27 +1752,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ch_zip: "21000",
         ch_country: "RS",
         ch_phone: user.phoneNumber || "000000000",
-        ch_email: user.email || "user@parkshare.rs",
-        supported_payment_methods: ["card"]
+        ch_email: user.email || "info@cardrop.app",
+        supported_payment_methods: ["card"],
       };
-      
+
       // Generate digest: SHA512(merchantKey + timestamp + authenticityToken + fullpath + body)
       const message = merchantKey + timestamp + authenticityToken + fullpath + JSON.stringify(body);
       const digest = createHash('sha512').update(message).digest('hex');
-      
-      // In production, make actual API call to Monri
-      // For now, return mock response
-      const mockResponse = {
-        status: "approved",
-        id: `monri_${Date.now()}`,
-        client_secret: `secret_${Date.now()}`,
-        order_number: orderNumber,
-        payment_url: `https://ipgtest.monri.com/payment/${orderNumber}`,
-      };
-      
+
+      // Return mock response (real Monri API call goes here in production)
       res.json({
         success: true,
-        payment: mockResponse,
+        payment: {
+          status: "approved",
+          id: `monri_${timestamp}`,
+          client_secret: `secret_${timestamp}`,
+          order_number: orderNumber,
+          payment_url: `https://ipgtest.monri.com/payment/${orderNumber}`,
+        },
       });
     } catch (error) {
       console.error("Error creating Monri payment:", error);
@@ -1794,8 +1808,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Invalid signature" });
       }
 
-      // Extract booking ID from order number (format: PARK-{bookingId}-{timestamp})
-      const bookingId = order_number.split('-')[1];
+      // Extract booking ID from order number (format: PARK_{bookingId}_{timestamp})
+      // Underscore separator avoids collision with UUID hyphens inside bookingId
+      const parts = order_number.split('_');
+      if (parts.length < 3 || parts[0] !== 'PARK') {
+        console.warn("Monri callback: unexpected order_number format:", order_number);
+        return res.status(400).json({ message: "Invalid order_number format" });
+      }
+      const bookingId = parts[1];
 
       if (status === 'approved') {
         await storage.updateBooking(bookingId, {
@@ -2559,7 +2579,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       isActive: true,
       isPremium: true,
       subscriptionType: true,
-      autoRenewal: true,
     })
     .partial();
 
