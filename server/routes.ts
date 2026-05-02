@@ -1661,13 +1661,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Only accept user-supplied fields; price/status computed server-side
       const { spotId, startTime, endTime } = bookingCreateSchema.parse(req.body);
 
+      if (endTime <= startTime) {
+        return res.status(400).json({ message: "Vreme završetka mora biti posle početka" });
+      }
+
       const spot = await storage.getParkingSpot(spotId);
       if (!spot) {
         return res.status(404).json({ message: "Parking mesto nije pronađeno" });
       }
+      if (!spot.isActive) {
+        return res.status(400).json({ message: "Parking mesto nije aktivno" });
+      }
+      if (spot.ownerId === userId) {
+        return res.status(400).json({ message: "Ne možete rezervisati sopstveno parking mesto" });
+      }
 
       // Compute total price server-side from spot's hourly rate
-      const hours = Math.max(1, Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)));
+      const hours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60));
       const totalPrice = (parseFloat(spot.pricePerHour) * hours).toFixed(2);
 
       // Check for conflicting bookings
