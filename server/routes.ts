@@ -1339,25 +1339,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      // Durable replay protection: reject if this session was already applied
-      const alreadyConsumed = await storage.isStripeSessionConsumed(sessionId);
-      if (alreadyConsumed) {
-        return res.status(409).json({ message: "Session already consumed" });
-      }
-
       const tier = session.metadata?.tier as 'silver' | 'gold';
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
 
-      await storage.recordConsumedStripeSession(sessionId, userId, 'parking');
+      // Atomically record consumed session + activate spot in one transaction
+      // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
+      const spot = await storage.activateSpotWithSession(
+        spotId,
+        {
+          isActive: true,
+          subscriptionType: tier,
+          isPremium: true,
+          subscriptionExpiresAt: subscriptionExpiresAt,
+          stripeSessionId: sessionId,
+        } as any,
+        sessionId,
+        userId,
+      );
 
-      const spot = await storage.updateParkingSpot(spotId, {
-        isActive: true,
-        subscriptionType: tier,
-        isPremium: true,
-        subscriptionExpiresAt: subscriptionExpiresAt,
-        stripeSessionId: sessionId,
-      } as any);
+      if (!spot) return res.status(404).json({ message: "Spot not found" });
 
       res.json({ success: true, spot });
     } catch (error: any) {
@@ -1523,24 +1524,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      // Durable replay protection: reject if this session was already applied
-      const alreadyConsumedListing = await storage.isStripeSessionConsumed(sessionId);
-      if (alreadyConsumedListing) {
-        return res.status(409).json({ message: "Session already consumed" });
-      }
-
       const tier = session.metadata?.tier as 'silver' | 'gold';
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
 
-      await storage.recordConsumedStripeSession(sessionId, userId, 'listing');
+      // Atomically record consumed session + activate listing in one transaction
+      // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
+      const listing = await storage.activateSalesListingWithSession(
+        listingId,
+        {
+          isActive: true,
+          subscriptionType: tier,
+          isPremium: true,
+          subscriptionExpiresAt: subscriptionExpiresAt,
+        } as any,
+        sessionId,
+        userId,
+      );
 
-      const listing = await storage.updateSalesListing(listingId, {
-        isActive: true,
-        subscriptionType: tier,
-        isPremium: true,
-        subscriptionExpiresAt: subscriptionExpiresAt,
-      } as any);
+      if (!listing) return res.status(404).json({ message: "Listing not found" });
 
       res.json({ success: true, listing });
     } catch (error: any) {
@@ -2513,19 +2515,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const sanitizedBody = sanitizeObject(req.body);
-      const { subscriptionType: subType, ...listingData } = sanitizedBody;
-      const validatedData = insertSalesListingSchema.parse(listingData);
-      
-      const { getPlanById, calculateExpiryDate } = await import('../shared/pricing.js');
-      const plan = getPlanById(subType || 'standard');
-      const subscriptionExpiresAt = plan ? calculateExpiryDate(plan.id) : calculateExpiryDate('standard');
-      
+      const validatedData = insertSalesListingSchema.parse(sanitizedBody);
+
+      // Always create as standard/inactive — premium activation goes through Stripe verify-sale-payment
       const listing = await storage.createSalesListing({
         ...validatedData,
         sellerId: userId,
-        subscriptionType: plan?.id || 'standard',
-        subscriptionExpiresAt,
-        isPremium: plan ? (plan.tier === 'gold' || plan.tier === 'silver') : false,
+        subscriptionType: 'standard',
+        isPremium: false,
+        isActive: false,
+        subscriptionExpiresAt: null,
       } as any);
       res.status(201).json(listing);
     } catch (error: any) {
