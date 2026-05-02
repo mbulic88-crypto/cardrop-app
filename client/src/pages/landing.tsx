@@ -545,14 +545,22 @@ export default function Landing() {
                 type="button"
                 onClick={() => setShowIosModal(true)}
                 data-testid="button-install-iphone"
-                className={`rounded-md p-3 text-left transition-all hover-elevate cursor-pointer ${isIos ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
+                className={`rounded-md flex flex-col items-center justify-center p-2 gap-1.5 transition-all hover-elevate cursor-pointer ${isIos ? "border-2 border-accent" : "border border-border/50"}`}
               >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Smartphone className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-                  <p className={`text-sm font-semibold ${isIos ? "text-accent" : "text-foreground"}`}>{t.installIphone}</p>
+                {/* App Store badge placeholder — styled to match Google Play badge weight */}
+                <div className={`w-full rounded flex items-center justify-center gap-2 px-3 py-2 ${isIos ? "bg-foreground" : "bg-foreground/80"}`}>
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-background flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div className="flex flex-col items-start">
+                    <span className="text-background text-[9px] leading-tight font-normal">
+                      {language === "sr" ? "Uskoro na" : "Coming soon to"}
+                    </span>
+                    <span className="text-background text-sm font-semibold leading-tight">App Store</span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {language === "sr" ? "Uskoro na App Store. Tapnite za uputstvo — instalacija putem Safari-ja." : "Coming soon to App Store. Tap for Safari install guide."}
+                <p className="text-[10px] text-muted-foreground leading-tight text-center">
+                  {language === "sr" ? "Tapni za Safari uputstvo" : "Tap for Safari guide"}
                 </p>
               </button>
             </div>
