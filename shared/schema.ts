@@ -127,8 +127,8 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
   .extend({
     category: z.enum(['private', 'company', 'truck', 'residential', 'carlot']).default('private'),
     phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
-    paymentType: z.enum(['cash', 'bank_transfer', 'card_monri'], {
-      errorMap: () => ({ message: "Tip plaćanja mora biti: Keš, Preko računa, ili Kartično" })
+    paymentType: z.enum(['cash', 'bank_transfer'], {
+      errorMap: () => ({ message: "Tip plaćanja mora biti: Keš ili Preko računa" })
     }),
     contactEmail: z.string().email("Unesite validnu email adresu"),
     advertiserType: z.enum(['owner', 'agency', 'company']).default('owner'),

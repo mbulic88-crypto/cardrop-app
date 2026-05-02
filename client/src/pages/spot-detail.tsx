@@ -414,7 +414,7 @@ export default function SpotDetail() {
                       <span className="text-muted-foreground" data-testid="text-payment-type">
                         Tip plaćanja: {spot.paymentType === 'cash' && 'Keš'}
                         {spot.paymentType === 'bank_transfer' && 'Preko računa'}
-                        {spot.paymentType === 'card_monri' && 'Kartično'}
+                        {spot.paymentType === 'card' && 'Kartično'}
                       </span>
                     </div>
                   </div>

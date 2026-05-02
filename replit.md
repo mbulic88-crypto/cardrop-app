@@ -1,7 +1,7 @@
 # CarDrop - Parking Space Sharing Platform
 
 ## Overview
-CarDrop is a web-based parking space sharing platform for the Serbian market, enabling users to rent out their private parking spots and find available parking. The platform features a modern design with dark mode (default) and light mode (WhatsApp cream theme), integrates with Monri Payments for secure transactions, and is designed for an intuitive cross-device experience. Key capabilities include listing management, search and discovery via an interactive map, a secure booking system, and a comprehensive review and rating system. The project aims to provide a reliable and user-friendly solution for urban parking challenges in Serbia.
+CarDrop is a web-based parking space sharing platform for the Serbian market, enabling users to rent out their private parking spots and find available parking. The platform features a modern design with dark mode (default) and light mode (WhatsApp cream theme), uses Stripe for premium listing payments, and is designed for an intuitive cross-device experience. Key capabilities include listing management, search and discovery via an interactive map, a secure booking system, and a comprehensive review and rating system. The project aims to provide a reliable and user-friendly solution for urban parking challenges in Serbia.
 
 ## User Preferences
 I prefer simple language and detailed explanations. I want iterative development and prefer that you ask before making major changes.
@@ -87,8 +87,7 @@ The platform features a dual-theme design with green accent colors:
     - `GET /api/bookings/:id` IDOR-protected: only renter or spot owner can access
     - `PUT /api/messages/:id/read` ownership-checked: only receiver can mark as read
     - `PATCH /api/sales-listings/:id` uses explicit `salesListingEditSchema` that omits `isActive`, `isPremium`, `subscriptionType`, `autoRenewal` — monetization/activation fields cannot be self-set
-    - Monri callback (`POST /api/payments/monri/callback`) refuses to process without production credentials and verifies SHA512 digest signature
-    - Stripe IDOR protection: verify-plan-payment checks session.metadata.userId === req.session.userId; replay prevention via `mapHackConsumedSessions` table
+    - Stripe IDOR protection: spotId/listingId from session.metadata (not request body); ownership verified before activation; replay prevention via `mapHackConsumedSessions` table (unique constraint + DB transaction)
     - `GET /api/auth/user` strips `passwordHash` before returning user to frontend
     - VAPID keys server-only (no VITE_ fallback)
 *   **Data Validation**: Zod schemas are used for robust data validation on both frontend and backend, handling type conversions for dates and other complex data.
@@ -109,7 +108,6 @@ The platform features a dual-theme design with green accent colors:
     - Component: `client/src/components/MapHackMap.tsx`
 
 ## External Dependencies
-*   **Monri Payments (Payten)**: API v2 (REST/JSON) for secure payment processing.
 *   **Replit Auth**: OpenID Connect for user authentication.
 *   **Replit Object Storage**: For secure storage and retrieval of parking spot images.
 *   **Leaflet**: JavaScript library for interactive maps (also used for Map Hack NS full-screen map).

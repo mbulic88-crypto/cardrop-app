@@ -14,7 +14,6 @@ import Home from "@/pages/home";
 import SpotDetail from "@/pages/spot-detail";
 import AddSpot from "@/pages/add-spot";
 import MyBookings from "@/pages/my-bookings";
-import Payment from "@/pages/payment";
 import Transactions from "@/pages/transactions";
 import Dashboard from "@/pages/dashboard";
 import EditSpot from "@/pages/edit-spot";
@@ -73,7 +72,6 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-bookings" component={MyBookings} />
       <Route path="/transactions" component={Transactions} />
-      <Route path="/payment/:bookingId" component={Payment} />
       <Route path="/add-sale" component={AddSale} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />

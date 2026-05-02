@@ -87,7 +87,7 @@ export default function TermsAcceptanceDialog({
             <div>
               <h4 className="font-semibold text-foreground mb-1">Plaćanja</h4>
               <p>
-                Sva plaćanja se obrađuju putem Monri platnog sistema. ParkShare zadržava pravo provizije. 
+                Sva plaćanja se obrađuju putem Stripe platnog sistema. CarDrop zadržava pravo provizije. 
                 Politike povraćaja novca određuju vlasnik i iznajmljivač direktno.
               </p>
             </div>
