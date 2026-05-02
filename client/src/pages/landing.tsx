@@ -544,19 +544,18 @@ export default function Landing() {
                 className={`rounded-md p-3 text-left flex flex-col gap-2 ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
               >
                 <p className={`text-sm font-semibold ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
                 <a
                   href="https://play.google.com/store/apps/details?id=cardrop.app"
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="link-google-play"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-block mt-1"
+                  className="inline-block"
                 >
                   <img
                     src={googlePlayBadgeImg}
                     alt="Get it on Google Play"
-                    style={{ height: 40, width: "auto" }}
+                    style={{ height: 44, width: "auto", maxWidth: "100%" }}
                   />
                 </a>
               </div>
