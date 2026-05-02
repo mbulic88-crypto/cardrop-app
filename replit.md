@@ -78,7 +78,19 @@ The platform features a dual-theme design with green accent colors:
 
 ### System Design Choices
 *   **API Design**: RESTful API endpoints for CRUD operations on parking spots, bookings, payments, and reviews.
-*   **Security**: Helmet middleware for security headers, rate limiting (200 req/15min general, 30 req/15min sensitive routes), input sanitization (`server/sanitize.ts`) for XSS prevention, server-side Zod validation, secure handling of payment tokens, VAPID keys properly secured (server-only, no VITE_ fallback), debug console logs removed from production code.
+*   **Security** (audited May 2026):
+    - Helmet middleware (contentSecurityPolicy/CORP/COOP/frameguard disabled intentionally for Mapbox compatibility)
+    - Rate limiting: 200 req/15min general, 30 req/15min on `/api/stripe/`, `/api/payments/`, `/api/push/`
+    - Session cookies: `httpOnly: true`, `secure: true`, `sameSite: lax`, 7-day TTL, stored in PostgreSQL (`sessions` table)
+    - Input sanitization (`server/sanitize.ts`) for XSS prevention + Zod validation on all mutating routes
+    - `GET /api/users/:id` returns minimal public profile only (id, firstName, lastName, profileImageUrl, mapNickname, mapAvatarId, createdAt) — no PII, credentials, or billing data
+    - `GET /api/bookings/:id` IDOR-protected: only renter or spot owner can access
+    - `PUT /api/messages/:id/read` ownership-checked: only receiver can mark as read
+    - `PATCH /api/sales-listings/:id` Zod-validated with `insertSalesListingSchema.partial()`
+    - Monri callback (`POST /api/payments/monri/callback`) refuses to process without production credentials and verifies SHA512 digest signature
+    - Stripe IDOR protection: verify-plan-payment checks session.metadata.userId === req.session.userId; replay prevention via `mapHackConsumedSessions` table
+    - `GET /api/auth/user` strips `passwordHash` before returning user to frontend
+    - VAPID keys server-only (no VITE_ fallback)
 *   **Data Validation**: Zod schemas are used for robust data validation on both frontend and backend, handling type conversions for dates and other complex data.
 *   **Error Handling**: Comprehensive error handling, including specific responses for unique constraint violations (e.g., duplicate reviews), trial already used (403), and invalid subscription plans (400).
 *   **Geographic Scope**: Designed for Serbia, with city-based filtering and popular destination features.

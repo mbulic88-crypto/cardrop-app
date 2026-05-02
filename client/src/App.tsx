@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -26,8 +26,10 @@ import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AuthPage from "@/pages/auth";
-import MapHackNS from "@/pages/map-hack-ns";
-import MapHackSubscribe from "@/pages/map-hack-subscribe";
+
+// Heavy map pages loaded lazily to keep initial bundle small
+const MapHackNS = lazy(() => import("@/pages/map-hack-ns"));
+const MapHackSubscribe = lazy(() => import("@/pages/map-hack-subscribe"));
 
 function usePageViewTracking() {
   const [location] = useLocation();
@@ -76,8 +78,16 @@ function Router() {
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route path="/admin" component={Admin} />
-      <Route path="/map-hack" component={MapHackNS} />
-      <Route path="/map-hack/subscribe" component={MapHackSubscribe} />
+      <Route path="/map-hack">
+        <Suspense fallback={null}>
+          <MapHackNS />
+        </Suspense>
+      </Route>
+      <Route path="/map-hack/subscribe">
+        <Suspense fallback={null}>
+          <MapHackSubscribe />
+        </Suspense>
+      </Route>
       <Route component={NotFound} />
       </Switch>
     </>

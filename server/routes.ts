@@ -1546,15 +1546,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User routes — returns only public-safe fields (no credentials or billing data)
+  // User routes — returns minimal public profile only (no PII, credentials, or billing data)
   app.get('/api/users/:id', async (req, res) => {
     try {
       const user = await storage.getUser(req.params.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      const { passwordHash, stripeCustomerId, stripeSubscriptionId, mapHackStripeSessionId, mapHackPlan, mapHackPlanExpiresAt, mapHackTrialStartedAt, isAdmin, ...publicUser } = user;
-      res.json(publicUser);
+      // Return only what is needed to display a spot/listing owner card
+      res.json({
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+        mapNickname: user.mapNickname,
+        mapAvatarId: user.mapAvatarId,
+        createdAt: user.createdAt,
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -1699,13 +1707,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/payments/monri/callback', async (req, res) => {
     try {
-      // TODO: Add proper Monri signature verification in production
-      // Verify the callback authenticity using Monri's signature mechanism
-      const { order_number, status, transaction_id } = req.body;
-      
-      // Extract booking ID from order number
+      const merchantKey = process.env.MONRI_MERCHANT_KEY;
+      const authenticityToken = process.env.MONRI_AUTHENTICITY_TOKEN;
+
+      // Refuse to process callbacks when running with test/missing credentials
+      if (!merchantKey || !authenticityToken ||
+          merchantKey === 'test_merchant_key' || authenticityToken === 'test_authenticity_token') {
+        console.warn("Monri callback received but production credentials not configured — ignoring");
+        return res.status(503).json({ message: "Payment callback not configured" });
+      }
+
+      const { order_number, status, transaction_id, digest } = req.body;
+
+      // Verify Monri callback signature: SHA512(authenticityToken + order_number + status + amount)
+      // Full signature spec: https://docs.monri.com/#callback-notification
+      if (!digest) {
+        console.warn("Monri callback missing digest signature — rejected");
+        return res.status(400).json({ message: "Missing signature" });
+      }
+
+      const amount = req.body.amount ? String(req.body.amount) : '';
+      const expectedDigest = createHash('sha512')
+        .update(authenticityToken + order_number + status + amount)
+        .digest('hex');
+
+      if (digest !== expectedDigest) {
+        console.warn("Monri callback digest mismatch — rejected");
+        return res.status(403).json({ message: "Invalid signature" });
+      }
+
+      // Extract booking ID from order number (format: PARK-{bookingId}-{timestamp})
       const bookingId = order_number.split('-')[1];
-      
+
       if (status === 'approved') {
         await storage.updateBooking(bookingId, {
           status: 'confirmed',
@@ -1714,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           monriTransactionId: transaction_id,
         });
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error handling Monri callback:", error);
