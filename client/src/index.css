@@ -7,12 +7,13 @@ html {
   background-color: #1B4332;
 }
 
-/* iOS PWA safe area — notch & Dynamic Island
+/* iOS PWA safe area — notch, Dynamic Island, and home indicator
    Applies to normal document-flow pages (landing, home, auth, etc.).
    Fixed/inset-0 containers ignore body padding and handle safe area themselves. */
 @supports (padding-top: env(safe-area-inset-top)) {
   body {
     padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
@@ -27,17 +28,19 @@ html {
   }
 }
 
-/* iOS Safari — prevent elastic scroll bounce on body */
+/* iOS Safari — prevent elastic scroll bounce globally and on all scroll containers */
+html,
 body {
   overscroll-behavior: none;
 }
 
-/* iOS Safari — smooth momentum scrolling on scrollable lists */
+/* iOS Safari — smooth momentum scrolling and no bounce on all scrollable containers */
 .overflow-y-auto,
 .overflow-y-scroll,
 .overflow-auto,
 .overflow-scroll {
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* LIGHT MODE - WhatsApp cream theme */
