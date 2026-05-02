@@ -1905,7 +1905,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Nemate dozvolu za izmenu ovog mesta" });
       }
       
-      const validatedData = insertParkingSpotSchema.omit({ subscriptionType: true } as any).parse(req.body);
+      const parkingSpotEditSchema = insertParkingSpotSchema.omit({
+        isActive: true,
+        isPremium: true,
+        subscriptionType: true,
+        autoRenewal: true,
+      } as any);
+      const validatedData = parkingSpotEditSchema.parse(req.body);
       const updated = await storage.updateParkingSpot(req.params.id, validatedData);
       
       res.json(updated);
