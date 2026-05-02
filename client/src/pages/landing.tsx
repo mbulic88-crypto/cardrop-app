@@ -111,7 +111,7 @@ const translations = {
     pricingBestValue: "Najbolja Vrednost",
     mapHackTitle: "Map Hack NS",
     mapHackSubtitle: "Real-time parking mapa Novog Sada. Štek mesta, pauk radar, safe zone alarmi — sve u jednoj aplikaciji.",
-    mapHackBadge: "Samo za Novi Sad",
+    mapHackBadge: "Trenutno samo za Novi Sad · uskoro cela Srbija",
     mapHackFreeLabel: "FREE",
     mapHackFreeDesc: "Osnovna mapa sa zlatnim minutom i paukom",
     mapHackFreeFeatures: ["Interaktivna mapa NS", "Zlatni Minut markeri", "Pauk radar upozorenja", "SMS plaćanje javnih zona (1 klik)", "Live Chat zajednica"],
@@ -215,7 +215,7 @@ const translations = {
     pricingBestValue: "Best Value",
     mapHackTitle: "Map Hack NS",
     mapHackSubtitle: "Real-time parking map of Novi Sad. Hidden spots, speed camera alerts, safe zone alarms — all in one app.",
-    mapHackBadge: "Novi Sad Only",
+    mapHackBadge: "Currently Novi Sad only · coming soon to all of Serbia",
     mapHackFreeLabel: "FREE",
     mapHackFreeDesc: "Basic map with golden minute and speed camera",
     mapHackFreeFeatures: ["Interactive NS map", "Golden Minute markers", "Speed camera alerts", "Public zone SMS payment (1 tap)", "Live community chat"],
@@ -975,92 +975,122 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* PREMIUM */}
-            <Card className="p-6 flex flex-col relative border-2 border-primary" data-testid="card-mh-pricing-premium">
+            <div
+              className="p-6 flex flex-col relative rounded-md"
+              data-testid="card-mh-pricing-premium"
+              style={{
+                background: "linear-gradient(145deg, #B8860B 0%, #DAA520 45%, #FFD700 100%)",
+                boxShadow: "0 4px 20px rgba(218,165,32,0.4)",
+              }}
+            >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground border-0 font-bold no-default-hover-elevate no-default-active-elevate">
+                <span className="bg-yellow-950 text-yellow-300 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wide whitespace-nowrap">
                   {t.mapHackPremiumBadge}
-                </Badge>
+                </span>
               </div>
               <div className="mb-4 mt-1">
-                <span className="text-lg font-bold text-foreground">{t.mapHackPremiumLabel}</span>
+                <span className="text-lg font-bold text-yellow-950">{t.mapHackPremiumLabel}</span>
                 <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-3xl font-extrabold text-foreground">390</span>
-                  <span className="text-sm text-muted-foreground">RSD{t.mapHackPerMonth}</span>
+                  <span className="text-3xl font-extrabold text-yellow-950">390</span>
+                  <span className="text-sm text-yellow-800">RSD{t.mapHackPerMonth}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+                <p className="text-xs text-yellow-900/70 mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">{t.mapHackPremiumDesc}</p>
+              <p className="text-xs text-yellow-900/70 mb-4">{t.mapHackPremiumDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
                 {t.mapHackPremiumFeatures.map((f: string) => (
-                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5" />
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-yellow-950">
+                    <Check className="w-3 h-3 text-yellow-950 flex-shrink-0 mt-0.5" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/map-hack/subscribe">
-                <Button className="w-full" data-testid="button-mh-premium-cta">
+                <button
+                  className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors"
+                  data-testid="button-mh-premium-cta"
+                >
                   {t.mapHackCTA}
-                </Button>
+                </button>
               </Link>
-            </Card>
+            </div>
 
             {/* DAY PASS */}
-            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-daypass">
+            <div
+              className="p-6 flex flex-col rounded-md"
+              data-testid="card-mh-pricing-daypass"
+              style={{
+                background: "linear-gradient(145deg, #7f1d1d 0%, #dc2626 55%, #ef4444 100%)",
+                boxShadow: "0 4px 20px rgba(220,38,38,0.35)",
+              }}
+            >
               <div className="mb-4">
-                <span className="text-lg font-bold text-foreground">{t.mapHackDayPassLabel}</span>
+                <span className="text-lg font-bold text-white">{t.mapHackDayPassLabel}</span>
                 <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-3xl font-extrabold text-foreground">120</span>
-                  <span className="text-sm text-muted-foreground">RSD / {t.mapHackPerDay}</span>
+                  <span className="text-3xl font-extrabold text-white">120</span>
+                  <span className="text-sm text-red-200">RSD / {t.mapHackPerDay}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Jednokratno plaćanje' : 'One-time payment'}</p>
+                <p className="text-xs text-red-200 mt-0.5">{language === 'sr' ? 'Jednokratno plaćanje' : 'One-time payment'}</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">{t.mapHackDayPassDesc}</p>
+              <p className="text-xs text-red-200 mb-4">{t.mapHackDayPassDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
                 {t.mapHackPremiumFeatures.map((f: string) => (
-                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-white">
+                    <Check className="w-3 h-3 text-white flex-shrink-0 mt-0.5" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/map-hack/subscribe">
-                <Button variant="outline" className="w-full" data-testid="button-mh-daypass-cta">
+                <button
+                  className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                  data-testid="button-mh-daypass-cta"
+                >
                   {t.mapHackCTA}
-                </Button>
+                </button>
               </Link>
-            </Card>
+            </div>
 
             {/* GODIŠNJI */}
-            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-annual">
+            <div
+              className="p-6 flex flex-col rounded-md"
+              data-testid="card-mh-pricing-annual"
+              style={{
+                background: "linear-gradient(145deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%)",
+                boxShadow: "0 4px 20px rgba(67,56,202,0.35)",
+              }}
+            >
               <div className="mb-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-lg font-bold text-foreground">{t.mapHackAnnualLabel}</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 no-default-hover-elevate no-default-active-elevate">
+                  <span className="text-lg font-bold text-white">{t.mapHackAnnualLabel}</span>
+                  <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
                     {t.mapHackAnnualBadge}
-                  </Badge>
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-3xl font-extrabold text-foreground">3.500</span>
-                  <span className="text-sm text-muted-foreground">RSD{t.mapHackPerYear}</span>
+                  <span className="text-3xl font-extrabold text-white">3.500</span>
+                  <span className="text-sm text-indigo-300">RSD{t.mapHackPerYear}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+                <p className="text-xs text-indigo-300 mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">{t.mapHackAnnualDesc}</p>
+              <p className="text-xs text-indigo-300 mb-4">{t.mapHackAnnualDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
                 {t.mapHackPremiumFeatures.map((f: string) => (
-                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3 text-indigo-400 flex-shrink-0 mt-0.5" />
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-white">
+                    <Check className="w-3 h-3 text-indigo-300 flex-shrink-0 mt-0.5" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link href="/map-hack/subscribe">
-                <Button variant="outline" className="w-full" data-testid="button-mh-annual-cta">
+                <button
+                  className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                  data-testid="button-mh-annual-cta"
+                >
                   {t.mapHackCTA}
-                </Button>
+                </button>
               </Link>
-            </Card>
+            </div>
           </div>
 
           <p className="text-xs text-muted-foreground text-center mt-8">
