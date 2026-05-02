@@ -125,16 +125,29 @@ async function clearSpotExpiry() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
+  // Sensitive route prefixes whose response bodies must never be logged
+  const SENSITIVE_LOG_PREFIXES = [
+    "/api/auth",
+    "/api/stripe",
+    "/api/payments",
+    "/api/map-hack",
+    "/api/users",
+    "/api/push",
+  ];
+
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
+    const isSensitive = SENSITIVE_LOG_PREFIXES.some((p) => path.startsWith(p));
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-    const originalResJson = res.json;
-    res.json = function (bodyJson, ...args) {
-      capturedJsonResponse = bodyJson;
-      return originalResJson.apply(res, [bodyJson, ...args]);
-    };
+    if (!isSensitive) {
+      const originalResJson = res.json;
+      res.json = function (bodyJson, ...args) {
+        capturedJsonResponse = bodyJson;
+        return originalResJson.apply(res, [bodyJson, ...args]);
+      };
+    }
 
     res.on("finish", () => {
       const duration = Date.now() - start;

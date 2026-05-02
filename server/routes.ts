@@ -1305,8 +1305,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/verify-payment', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
-      const { sessionId, spotId } = req.body;
+      const { sessionId } = req.body;
       const userId = req.session.userId;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: "Missing sessionId" });
+      }
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -1314,8 +1318,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Payment not completed", status: session.payment_status });
       }
 
-      if (session.metadata?.userId !== userId) {
+      // Verify caller owns this session
+      if (session.metadata?.userId !== String(userId)) {
         return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Use spotId from verified Stripe metadata — never trust client-supplied spotId
+      const spotId = session.metadata?.spotId;
+      if (!spotId) {
+        return res.status(400).json({ message: "Invalid session: missing spotId" });
+      }
+
+      const existingSpot = await storage.getParkingSpot(spotId);
+      if (!existingSpot) {
+        return res.status(404).json({ message: "Spot not found" });
+      }
+
+      // Verify caller owns the target spot
+      if (existingSpot.ownerId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Replay protection: reject if this session was already applied to this spot
+      if ((existingSpot as any).stripeSessionId === sessionId && existingSpot.isActive) {
+        return res.status(409).json({ message: "Session already consumed" });
       }
 
       const tier = session.metadata?.tier as 'silver' | 'gold';
@@ -1460,8 +1486,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/stripe/verify-sale-payment', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();
-      const { sessionId, listingId } = req.body;
+      const { sessionId } = req.body;
       const userId = req.session.userId;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: "Missing sessionId" });
+      }
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -1469,8 +1499,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Payment not completed", status: session.payment_status });
       }
 
-      if (session.metadata?.userId !== userId) {
+      // Verify caller owns this session
+      if (session.metadata?.userId !== String(userId)) {
         return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Use listingId from verified Stripe metadata — never trust client-supplied listingId
+      const listingId = session.metadata?.listingId;
+      if (!listingId) {
+        return res.status(400).json({ message: "Invalid session: missing listingId" });
+      }
+
+      const existingListing = await storage.getSalesListing(listingId);
+      if (!existingListing) {
+        return res.status(404).json({ message: "Listing not found" });
+      }
+
+      // Verify caller owns the target listing
+      if (existingListing.sellerId !== userId) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Replay protection: reject if listing is already active (session already consumed)
+      if (existingListing.isActive) {
+        return res.status(409).json({ message: "Session already consumed" });
       }
 
       const tier = session.metadata?.tier as 'silver' | 'gold';
