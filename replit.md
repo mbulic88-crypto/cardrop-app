@@ -86,7 +86,7 @@ The platform features a dual-theme design with green accent colors:
     - `GET /api/users/:id` returns minimal public profile only (id, firstName, lastName, profileImageUrl, mapNickname, mapAvatarId, createdAt) — no PII, credentials, or billing data
     - `GET /api/bookings/:id` IDOR-protected: only renter or spot owner can access
     - `PUT /api/messages/:id/read` ownership-checked: only receiver can mark as read
-    - `PATCH /api/sales-listings/:id` Zod-validated with `insertSalesListingSchema.partial()`
+    - `PATCH /api/sales-listings/:id` uses explicit `salesListingEditSchema` that omits `isActive`, `isPremium`, `subscriptionType`, `autoRenewal` — monetization/activation fields cannot be self-set
     - Monri callback (`POST /api/payments/monri/callback`) refuses to process without production credentials and verifies SHA512 digest signature
     - Stripe IDOR protection: verify-plan-payment checks session.metadata.userId === req.session.userId; replay prevention via `mapHackConsumedSessions` table
     - `GET /api/auth/user` strips `passwordHash` before returning user to frontend
