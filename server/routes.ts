@@ -522,7 +522,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function hasPremiumMapHackPlan(user: any): boolean {
     if (user.isAdmin) return true;
-    if (user.mapHackPlan === 'firma') return true;
+    if (user.mapHackPlan === 'firma') {
+      if (!user.mapHackPlanExpiresAt) return true; // firma without expiry = active
+      return new Date() < new Date(user.mapHackPlanExpiresAt);
+    }
     const paidPlans = ['premium', 'day_pass', 'godisnji_premium'];
     if (!paidPlans.includes(user.mapHackPlan || '')) return false;
     if (!user.mapHackPlanExpiresAt) return false;

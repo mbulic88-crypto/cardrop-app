@@ -29,6 +29,15 @@ export function usePushNotifications() {
     if (supported) {
       setPermission(Notification.permission);
       checkSubscription();
+
+      // Poll permission state so UI updates if user changes it in browser settings
+      const interval = setInterval(() => {
+        const current = Notification.permission;
+        setPermission(prev => prev !== current ? current : prev);
+        if (current === 'granted') clearInterval(interval);
+      }, 3000);
+
+      return () => clearInterval(interval);
     }
   }, []);
 

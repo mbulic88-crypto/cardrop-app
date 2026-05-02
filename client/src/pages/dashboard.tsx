@@ -828,7 +828,10 @@ export default function Dashboard() {
                           <div>
                             <p className="font-medium text-foreground">Push Obaveštenja</p>
                             <p className="text-sm text-muted-foreground">
-                              {isSubscribed ? "Primate obaveštenja" : "Obaveštenja su isključena"}
+                              {isSubscribed ? "Aktivna — paukovi, zlatni minuti, chat" : "Isključena — nećete primati map obaveštenja"}
+                            </p>
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">
+                              Privatne poruke stižu uvek (kada je push aktivan)
                             </p>
                           </div>
                         </div>

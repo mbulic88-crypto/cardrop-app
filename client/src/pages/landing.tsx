@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone } from "lucide-react";
-import { SiInstagram, SiFacebook, SiGoogleplay } from "react-icons/si";
+import { SiInstagram, SiFacebook } from "react-icons/si";
+import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -549,11 +550,14 @@ export default function Landing() {
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="link-google-play"
-                  className="inline-flex items-center gap-1.5 mt-0.5 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-foreground text-background"
                   onClick={(e) => e.stopPropagation()}
+                  className="inline-block mt-1"
                 >
-                  <SiGoogleplay size={13} />
-                  {t.googlePlayBadge}
+                  <img
+                    src={googlePlayBadgeImg}
+                    alt="Get it on Google Play"
+                    style={{ height: 40, width: "auto" }}
+                  />
                 </a>
               </div>
               <button
