@@ -527,17 +527,6 @@ export default function Landing() {
               {t.sellButton}
             </Button>
 
-            {/* Install app */}
-            <Button
-              size="lg"
-              onClick={installApp}
-              variant="secondary"
-              className="w-full text-base py-5 font-semibold border border-accent/50 bg-accent/15 text-accent"
-              data-testid="button-install-app"
-            >
-              <Download className="w-5 h-5 mr-2" />
-              {t.installApp}
-            </Button>
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
               <a
                 href="https://play.google.com/store/apps/details?id=cardrop.app"

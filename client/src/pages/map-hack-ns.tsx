@@ -17,6 +17,7 @@ import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
 import { SiViber, SiWhatsapp } from "react-icons/si";
+import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 
 type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
 
@@ -1892,9 +1893,12 @@ export default function MapHackNS() {
                 rel="noopener noreferrer"
                 data-testid="btn-google-play"
                 title="Preuzmi na Google Play"
-                className="kraft-btn relative flex items-center justify-center"
-                style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none", textDecoration: "none" }}>
-                <Download size={15} style={{ color: "#fff" }} />
+                style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+                <img
+                  src={googlePlayBadgeImg}
+                  alt="Get it on Google Play"
+                  style={{ height: 32, width: "auto", display: "block" }}
+                />
               </a>
             )}
             {/* PWA Install — shown on iOS only; hidden on Android (use Play Store instead) */}
