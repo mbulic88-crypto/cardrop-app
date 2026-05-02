@@ -50,6 +50,8 @@ export interface IStorage {
   isStripeSessionConsumed(stripeSessionId: string): Promise<boolean>;
   recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void>;
   activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
+  deactivateMapHackPlan(userId: string): Promise<User | undefined>;
+  renewMapHackPlan(userId: string, plan: string, expiresAt: Date): Promise<User | undefined>;
   
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -248,6 +250,24 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return user;
     });
+  }
+
+  async deactivateMapHackPlan(userId: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ mapHackPlan: 'free', mapHackPlanExpiresAt: null, stripeSubscriptionId: null, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async renewMapHackPlan(userId: string, plan: string, expiresAt: Date): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ mapHackPlan: plan, mapHackPlanExpiresAt: expiresAt, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
   }
 
   // Parking spots operations

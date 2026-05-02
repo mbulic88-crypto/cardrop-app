@@ -109,6 +109,25 @@ const translations = {
     pricingChoosePlan: "Izaberi Plan",
     pricingMostPopular: "Najpopularniji",
     pricingBestValue: "Najbolja Vrednost",
+    mapHackTitle: "Map Hack NS",
+    mapHackSubtitle: "Real-time parking mapa Novog Sada. Štek mesta, pauk radar, safe zone alarmi — sve u jednoj aplikaciji.",
+    mapHackBadge: "Samo za Novi Sad",
+    mapHackFreeLabel: "FREE",
+    mapHackFreeDesc: "Osnovna mapa sa zlatnim minutom i paukom",
+    mapHackFreeFeatures: ["Interaktivna mapa NS", "Zlatni Minut markeri", "Pauk radar upozorenja", "SMS plaćanje javnih zona (1 klik)", "Live Chat zajednica"],
+    mapHackPremiumLabel: "PREMIUM",
+    mapHackPremiumBadge: "Preporučeno",
+    mapHackPremiumDesc: "Potpuna zaštita — najbrži parking u gradu",
+    mapHackPremiumFeatures: ["Sve Free funkcije +", "Štek parking lokacije (skrivena baza)", "Radar markeri (policija i patrola)", "Safe Zone alarm — push u 300m krugu", "Push notifikacije bez gledanja u mapu"],
+    mapHackDayPassLabel: "DAY PASS",
+    mapHackDayPassDesc: "Sve Premium funkcije na 24 sata",
+    mapHackAnnualLabel: "GODIŠNJI",
+    mapHackAnnualBadge: "Ušteda 2 meseca",
+    mapHackAnnualDesc: "Sve Premium funkcije — 365 dana",
+    mapHackPerMonth: "/ mes",
+    mapHackPerDay: "24h",
+    mapHackPerYear: "/ god",
+    mapHackCTA: "Otvorite Map Hack NS",
     contactTitle: "Kontaktirajte Nas",
     contactSubtitle: "Vaše mišljenje nam je važno! Pišite nam za bilo kakvo pitanje, predlog ili ideju - zajedno pravimo bolju platformu.",
     contactEmail: "Email",
@@ -194,6 +213,25 @@ const translations = {
     pricingChoosePlan: "Choose Plan",
     pricingMostPopular: "Most Popular",
     pricingBestValue: "Best Value",
+    mapHackTitle: "Map Hack NS",
+    mapHackSubtitle: "Real-time parking map of Novi Sad. Hidden spots, speed camera alerts, safe zone alarms — all in one app.",
+    mapHackBadge: "Novi Sad Only",
+    mapHackFreeLabel: "FREE",
+    mapHackFreeDesc: "Basic map with golden minute and speed camera",
+    mapHackFreeFeatures: ["Interactive NS map", "Golden Minute markers", "Speed camera alerts", "Public zone SMS payment (1 tap)", "Live community chat"],
+    mapHackPremiumLabel: "PREMIUM",
+    mapHackPremiumBadge: "Recommended",
+    mapHackPremiumDesc: "Full protection — fastest parking in the city",
+    mapHackPremiumFeatures: ["All Free features +", "Hidden parking spots database", "Police patrol radar markers", "Safe Zone alarm — push within 300m", "Push notifications without watching the map"],
+    mapHackDayPassLabel: "DAY PASS",
+    mapHackDayPassDesc: "All Premium features for 24 hours",
+    mapHackAnnualLabel: "ANNUAL",
+    mapHackAnnualBadge: "Save 2 months",
+    mapHackAnnualDesc: "All Premium features — 365 days",
+    mapHackPerMonth: "/ mo",
+    mapHackPerDay: "24h",
+    mapHackPerYear: "/ yr",
+    mapHackCTA: "Open Map Hack NS",
     contactTitle: "Contact Us",
     contactSubtitle: "Your opinion matters! Write to us with any question, suggestion or idea - together we build a better platform.",
     contactEmail: "Email",
@@ -919,6 +957,145 @@ export default function Landing() {
           </div>
         </div>
       </div>
+
+      {/* Map Hack NS Pricing Section */}
+      <div id="map-hack-pricing" className="py-20 md:py-24 px-6 scroll-mt-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <Badge variant="secondary" className="text-sm font-semibold px-4 py-1 no-default-hover-elevate no-default-active-elevate" data-testid="badge-map-hack-only">
+              {t.mapHackBadge}
+            </Badge>
+            <h2 className="text-2xl md:text-4xl font-bold text-center text-foreground" data-testid="text-map-hack-pricing-title">
+              {t.mapHackTitle}
+            </h2>
+          </div>
+          <p className="text-center text-muted-foreground mb-12 md:mb-16 max-w-2xl mx-auto">
+            {t.mapHackSubtitle}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+            {/* FREE */}
+            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-free">
+              <div className="mb-4">
+                <span className="text-lg font-bold text-foreground">{t.mapHackFreeLabel}</span>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-extrabold text-foreground">0</span>
+                  <span className="text-sm text-muted-foreground">RSD</span>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">{t.mapHackFreeDesc}</p>
+              <ul className="space-y-2 flex-1 mb-5">
+                {t.mapHackFreeFeatures.map((f: string) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/map-hack">
+                <Button variant="outline" className="w-full" data-testid="button-mh-free-cta">
+                  {t.mapHackCTA}
+                </Button>
+              </Link>
+            </Card>
+
+            {/* PREMIUM */}
+            <Card className="p-6 flex flex-col relative border-2 border-primary" data-testid="card-mh-pricing-premium">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <Badge className="bg-primary text-primary-foreground border-0 font-bold no-default-hover-elevate no-default-active-elevate">
+                  {t.mapHackPremiumBadge}
+                </Badge>
+              </div>
+              <div className="mb-4 mt-1">
+                <span className="text-lg font-bold text-foreground">{t.mapHackPremiumLabel}</span>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-extrabold text-foreground">390</span>
+                  <span className="text-sm text-muted-foreground">RSD{t.mapHackPerMonth}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">{t.mapHackPremiumDesc}</p>
+              <ul className="space-y-2 flex-1 mb-5">
+                {t.mapHackPremiumFeatures.map((f: string) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/map-hack/subscribe">
+                <Button className="w-full" data-testid="button-mh-premium-cta">
+                  {t.mapHackCTA}
+                </Button>
+              </Link>
+            </Card>
+
+            {/* DAY PASS */}
+            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-daypass">
+              <div className="mb-4">
+                <span className="text-lg font-bold text-foreground">{t.mapHackDayPassLabel}</span>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-extrabold text-foreground">120</span>
+                  <span className="text-sm text-muted-foreground">RSD / {t.mapHackPerDay}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Jednokratno plaćanje' : 'One-time payment'}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">{t.mapHackDayPassDesc}</p>
+              <ul className="space-y-2 flex-1 mb-5">
+                {t.mapHackPremiumFeatures.map((f: string) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-blue-500 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/map-hack/subscribe">
+                <Button variant="outline" className="w-full" data-testid="button-mh-daypass-cta">
+                  {t.mapHackCTA}
+                </Button>
+              </Link>
+            </Card>
+
+            {/* GODIŠNJI */}
+            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-annual">
+              <div className="mb-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-lg font-bold text-foreground">{t.mapHackAnnualLabel}</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 no-default-hover-elevate no-default-active-elevate">
+                    {t.mapHackAnnualBadge}
+                  </Badge>
+                </div>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-extrabold text-foreground">3.500</span>
+                  <span className="text-sm text-muted-foreground">RSD{t.mapHackPerYear}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">{t.mapHackAnnualDesc}</p>
+              <ul className="space-y-2 flex-1 mb-5">
+                {t.mapHackPremiumFeatures.map((f: string) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-indigo-400 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/map-hack/subscribe">
+                <Button variant="outline" className="w-full" data-testid="button-mh-annual-cta">
+                  {t.mapHackCTA}
+                </Button>
+              </Link>
+            </Card>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center mt-8">
+            {language === 'sr'
+              ? 'Plaćanje karticom putem Stripe. Premium i Godišnji plan se automatski obnavljaju — otkazati u bilo kom trenutku.'
+              : 'Card payments via Stripe. Premium and Annual plans auto-renew — cancel anytime.'}
+          </p>
+        </div>
+      </div>
+
       {/* Testimonials Section */}
       <div className="py-20 md:py-24 px-6 max-w-7xl mx-auto bg-card/30">
         <h2 className="text-2xl md:text-4xl font-bold text-center mb-10 md:mb-12 text-foreground">
