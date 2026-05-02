@@ -1,5 +1,6 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { storage } from './storage';
+import { sendMapHackRenewalEmail, sendMapHackCancellationEmail } from './email';
 
 async function handleMapHackWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
   // ── Subscription cancelled ────────────────────────────────────────────────
@@ -19,6 +20,10 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
     await storage.updateMapHackPlan(userId, 'free', null);
     await storage.updateMapHackSubscription(userId, { stripeSubscriptionId: null });
     console.log(`[MapHack Webhook] Subscription cancelled for user ${userId}, plan reset to free`);
+    const cancelledPlan = (subscription.metadata as Record<string, string> | undefined)?.plan || 'premium';
+    if (user.email) {
+      sendMapHackCancellationEmail(user.email, user.firstName || user.email, cancelledPlan).catch(() => {});
+    }
 
   // ── Subscription renewed (Stripe's authoritative period dates) ────────────
   } else if (event.type === 'invoice.payment_succeeded') {
@@ -75,6 +80,10 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
 
     await storage.updateMapHackPlan(userId, plan, expiresAt);
     console.log(`[MapHack Webhook] Subscription renewed for user ${userId}, plan=${plan}, expires=${expiresAt.toISOString()}`);
+    // Only send renewal email on actual renewal cycles, not initial purchase
+    if (billingReason === 'subscription_cycle' && user.email) {
+      sendMapHackRenewalEmail(user.email, user.firstName || user.email, plan, expiresAt).catch(() => {});
+    }
 
   // ── Subscription updated (e.g. trial→active, plan change) ────────────────
   } else if (event.type === 'customer.subscription.updated') {

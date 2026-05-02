@@ -13,6 +13,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
+import { sendMapHackPurchaseEmail } from './email';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
@@ -439,6 +440,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? session.subscription
           : session.subscription.id;
         await storage.updateMapHackSubscription(userId, { stripeSubscriptionId: subscriptionId });
+      }
+
+      // Send purchase confirmation email
+      if (updated.email) {
+        sendMapHackPurchaseEmail(
+          updated.email,
+          updated.firstName || updated.email,
+          verifiedPlan,
+          expiresAt,
+        ).catch(() => {});
       }
 
       const { passwordHash, ...safeUser } = updated;
