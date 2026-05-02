@@ -83,7 +83,7 @@ export const parkingSpots = pgTable("parking_spots", {
   is24Hours: boolean("is_24_hours").notNull().default(true),
   imageUrls: text("image_urls").array().notNull().default(sql`ARRAY[]::text[]`),
   phone: varchar("phone", { length: 50 }).notNull().default(''),
-  paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer, card_monri
+  paymentType: varchar("payment_type", { length: 50 }).notNull().default('cash'), // cash, bank_transfer
   contactEmail: varchar("contact_email", { length: 255 }).notNull(),
   // Advertiser type for all categories
   advertiserType: varchar("advertiser_type", { length: 50 }).notNull().default('owner'), // owner, agency, company
@@ -191,7 +191,16 @@ export const insertBookingSchema = createInsertSchema(bookings)
     endTime: dateSchema,
   });
 
+// Client-facing create schema: only user-supplied fields.
+// totalPrice, status, paymentStatus are always computed server-side.
+export const bookingCreateSchema = z.object({
+  spotId: z.string().min(1),
+  startTime: dateSchema,
+  endTime: dateSchema,
+});
+
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
+export type BookingCreate = z.infer<typeof bookingCreateSchema>;
 export type Booking = typeof bookings.$inferSelect;
 
 // Reviews table - for renters to review spot owners after payment

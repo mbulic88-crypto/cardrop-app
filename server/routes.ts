@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertParkingSpotSchema, parkingSpotEditSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
+import { insertParkingSpotSchema, parkingSpotEditSchema, insertBookingSchema, bookingCreateSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import Stripe from "stripe";
@@ -1657,36 +1657,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      
-      // Validate request body
-      const validatedData = insertBookingSchema.parse(req.body);
-      
+
+      // Only accept user-supplied fields; price/status computed server-side
+      const { spotId, startTime, endTime } = bookingCreateSchema.parse(req.body);
+
+      const spot = await storage.getParkingSpot(spotId);
+      if (!spot) {
+        return res.status(404).json({ message: "Parking mesto nije pronađeno" });
+      }
+
+      // Compute total price server-side from spot's hourly rate
+      const hours = Math.max(1, Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)));
+      const totalPrice = (parseFloat(spot.pricePerHour) * hours).toFixed(2);
+
       // Check for conflicting bookings
-      const existingBookings = await storage.getSpotBookings(validatedData.spotId);
+      const existingBookings = await storage.getSpotBookings(spotId);
       const hasConflict = existingBookings.some((booking) => {
         if (booking.status === 'cancelled') return false;
-        
-        const newStart = new Date(validatedData.startTime);
-        const newEnd = new Date(validatedData.endTime);
+        const newStart = startTime;
+        const newEnd = endTime;
         const existingStart = new Date(booking.startTime);
         const existingEnd = new Date(booking.endTime);
-        
         return (
           (newStart >= existingStart && newStart < existingEnd) ||
           (newEnd > existingStart && newEnd <= existingEnd) ||
           (newStart <= existingStart && newEnd >= existingEnd)
         );
       });
-      
+
       if (hasConflict) {
         return res.status(400).json({ message: "Time slot is already booked" });
       }
-      
+
       const booking = await storage.createBooking({
-        ...validatedData,
+        spotId,
+        startTime,
+        endTime,
+        totalPrice,
+        currency: spot.currency,
+        status: 'pending',
+        paymentStatus: 'pending',
         renterId: userId,
       });
-      
+
       res.status(201).json(booking);
     } catch (error: any) {
       console.error("Error creating booking:", error);
