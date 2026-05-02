@@ -21,14 +21,21 @@ self.addEventListener('push', (event) => {
 
   try {
     const data = event.data.json();
+    // Use a unique tag per notification (timestamp fallback) so notifications
+    // never silently replace each other. renotify:true ensures the user is
+    // alerted even when the same tag is intentionally reused (e.g. broadcasts).
+    const tag = data.tag
+      ? `${data.tag}-${Date.now()}`
+      : `cardrop-${Date.now()}`;
     const options = {
       body: data.body || '',
       icon: data.icon || '/icons/icon-192x192.png',
       badge: data.badge || '/icons/icon-192x192.png',
-      tag: data.tag || 'cardrop-notification',
+      tag,
+      renotify: true,
       data: { url: data.url || '/' },
       vibrate: [200, 100, 200],
-      requireInteraction: true
+      requireInteraction: false
     };
 
     event.waitUntil(

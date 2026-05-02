@@ -2123,9 +2123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send push notification to receiver
       await sendPushToUser(validatedData.receiverId, {
         title: 'Nova poruka - CarDrop',
-        body: `${senderName} vam je poslao poruku u vezi: ${spotTitle}`,
+        body: `${senderName}: ${spotTitle}`,
         url: '/dashboard?tab=messages',
-        tag: 'new-message',
+        tag: `msg-${userId}`,
       });
 
       res.status(201).json(message);

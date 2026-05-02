@@ -31,12 +31,19 @@ export async function saveSubscription(userId: string, subscription: {
   keys: { p256dh: string; auth: string };
 }) {
   try {
+    // Upsert: update keys if the endpoint already exists (handles key rotation)
     await db.insert(pushSubscriptions).values({
       userId,
       endpoint: subscription.endpoint,
       p256dh: subscription.keys.p256dh,
       auth: subscription.keys.auth,
-    }).onConflictDoNothing();
+    }).onConflictDoUpdate({
+      target: [pushSubscriptions.userId, pushSubscriptions.endpoint],
+      set: {
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      },
+    });
     return true;
   } catch (error) {
     console.error('Error saving push subscription:', error);
@@ -76,30 +83,29 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   const results = await Promise.allSettled(
     subscriptions.map(async (sub) => {
       const ep = sub.endpoint.slice(0, 60);
-      console.log(`[PUSH] Sending to userId=${userId} endpoint=${ep}...`);
       try {
         await webPush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth }
-          },
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify(payload)
         );
-        console.log(`[PUSH] Success userId=${userId} endpoint=${ep}`);
       } catch (error: any) {
         const status = error.statusCode ?? error.status ?? 'unknown';
         if (error.statusCode === 410 || error.statusCode === 404) {
-          console.log(`[PUSH ERROR 410] Deleted stale sub for userId=${userId} endpoint=${ep}`);
-          await db.delete(pushSubscriptions)
-            .where(eq(pushSubscriptions.id, sub.id));
+          console.log(`[PUSH] Stale sub removed userId=${userId} endpoint=${ep}`);
+          await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, sub.id));
         } else {
-          console.error(`[PUSH ERROR] userId=${userId} status=${status} msg=${error.message} endpoint=${ep}`);
+          console.error(`[PUSH ERROR] userId=${userId} status=${status} msg=${error.message}`);
         }
         throw error;
       }
     })
   );
 
+  const succeeded = results.filter(r => r.status === 'fulfilled').length;
+  const failed = results.filter(r => r.status === 'rejected').length;
+  if (subscriptions.length > 0) {
+    console.log(`[PUSH] userId=${userId} sent=${succeeded} failed=${failed} total=${subscriptions.length}`);
+  }
   return results;
 }
 

@@ -47,9 +47,17 @@ export function usePushNotifications() {
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         setIsSubscribed(true);
-        apiRequest('POST', '/api/push/subscribe', { subscription: subscription.toJSON() }).catch(() => {});
+        // Only sync with the server if the endpoint changed (e.g. browser
+        // rotated the push subscription) to avoid a needless API call on
+        // every page load.
+        const lastEndpoint = localStorage.getItem('push-endpoint');
+        if (lastEndpoint !== subscription.endpoint) {
+          await apiRequest('POST', '/api/push/subscribe', { subscription: subscription.toJSON() });
+          localStorage.setItem('push-endpoint', subscription.endpoint);
+        }
       } else {
         setIsSubscribed(false);
+        localStorage.removeItem('push-endpoint');
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -81,6 +89,7 @@ export function usePushNotifications() {
       }
 
       await apiRequest('POST', '/api/push/subscribe', { subscription: subscription.toJSON() });
+      localStorage.setItem('push-endpoint', subscription.endpoint);
 
       setIsSubscribed(true);
       setIsLoading(false);
@@ -102,8 +111,8 @@ export function usePushNotifications() {
 
       if (subscription) {
         await subscription.unsubscribe();
-        
         await apiRequest('POST', '/api/push/unsubscribe', { endpoint: subscription.endpoint });
+        localStorage.removeItem('push-endpoint');
       }
 
       setIsSubscribed(false);
