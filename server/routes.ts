@@ -31,21 +31,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // One-time fix: activate "Garaza u Futogu" Silver spot that was left inactive
-  try {
-    const fixSpotId = '9ec043a3-7234-4793-bf0a-09a195270f71';
-    const fixSpot = await storage.getParkingSpot(fixSpotId);
-    if (fixSpot && !fixSpot.isActive) {
-      await storage.updateParkingSpot(fixSpotId, {
-        isActive: true,
-        isPremium: true,
-      } as any);
-      console.log('Fixed: Activated Garaza u Futogu spot');
-    }
-  } catch (e) {
-    // Spot may not exist in this environment, ignore
-  }
-
   const ADMIN_EMAIL_LIST = ['m.bulic88@gmail.com'];
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -1561,14 +1546,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User routes
+  // User routes — returns only public-safe fields (no credentials or billing data)
   app.get('/api/users/:id', async (req, res) => {
     try {
       const user = await storage.getUser(req.params.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json(user);
+      const { passwordHash, stripeCustomerId, stripeSubscriptionId, mapHackStripeSessionId, mapHackPlan, mapHackPlanExpiresAt, mapHackTrialStartedAt, isAdmin, ...publicUser } = user;
+      res.json(publicUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -1589,9 +1575,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.session.userId;
       const booking = await storage.getBooking(req.params.id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+      // Only renter or spot owner may view a specific booking
+      if (booking.renterId !== userId) {
+        const spot = await storage.getParkingSpot(booking.spotId);
+        if (!spot || spot.ownerId !== userId) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
       }
       res.json(booking);
     } catch (error) {
@@ -2184,6 +2178,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/messages/:id/read', isAuthenticated, async (req: any, res) => {
     try {
+      const userId = req.session.userId;
+      const userMessages = await storage.getUserMessages(userId);
+      const msg = userMessages.find(m => m.id === req.params.id);
+      if (!msg) {
+        return res.status(404).json({ message: "Poruka nije pronađena" });
+      }
+      if (msg.receiverId !== userId) {
+        return res.status(403).json({ message: "Nemate dozvolu" });
+      }
       await storage.markMessageAsRead(req.params.id);
       res.json({ message: "Poruka označena kao pročitana" });
     } catch (error) {
@@ -2192,15 +2195,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin middleware
-  const ADMIN_EMAILS = ['m.bulic88@gmail.com'];
-
+  // Admin middleware (uses the same ADMIN_EMAIL_LIST constant defined above)
   const isAdmin = async (req: any, res: any, next: any) => {
     const userId = req.session?.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const user = await storage.getUser(userId);
     if (!user) return res.status(401).json({ message: "Unauthorized" });
-    const hasAdminAccess = user.isAdmin || ADMIN_EMAILS.includes(user.email || '');
+    const hasAdminAccess = user.isAdmin || ADMIN_EMAIL_LIST.includes(user.email || '');
     if (!hasAdminAccess) return res.status(403).json({ message: "Forbidden - Admin only" });
     if (!user.isAdmin && hasAdminAccess) {
       await storage.updateUser(user.id, { isAdmin: true } as any);
@@ -2468,10 +2469,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!listing) return res.status(404).json({ message: "Listing not found" });
       if (listing.sellerId !== userId) return res.status(403).json({ message: "Not authorized" });
       const sanitizedBody = sanitizeObject(req.body);
-      const updated = await storage.updateSalesListing(req.params.id, sanitizedBody);
+      const validatedData = insertSalesListingSchema.partial().parse(sanitizedBody);
+      const updated = await storage.updateSalesListing(req.params.id, validatedData);
       res.json(updated);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating sales listing:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Nevalidni podaci", errors: error.errors });
+      }
       res.status(500).json({ message: "Failed to update sales listing" });
     }
   });
