@@ -44,7 +44,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [accountDeletedInfo, setAccountDeletedInfo] = useState<{ hadSubscription: boolean } | null>(null);
-  const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading } = usePushNotifications();
+  const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
@@ -806,7 +806,18 @@ export default function Dashboard() {
                       </p>
                     </div>
 
-                    {pushSupported && (
+                    {pushSupported && pushPermission === 'denied' && (
+                      <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg">
+                        <BellOff className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium text-foreground">Push Obaveštenja su blokirana</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            Da biste ih omogućili, idite na: <strong>Podešavanja telefona → Aplikacije → Chrome → Obaveštenja</strong> i dozvolite notifikacije.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {pushSupported && pushPermission !== 'denied' && (
                       <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div className="flex items-center gap-3">
                           {isSubscribed ? (

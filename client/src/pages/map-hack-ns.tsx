@@ -474,12 +474,23 @@ export default function MapHackNS() {
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const mapFlyToRef = useRef<{ flyTo: (lat: number, lng: number) => void } | null>(null);
   const [showPwaModal, setShowPwaModal] = useState(false);
-  const [pushBannerDismissed, setPushBannerDismissed] = useState(false);
+  const isTwa = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent);
+  const pushBannerKey = isTwa ? 'pushBannerDismissed-twa' : 'pushBannerDismissed-web';
+  const [pushBannerDismissed, setPushBannerDismissedState] = useState(() => {
+    try { return localStorage.getItem(pushBannerKey) === '1'; } catch { return false; }
+  });
+  const setPushBannerDismissed = (v: boolean) => {
+    setPushBannerDismissedState(v);
+    try { if (v) localStorage.setItem(pushBannerKey, '1'); } catch {}
+  };
   const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const { isInstallable, isInstalled, installApp } = usePWA();
   const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: pushSubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
   useEffect(() => {
-    setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
+    const ua = navigator.userAgent;
+    setIsIos(/iPhone|iPad|iPod/i.test(ua));
+    setIsAndroid(/Android/i.test(ua));
   }, []);
 
   useEffect(() => {
@@ -1401,7 +1412,26 @@ export default function MapHackNS() {
 
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117", paddingTop: 'env(safe-area-inset-top)' }}>
-      {/* ── Push notification banner ── */}
+      {/* ── Push notification banner — blocked ── */}
+      {isAuthenticated && pushSupported && pushPermission === 'denied' && !pushBannerDismissed && (
+        <div
+          className="flex-shrink-0 flex items-center gap-2 px-3 py-2"
+          style={{ background: "#7f1d1d", borderBottom: "1px solid rgba(255,255,255,0.10)" }}
+        >
+          <BellOff size={14} style={{ color: "#fca5a5", flexShrink: 0 }} />
+          <span className="text-xs flex-1" style={{ color: "#fecaca" }}>
+            Notifikacije blokirane → Podešavanja → Chrome → Obaveštenja
+          </span>
+          <button
+            data-testid="btn-push-banner-dismiss"
+            onClick={() => setPushBannerDismissed(true)}
+            className="flex-shrink-0"
+          >
+            <X size={14} style={{ color: "#f87171" }} />
+          </button>
+        </div>
+      )}
+      {/* ── Push notification banner — not subscribed ── */}
       {isAuthenticated && pushSupported && !pushSubscribed && pushPermission !== 'denied' && !pushBannerDismissed && (
         <div
           className="flex-shrink-0 flex items-center gap-2 px-3 py-2"
@@ -1854,11 +1884,35 @@ export default function MapHackNS() {
           {/* Right: PWA install + burger menu */}
           <div className="flex items-center gap-1.5">
 
-            {/* PWA Install — shown on Android (installable) or iOS; hidden once installed */}
-            {!isInstalled && (isInstallable || isIos) && (
+            {/* Google Play — shown on Android when not installed via Play */}
+            {isAndroid && !isInstalled && (
+              <a
+                href="https://play.google.com/store/apps/details?id=cardrop.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="btn-google-play"
+                title="Preuzmi na Google Play"
+                className="kraft-btn relative flex items-center justify-center"
+                style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none", textDecoration: "none" }}>
+                <Download size={15} style={{ color: "#fff" }} />
+              </a>
+            )}
+            {/* PWA Install — shown on iOS only; hidden on Android (use Play Store instead) */}
+            {!isInstalled && !isAndroid && isIos && (
               <button
                 data-testid="btn-pwa-install"
-                onClick={() => isInstallable ? installApp() : setShowPwaModal(true)}
+                onClick={() => setShowPwaModal(true)}
+                title="Instaliraj aplikaciju"
+                className="kraft-btn relative flex items-center justify-center"
+                style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none" }}>
+                <Download size={15} style={{ color: "#fff" }} />
+              </button>
+            )}
+            {/* PWA Install — shown on non-Android/non-iOS when installable */}
+            {!isInstalled && !isAndroid && !isIos && isInstallable && (
+              <button
+                data-testid="btn-pwa-install-desktop"
+                onClick={() => installApp()}
                 title="Instaliraj aplikaciju"
                 className="kraft-btn relative flex items-center justify-center"
                 style={{ width: 34, height: 34, borderRadius: "50%", background: "#059669", border: "none" }}>

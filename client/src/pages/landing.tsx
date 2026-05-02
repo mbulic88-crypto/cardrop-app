@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone } from "lucide-react";
-import { SiInstagram, SiFacebook } from "react-icons/si";
+import { SiInstagram, SiFacebook, SiGoogleplay } from "react-icons/si";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -55,9 +55,10 @@ const translations = {
     langButton: "ENG",
     installApp: "Instaliraj Aplikaciju",
     installAndroid: "Android",
-    installAndroidDesc: "Kliknite dugme iznad i aplikacija se automatski instalira.",
+    installAndroidDesc: "Preuzmite sa Google Play ili kliknite dugme iznad za direktnu instalaciju.",
     installIphone: "iPhone",
     installIphoneDesc: "Otvorite u Safari-ju, kliknite dugme za deljenje i izaberite \"Dodaj na početni ekran\".",
+    googlePlayBadge: "Dostupno na Google Play",
     sellButton: "Oglasi Prodaju",
     whoIsThisFor: "Za Koga Je Ovo",
     whoCanRent: "Ko Može Da Iznajmi Parking",
@@ -139,9 +140,10 @@ const translations = {
     langButton: "SRP",
     installApp: "Install App",
     installAndroid: "Android",
-    installAndroidDesc: "Click the button above and the app installs automatically.",
+    installAndroidDesc: "Download from Google Play or click the button above to install directly.",
     installIphone: "iPhone",
     installIphoneDesc: "Open in Safari, tap the Share button and select \"Add to Home Screen\".",
+    googlePlayBadge: "Get it on Google Play",
     sellButton: "List for Sale",
     whoIsThisFor: "Who Is This For",
     whoCanRent: "Who Can Rent Out Parking",
@@ -536,15 +538,24 @@ export default function Landing() {
               {t.installApp}
             </Button>
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
-              <button
-                type="button"
-                onClick={isInstallable ? installApp : undefined}
+              <div
                 data-testid="button-install-android"
-                className={`rounded-md p-3 text-left transition-all hover-elevate ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"} ${isInstallable ? "cursor-pointer" : "cursor-default"}`}
+                className={`rounded-md p-3 text-left flex flex-col gap-2 ${isAndroid ? "bg-accent/20 border-2 border-accent" : "bg-card/50 border border-border/50"}`}
               >
-                <p className={`text-sm font-semibold mb-1 ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
+                <p className={`text-sm font-semibold ${isAndroid ? "text-accent" : "text-foreground"}`}>{t.installAndroid}</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{t.installAndroidDesc}</p>
-              </button>
+                <a
+                  href="https://play.google.com/store/apps/details?id=cardrop.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-google-play"
+                  className="inline-flex items-center gap-1.5 mt-0.5 px-2.5 py-1.5 rounded-md text-xs font-semibold bg-foreground text-background"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <SiGoogleplay size={13} />
+                  {t.googlePlayBadge}
+                </a>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowIosModal(true)}
