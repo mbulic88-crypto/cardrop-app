@@ -973,32 +973,7 @@ export default function Landing() {
             {t.mapHackSubtitle}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-            {/* FREE */}
-            <Card className="p-6 flex flex-col border border-border" data-testid="card-mh-pricing-free">
-              <div className="mb-4">
-                <span className="text-lg font-bold text-foreground">{t.mapHackFreeLabel}</span>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="text-3xl font-extrabold text-foreground">0</span>
-                  <span className="text-sm text-muted-foreground">RSD</span>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">{t.mapHackFreeDesc}</p>
-              <ul className="space-y-2 flex-1 mb-5">
-                {t.mapHackFreeFeatures.map((f: string) => (
-                  <li key={f} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/map-hack">
-                <Button variant="outline" className="w-full" data-testid="button-mh-free-cta">
-                  {t.mapHackCTA}
-                </Button>
-              </Link>
-            </Card>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* PREMIUM */}
             <Card className="p-6 flex flex-col relative border-2 border-primary" data-testid="card-mh-pricing-premium">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
