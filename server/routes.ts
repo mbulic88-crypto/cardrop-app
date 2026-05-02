@@ -1349,7 +1349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
 
-      await storage.recordConsumedStripeSession(sessionId, userId, `spot-${spotId}-${tier}`);
+      await storage.recordConsumedStripeSession(sessionId, userId, 'parking');
 
       const spot = await storage.updateParkingSpot(spotId, {
         isActive: true,
@@ -1533,7 +1533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
 
-      await storage.recordConsumedStripeSession(sessionId, userId, `listing-${listingId}-${tier}`);
+      await storage.recordConsumedStripeSession(sessionId, userId, 'listing');
 
       const listing = await storage.updateSalesListing(listingId, {
         isActive: true,
@@ -1760,13 +1760,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = merchantKey + timestamp + authenticityToken + fullpath + JSON.stringify(body);
       const digest = createHash('sha512').update(message).digest('hex');
 
-      // Return mock response (real Monri API call goes here in production)
+      // In production, refuse to return a mock response
+      if (process.env.NODE_ENV === 'production' &&
+          (merchantKey === 'test_merchant_key' || authenticityToken === 'test_authenticity_token')) {
+        return res.status(503).json({ message: "Monri plaćanje nije konfigurisano za produkciju" });
+      }
+
+      // Return test-mode response (Monri integration pending live credentials)
       res.json({
         success: true,
         payment: {
           status: "approved",
           id: `monri_${timestamp}`,
-          client_secret: `secret_${timestamp}`,
           order_number: orderNumber,
           payment_url: `https://ipgtest.monri.com/payment/${orderNumber}`,
         },

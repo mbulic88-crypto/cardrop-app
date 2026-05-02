@@ -125,6 +125,12 @@ async function clearSpotExpiry() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
 
+  // CORS: not configured because the backend and frontend are served from the
+  // same Express server on a single domain. Browsers enforce CORS only for
+  // cross-origin requests; same-origin requests never require a CORS header.
+  // In production (cardrop.app) there is only one origin, so no CORS policy
+  // is needed and adding permissive CORS would weaken security.
+
   // Sensitive route prefixes whose response bodies must never be logged
   const SENSITIVE_LOG_PREFIXES = [
     "/api/auth",
