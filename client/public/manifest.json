@@ -87,7 +87,6 @@
       "src": "/screenshots/screen1.png",
       "sizes": "1284x2778",
       "type": "image/png",
-      "platform": "narrow",
       "form_factor": "narrow",
       "label": "CarDrop NS Map Hack - Interaktivna parking mapa"
     },
@@ -95,7 +94,6 @@
       "src": "/screenshots/screen2.png",
       "sizes": "1284x2778",
       "type": "image/png",
-      "platform": "narrow",
       "form_factor": "narrow",
       "label": "CarDrop Live Chat - Parking info u realnom vremenu"
     }
