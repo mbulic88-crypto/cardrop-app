@@ -50,8 +50,8 @@ export interface IStorage {
   isStripeSessionConsumed(stripeSessionId: string): Promise<boolean>;
   recordConsumedStripeSession(stripeSessionId: string, userId: string, plan: string): Promise<void>;
   activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
-  activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date, stripeSessionId: string, userId: string): Promise<ParkingSpot | undefined>;
-  activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date, sessionId: string, userId: string): Promise<SalesListing | undefined>;
+  activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, stripeSessionId: string, userId: string): Promise<{ spot: ParkingSpot | undefined; alreadyConsumed: boolean }>;
+  activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }>;
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
   getParkingSpot(id: string): Promise<ParkingSpot | undefined>;
@@ -439,41 +439,57 @@ export class DatabaseStorage implements IStorage {
       .orderBy(tierOrder, desc(salesListings.createdAt));
   }
 
-  async activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date, stripeSessionId: string, userId: string): Promise<ParkingSpot | undefined> {
-    return await db.transaction(async (tx) => {
-      await tx.insert(mapHackConsumedSessions).values({ stripeSessionId, userId, plan: 'parking' });
-      const [spot] = await tx
-        .update(parkingSpots)
-        .set({
-          isActive: true,
-          subscriptionType: tier,
-          isPremium: true,
-          subscriptionExpiresAt,
-          stripeSessionId,
-          updatedAt: new Date(),
-        })
-        .where(eq(parkingSpots.id, spotId))
-        .returning();
-      return spot;
-    });
+  async activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, stripeSessionId: string, userId: string): Promise<{ spot: ParkingSpot | undefined; alreadyConsumed: boolean }> {
+    try {
+      return await db.transaction(async (tx) => {
+        await tx.insert(mapHackConsumedSessions).values({ stripeSessionId, userId, plan: 'parking' });
+        const [spot] = await tx
+          .update(parkingSpots)
+          .set({
+            isActive: true,
+            subscriptionType: tier,
+            isPremium: true,
+            subscriptionExpiresAt,
+            stripeSessionId,
+            updatedAt: new Date(),
+          })
+          .where(eq(parkingSpots.id, spotId))
+          .returning();
+        return { spot, alreadyConsumed: false };
+      });
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        const [spot] = await db.select().from(parkingSpots).where(eq(parkingSpots.id, spotId));
+        return { spot, alreadyConsumed: true };
+      }
+      throw err;
+    }
   }
 
-  async activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date, sessionId: string, userId: string): Promise<SalesListing | undefined> {
-    return await db.transaction(async (tx) => {
-      await tx.insert(mapHackConsumedSessions).values({ stripeSessionId: sessionId, userId, plan: 'listing' });
-      const [listing] = await tx
-        .update(salesListings)
-        .set({
-          isActive: true,
-          subscriptionType: tier,
-          isPremium: true,
-          subscriptionExpiresAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(salesListings.id, listingId))
-        .returning();
-      return listing;
-    });
+  async activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }> {
+    try {
+      return await db.transaction(async (tx) => {
+        await tx.insert(mapHackConsumedSessions).values({ stripeSessionId: sessionId, userId, plan: 'listing' });
+        const [listing] = await tx
+          .update(salesListings)
+          .set({
+            isActive: true,
+            subscriptionType: tier,
+            isPremium: true,
+            subscriptionExpiresAt,
+            updatedAt: new Date(),
+          })
+          .where(eq(salesListings.id, listingId))
+          .returning();
+        return { listing, alreadyConsumed: false };
+      });
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        const [listing] = await db.select().from(salesListings).where(eq(salesListings.id, listingId));
+        return { listing, alreadyConsumed: false };
+      }
+      throw err;
+    }
   }
 
   async getSalesListing(id: string): Promise<SalesListing | undefined> {

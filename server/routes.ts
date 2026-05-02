@@ -1349,9 +1349,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Atomically record consumed session + activate spot in one transaction
       // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
-      const spot = await storage.activateSpotWithSession(spotId, tier, subscriptionExpiresAt, sessionId, userId);
+      const { spot, alreadyConsumed: spotAlreadyConsumed } = await storage.activateSpotWithSession(spotId, tier, subscriptionExpiresAt, sessionId, userId);
 
       if (!spot) return res.status(404).json({ message: "Spot not found" });
+
+      if (spotAlreadyConsumed) {
+        return res.status(409).json({ message: "Session already consumed", spot });
+      }
 
       res.json({ success: true, spot });
     } catch (error: any) {
@@ -1527,9 +1531,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Atomically record consumed session + activate listing in one transaction
       // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
-      const listing = await storage.activateSalesListingWithSession(listingId, tierListing, subscriptionExpiresAt, sessionId, userId);
+      const { listing, alreadyConsumed: listingAlreadyConsumed } = await storage.activateSalesListingWithSession(listingId, tierListing, subscriptionExpiresAt, sessionId, userId);
 
       if (!listing) return res.status(404).json({ message: "Listing not found" });
+
+      if (listingAlreadyConsumed) {
+        return res.status(409).json({ message: "Session already consumed", listing });
+      }
 
       res.json({ success: true, listing });
     } catch (error: any) {
