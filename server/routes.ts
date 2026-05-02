@@ -1339,24 +1339,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const tier = session.metadata?.tier as 'silver' | 'gold';
+      const rawTier = session.metadata?.tier;
+      if (rawTier !== 'silver' && rawTier !== 'gold') {
+        return res.status(400).json({ message: "Invalid tier in session metadata" });
+      }
+      const tier: 'silver' | 'gold' = rawTier;
       const { calculateExpiryDate } = await import('../shared/pricing.js');
       const subscriptionExpiresAt = calculateExpiryDate(tier);
 
       // Atomically record consumed session + activate spot in one transaction
       // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
-      const spot = await storage.activateSpotWithSession(
-        spotId,
-        {
-          isActive: true,
-          subscriptionType: tier,
-          isPremium: true,
-          subscriptionExpiresAt: subscriptionExpiresAt,
-          stripeSessionId: sessionId,
-        } as any,
-        sessionId,
-        userId,
-      );
+      const spot = await storage.activateSpotWithSession(spotId, tier, subscriptionExpiresAt, sessionId, userId);
 
       if (!spot) return res.status(404).json({ message: "Spot not found" });
 
@@ -1524,23 +1517,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const tier = session.metadata?.tier as 'silver' | 'gold';
+      const rawTierListing = session.metadata?.tier;
+      if (rawTierListing !== 'silver' && rawTierListing !== 'gold') {
+        return res.status(400).json({ message: "Invalid tier in session metadata" });
+      }
+      const tierListing: 'silver' | 'gold' = rawTierListing;
       const { calculateExpiryDate } = await import('../shared/pricing.js');
-      const subscriptionExpiresAt = calculateExpiryDate(tier);
+      const subscriptionExpiresAt = calculateExpiryDate(tierListing);
 
       // Atomically record consumed session + activate listing in one transaction
       // (unique constraint on stripeSessionId rejects concurrent/duplicate attempts)
-      const listing = await storage.activateSalesListingWithSession(
-        listingId,
-        {
-          isActive: true,
-          subscriptionType: tier,
-          isPremium: true,
-          subscriptionExpiresAt: subscriptionExpiresAt,
-        } as any,
-        sessionId,
-        userId,
-      );
+      const listing = await storage.activateSalesListingWithSession(listingId, tierListing, subscriptionExpiresAt, sessionId, userId);
 
       if (!listing) return res.status(404).json({ message: "Listing not found" });
 
@@ -2517,15 +2504,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sanitizedBody = sanitizeObject(req.body);
       const validatedData = insertSalesListingSchema.parse(sanitizedBody);
 
-      // Always create as standard/inactive — premium activation goes through Stripe verify-sale-payment
+      // Always create standard listings as active — premium activation goes through Stripe
+      // Force subscriptionType/isPremium server-side; client cannot self-upgrade
       const listing = await storage.createSalesListing({
         ...validatedData,
         sellerId: userId,
         subscriptionType: 'standard',
         isPremium: false,
-        isActive: false,
-        subscriptionExpiresAt: null,
-      } as any);
+        isActive: true,
+      });
       res.status(201).json(listing);
     } catch (error: any) {
       console.error("Error creating sales listing:", error);
