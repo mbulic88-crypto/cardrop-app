@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertParkingSpotSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
+import { insertParkingSpotSchema, parkingSpotEditSchema, insertBookingSchema, insertReviewSchema, insertMessageSchema, insertSalesListingSchema } from "@shared/schema";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import Stripe from "stripe";
@@ -1905,12 +1905,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Nemate dozvolu za izmenu ovog mesta" });
       }
       
-      const parkingSpotEditSchema = insertParkingSpotSchema.omit({
-        isActive: true,
-        isPremium: true,
-        subscriptionType: true,
-        autoRenewal: true,
-      } as any);
       const validatedData = parkingSpotEditSchema.parse(req.body);
       const updated = await storage.updateParkingSpot(req.params.id, validatedData);
       

@@ -131,25 +131,14 @@ async function clearSpotExpiry() {
   // In production (cardrop.app) there is only one origin, so no CORS policy
   // is needed and adding permissive CORS would weaken security.
 
-  // Sensitive route prefixes whose response bodies must never be logged
-  const SENSITIVE_LOG_PREFIXES = [
-    "/api/auth",
-    "/api/stripe",
-    "/api/payments",
-    "/api/map-hack",
-    "/api/users",
-    "/api/push",
-    "/api/messages",
-    "/api/bookings",
-  ];
-
+  // Response bodies are never logged for any /api/ route (deny-by-default)
+  // to prevent PII, contact data, or payment info from appearing in logs.
   app.use((req, res, next) => {
     const start = Date.now();
     const path = req.path;
-    const isSensitive = SENSITIVE_LOG_PREFIXES.some((p) => path.startsWith(p));
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-    if (!isSensitive) {
+    if (!path.startsWith("/api")) {
       const originalResJson = res.json;
       res.json = function (bodyJson, ...args) {
         capturedJsonResponse = bodyJson;
