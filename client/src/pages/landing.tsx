@@ -571,7 +571,7 @@ export default function Landing() {
                 target="_blank"
                 rel="noopener noreferrer"
                 data-testid="link-google-play"
-                className={`rounded-md flex items-center justify-center p-2 ${isAndroid ? "border-2 border-accent" : "border border-border/50"}`}
+                className="rounded-md flex items-center justify-center p-2 border border-border/50"
               >
                 <img
                   src={googlePlayBadgeImg}
