@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cardrop-v4';
+const CACHE_NAME = 'cardrop-v5';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -16,41 +16,74 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// ─── Push notifications ───────────────────────────────────────────────────────
+// Everything inside event.waitUntil so the push event stays alive until
+// showNotification resolves. A fallback notification is always shown so
+// Chrome/TWA never auto-generates a generic "site updated" message.
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
+  event.waitUntil(
+    (async () => {
+      try {
+        if (!event.data) {
+          await self.registration.showNotification('CarDrop', {
+            body: 'Nova poruka',
+            icon: '/icons/icon-192x192.png',
+          });
+          return;
+        }
 
-  try {
-    const data = event.data.json();
-    // Use a unique tag per notification (timestamp fallback) so notifications
-    // never silently replace each other. renotify:true ensures the user is
-    // alerted even when the same tag is intentionally reused (e.g. broadcasts).
-    const tag = data.tag
-      ? `${data.tag}-${Date.now()}`
-      : `cardrop-${Date.now()}`;
-    const options = {
-      body: data.body || '',
-      icon: data.icon || '/icons/icon-192x192.png',
-      badge: data.badge || '/icons/icon-192x192.png',
-      tag,
-      renotify: true,
-      data: { url: data.url || '/' },
-      vibrate: [200, 100, 200],
-      requireInteraction: false
-    };
+        let data;
+        try {
+          data = event.data.json();
+        } catch {
+          data = { title: 'CarDrop', body: event.data.text() || 'Nova poruka' };
+        }
 
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'CarDrop', options)
-    );
-  } catch (error) {
-    console.error('Error showing notification:', error);
-  }
+        const tag = data.tag
+          ? `${data.tag}-${Date.now()}`
+          : `cardrop-${Date.now()}`;
+
+        await self.registration.showNotification(data.title || 'CarDrop', {
+          body: data.body || '',
+          icon: data.icon || '/icons/icon-192x192.png',
+          badge: '/icons/icon-192x192.png',
+          tag,
+          data: { url: data.url || '/map-hack' },
+          vibrate: [200, 100, 200],
+        });
+      } catch (err) {
+        console.error('[SW] Push handler error:', err);
+        // Last-resort fallback — must always call showNotification in TWA
+        try {
+          await self.registration.showNotification('CarDrop', {
+            body: 'Nova poruka',
+            icon: '/icons/icon-192x192.png',
+          });
+        } catch (e2) {
+          console.error('[SW] Fallback notification failed:', e2);
+        }
+      }
+    })()
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const url = event.notification.data?.url || '/';
-  
+  const url = event.notification.data?.url || '/map-hack';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
@@ -64,22 +97,10 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
+// ─── Fetch caching ────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  
+
   const url = new URL(event.request.url);
 
   if (url.pathname.startsWith('/api/')) {
@@ -95,24 +116,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.match(/\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|webp|ico)$/)) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then((response) => {
-          if (response.ok) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  if (url.origin === self.location.origin && url.pathname.match(/^https?:\/\/fonts\./)) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) return cachedResponse;
