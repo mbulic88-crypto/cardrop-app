@@ -265,6 +265,11 @@ export function MapHackMap({
   const handleMoveEnd = useCallback((e: ViewStateChangeEvent) => {
     onCenterChangeRef.current?.(e.viewState.latitude, e.viewState.longitude);
     updateViewport();
+    try {
+      localStorage.setItem("mh_last_lat", String(e.viewState.latitude));
+      localStorage.setItem("mh_last_lng", String(e.viewState.longitude));
+      localStorage.setItem("mh_last_zoom", String(e.viewState.zoom));
+    } catch (_) { /* ignore storage errors */ }
   }, [updateViewport]);
 
   const handleMapLoad = useCallback((e: MapboxEvent) => {
@@ -295,10 +300,11 @@ export function MapHackMap({
             zoom: 13,
             duration: 1200,
           });
-          // Persist last known location for faster next load
+          // Persist last known location and zoom for faster next load
           try {
             localStorage.setItem("mh_last_lat", String(lat));
             localStorage.setItem("mh_last_lng", String(lng));
+            localStorage.setItem("mh_last_zoom", "13");
           } catch (_) { /* ignore storage errors */ }
         },
         () => { /* permission denied or unavailable — stay on Serbia overview */ },
@@ -359,7 +365,9 @@ export function MapHackMap({
             const lat = parseFloat(localStorage.getItem("mh_last_lat") ?? "");
             const lng = parseFloat(localStorage.getItem("mh_last_lng") ?? "");
             if (!isNaN(lat) && !isNaN(lng)) {
-              return { latitude: lat, longitude: lng, zoom: 13 };
+              const storedZoom = parseFloat(localStorage.getItem("mh_last_zoom") ?? "");
+              const zoom = !isNaN(storedZoom) ? storedZoom : 13;
+              return { latitude: lat, longitude: lng, zoom };
             }
           } catch (_) { /* ignore */ }
           return { longitude: 20.9, latitude: 44.0, zoom: 7 };
