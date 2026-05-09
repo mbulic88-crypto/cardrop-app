@@ -473,6 +473,14 @@ export default function MapHackNS() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchSuggestions, setSearchSuggestions] = useState<Array<{ text: string; sub: string; lat: number; lng: number }>>([]);
+  const [parkingFilterOpen, setParkingFilterOpen] = useState(false);
+  const [parkingFilter, setParkingFilter] = useState<{
+    city: string;
+    pricingType: string;
+    evCharging: boolean;
+    is24Hours: boolean;
+    hasCamera: boolean;
+  }>({ city: "", pricingType: "", evCharging: false, is24Hours: false, hasCamera: false });
   const [chatFullscreen, setChatFullscreen] = useState(false);
   const [flyToLocation, setFlyToLocation] = useState<{ lat: number; lng: number } | null>(null);
   const mapFlyToRef = useRef<{ flyTo: (lat: number, lng: number) => void } | null>(null);
@@ -550,6 +558,30 @@ export default function MapHackNS() {
     queryKey: ["/api/map-hack/parking-listings"],
     enabled: isMapView,
     refetchInterval: isMapView ? 120000 : false,
+  });
+
+  // Derive unique cities from loaded listings (for city dropdown)
+  const availableCities = Array.from(
+    new Set(parkingListings.map(p => p.city).filter(Boolean) as string[])
+  ).sort((a, b) => a.localeCompare(b, "sr"));
+
+  // Count active parking filters
+  const parkingFilterCount = [
+    parkingFilter.city !== "",
+    parkingFilter.pricingType !== "",
+    parkingFilter.evCharging,
+    parkingFilter.is24Hours,
+    parkingFilter.hasCamera,
+  ].filter(Boolean).length;
+
+  // Apply parking filters client-side in real time
+  const filteredParkingListings = parkingListings.filter(p => {
+    if (parkingFilter.city && p.city !== parkingFilter.city) return false;
+    if (parkingFilter.pricingType && p.pricingType !== parkingFilter.pricingType) return false;
+    if (parkingFilter.evCharging && !p.hasEvCharging) return false;
+    if (parkingFilter.is24Hours && !p.is24Hours) return false;
+    if (parkingFilter.hasCamera && !p.hasSecurityCamera) return false;
+    return true;
   });
 
   const addMarkerMutation = useMutation({
@@ -2478,15 +2510,138 @@ export default function MapHackNS() {
           Aktivno ▾
         </button>
       </div>
-      {/* ── Parking listings note ── */}
+      {/* ── Parking filter bar ── */}
       {!chatFullscreen && parkingListings.length > 0 && (
-        <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5"
-          style={{ background: "rgba(20,184,166,0.08)", borderBottom: "1px solid rgba(20,184,166,0.15)" }}>
-          <Car size={12} style={{ color: "#14b8a6", flexShrink: 0 }} />
-          <span className="text-xs" style={{ color: "#14b8a6" }}>
-            Mapa prikazuje i privatne parking oglase ({parkingListings.length}) — tapni pin za detalje
-          </span>
-        </div>
+        <>
+          <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5"
+            style={{ background: "rgba(20,184,166,0.08)", borderBottom: parkingFilterOpen ? "none" : "1px solid rgba(20,184,166,0.15)" }}>
+            <Car size={12} style={{ color: "#14b8a6", flexShrink: 0 }} />
+            <span className="text-xs flex-1" style={{ color: "#14b8a6" }}>
+              Privatni parking oglasi — {filteredParkingListings.length}
+              {parkingFilterCount > 0 && ` / ${parkingListings.length}`}
+            </span>
+            <button
+              data-testid="btn-parking-filter-toggle"
+              onClick={() => setParkingFilterOpen(p => !p)}
+              className="kraft-btn flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+              style={{
+                background: parkingFilterCount > 0 ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${parkingFilterCount > 0 ? "rgba(20,184,166,0.5)" : "rgba(255,255,255,0.12)"}`,
+                color: parkingFilterCount > 0 ? "#14b8a6" : "#9ca3af",
+              }}>
+              <Search size={10} />
+              <span>Filter</span>
+              {parkingFilterCount > 0 && (
+                <span className="flex items-center justify-center rounded-full font-bold"
+                  style={{ width: 14, height: 14, background: "#14b8a6", color: "#0d1117", fontSize: 9 }}>
+                  {parkingFilterCount}
+                </span>
+              )}
+            </button>
+            {parkingFilterCount > 0 && (
+              <button
+                data-testid="btn-parking-filter-reset"
+                onClick={() => setParkingFilter({ city: "", pricingType: "", evCharging: false, is24Hours: false, hasCamera: false })}
+                className="kraft-btn flex items-center justify-center rounded-full"
+                style={{ width: 20, height: 20, background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", flexShrink: 0 }}>
+                <X size={10} />
+              </button>
+            )}
+          </div>
+          {/* ── Filter drawer ── */}
+          {parkingFilterOpen && (
+            <div className="flex-shrink-0 px-3 py-3 flex flex-col gap-3"
+              style={{ background: "rgba(13,17,23,0.97)", borderBottom: "1px solid rgba(20,184,166,0.15)" }}>
+              {/* City row */}
+              {availableCities.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Grad</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableCities.map(c => {
+                      const CITY_LABELS: Record<string, string> = {
+                        beograd: "Beograd", novi_sad: "Novi Sad", nis: "Niš", kragujevac: "Kragujevac",
+                        subotica: "Subotica", zrenjanin: "Zrenjanin", pancevo: "Pančevo", cacak: "Čačak",
+                        novi_pazar: "Novi Pazar", kraljevo: "Kraljevo", smederevo: "Smederevo",
+                        leskovac: "Leskovac", sabac: "Šabac", uzice: "Užice", valjevo: "Valjevo",
+                        vranje: "Vranje", ostalo: "Ostalo",
+                      };
+                      const label = CITY_LABELS[c] ?? c;
+                      const active = parkingFilter.city === c;
+                      return (
+                        <button
+                          key={c}
+                          data-testid={`parking-filter-city-${c}`}
+                          onClick={() => setParkingFilter(prev => ({ ...prev, city: active ? "" : c }))}
+                          className="kraft-btn px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          style={{
+                            background: active ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.05)",
+                            border: `1px solid ${active ? "#14b8a6" : "rgba(255,255,255,0.1)"}`,
+                            color: active ? "#14b8a6" : "#9ca3af",
+                          }}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {/* Pricing type row */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Tip zakupa</span>
+                <div className="flex gap-1.5">
+                  {([
+                    { key: "daily", label: "Dnevno" },
+                    { key: "monthly", label: "Mesečno" },
+                    { key: "hourly", label: "Po satu" },
+                  ] as const).map(({ key, label }) => {
+                    const active = parkingFilter.pricingType === key;
+                    return (
+                      <button
+                        key={key}
+                        data-testid={`parking-filter-pricing-${key}`}
+                        onClick={() => setParkingFilter(prev => ({ ...prev, pricingType: active ? "" : key }))}
+                        className="kraft-btn px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        style={{
+                          background: active ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${active ? "#14b8a6" : "rgba(255,255,255,0.1)"}`,
+                          color: active ? "#14b8a6" : "#9ca3af",
+                        }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Boolean feature toggles */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Karakteristike</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {([
+                    { key: "evCharging" as const, label: "EV punjač" },
+                    { key: "is24Hours" as const, label: "Otvoreno 24/7" },
+                    { key: "hasCamera" as const, label: "Kamera" },
+                  ]).map(({ key, label }) => {
+                    const active = parkingFilter[key];
+                    return (
+                      <button
+                        key={key}
+                        data-testid={`parking-filter-feat-${key}`}
+                        onClick={() => setParkingFilter(prev => ({ ...prev, [key]: !prev[key] }))}
+                        className="kraft-btn px-2.5 py-0.5 rounded-full text-xs font-medium"
+                        style={{
+                          background: active ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${active ? "#14b8a6" : "rgba(255,255,255,0.1)"}`,
+                          color: active ? "#14b8a6" : "#9ca3af",
+                        }}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
       {/* ── Map area ── */}
       <div
@@ -2523,7 +2678,7 @@ export default function MapHackNS() {
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           chatPreviewMsg={null}
           onChatClick={undefined}
-          parkingListings={parkingListings}
+          parkingListings={filteredParkingListings}
           flyToLocation={flyToLocation}
           onParkingClick={setSelectedParking}
           sizeKey={mapExpanded}

@@ -37,6 +37,7 @@ export interface ParkingListing {
   hasSecurityCamera?: boolean | null;
   subscriptionType?: string | null;
   imageUrls?: string[] | null;
+  city?: string | null;
 }
 
 export interface MapHackMapProps {
