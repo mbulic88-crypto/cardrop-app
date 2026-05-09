@@ -2435,6 +2435,16 @@ export default function MapHackNS() {
           Aktivno ▾
         </button>
       </div>
+      {/* ── Parking listings note ── */}
+      {!chatFullscreen && parkingListings.length > 0 && (
+        <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5"
+          style={{ background: "rgba(20,184,166,0.08)", borderBottom: "1px solid rgba(20,184,166,0.15)" }}>
+          <Car size={12} style={{ color: "#14b8a6", flexShrink: 0 }} />
+          <span className="text-xs" style={{ color: "#14b8a6" }}>
+            Mapa prikazuje i privatne parking oglase ({parkingListings.length}) — tapni pin za detalje
+          </span>
+        </div>
+      )}
       {/* ── Map area ── */}
       <div
         className={mapExpanded ? "relative flex-1" : "relative flex-shrink-0"}

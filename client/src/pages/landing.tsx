@@ -1180,7 +1180,7 @@ export default function Landing() {
             { name: "Niš", nameEn: "Niš", image: cityNisImg },
             { name: "Kragujevac", nameEn: "Kragujevac", image: cityKragujevacImg }
           ].map((city) => (
-            <Link key={city.name} href={`/home?search=${city.name}`}>
+            <Link key={city.name} href="/map-hack">
               <Card className="hover-elevate cursor-pointer overflow-hidden">
                 <div className="relative h-32 md:h-40">
                   <img
