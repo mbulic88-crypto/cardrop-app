@@ -331,16 +331,12 @@ export function MapHackMap({
       <Map
         ref={mapRef}
         initialViewState={{
-          longitude: 19.8335,
-          latitude: 45.2671,
-          zoom: 14,
+          longitude: 20.9,
+          latitude: 44.0,
+          zoom: 7,
         }}
-        minZoom={11}
+        minZoom={6}
         maxZoom={18}
-        maxBounds={[
-          [19.50, 45.05],
-          [20.20, 45.55],
-        ]}
         mapStyle="mapbox://styles/mapbox/standard"
         mapboxAccessToken={MAPBOX_TOKEN}
         onClick={handleClick}
@@ -376,10 +372,10 @@ export function MapHackMap({
             boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
             zIndex: 10,
           }}
-          title="Resetuj pogled"
+          title="Resetuj pogled na Srbiju"
           onClick={(e) => {
             e.stopPropagation();
-            mapRef.current?.flyTo({ center: [19.8335, 45.2671], zoom: 14, duration: 800 });
+            mapRef.current?.flyTo({ center: [20.9, 44.0], zoom: 7, duration: 800 });
           }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">

@@ -370,7 +370,7 @@ export default function Landing() {
               {menuOpen && (
                 <div className="absolute top-12 left-0 w-64 bg-card border border-border rounded-md shadow-lg z-50">
                   <nav className="py-2">
-                    <Link href="/home" onClick={() => setMenuOpen(false)}>
+                    <Link href="/map-hack" onClick={() => setMenuOpen(false)}>
                       <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-find-parking">
                         <Search className="w-5 h-5 text-accent" />
                         <span className="text-card-foreground font-medium">{t.menuFindParking}</span>
@@ -535,7 +535,7 @@ export default function Landing() {
         {/* Action Buttons – Iznajmi, Rezerviši, Prodaja */}
         <div className="relative z-10 bg-background px-4 pb-5">
           <div className="max-w-xl mx-auto flex flex-col gap-3">
-            <Link href="/home" className="w-full">
+            <Link href="/map-hack" className="w-full">
               <Button
                 size="lg"
                 className="w-full text-base py-5"
@@ -771,7 +771,7 @@ export default function Landing() {
             </ul>
           </Card>
 
-          <Link href="/home">
+          <Link href="/map-hack">
             <Card 
               className="p-6 hover-elevate bg-primary border-primary-border cursor-pointer h-full"
               data-testid="card-how-to-reserve"
