@@ -213,6 +213,7 @@ export function MapHackMap({
   onMapReady,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const autoGeolocatedRef = useRef(false);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [zoom, setZoom] = useState(14);
@@ -281,6 +282,21 @@ export function MapHackMap({
           mapRef.current?.flyTo({ center: [lng, lat], zoom: 16, duration: 1000 });
         },
       });
+    }
+    // Auto-geolocate once on first load — silently fly to user's city
+    if (!autoGeolocatedRef.current && navigator.geolocation) {
+      autoGeolocatedRef.current = true;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          mapRef.current?.flyTo({
+            center: [pos.coords.longitude, pos.coords.latitude],
+            zoom: 13,
+            duration: 1200,
+          });
+        },
+        () => { /* permission denied or unavailable — stay on Serbia overview */ },
+        { timeout: 8000, maximumAge: 60000 }
+      );
     }
   }, [onMapReady]);
 
