@@ -288,11 +288,18 @@ export function MapHackMap({
       autoGeolocatedRef.current = true;
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
           mapRef.current?.flyTo({
-            center: [pos.coords.longitude, pos.coords.latitude],
+            center: [lng, lat],
             zoom: 13,
             duration: 1200,
           });
+          // Persist last known location for faster next load
+          try {
+            localStorage.setItem("mh_last_lat", String(lat));
+            localStorage.setItem("mh_last_lng", String(lng));
+          } catch (_) { /* ignore storage errors */ }
         },
         () => { /* permission denied or unavailable — stay on Serbia overview */ },
         { timeout: 8000, maximumAge: 60000 }
@@ -347,11 +354,16 @@ export function MapHackMap({
     <div className="absolute inset-0" style={{ cursor: isAddMode ? "crosshair" : undefined }}>
       <Map
         ref={mapRef}
-        initialViewState={{
-          longitude: 20.9,
-          latitude: 44.0,
-          zoom: 7,
-        }}
+        initialViewState={(() => {
+          try {
+            const lat = parseFloat(localStorage.getItem("mh_last_lat") ?? "");
+            const lng = parseFloat(localStorage.getItem("mh_last_lng") ?? "");
+            if (!isNaN(lat) && !isNaN(lng)) {
+              return { latitude: lat, longitude: lng, zoom: 13 };
+            }
+          } catch (_) { /* ignore */ }
+          return { longitude: 20.9, latitude: 44.0, zoom: 7 };
+        })()}
         minZoom={6}
         maxZoom={18}
         mapStyle="mapbox://styles/mapbox/standard"
