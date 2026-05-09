@@ -1431,6 +1431,12 @@ export default function MapHackNS() {
    * Smederevo     | https://parkingsd.rs                    | Codes 8661–8664 (old 9058/9059 were wrong); prices 53/44/35 din/h
    * Požarevac     | https://parking012.rs                   | Codes 8120–8124 (old 9057/9056 were wrong); prices not published
    * Zaječar       | https://zajecarparking.co.rs            | Codes were swapped: 9053=I Crvena, 9055=II Žuta (not Zelena)
+   * Kruševac      | https://parkingkrusevac.rs              | Codes 9344/9345 confirmed; 9346 daily unverified (inferred); prices nije obj.
+   * Leskovac      | https://jkpleskovac.rs                  | Codes 9355/9356 confirmed; 9357 daily unverified (inferred); prices nije obj.
+   * Vranje        | https://jkpvranje.rs                    | Codes 9370/9371 confirmed; 9372 daily unverified (inferred); prices nije obj.
+   * Užice         | https://jkpkomunalac.rs                 | Codes 9305/9306 confirmed; 9307 daily unverified (inferred); prices nije obj.
+   * Jagodina      | https://jkpjagodina.rs                  | Codes 9385/9386 confirmed; 9387 daily unverified (inferred); prices nije obj.
+   * Sombor        | https://jkpsombor.rs                    | Codes 9262/9263 confirmed; 9264 daily unverified (inferred); prices nije obj.
    *
    * "nije obj." = price not publicly listed on official operator website
    */
@@ -1675,6 +1681,90 @@ export default function MapHackNS() {
         return "9055";
       },
     },
+    {
+      id: "krusevac", name: "Kruševac", operator: "JKP Komunalac Kruševac", operatorUrl: "https://parkingkrusevac.rs",
+      center: { lat: 43.5819, lng: 21.3311 },
+      zones: [
+        { sms: "9344", name: "I zona — Crvena", short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9345", name: "II zona — Žuta",  short: "II zona", color: "#eab308", bg: "rgba(234,179,8,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9346", name: "Dnevna — I zona", short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.5819, 21.3311);
+        if (dCenter < 500) return "9344";
+        return "9345";
+      },
+    },
+    {
+      id: "leskovac", name: "Leskovac", operator: "JKP Komunalne usluge Leskovac", operatorUrl: "https://jkpleskovac.rs",
+      center: { lat: 42.9982, lng: 21.9459 },
+      zones: [
+        { sms: "9355", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9356", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9357", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 42.9982, 21.9459);
+        if (dCenter < 500) return "9355";
+        return "9356";
+      },
+    },
+    {
+      id: "vranje", name: "Vranje", operator: "JKP Komunalne delatnosti Vranje", operatorUrl: "https://jkpvranje.rs",
+      center: { lat: 42.5497, lng: 21.9001 },
+      zones: [
+        { sms: "9370", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9371", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9372", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 42.5497, 21.9001);
+        if (dCenter < 500) return "9370";
+        return "9371";
+      },
+    },
+    {
+      id: "uzice", name: "Užice", operator: "JKP Komunalac Užice", operatorUrl: "https://jkpkomunalac.rs",
+      center: { lat: 43.8571, lng: 19.8441 },
+      zones: [
+        { sms: "9305", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9306", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9307", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.8571, 19.8441);
+        if (dCenter < 500) return "9305";
+        return "9306";
+      },
+    },
+    {
+      id: "jagodina", name: "Jagodina", operator: "JKP Jagodina", operatorUrl: "https://jkpjagodina.rs",
+      center: { lat: 43.9784, lng: 21.2614 },
+      zones: [
+        { sms: "9385", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9386", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9387", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.9784, 21.2614);
+        if (dCenter < 500) return "9385";
+        return "9386";
+      },
+    },
+    {
+      id: "sombor", name: "Sombor", operator: "JKP Sombor", operatorUrl: "https://jkpsombor.rs",
+      center: { lat: 45.7742, lng: 19.1122 },
+      zones: [
+        { sms: "9262", name: "I zona — Crvena", short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "nije obj.", limit: "120 min" },
+        { sms: "9263", name: "II zona — Žuta",  short: "II zona", color: "#eab308", bg: "rgba(234,179,8,0.18)",  price: "nije obj.", limit: "pon-sub 7-20h" },
+        { sms: "9264", name: "Dnevna — I zona", short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "nije obj.", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 45.7742, 19.1122);
+        if (dCenter < 500) return "9262";
+        return "9263";
+      },
+    },
   ];
 
   if (process.env.NODE_ENV !== "production") {
@@ -1703,6 +1793,12 @@ export default function MapHackNS() {
     if (lat >= 44.65 && lat <= 44.68 && lng >= 20.91 && lng <= 20.95) return "smederevo";
     if (lat >= 44.60 && lat <= 44.63 && lng >= 21.17 && lng <= 21.21) return "pozarevac";
     if (lat >= 43.89 && lat <= 43.92 && lng >= 22.26 && lng <= 22.30) return "zajecar";
+    if (lat >= 43.56 && lat <= 43.60 && lng >= 21.31 && lng <= 21.35) return "krusevac";
+    if (lat >= 42.97 && lat <= 43.02 && lng >= 21.92 && lng <= 21.97) return "leskovac";
+    if (lat >= 42.53 && lat <= 42.57 && lng >= 21.88 && lng <= 21.93) return "vranje";
+    if (lat >= 43.84 && lat <= 43.88 && lng >= 19.82 && lng <= 19.87) return "uzice";
+    if (lat >= 43.96 && lat <= 44.00 && lng >= 21.24 && lng <= 21.29) return "jagodina";
+    if (lat >= 45.76 && lat <= 45.79 && lng >= 19.09 && lng <= 19.14) return "sombor";
     if (lat >= 44.65 && lat <= 44.95 && lng >= 20.20 && lng <= 20.65) return "beograd";
     let closest = "novi_sad";
     let minDist = Infinity;
