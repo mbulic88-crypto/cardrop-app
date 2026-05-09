@@ -265,7 +265,7 @@ export default function Admin() {
             </TabsTrigger>
             <TabsTrigger value="maphack" className="flex items-center gap-2" data-testid="tab-maphack">
               <MapPin className="h-4 w-4" />
-              Map Hack NS ({mapMarkersList?.length || 0})
+              Map Hack RS ({mapMarkersList?.length || 0})
             </TabsTrigger>
           </TabsList>
 

@@ -109,12 +109,12 @@ const translations = {
     pricingChoosePlan: "Izaberi Plan",
     pricingMostPopular: "Najpopularniji",
     pricingBestValue: "Najbolja Vrednost",
-    mapHackTitle: "Map Hack NS",
-    mapHackSubtitle: "Real-time parking mapa Novog Sada. Štek mesta, pauk radar, safe zone alarmi — sve u jednoj aplikaciji.",
-    mapHackBadge: "Trenutno samo za Novi Sad · uskoro cela Srbija",
+    mapHackTitle: "Map Hack RS",
+    mapHackSubtitle: "Real-time parking mapa Srbije. Štek mesta, pauk radar, safe zone alarmi — sve u jednoj aplikaciji.",
+    mapHackBadge: "Dostupno širom Srbije",
     mapHackFreeLabel: "FREE",
     mapHackFreeDesc: "Osnovna mapa sa zlatnim minutom i paukom",
-    mapHackFreeFeatures: ["Interaktivna mapa NS", "Zlatni Minut markeri", "Pauk radar upozorenja", "SMS plaćanje javnih zona (1 klik)", "Live Chat zajednica"],
+    mapHackFreeFeatures: ["Interaktivna parking mapa RS", "Zlatni Minut markeri", "Pauk radar upozorenja", "SMS plaćanje javnih zona (1 klik)", "Live Chat zajednica"],
     mapHackPremiumLabel: "PREMIUM",
     mapHackPremiumBadge: "Preporučeno",
     mapHackPremiumDesc: "Potpuna zaštita — najbrži parking u gradu",
@@ -127,7 +127,7 @@ const translations = {
     mapHackPerMonth: "/ mes",
     mapHackPerDay: "24h",
     mapHackPerYear: "/ god",
-    mapHackCTA: "Otvorite Map Hack NS",
+    mapHackCTA: "Otvorite Map Hack RS",
     contactTitle: "Kontaktirajte Nas",
     contactSubtitle: "Vaše mišljenje nam je važno! Pišite nam za bilo kakvo pitanje, predlog ili ideju - zajedno pravimo bolju platformu.",
     contactEmail: "Email",
@@ -213,12 +213,12 @@ const translations = {
     pricingChoosePlan: "Choose Plan",
     pricingMostPopular: "Most Popular",
     pricingBestValue: "Best Value",
-    mapHackTitle: "Map Hack NS",
-    mapHackSubtitle: "Real-time parking map of Novi Sad. Hidden spots, speed camera alerts, safe zone alarms — all in one app.",
-    mapHackBadge: "Currently Novi Sad only · coming soon to all of Serbia",
+    mapHackTitle: "Map Hack RS",
+    mapHackSubtitle: "Real-time parking map of Serbia. Hidden spots, speed camera alerts, safe zone alarms — all in one app.",
+    mapHackBadge: "Available across Serbia",
     mapHackFreeLabel: "FREE",
     mapHackFreeDesc: "Basic map with golden minute and speed camera",
-    mapHackFreeFeatures: ["Interactive NS map", "Golden Minute markers", "Speed camera alerts", "Public zone SMS payment (1 tap)", "Live community chat"],
+    mapHackFreeFeatures: ["Interactive RS parking map", "Golden Minute markers", "Speed camera alerts", "Public zone SMS payment (1 tap)", "Live community chat"],
     mapHackPremiumLabel: "PREMIUM",
     mapHackPremiumBadge: "Recommended",
     mapHackPremiumDesc: "Full protection — fastest parking in the city",
@@ -231,7 +231,7 @@ const translations = {
     mapHackPerMonth: "/ mo",
     mapHackPerDay: "24h",
     mapHackPerYear: "/ yr",
-    mapHackCTA: "Open Map Hack NS",
+    mapHackCTA: "Open Map Hack RS",
     contactTitle: "Contact Us",
     contactSubtitle: "Your opinion matters! Write to us with any question, suggestion or idea - together we build a better platform.",
     contactEmail: "Email",
@@ -523,7 +523,7 @@ export default function Landing() {
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 flex flex-col items-center text-center gap-0.5">
-                  <span className="font-bold text-lg leading-tight">NS Map Hack </span>
+                  <span className="font-bold text-lg leading-tight">Map Hack RS</span>
                   <span className="text-green-100 text-xs leading-tight">Štek parkinzi · Crvene zone · Live chat info · Korisne lokacije · Privatni parkinzi i garaže · Ostalo</span>
                 </div>
                 <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>

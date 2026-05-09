@@ -132,7 +132,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         <div className="flex items-start justify-between mb-2">
           <div>
             <span className="text-slate-800 dark:text-slate-100 font-extrabold text-base tracking-wide">FREE</span>
-            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Osnovni pristup zajednici i mapi Novog Sada.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Osnovni pristup parking zajednici Srbije.</p>
           </div>
           <div className="flex flex-col items-end gap-1">
             <span className="text-slate-800 dark:text-slate-100 text-2xl font-extrabold leading-none">0</span>
@@ -141,7 +141,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           </div>
         </div>
         <div className="flex flex-col gap-1.5 mt-3">
-          <FreeRow ok text="Brza Mapa NS sa zonama i ulicama" />
+          <FreeRow ok text="Parking mapa Srbije sa zonama i ulicama" />
           <FreeRow ok text="Live Chat (pisanje i čitanje u realnom vremenu)" />
           <FreeRow ok text="Smart SMS plaćanje javnih zona (1 klik)" />
           <FreeRow ok text="Pregled privatnih parkinga za najam" />
@@ -299,7 +299,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
   );
 }
 
-function CompactHero({ title = "Map Hack NS" }: { title?: string }) {
+function CompactHero({ title = "Map Hack RS" }: { title?: string }) {
   return (
     <div
       className="flex-shrink-0"
@@ -454,6 +454,8 @@ export default function MapHackNS() {
   const [voiceState, setVoiceState] = useState<"idle" | "recording" | "uploading">("idle");
   const [voiceSecondsLeft, setVoiceSecondsLeft] = useState(60);
   const [smsOpen, setSmsOpen] = useState(false);
+  const [smsCity, setSmsCity] = useState<string>(() => localStorage.getItem("cardrop_sms_city") ?? "novi_sad");
+  const [smsCityDropdownOpen, setSmsCityDropdownOpen] = useState(false);
   const [watchZoneOpen, setWatchZoneOpen] = useState(false);
   const [watchZonePlaceMode, setWatchZonePlaceMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 45.2671, lng: 19.8335 });
@@ -1375,37 +1377,161 @@ export default function MapHackNS() {
   const firstPauk = mapMarkers.find(m => m.type === "pauk");
   const alarmActive = paukInZone.length > 0;
 
-  const NS_ZONES = [
-    { sms: "8210", name: "Extra zona",    short: "Extra",  color: "#a855f7", bg: "rgba(168,85,247,0.18)",  price: "80 din/h",  limit: "60 min" },
-    { sms: "8211", name: "Crvena zona",   short: "Crvena", color: "#ef4444", bg: "rgba(239,68,68,0.18)",   price: "60 din/h",  limit: "120 min" },
-    { sms: "8212", name: "Plava zona",    short: "Plava",  color: "#3b82f6", bg: "rgba(59,130,246,0.18)",  price: "50 din/h",  limit: "∞" },
-    { sms: "8213", name: "Strand",        short: "Strand", color: "#06b6d4", bg: "rgba(6,182,212,0.18)",   price: "posebno",   limit: "posebno" },
-    { sms: "8214", name: "Najlon pijaca", short: "Najlon", color: "#f97316", bg: "rgba(249,115,22,0.18)",  price: "posebno",   limit: "posebno" },
-    { sms: "8215", name: "Dnevna karta",  short: "Dnevna", color: "#6b7280", bg: "rgba(107,114,128,0.15)", price: "posebno",   limit: "posebno" },
-    { sms: "8218", name: "Bela zona",     short: "Bela",   color: "#d1d5db", bg: "rgba(209,213,219,0.12)", price: "30 din/h",  limit: "∞" },
-    { sms: "8288", name: "Sajam",         short: "Sajam",  color: "#eab308", bg: "rgba(234,179,8,0.18)",   price: "posebno",   limit: "za vreme sajma" },
+  type SmsZone = { sms: string; name: string; short: string; color: string; bg: string; price: string; limit: string };
+  type SmsCity = { id: string; name: string; operator: string; operatorUrl: string; center: { lat: number; lng: number }; zones: SmsZone[]; detectZone: (lat: number, lng: number) => string };
+
+  const SMS_CITIES: SmsCity[] = [
+    {
+      id: "novi_sad", name: "Novi Sad", operator: "JKP Parking Servis NS", operatorUrl: "https://parkingns.rs",
+      center: { lat: 45.2551, lng: 19.8451 },
+      zones: [
+        { sms: "8210", name: "Extra zona",    short: "Extra",  color: "#a855f7", bg: "rgba(168,85,247,0.18)",  price: "80 din/h",  limit: "60 min" },
+        { sms: "8211", name: "Crvena zona",   short: "Crvena", color: "#ef4444", bg: "rgba(239,68,68,0.18)",   price: "60 din/h",  limit: "120 min" },
+        { sms: "8212", name: "Plava zona",    short: "Plava",  color: "#3b82f6", bg: "rgba(59,130,246,0.18)",  price: "50 din/h",  limit: "∞" },
+        { sms: "8213", name: "Strand",        short: "Strand", color: "#06b6d4", bg: "rgba(6,182,212,0.18)",   price: "posebno",   limit: "posebno" },
+        { sms: "8214", name: "Najlon pijaca", short: "Najlon", color: "#f97316", bg: "rgba(249,115,22,0.18)",  price: "posebno",   limit: "posebno" },
+        { sms: "8215", name: "Dnevna karta",  short: "Dnevna", color: "#6b7280", bg: "rgba(107,114,128,0.15)", price: "posebno",   limit: "posebno" },
+        { sms: "8218", name: "Bela zona",     short: "Bela",   color: "#d1d5db", bg: "rgba(209,213,219,0.12)", price: "30 din/h",  limit: "∞" },
+        { sms: "8288", name: "Sajam",         short: "Sajam",  color: "#eab308", bg: "rgba(234,179,8,0.18)",   price: "posebno",   limit: "za vreme sajma" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 45.2551, 19.8451);
+        const dStrand = haversineMeters(lat, lng, 45.2580, 19.8120);
+        const dNajlon = haversineMeters(lat, lng, 45.2440, 19.8480);
+        if (dStrand < 500) return "8213";
+        if (dNajlon < 350) return "8214";
+        if (dCenter < 500) return "8210";
+        if (dCenter < 1100) return "8211";
+        if (dCenter < 2200) return "8212";
+        return "8218";
+      },
+    },
+    {
+      id: "beograd", name: "Beograd", operator: "JKP Parking Servis", operatorUrl: "https://www.parking-servis.co.rs",
+      center: { lat: 44.8176, lng: 20.4569 },
+      zones: [
+        { sms: "9114", name: "Zona A — Ljubičasta", short: "Zona A", color: "#a855f7", bg: "rgba(168,85,247,0.18)", price: "posebno", limit: "30 min" },
+        { sms: "9111", name: "Zona 1 — Crvena",     short: "Zona 1", color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "1h" },
+        { sms: "9112", name: "Zona 2 — Žuta",        short: "Zona 2", color: "#eab308", bg: "rgba(234,179,8,0.18)", price: "posebno", limit: "1h" },
+        { sms: "9113", name: "Zona 3 — Zelena",      short: "Zona 3", color: "#22c55e", bg: "rgba(34,197,94,0.18)", price: "posebno", limit: "1h" },
+        { sms: "9116", name: "Zona B — Bela",         short: "Zona B", color: "#d1d5db", bg: "rgba(209,213,219,0.12)", price: "posebno", limit: "1h" },
+        { sms: "9119", name: "Plava zona (opšta)",    short: "Plava",  color: "#3b82f6", bg: "rgba(59,130,246,0.18)", price: "posebno", limit: "1h" },
+        { sms: "9118", name: "Plava zona — Dnevna",   short: "Plava D", color: "#1d4ed8", bg: "rgba(29,78,216,0.18)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.8184, 20.4580);
+        if (dCenter < 300) return "9114";
+        if (dCenter < 900) return "9111";
+        if (dCenter < 1800) return "9112";
+        if (dCenter < 3000) return "9113";
+        return "9119";
+      },
+    },
+    {
+      id: "nis", name: "Niš", operator: "JKP Parking Servis Niš", operatorUrl: "https://www.nisparking.rs",
+      center: { lat: 43.3209, lng: 21.8954 },
+      zones: [
+        { sms: "9180", name: "Ekstra zona",       short: "Ekstra",   color: "#a855f7", bg: "rgba(168,85,247,0.18)", price: "80 din/h",  limit: "60 min" },
+        { sms: "9181", name: "I zona — Crvena",   short: "I zona",   color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "50 din/sat", limit: "120 min" },
+        { sms: "9182", name: "II zona — Zelena",  short: "II zona",  color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "37 din/h",  limit: "180 min" },
+        { sms: "9184", name: "I zona — Dnevna",   short: "I dnevna", color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno",   limit: "do kraja naplate" },
+        { sms: "9185", name: "II zona — Dnevna",  short: "II dnevna",color: "#16a34a", bg: "rgba(22,163,74,0.15)", price: "posebno",   limit: "do kraja naplate" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.3209, 21.8954);
+        if (dCenter < 300) return "9180";
+        if (dCenter < 900) return "9181";
+        return "9182";
+      },
+    },
+    {
+      id: "kragujevac", name: "Kragujevac", operator: "JKP Šumadija", operatorUrl: "https://www.jkpsumadija.rs",
+      center: { lat: 44.0128, lng: 20.9116 },
+      zones: [
+        { sms: "8340", name: "Zona 0",          short: "Zona 0",   color: "#f97316", bg: "rgba(249,115,22,0.18)", price: "posebno", limit: "120 min" },
+        { sms: "8341", name: "Zona I",           short: "Zona I",   color: "#ef4444", bg: "rgba(239,68,68,0.18)", price: "posebno", limit: "1h" },
+        { sms: "8342", name: "Zona II",          short: "Zona II",  color: "#22c55e", bg: "rgba(34,197,94,0.18)", price: "posebno", limit: "1h" },
+        { sms: "8343", name: "Dnevna — Zona I",  short: "Dnevna I", color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+        { sms: "8344", name: "Dnevna — Zona II", short: "Dnevna II",color: "#16a34a", bg: "rgba(22,163,74,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.0128, 20.9116);
+        if (dCenter < 300) return "8340";
+        if (dCenter < 900) return "8341";
+        return "8342";
+      },
+    },
+    {
+      id: "subotica", name: "Subotica", operator: "JKP Parking Subotica", operatorUrl: "https://suparking.rs",
+      center: { lat: 46.1004, lng: 19.6674 },
+      zones: [
+        { sms: "9241", name: "Crvena zona",      short: "Crvena",   color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "pon-pet 7-21h" },
+        { sms: "9242", name: "Žuta zona",         short: "Žuta",     color: "#eab308", bg: "rgba(234,179,8,0.18)", price: "posebno", limit: "pon-pet 7-21h" },
+        { sms: "9243", name: "Zelena zona",       short: "Zelena",   color: "#22c55e", bg: "rgba(34,197,94,0.18)", price: "posebno", limit: "pon-ned 5-15h" },
+        { sms: "9244", name: "Plava zona",        short: "Plava",    color: "#3b82f6", bg: "rgba(59,130,246,0.18)", price: "posebno", limit: "pon-pet 7-21h" },
+        { sms: "9245", name: "Dnevna — Crvena",  short: "Dnevna C", color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+        { sms: "9246", name: "Dnevna — Žuta",    short: "Dnevna Ž", color: "#ca8a04", bg: "rgba(202,138,4,0.15)", price: "posebno", limit: "dnevna" },
+        { sms: "9247", name: "Dnevna — Plava",   short: "Dnevna P", color: "#1d4ed8", bg: "rgba(29,78,216,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 46.1004, 19.6674);
+        if (dCenter < 400) return "9241";
+        if (dCenter < 900) return "9242";
+        if (dCenter < 1500) return "9243";
+        return "9244";
+      },
+    },
+    {
+      id: "zrenjanin", name: "Zrenjanin", operator: "JKP Parking Zrenjanin", operatorUrl: "https://www.zrenjanin.rs",
+      center: { lat: 45.3876, lng: 20.3918 },
+      zones: [
+        { sms: "8230", name: "Crvena zona",     short: "Crvena",   color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "50 din/h", limit: "1h" },
+        { sms: "8231", name: "Žuta zona",        short: "Žuta",     color: "#eab308", bg: "rgba(234,179,8,0.18)", price: "40 din/h", limit: "1h" },
+        { sms: "8232", name: "Zelena zona",      short: "Zelena",   color: "#22c55e", bg: "rgba(34,197,94,0.18)", price: "30 din/h", limit: "1h" },
+        { sms: "8235", name: "Dnevna — Crvena", short: "Dnevna C", color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "200 din",  limit: "dnevna" },
+        { sms: "8236", name: "Dnevna — Žuta",   short: "Dnevna Ž", color: "#ca8a04", bg: "rgba(202,138,4,0.15)", price: "150 din",  limit: "dnevna" },
+        { sms: "8237", name: "Dnevna — Zelena", short: "Dnevna Z", color: "#16a34a", bg: "rgba(22,163,74,0.15)", price: "100 din",  limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 45.3876, 20.3918);
+        if (dCenter < 400) return "8230";
+        if (dCenter < 900) return "8231";
+        return "8232";
+      },
+    },
   ];
 
-  function detectNSZone(lat: number, lng: number): string {
-    const dCenter = haversineMeters(lat, lng, 45.2551, 19.8451);
-    const dStrand = haversineMeters(lat, lng, 45.2580, 19.8120);
-    const dNajlon = haversineMeters(lat, lng, 45.2440, 19.8480);
-    if (dStrand < 500) return "8213";
-    if (dNajlon < 350) return "8214";
-    if (dCenter < 500) return "8210";
-    if (dCenter < 1100) return "8211";
-    if (dCenter < 2200) return "8212";
-    return "8218";
+  function detectCityByGps(lat: number, lng: number): string {
+    if (lat >= 44.65 && lat <= 44.95 && lng >= 20.20 && lng <= 20.65) return "beograd";
+    if (lat >= 45.20 && lat <= 45.36 && lng >= 19.72 && lng <= 19.98) return "novi_sad";
+    if (lat >= 43.27 && lat <= 43.40 && lng >= 21.82 && lng <= 22.06) return "nis";
+    if (lat >= 43.98 && lat <= 44.08 && lng >= 20.82 && lng <= 21.05) return "kragujevac";
+    if (lat >= 46.06 && lat <= 46.12 && lng >= 19.61 && lng <= 19.73) return "subotica";
+    if (lat >= 45.36 && lat <= 45.42 && lng >= 20.35 && lng <= 20.44) return "zrenjanin";
+    let closest = "novi_sad";
+    let minDist = Infinity;
+    for (const city of SMS_CITIES) {
+      const d = haversineMeters(lat, lng, city.center.lat, city.center.lng);
+      if (d < minDist) { minDist = d; closest = city.id; }
+    }
+    return closest;
   }
+
+  const activeSmsCity = SMS_CITIES.find(c => c.id === smsCity) ?? SMS_CITIES[0];
 
   function openSmsModal() {
     setSuggestedZone(null);
+    setSmsCityDropdownOpen(false);
     setSmsOpen(true);
     if (!navigator.geolocation) return;
     setGpsLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setSuggestedZone(detectNSZone(pos.coords.latitude, pos.coords.longitude));
+        const detectedCity = detectCityByGps(pos.coords.latitude, pos.coords.longitude);
+        const city = SMS_CITIES.find(c => c.id === detectedCity) ?? SMS_CITIES[0];
+        setSmsCity(detectedCity);
+        localStorage.setItem("cardrop_sms_city", detectedCity);
+        setSuggestedZone(city.detectZone(pos.coords.latitude, pos.coords.longitude));
         setGpsLoading(false);
       },
       () => setGpsLoading(false),
@@ -2942,19 +3068,19 @@ export default function MapHackNS() {
       {smsOpen && (
         <div className="fixed inset-0 z-[9999] flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)" }}
-          onClick={() => setSmsOpen(false)}>
+          onClick={() => { setSmsOpen(false); setSmsCityDropdownOpen(false); }}>
           <div className="w-full rounded-t-2xl flex flex-col"
             style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.12)", maxWidth: 520, height: "88vh" }}
             onClick={e => e.stopPropagation()}>
 
-            {/* Header — sticky, never scrolls */}
+            {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-2.5"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               <div>
-                <p className="font-bold" style={{ color: "#f9fafb", fontSize: 15 }}>SMS Parking — Novi Sad</p>
-                <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>JKP Parking Servis · pošalji tablicu na broj zone</p>
+                <p className="font-bold" style={{ color: "#f9fafb", fontSize: 15 }}>SMS Parking</p>
+                <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{activeSmsCity.operator} · pošalji tablicu na broj zone</p>
               </div>
-              <button onClick={() => setSmsOpen(false)}
+              <button onClick={() => { setSmsOpen(false); setSmsCityDropdownOpen(false); }}
                 className="flex items-center justify-center rounded-full"
                 style={{ width: 30, height: 30, background: "rgba(255,255,255,0.07)" }}>
                 <X size={14} style={{ color: "#9ca3af" }} />
@@ -2963,6 +3089,48 @@ export default function MapHackNS() {
 
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+
+            {/* City selector */}
+            <div className="px-4 pt-2.5 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="text-xs font-semibold mb-1.5" style={{ color: "#9ca3af" }}>GRAD</p>
+              <div className="relative">
+                <button
+                  data-testid="btn-sms-city-dropdown"
+                  onClick={() => setSmsCityDropdownOpen(v => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left"
+                  style={{ background: "#1a1f2b", border: "1.5px solid rgba(255,255,255,0.2)" }}>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={13} style={{ color: "#22c55e" }} />
+                    <span className="font-bold text-sm" style={{ color: "#f9fafb" }}>{activeSmsCity.name}</span>
+                  </div>
+                  <ChevronDown size={14} style={{ color: "#9ca3af", transform: smsCityDropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+                </button>
+                {smsCityDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 rounded-lg overflow-hidden z-10"
+                    style={{ background: "#1f2937", border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+                    {SMS_CITIES.map(city => (
+                      <button
+                        key={city.id}
+                        data-testid={`btn-city-${city.id}`}
+                        onClick={() => {
+                          setSmsCity(city.id);
+                          localStorage.setItem("cardrop_sms_city", city.id);
+                          setSuggestedZone(null);
+                          setSmsCityDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 text-left"
+                        style={{
+                          background: city.id === smsCity ? "rgba(34,197,94,0.12)" : "transparent",
+                          borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        }}>
+                        <span className="text-sm" style={{ color: city.id === smsCity ? "#22c55e" : "#f9fafb" }}>{city.name}</span>
+                        {city.id === smsCity && <Check size={12} style={{ color: "#22c55e" }} />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Plate input */}
             <div className="px-4 pt-2.5 pb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
@@ -2974,7 +3142,7 @@ export default function MapHackNS() {
                   setPlateInput(val);
                   localStorage.setItem("cardrop_plate", val);
                 }}
-                placeholder="NS123AB"
+                placeholder={activeSmsCity.id === "novi_sad" ? "NS123AB" : activeSmsCity.id === "beograd" ? "BG123AB" : activeSmsCity.id === "nis" ? "NI123AB" : activeSmsCity.id === "kragujevac" ? "KG123AB" : activeSmsCity.id === "subotica" ? "SU123AB" : "ZR123AB"}
                 data-testid="input-plate"
                 className="h-9 text-base font-bold text-center tracking-widest"
                 style={{ background: "#1a1f2b", border: "1.5px solid rgba(255,255,255,0.2)", color: "#f9fafb", letterSpacing: "0.12em" }}
@@ -2982,7 +3150,7 @@ export default function MapHackNS() {
               />
               {plateInput.trim().length > 0 && (
                 <p className="text-xs mt-1" style={{ color: "#22c55e" }}>
-                  {plateInput.trim().toUpperCase()} — tapni zonu da posalješ SMS
+                  {plateInput.trim().toUpperCase()} — tapni zonu da pošalješ SMS
                 </p>
               )}
             </div>
@@ -2994,33 +3162,42 @@ export default function MapHackNS() {
                 <span className="text-xs" style={{ color: "#9ca3af" }}>Određujem lokaciju...</span>
               ) : suggestedZone ? (
                 <>
-                  <span className="text-xs" style={{ color: "#9ca3af" }}>Preporučena zona:</span>
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>GPS preporučuje:</span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: (NS_ZONES.find(z => z.sms === suggestedZone)?.bg ?? "rgba(255,255,255,0.1)"),
-                      color: (NS_ZONES.find(z => z.sms === suggestedZone)?.color ?? "#fff") }}>
-                    {NS_ZONES.find(z => z.sms === suggestedZone)?.name ?? suggestedZone}
+                    style={{
+                      background: activeSmsCity.zones.find(z => z.sms === suggestedZone)?.bg ?? "rgba(255,255,255,0.1)",
+                      color: activeSmsCity.zones.find(z => z.sms === suggestedZone)?.color ?? "#fff",
+                    }}>
+                    {activeSmsCity.zones.find(z => z.sms === suggestedZone)?.name ?? suggestedZone}
                   </span>
                 </>
               ) : (
                 <button onClick={() => {
                     setGpsLoading(true);
                     navigator.geolocation?.getCurrentPosition(
-                      (pos) => { setSuggestedZone(detectNSZone(pos.coords.latitude, pos.coords.longitude)); setGpsLoading(false); },
+                      (pos) => {
+                        const detectedCity = detectCityByGps(pos.coords.latitude, pos.coords.longitude);
+                        const city = SMS_CITIES.find(c => c.id === detectedCity) ?? activeSmsCity;
+                        setSmsCity(detectedCity);
+                        localStorage.setItem("cardrop_sms_city", detectedCity);
+                        setSuggestedZone(city.detectZone(pos.coords.latitude, pos.coords.longitude));
+                        setGpsLoading(false);
+                      },
                       () => setGpsLoading(false),
                       { timeout: 8000 }
                     );
                   }}
                   className="text-xs" style={{ color: "#6b7280" }}>
-                  Tapni da odrediš lokaciju →
+                  Tapni za GPS detekciju grada i zone →
                 </button>
               )}
             </div>
 
             {/* Zone grid */}
             <div className="px-4 pt-2.5 pb-2">
-              <p className="text-xs font-semibold mb-2" style={{ color: "#6b7280" }}>IZABERI ZONU</p>
+              <p className="text-xs font-semibold mb-2" style={{ color: "#6b7280" }}>IZABERI ZONU — {activeSmsCity.name.toUpperCase()}</p>
               <div className="grid grid-cols-2 gap-1.5">
-                {NS_ZONES.map(zone => {
+                {activeSmsCity.zones.map(zone => {
                   const plate = plateInput.trim();
                   const isSuggested = suggestedZone === zone.sms;
                   return (
@@ -3036,11 +3213,11 @@ export default function MapHackNS() {
                       }}
                       className="relative flex items-center gap-2 px-2.5 py-2 rounded-xl text-left"
                       style={{
-                        background: isSuggested ? zone.bg.replace("0.18", "0.28") : zone.bg,
+                        background: isSuggested ? zone.bg.replace("0.18", "0.28").replace("0.15", "0.25").replace("0.12", "0.22") : zone.bg,
                         border: `1.5px solid ${isSuggested ? zone.color + "99" : zone.color + "40"}`,
                       }}>
                       {isSuggested && (
-                        <span className="absolute -top-2 -right-1 text-xs font-bold px-1.5 py-0.5 rounded-full"
+                        <span className="absolute -top-2 -right-1 font-bold px-1.5 py-0.5 rounded-full"
                           style={{ background: zone.color, color: "#fff", fontSize: 8 }}>GPS</span>
                       )}
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: zone.color }} />
@@ -3053,8 +3230,11 @@ export default function MapHackNS() {
                   );
                 })}
               </div>
-              <p className="text-xs text-center mt-3 mb-4" style={{ color: "#4b5563" }}>
+              <p className="text-xs text-center mt-3 mb-1" style={{ color: "#4b5563" }}>
                 Naplaćuje se standardna SMS tarifa · samo za +381 brojeve
+              </p>
+              <p className="text-xs text-center mb-4" style={{ color: "#374151" }}>
+                {activeSmsCity.operator}
               </p>
             </div>
             </div>{/* end scrollable body */}
@@ -3102,7 +3282,7 @@ export default function MapHackNS() {
                     { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)", badge: "Premium" },
                     { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje javnih", desc: "Plati javni parking putem SMS-a — 1 klik", badge: "Free" },
                     { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili patrola na putu", badge: "Premium" },
-                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinzi", desc: "Pregled privatnih parkinga za iznajmljivanje u NS", badge: "Free" },
+                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinzi", desc: "Pregled privatnih parkinga za iznajmljivanje u Srbiji", badge: "Free" },
                   ].map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: item.color + "22", border: `1px solid ${item.color}44` }}>

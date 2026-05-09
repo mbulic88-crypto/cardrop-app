@@ -44,7 +44,7 @@ export default function MapHackSubscribe() {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
       toast({
         title: "Free plan aktiviran!",
-        description: "Dobrodošao u Map Hack NS zajednicu.",
+        description: "Dobrodošao u Map Hack RS zajednicu.",
       });
       setLocation("/map-hack");
     },
@@ -119,7 +119,7 @@ export default function MapHackSubscribe() {
           </Button>
         </Link>
         <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-md" />
-        <span className="font-bold text-foreground text-lg">Map Hack NS</span>
+        <span className="font-bold text-foreground text-lg">Map Hack RS</span>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-md mx-auto w-full flex flex-col gap-4">
@@ -155,11 +155,11 @@ export default function MapHackSubscribe() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">
-              Osnovni pristup zajednici i mapi Novog Sada.
+              Osnovni pristup parking zajednici Srbije.
             </p>
             <ul className="text-xs text-muted-foreground space-y-1">
               {[
-                "Mapa NS sa parking zonama i ulicama",
+                "Parking mapa Srbije sa zonama i ulicama",
                 "Zlatni Minut i Pauk markeri",
                 "Smart SMS plaćanje javnih zona (1 klik)",
                 "Privatni parkinzi za najam",
@@ -451,7 +451,7 @@ function LegendSection() {
       icon: <Car size={14} />,
       color: "#14b8a6",
       label: "Privatni Parkinzi",
-      desc: "Pregled privatnih parkinga za iznajmljivanje u NS",
+      desc: "Pregled privatnih parkinga za iznajmljivanje",
       badge: "Free",
     },
   ];

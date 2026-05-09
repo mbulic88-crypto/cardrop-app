@@ -68,11 +68,11 @@ export default function PrivacyPolicy() {
           <section>
             <div className="flex items-center gap-2 mb-3">
               <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">2. Šta je Map Hack NS</h2>
+              <h2 className="text-xl font-semibold">2. Šta je Map Hack RS</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
-                Map Hack NS je funkcionalnost unutar platforme CarDrop koja korisnicima omogućava da <strong className="text-foreground">međusobno razmenjuju informacije</strong> o parkiranju, prisustvu pauka (evakuatora), policijskim radarima i slobodnim "štek" mestima u Novom Sadu.
+                Map Hack RS je funkcionalnost unutar platforme CarDrop koja korisnicima omogućava da <strong className="text-foreground">međusobno razmenjuju informacije</strong> o parkiranju, prisustvu pauka (evakuatora), policijskim radarima i slobodnim "štek" mestima širom Srbije.
               </p>
               <p>
                 CarDrop je isključivo <strong className="text-foreground">tehnička platforma i posrednik</strong>. Mi ne generišemo, ne verifikujemo i ne garantujemo tačnost informacija koje korisnici postavljaju. Sav sadržaj je korisnički (crowdsourced).

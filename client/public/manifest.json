@@ -73,9 +73,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Map Hack NS",
-      "short_name": "Mapa",
-      "description": "Otvori interaktivnu parking mapu Novog Sada",
+      "name": "Map Hack RS",
+      "short_name": "Map Hack",
+      "description": "Otvori interaktivnu parking mapu Srbije",
       "url": "/map-hack",
       "icons": [
         { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" }
