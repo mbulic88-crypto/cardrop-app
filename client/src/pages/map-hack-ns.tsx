@@ -1499,15 +1499,136 @@ export default function MapHackNS() {
         return "8232";
       },
     },
+    {
+      id: "cacak", name: "Čačak", operator: "JKP Komunalac Čačak", operatorUrl: "https://www.komunalac-cacak.rs",
+      center: { lat: 43.8914, lng: 20.3497 },
+      zones: [
+        { sms: "9160", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9161", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9163", name: "Dnevna — I zona",  short: "Dnevna I",color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+        { sms: "9164", name: "Dnevna — II zona", short: "Dnevna II",color: "#16a34a", bg: "rgba(22,163,74,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.8914, 20.3497);
+        if (dCenter < 500) return "9160";
+        return "9161";
+      },
+    },
+    {
+      id: "valjevo", name: "Valjevo", operator: "JKP Vidrak", operatorUrl: "https://www.jkpvidrak.rs",
+      center: { lat: 44.2749, lng: 19.8900 },
+      zones: [
+        { sms: "9060", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9061", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9063", name: "Dnevna — I zona",  short: "Dnevna I",color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.2749, 19.8900);
+        if (dCenter < 500) return "9060";
+        return "9061";
+      },
+    },
+    {
+      id: "novi_pazar", name: "Novi Pazar", operator: "JKP Komunalne usluge", operatorUrl: "https://www.novipazar.rs",
+      center: { lat: 43.1367, lng: 20.5125 },
+      zones: [
+        { sms: "9280", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9281", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9283", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.1367, 20.5125);
+        if (dCenter < 500) return "9280";
+        return "9281";
+      },
+    },
+    {
+      id: "pancevo", name: "Pančevo", operator: "JKP Parking Pančevo", operatorUrl: "https://www.pancevo.rs",
+      center: { lat: 44.8708, lng: 20.6407 },
+      zones: [
+        { sms: "9154", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9155", name: "II zona — Žuta",   short: "II zona", color: "#eab308", bg: "rgba(234,179,8,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9156", name: "III zona — Zelena",short: "III zona",color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-pet 7-20h" },
+        { sms: "9157", name: "Dnevna karta",     short: "Dnevna",  color: "#6b7280", bg: "rgba(107,114,128,0.15)",price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.8708, 20.6407);
+        if (dCenter < 400) return "9154";
+        if (dCenter < 900) return "9155";
+        return "9156";
+      },
+    },
+    {
+      id: "sabac", name: "Šabac", operator: "JKP Šabac", operatorUrl: "https://www.jkpsabac.rs",
+      center: { lat: 44.7538, lng: 19.6925 },
+      zones: [
+        { sms: "9065", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9066", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9068", name: "Dnevna — I zona",  short: "Dnevna",  color: "#dc2626", bg: "rgba(220,38,38,0.15)", price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.7538, 19.6925);
+        if (dCenter < 500) return "9065";
+        return "9066";
+      },
+    },
+    {
+      id: "smederevo", name: "Smederevo", operator: "JKP Smederevo", operatorUrl: "https://www.smederevo.org.rs",
+      center: { lat: 44.6637, lng: 20.9285 },
+      zones: [
+        { sms: "9058", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9059", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.6637, 20.9285);
+        if (dCenter < 500) return "9058";
+        return "9059";
+      },
+    },
+    {
+      id: "pozarevac", name: "Požarevac", operator: "JKP Komunalac Požarevac", operatorUrl: "https://www.pozarevac.rs",
+      center: { lat: 44.6155, lng: 21.1877 },
+      zones: [
+        { sms: "9057", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9056", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 44.6155, 21.1877);
+        if (dCenter < 500) return "9057";
+        return "9056";
+      },
+    },
+    {
+      id: "zajecar", name: "Zaječar", operator: "JKP Komunalac Zaječar", operatorUrl: "https://www.zajecar.info",
+      center: { lat: 43.9057, lng: 22.2728 },
+      zones: [
+        { sms: "9055", name: "I zona — Crvena",  short: "I zona",  color: "#ef4444", bg: "rgba(239,68,68,0.18)",  price: "posebno", limit: "120 min" },
+        { sms: "9053", name: "II zona — Zelena", short: "II zona", color: "#22c55e", bg: "rgba(34,197,94,0.18)",  price: "posebno", limit: "pon-sub 7-20h" },
+        { sms: "9054", name: "Dnevna karta",     short: "Dnevna",  color: "#6b7280", bg: "rgba(107,114,128,0.15)",price: "posebno", limit: "dnevna" },
+      ],
+      detectZone: (lat, lng) => {
+        const dCenter = haversineMeters(lat, lng, 43.9057, 22.2728);
+        if (dCenter < 500) return "9055";
+        return "9053";
+      },
+    },
   ];
 
   function detectCityByGps(lat: number, lng: number): string {
-    if (lat >= 44.65 && lat <= 44.95 && lng >= 20.20 && lng <= 20.65) return "beograd";
     if (lat >= 45.20 && lat <= 45.36 && lng >= 19.72 && lng <= 19.98) return "novi_sad";
     if (lat >= 43.27 && lat <= 43.40 && lng >= 21.82 && lng <= 22.06) return "nis";
     if (lat >= 43.98 && lat <= 44.08 && lng >= 20.82 && lng <= 21.05) return "kragujevac";
     if (lat >= 46.06 && lat <= 46.12 && lng >= 19.61 && lng <= 19.73) return "subotica";
     if (lat >= 45.36 && lat <= 45.42 && lng >= 20.35 && lng <= 20.44) return "zrenjanin";
+    if (lat >= 43.87 && lat <= 43.91 && lng >= 20.33 && lng <= 20.37) return "cacak";
+    if (lat >= 44.26 && lat <= 44.29 && lng >= 19.87 && lng <= 19.91) return "valjevo";
+    if (lat >= 43.12 && lat <= 43.16 && lng >= 20.50 && lng <= 20.53) return "novi_pazar";
+    if (lat >= 44.85 && lat <= 44.90 && lng >= 20.62 && lng <= 20.66) return "pancevo";
+    if (lat >= 44.74 && lat <= 44.77 && lng >= 19.68 && lng <= 19.71) return "sabac";
+    if (lat >= 44.65 && lat <= 44.68 && lng >= 20.91 && lng <= 20.95) return "smederevo";
+    if (lat >= 44.60 && lat <= 44.63 && lng >= 21.17 && lng <= 21.21) return "pozarevac";
+    if (lat >= 43.89 && lat <= 43.92 && lng >= 22.26 && lng <= 22.30) return "zajecar";
+    if (lat >= 44.65 && lat <= 44.95 && lng >= 20.20 && lng <= 20.65) return "beograd";
     let closest = "novi_sad";
     let minDist = Infinity;
     for (const city of SMS_CITIES) {
