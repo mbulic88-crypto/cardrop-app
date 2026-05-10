@@ -213,6 +213,8 @@ export function MapHackMap({
   onMapReady,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const geolocateRef = useRef<any>(null);
   const autoGeolocatedRef = useRef(false);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -300,6 +302,8 @@ export function MapHackMap({
             zoom: 13,
             duration: 1200,
           });
+          // Trigger GeolocateControl so the blue location dot appears
+          setTimeout(() => { geolocateRef.current?.trigger(); }, 400);
           // Persist last known location and zoom for faster next load
           try {
             localStorage.setItem("mh_last_lat", String(lat));
@@ -385,6 +389,7 @@ export function MapHackMap({
       >
         <NavigationControl position="top-right" showCompass={false} />
         <GeolocateControl
+          ref={geolocateRef}
           position="bottom-right"
           trackUserLocation={true}
           showUserHeading={true}

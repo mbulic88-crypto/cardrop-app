@@ -2826,6 +2826,16 @@ export default function MapHackNS() {
       <div className="flex-shrink-0 px-3 pt-2.5"
         style={{ background: "#0d1117", borderTop: "1px solid rgba(255,255,255,0.08)", display: chatFullscreen ? "none" : undefined, paddingBottom: 'max(10px, env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {/* Izdaj Parking — prvo mesto u action baru */}
+          <button
+            data-testid="btn-izdaj-parking"
+            onClick={() => setLocation("/select-category")}
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            style={{ width: 58, height: 58, background: "#0c4a6e", border: "1.5px solid #0ea5e9" }}>
+            <Plus size={18} style={{ color: "#7dd3fc" }} />
+            <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
+          </button>
+
           {/* Zlatni Minut */}
           {(() => {
             const count = mapMarkers.filter(m => m.type === "zlatni_minut").length;
@@ -3010,16 +3020,6 @@ export default function MapHackNS() {
               </button>
             );
           })()}
-
-          {/* Izdaj Parking — link to add-spot */}
-          <button
-            data-testid="btn-izdaj-parking"
-            onClick={() => setLocation("/select-category")}
-            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ width: 58, height: 58, background: "#0c4a6e", border: "1.5px solid #0ea5e9" }}>
-            <Plus size={18} style={{ color: "#7dd3fc" }} />
-            <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
-          </button>
 
           {/* Chat — na kraju action bara */}
           <button
