@@ -8,7 +8,7 @@ import Map, {
   Layer,
 } from "react-map-gl";
 import type { MapRef, MapLayerMouseEvent, ViewStateChangeEvent } from "react-map-gl";
-import type { MapboxEvent } from "mapbox-gl";
+import type { MapboxEvent, GeolocateControl as MapboxGeolocateControl } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { MapMarker, MapSafeZone, MapWatchArea } from "@shared/schema";
 import Supercluster from "supercluster";
@@ -213,8 +213,7 @@ export function MapHackMap({
   onMapReady,
 }: MapHackMapProps) {
   const mapRef = useRef<MapRef>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const geolocateRef = useRef<any>(null);
+  const geolocateRef = useRef<MapboxGeolocateControl>(null);
   const autoGeolocatedRef = useRef(false);
   const [parkingPopup, setParkingPopup] = useState<ParkingPopupState | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
