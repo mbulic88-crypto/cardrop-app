@@ -52,6 +52,8 @@ export interface IStorage {
   activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
   activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, stripeSessionId: string, userId: string): Promise<{ spot: ParkingSpot | undefined; alreadyConsumed: boolean }>;
   activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }>;
+  createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
+  saveUserLicensePlate(userId: string, licensePlate: string): Promise<void>;
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
   getParkingSpot(id: string): Promise<ParkingSpot | undefined>;
@@ -398,6 +400,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id))
       .returning();
     return booking;
+  }
+
+  async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
+    const existing = await db.select().from(bookings).where(eq(bookings.bookingStripeSessionId, data.bookingStripeSessionId)).limit(1);
+    if (existing.length > 0) {
+      return { booking: existing[0], alreadyConsumed: true };
+    }
+    const [booking] = await db.insert(bookings).values(data).returning();
+    return { booking, alreadyConsumed: false };
+  }
+
+  async saveUserLicensePlate(userId: string, licensePlate: string): Promise<void> {
+    await db.update(users).set({ savedLicensePlate: licensePlate, updatedAt: new Date() }).where(eq(users.id, userId));
   }
 
   // Reviews operations

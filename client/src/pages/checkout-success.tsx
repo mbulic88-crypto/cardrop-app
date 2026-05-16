@@ -4,23 +4,27 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Loader2, Home, Eye } from "lucide-react";
+import { CheckCircle, Loader2, Home, Eye, Car } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 
 export default function CheckoutSuccess() {
   const [, setLocation] = useLocation();
   const [verified, setVerified] = useState(false);
   const [resultId, setResultId] = useState<string | null>(null);
+  const [bookingResult, setBookingResult] = useState<any>(null);
 
   const urlParams = new URLSearchParams(window.location.search);
   const sessionId = urlParams.get('session_id');
   const spotIdParam = urlParams.get('spot_id');
   const listingIdParam = urlParams.get('listing_id');
+  const isBooking = urlParams.get('booking') === '1';
   const isSale = !!listingIdParam;
 
   const verifyMutation = useMutation({
     mutationFn: async () => {
-      if (isSale) {
+      if (isBooking) {
+        return await apiRequest("POST", "/api/stripe/verify-booking-payment", { sessionId });
+      } else if (isSale) {
         return await apiRequest("POST", "/api/stripe/verify-sale-payment", {
           sessionId,
           listingId: listingIdParam,
@@ -34,7 +38,12 @@ export default function CheckoutSuccess() {
     },
     onSuccess: (data) => {
       setVerified(true);
-      if (isSale) {
+      if (isBooking) {
+        setBookingResult(data);
+        setResultId(data.spot?.id || null);
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+      } else if (isSale) {
         setResultId(data.listing?.id || listingIdParam);
         queryClient.invalidateQueries({ queryKey: ["/api/sales-listings"] });
       } else {
@@ -46,10 +55,12 @@ export default function CheckoutSuccess() {
   });
 
   useEffect(() => {
-    if (sessionId && (spotIdParam || listingIdParam) && !verified) {
-      verifyMutation.mutate();
+    if (sessionId && !verified) {
+      if (isBooking || spotIdParam || listingIdParam) {
+        verifyMutation.mutate();
+      }
     }
-  }, [sessionId, spotIdParam, listingIdParam]);
+  }, [sessionId]);
 
   if (verifyMutation.isPending) {
     return (
@@ -72,6 +83,76 @@ export default function CheckoutSuccess() {
           <Link href="/home">
             <Button data-testid="button-go-home">Nazad na početnu</Button>
           </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isBooking && verified) {
+    const spot = bookingResult?.spot;
+    const booking = bookingResult?.booking;
+    const startTime = booking?.startTime ? new Date(booking.startTime) : null;
+    const endTime = booking?.endTime ? new Date(booking.endTime) : null;
+    const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="p-8 max-w-md w-full text-center">
+          <div className="mb-4">
+            <img src={parkInLogo} alt="CarDrop" className="w-12 h-12 rounded-lg mx-auto mb-4" />
+          </div>
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Plaćanje uspešno!</h2>
+          <p className="text-muted-foreground mb-4">Vaša rezervacija parkinga je potvrđena.</p>
+
+          {spot && (
+            <div className="bg-muted/50 rounded-md p-4 mb-4 text-left space-y-2">
+              <div className="flex items-start gap-2">
+                <Car className="w-4 h-4 mt-0.5 text-accent shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground text-sm">{spot.title}</p>
+                  {spot.parkingNumber && (
+                    <p className="text-xs text-muted-foreground font-mono">{spot.parkingNumber}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">{spot.address}</p>
+                </div>
+              </div>
+              {startTime && endTime && (
+                <p className="text-sm text-muted-foreground pl-6">
+                  {fmt(startTime)} – {fmt(endTime)}
+                </p>
+              )}
+              {booking?.totalPrice && (
+                <p className="text-sm font-semibold text-accent pl-6">
+                  {Number(booking.totalPrice).toLocaleString('sr-RS')} {booking.currency}
+                </p>
+              )}
+              {booking?.licensePlate && (
+                <p className="text-xs text-muted-foreground pl-6">Tablica: {booking.licensePlate}</p>
+              )}
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground mb-6">
+            Sledeći put tablice i kartica su već sačuvani — sve ide na jedan klik.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {resultId && (
+              <Link href={`/spot/${resultId}`}>
+                <Button className="w-full" data-testid="button-view-spot">
+                  <Eye className="w-4 h-4 mr-2" />
+                  Pogledaj parking
+                </Button>
+              </Link>
+            )}
+            <Link href="/home">
+              <Button variant="outline" className="w-full" data-testid="button-go-home">
+                <Home className="w-4 h-4 mr-2" />
+                Početna stranica
+              </Button>
+            </Link>
+          </div>
         </Card>
       </div>
     );

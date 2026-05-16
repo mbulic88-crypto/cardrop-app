@@ -48,6 +48,7 @@ export const users = pgTable("users", {
   mapPrivacyAcceptedAt: timestamp("map_privacy_accepted_at"),
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
+  savedLicensePlate: varchar("saved_license_plate", { length: 30 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -206,6 +207,8 @@ export const bookings = pgTable("bookings", {
   paymentStatus: varchar("payment_status", { length: 50 }).notNull().default('pending'), // pending, paid, refunded
   monriOrderNumber: varchar("monri_order_number", { length: 255 }),
   monriTransactionId: varchar("monri_transaction_id", { length: 255 }),
+  licensePlate: varchar("license_plate", { length: 30 }),
+  bookingStripeSessionId: varchar("booking_stripe_session_id", { length: 255 }).unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

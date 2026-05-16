@@ -1463,6 +1463,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/stripe/create-booking-checkout', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const { spotId, startTime, endTime, licensePlate } = req.body;
+
+      if (!spotId || !startTime || !endTime) {
+        return res.status(400).json({ message: "Nedostaju obavezna polja: spotId, startTime, endTime" });
+      }
+
+      const spot = await storage.getParkingSpot(spotId);
+      if (!spot || !spot.isActive) {
+        return res.status(404).json({ message: "Parking ne postoji ili nije aktivan" });
+      }
+      if (!spot.stripeLinkActive) {
+        return res.status(403).json({ message: "Online plaćanje nije aktivno za ovaj parking" });
+      }
+
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+        return res.status(400).json({ message: "Nevalidni datumi" });
+      }
+
+      const pricePerUnit = parseFloat(String(spot.pricePerHour));
+      let totalPrice: number;
+      if (spot.pricingType === 'hourly') {
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        totalPrice = Math.round(pricePerUnit * hours * 100) / 100;
+      } else if (spot.pricingType === 'monthly') {
+        const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+        totalPrice = pricePerUnit * Math.max(1, months);
+      } else {
+        const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        totalPrice = pricePerUnit * Math.max(1, days);
+      }
+      if (totalPrice <= 0) {
+        return res.status(400).json({ message: "Ukupna cena mora biti veća od 0" });
+      }
+
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      let stripeCustomerId = currentUser.stripeCustomerId ?? undefined;
+      if (!stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: currentUser.email ?? undefined,
+          name: `${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || undefined,
+          metadata: { userId },
+        });
+        stripeCustomerId = customer.id;
+        await storage.updateUser(userId, { stripeCustomerId });
+      }
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const currency = (spot.currency || 'RSD').toLowerCase();
+      const amountInSmallestUnit = Math.round(totalPrice * 100);
+
+      const session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency,
+            product_data: {
+              name: `Parking: ${spot.title}`,
+              description: spot.parkingNumber
+                ? `${spot.parkingNumber} · ${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`
+                : `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
+            },
+            unit_amount: amountInSmallestUnit,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        payment_intent_data: {
+          setup_future_usage: 'off_session',
+        },
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&booking=1`,
+        cancel_url: `${baseUrl}/spot/${spotId}`,
+        metadata: {
+          type: 'booking',
+          spotId,
+          userId,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          licensePlate: licensePlate || '',
+          totalPrice: String(totalPrice),
+          currency: spot.currency,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Error creating booking checkout:", error);
+      res.status(500).json({ message: error?.message || "Greška pri kreiranju sesije" });
+    }
+  });
+
+  app.post('/api/stripe/verify-booking-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { sessionId } = req.body;
+      const userId = req.session.userId;
+
+      if (!sessionId) {
+        return res.status(400).json({ message: "Nedostaje sessionId" });
+      }
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== 'paid') {
+        return res.status(400).json({ message: "Plaćanje nije završeno", status: session.payment_status });
+      }
+      if (session.metadata?.userId !== String(userId)) {
+        return res.status(403).json({ message: "Neovlašćen pristup" });
+      }
+      if (session.metadata?.type !== 'booking') {
+        return res.status(400).json({ message: "Nevalidna sesija" });
+      }
+
+      const spotId = session.metadata?.spotId;
+      const startTime = session.metadata?.startTime;
+      const endTime = session.metadata?.endTime;
+      const licensePlate = session.metadata?.licensePlate || '';
+      const totalPrice = session.metadata?.totalPrice;
+      const currency = session.metadata?.currency || 'RSD';
+
+      if (!spotId || !startTime || !endTime || !totalPrice) {
+        return res.status(400).json({ message: "Nevalidni podaci sesije" });
+      }
+
+      const spot = await storage.getParkingSpot(spotId);
+      if (!spot) return res.status(404).json({ message: "Parking nije pronađen" });
+
+      const { booking, alreadyConsumed } = await storage.createBookingWithSession({
+        spotId,
+        renterId: userId,
+        startTime: new Date(startTime),
+        endTime: new Date(endTime),
+        totalPrice,
+        currency,
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        licensePlate: licensePlate || undefined,
+        bookingStripeSessionId: sessionId,
+      });
+
+      if (licensePlate) {
+        await storage.saveUserLicensePlate(userId, licensePlate);
+      }
+
+      if (alreadyConsumed) {
+        return res.json({ success: true, booking, alreadyConsumed: true, spot });
+      }
+
+      res.json({ success: true, booking, spot });
+    } catch (error: any) {
+      console.error("Error verifying booking payment:", error);
+      res.status(500).json({ message: "Greška pri verifikaciji plaćanja" });
+    }
+  });
+
   app.post('/api/stripe/create-sale-checkout', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();

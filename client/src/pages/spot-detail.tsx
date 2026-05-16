@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle, Loader2 } from "lucide-react";
 import { SiViber, SiWhatsapp } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +17,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot, User as UserType, Review } from "@shared/schema";
 import { Link } from "wouter";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { sr } from "date-fns/locale";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -37,7 +39,7 @@ export default function SpotDetail() {
   const [, params] = useRoute("/spot/:id");
   const spotId = params?.id;
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -45,6 +47,14 @@ export default function SpotDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showOwnerContact, setShowOwnerContact] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [licensePlate, setLicensePlate] = useState('');
+  const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
+  const [bookingEndDate, setBookingEndDate] = useState<Date | undefined>(undefined);
+  const [startHour, setStartHour] = useState(8);
+  const [endHour, setEndHour] = useState(9);
+  const [numMonths, setNumMonths] = useState(1);
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -112,6 +122,87 @@ export default function SpotDetail() {
       spotId: spot.id,
       content: messageContent.trim(),
     });
+  };
+
+  useEffect(() => {
+    if (user?.savedLicensePlate && !licensePlate) {
+      setLicensePlate(user.savedLicensePlate);
+    }
+  }, [user?.savedLicensePlate]);
+
+  const calculatedPrice = useMemo(() => {
+    if (!spot) return 0;
+    const price = Number(spot.pricePerHour);
+    if (spot.pricingType === 'hourly') {
+      const hours = endHour - startHour;
+      return hours > 0 && bookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
+    } else if (spot.pricingType === 'daily') {
+      if (!bookingStartDate) return price;
+      if (!bookingEndDate) return price;
+      const days = Math.max(1, Math.ceil((bookingEndDate.getTime() - bookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
+    } else {
+      return numMonths * price;
+    }
+  }, [spot, bookingStartDate, bookingEndDate, startHour, endHour, numMonths]);
+
+  function getBookingTimes(): { startTime: Date; endTime: Date } {
+    const base = bookingStartDate || new Date();
+    if (spot?.pricingType === 'hourly') {
+      const start = new Date(base);
+      start.setHours(startHour, 0, 0, 0);
+      const end = new Date(base);
+      end.setHours(endHour, 0, 0, 0);
+      return { startTime: start, endTime: end };
+    } else if (spot?.pricingType === 'daily') {
+      const start = new Date(base);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(bookingEndDate || base);
+      end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    } else {
+      const start = new Date(base);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + numMonths);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    }
+  }
+
+  const bookingCheckoutMutation = useMutation({
+    mutationFn: async () => {
+      const { startTime, endTime } = getBookingTimes();
+      return await apiRequest("POST", "/api/stripe/create-booking-checkout", {
+        spotId: spot!.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        licensePlate,
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) {
+        setShowLoginDialog(true);
+        return;
+      }
+      toast({
+        title: "Greška",
+        description: "Nije moguće pokrenuti plaćanje. Pokušajte ponovo.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleBookingCheckout = () => {
+    if (!isAuthenticated) { setShowLoginDialog(true); return; }
+    bookingCheckoutMutation.mutate();
   };
 
   const imageCount = spot?.imageUrls?.length || 0;
@@ -280,14 +371,163 @@ export default function SpotDetail() {
               / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan'}
             </span>
           </div>
-          {spot.stripeLinkActive && spot.stripeLink && (
-            <a href={spot.stripeLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-3" data-testid="link-plati-online">
-              <Button className="bg-accent text-accent-foreground gap-2" data-testid="button-plati-online">
-                <CreditCard className="w-4 h-4" />
-                Plati online
-              </Button>
-            </a>
-          )}
+          <div className="mt-3">
+            <Button
+              className="bg-accent text-accent-foreground gap-2 w-full sm:w-auto"
+              onClick={() => {
+                if (!isAuthenticated) { setShowLoginDialog(true); return; }
+                setShowBookingForm(!showBookingForm);
+              }}
+              data-testid="button-rezervisi"
+            >
+              <CreditCard className="w-4 h-4" />
+              Plati ili rezerviši parking
+            </Button>
+
+            {showBookingForm && !spot.stripeLinkActive && (
+              <Card className="mt-3 p-4">
+                <p className="text-sm text-muted-foreground text-center py-2" data-testid="text-payment-inactive">
+                  Za ovaj parking nije aktivno online plaćanje. Molimo kontaktirajte vlasnika za plaćanje.
+                </p>
+              </Card>
+            )}
+
+            {showBookingForm && spot.stripeLinkActive && (
+              <Card className="mt-3 p-4 space-y-4" data-testid="card-booking-form">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block text-card-foreground">Registarska tablica</label>
+                  <Input
+                    placeholder="npr. NS 123-AB"
+                    value={licensePlate}
+                    onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
+                    data-testid="input-license-plate"
+                  />
+                </div>
+
+                {spot.pricingType === 'monthly' && (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2" data-testid="text-monthly-notice">
+                      Ovaj parking je za mesečno iznajmljivanje.
+                    </p>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block text-card-foreground">Datum početka</label>
+                      <Calendar
+                        mode="single"
+                        selected={bookingStartDate}
+                        onSelect={setBookingStartDate}
+                        disabled={(date) => date < startOfDay(new Date())}
+                        className="rounded-md border w-full"
+                        data-testid="calendar-booking-monthly"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block text-card-foreground">Broj meseci</label>
+                      <Select value={String(numMonths)} onValueChange={(v) => setNumMonths(Number(v))}>
+                        <SelectTrigger data-testid="select-num-months">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 6, 12].map(n => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n} {n === 1 ? 'mesec' : n < 5 ? 'meseca' : 'meseci'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {spot.pricingType === 'daily' && (
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block text-card-foreground">Period zakupa</label>
+                    <Calendar
+                      mode="range"
+                      selected={{ from: bookingStartDate, to: bookingEndDate }}
+                      onSelect={(range) => {
+                        setBookingStartDate(range?.from);
+                        setBookingEndDate(range?.to);
+                      }}
+                      disabled={(date) => date < startOfDay(new Date())}
+                      className="rounded-md border w-full"
+                      data-testid="calendar-booking-daily"
+                    />
+                  </div>
+                )}
+
+                {spot.pricingType === 'hourly' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block text-card-foreground">Dan</label>
+                      <Calendar
+                        mode="single"
+                        selected={bookingStartDate}
+                        onSelect={setBookingStartDate}
+                        disabled={(date) => date < startOfDay(new Date())}
+                        className="rounded-md border w-full"
+                        data-testid="calendar-booking-hourly"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block text-card-foreground">Od sata</label>
+                        <Select value={String(startHour)} onValueChange={(v) => { const h = Number(v); setStartHour(h); if (endHour <= h) setEndHour(h + 1); }}>
+                          <SelectTrigger data-testid="select-start-hour">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 23 }, (_, i) => i).map(h => (
+                              <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}:00</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block text-card-foreground">Do sata</label>
+                        <Select value={String(endHour)} onValueChange={(v) => setEndHour(Number(v))}>
+                          <SelectTrigger data-testid="select-end-hour">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
+                              <SelectItem key={h} value={String(h)} disabled={h <= startHour}>
+                                {String(h).padStart(2, '0')}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {calculatedPrice > 0 && (
+                  <div className="bg-muted/50 rounded-md p-3 flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Ukupno:</span>
+                    <span className="text-xl font-bold text-accent" data-testid="text-total-price">
+                      {calculatedPrice.toLocaleString('sr-RS')} {spot.currency}
+                    </span>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground text-center">
+                  Kada jednom uplatite, sledeći put sve ide na samo jedan klik.
+                </p>
+
+                <Button
+                  className="w-full bg-accent text-accent-foreground"
+                  onClick={handleBookingCheckout}
+                  disabled={bookingCheckoutMutation.isPending || !licensePlate.trim() || calculatedPrice <= 0}
+                  data-testid="button-nastavi-na-placanje"
+                >
+                  {bookingCheckoutMutation.isPending
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Učitavanje...</>
+                    : <><CreditCard className="w-4 h-4 mr-2" />Nastavi na plaćanje</>
+                  }
+                </Button>
+              </Card>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

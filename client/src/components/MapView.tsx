@@ -185,9 +185,18 @@ export function MapView({ spots }: MapViewProps) {
         container.appendChild(featuresDiv);
       }
       
+      if (spot.parkingNumber) {
+        const numBadge = document.createElement('span');
+        numBadge.className = 'text-xs font-mono inline-block mb-1.5 px-1.5 py-0.5 rounded border border-current opacity-80';
+        numBadge.style.cssText = 'color: #52B788; border-color: rgba(82,183,136,0.4); background: rgba(82,183,136,0.1);';
+        numBadge.textContent = spot.parkingNumber;
+        container.insertBefore(numBadge, address);
+      }
+
+      const priceUnit = spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mes' : 'dan';
       const price = document.createElement('div');
       price.className = 'text-lg font-bold text-accent';
-      price.textContent = `${spot.pricePerHour} ${spot.currency}/sat`;
+      price.textContent = `${spot.pricePerHour} ${spot.currency}/${priceUnit}`;
       container.appendChild(price);
       
       // Add click handler directly to the DOM element
