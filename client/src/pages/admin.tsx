@@ -316,40 +316,61 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
     doc.text(spot.parkingNumber, W - 29, 18, { align: "center" });
   }
 
-  // Spot title
+  // Parking number — very prominent below header (40pt bold)
+  if (spot.parkingNumber) {
+    doc.setFontSize(40);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(64, 145, 108);
+    doc.text(spot.parkingNumber, W / 2, 46, { align: "center" });
+  }
+
+  // Spot title below parking number
   doc.setTextColor(20, 20, 20);
-  doc.setFontSize(16);
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
+  const titleY = spot.parkingNumber ? 56 : 40;
   const titleLines = doc.splitTextToSize(spot.title, W - 20);
-  doc.text(titleLines, W / 2, 42, { align: "center" });
+  doc.text(titleLines, W / 2, titleY, { align: "center" });
 
   // Address
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text(spot.address, W / 2, 52, { align: "center" });
+  const addrY = titleY + 8;
+  doc.text(spot.address, W / 2, addrY, { align: "center" });
 
   // Divider
   doc.setDrawColor(220, 220, 220);
-  doc.line(15, 57, W - 15, 57);
+  const divY = addrY + 5;
+  doc.line(15, divY, W - 15, divY);
+
+  // Logo above QR code
+  const logoY = divY + 4;
+  const logoSize = 16;
+  if (logoData) {
+    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, logoY, logoSize, logoSize); } catch {}
+  }
 
   // QR code — centered, prominent
-  const qrSize = 80;
+  const qrSize = 72;
   const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 300, margin: 2 });
+  const qrY = logoY + logoSize + 3;
   const qrX = (W - qrSize) / 2;
-  doc.addImage(qrDataUrl, "PNG", qrX, 62, qrSize, qrSize);
+  doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
 
   // Instruction text below QR
-  doc.setFontSize(9);
+  const instrY = qrY + qrSize + 5;
+  doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const instrText = "Možete platiti parking skeniranjem QR koda ili direktno na aplikaciji.";
   const instrLines = doc.splitTextToSize(instrText, W - 30);
-  doc.text(instrLines, W / 2, 148, { align: "center" });
+  doc.text(instrLines, W / 2, instrY, { align: "center" });
 
   // Divider
   doc.setDrawColor(220, 220, 220);
-  doc.line(15, 156, W - 15, 156);
+  const div2Y = instrY + 8;
+  doc.line(15, div2Y, W - 15, div2Y);
 
   // Details row
   const pricingLabel = spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan';
@@ -361,9 +382,9 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
     spot.hasEvCharging ? "EV punjač" : null,
   ].filter(Boolean) as string[];
 
-  doc.setFontSize(8.5);
+  doc.setFontSize(8);
   doc.setTextColor(60, 60, 60);
-  doc.text(details.join("   •   "), W / 2, 163, { align: "center" });
+  doc.text(details.join("   •   "), W / 2, div2Y + 7, { align: "center" });
 
   // Dark footer
   doc.setFillColor(30, 30, 30);

@@ -279,9 +279,6 @@ export default function SpotDetail() {
             <span className="text-lg text-muted-foreground">
               / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan'}
             </span>
-            {spot.parkingNumber && (
-              <Badge className="font-mono bg-accent/15 text-accent border-accent/30 ml-2" data-testid="badge-parking-number">{spot.parkingNumber}</Badge>
-            )}
           </div>
           {spot.stripeLinkActive && spot.stripeLink && (
             <a href={spot.stripeLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-3" data-testid="link-plati-online">
@@ -302,6 +299,9 @@ export default function SpotDetail() {
                   <h1 className="text-3xl font-bold mb-2 text-foreground" data-testid="text-spot-title">
                     {spot.title}
                   </h1>
+                  {spot.parkingNumber && (
+                    <Badge className="font-mono bg-accent/15 text-accent border-accent/30 mb-2" data-testid="badge-parking-number-title">{spot.parkingNumber}</Badge>
+                  )}
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="w-5 h-5 mr-2" />
                     <span data-testid="text-spot-address">{spot.address}</span>

@@ -1204,32 +1204,7 @@ export default function AddSpot() {
                 </>
               )}
 
-              {/* Rental Duration Type */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground block">{t.rentalDuration}</label>
-                <Select 
-                  value={rentalDurationType} 
-                  onValueChange={(val: 'short' | 'long') => {
-                    setRentalDurationType(val);
-                    if (val === 'short') {
-                      form.setValue('pricingType', 'hourly');
-                    } else {
-                      form.setValue('pricingType', 'daily');
-                    }
-                  }}
-                >
-                  <SelectTrigger data-testid="select-rental-duration">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">{t.rentalShortTerm}</SelectItem>
-                    <SelectItem value="long">{t.rentalLongTerm}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">{t.rentalDurationDescription}</p>
-              </div>
-
-              {/* Pricing Period - depends on rental duration */}
+              {/* Pricing Period - direct 3-option selector */}
               <FormField
                 control={form.control}
                 name="pricingType"
@@ -1243,14 +1218,9 @@ export default function AddSpot() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {rentalDurationType === 'short' ? (
-                          <>
-                            <SelectItem value="hourly">Na sat</SelectItem>
-                            <SelectItem value="daily">Na dan</SelectItem>
-                          </>
-                        ) : (
-                          <SelectItem value="monthly">Mesečno</SelectItem>
-                        )}
+                        <SelectItem value="hourly">Na sat</SelectItem>
+                        <SelectItem value="daily">Na dan</SelectItem>
+                        <SelectItem value="monthly">Mesečno</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
