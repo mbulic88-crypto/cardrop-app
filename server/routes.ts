@@ -2256,9 +2256,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function generateParkingNumber(city: string | null | undefined): Promise<string> {
     const abbrev = (city && CITY_ABBREV[city]) ? CITY_ABBREV[city] : "SRB";
     const allSpots = await storage.getAllParkingSpotsAdmin();
-    const sameCity = allSpots.filter(s => s.parkingNumber && s.parkingNumber.startsWith(abbrev));
-    const n = sameCity.length + 1;
-    return `${abbrev}${n}`;
+    const existing = allSpots
+      .map(s => s.parkingNumber)
+      .filter((n): n is string => !!n && n.startsWith(abbrev))
+      .map(n => parseInt(n.slice(abbrev.length), 10))
+      .filter(n => !isNaN(n));
+    const maxN = existing.length > 0 ? Math.max(...existing) : 0;
+    // Find first unused number >= maxN+1 to handle gaps
+    const usedSet = new Set(existing);
+    let candidate = maxN + 1;
+    while (usedSet.has(candidate)) candidate++;
+    return `${abbrev}${candidate}`;
   }
 
   app.get('/api/admin/parking-spots', isAuthenticated, isAdmin, async (req, res) => {
