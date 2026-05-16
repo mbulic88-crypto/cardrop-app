@@ -1463,6 +1463,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/stripe/session-type', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { session_id } = req.query;
+      if (!session_id || typeof session_id !== 'string') {
+        return res.status(400).json({ message: "Nedostaje session_id" });
+      }
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      const type = session.metadata?.type || 'unknown';
+      return res.json({
+        type,
+        spotId: session.metadata?.spotId || null,
+        listingId: session.metadata?.listingId || null,
+      });
+    } catch (error: any) {
+      console.error("Error fetching session type:", error);
+      res.status(500).json({ message: "Greška pri dohvatanju sesije" });
+    }
+  });
+
   app.post('/api/stripe/create-booking-checkout', isAuthenticated, async (req: any, res) => {
     try {
       const stripe = await getUncachableStripeClient();

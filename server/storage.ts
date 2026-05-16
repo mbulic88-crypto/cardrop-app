@@ -403,12 +403,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
-    const existing = await db.select().from(bookings).where(eq(bookings.bookingStripeSessionId, data.bookingStripeSessionId)).limit(1);
-    if (existing.length > 0) {
-      return { booking: existing[0], alreadyConsumed: true };
+    const result = await db
+      .insert(bookings)
+      .values(data)
+      .onConflictDoNothing({ target: bookings.bookingStripeSessionId })
+      .returning();
+    if (result.length > 0) {
+      return { booking: result[0], alreadyConsumed: false };
     }
-    const [booking] = await db.insert(bookings).values(data).returning();
-    return { booking, alreadyConsumed: false };
+    const [existing] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.bookingStripeSessionId, data.bookingStripeSessionId))
+      .limit(1);
+    return { booking: existing, alreadyConsumed: true };
   }
 
   async saveUserLicensePlate(userId: string, licensePlate: string): Promise<void> {
