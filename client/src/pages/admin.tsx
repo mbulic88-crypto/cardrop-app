@@ -855,7 +855,7 @@ export default function Admin() {
                             onClick={() => activateStripeMutation.mutate(spot.id)}
                             disabled={activateStripeMutation.isPending}
                             data-testid={`button-activate-stripe-${spot.id}`}
-                            title={spot.stripeLinkActive ? "Stripe aktivan — klikni da ponovo kreiraš produkt" : "Aktiviraj Stripe plaćanje"}
+                            title={spot.stripeLinkActive ? "Stripe aktivan — produkt postoji u dashboardu" : "Aktiviraj Stripe plaćanje i kreiraj produkt"}
                           >
                             {activateStripeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
                           </Button>
