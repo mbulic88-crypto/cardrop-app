@@ -280,111 +280,53 @@ async function fetchLogoDataUrl(logoUrl: string): Promise<string | null> {
 async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const { jsPDF } = await import("jspdf");
   const QRCode = (await import("qrcode")).default;
-  const spotUrl = `https://cardrop.app/spot/${spot.id}`;
+  const spotUrl = `https://cardrop.app/map-hack?parking=${spot.id}`;
 
-  // Square 210x210mm format
   const doc = new jsPDF({ unit: "mm", format: [210, 210] });
   const W = 210;
 
-  // Dark header bar
+  // Dark header bar — taller, fully centered branding
+  const headerH = 52;
   doc.setFillColor(30, 30, 30);
-  doc.rect(0, 0, W, 30, "F");
+  doc.rect(0, 0, W, headerH, "F");
 
-  // Logo image at top-left
+  // Logo — centered horizontally
   const logoData = await fetchLogoDataUrl(logoUrl);
+  const logoSize = 28;
+  const logoX = (W - logoSize) / 2;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", 8, 5, 20, 20); } catch {}
+    try { doc.addImage(logoData, "PNG", logoX, 6, logoSize, logoSize); } catch {}
   }
 
-  // "CarDrop" brand text
+  // "CarDrop" brand text — centered below logo (still inside header)
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", 32, 17);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(180, 180, 180);
-  doc.text("cardrop.app", 32, 24);
+  doc.text("CarDrop", W / 2, 44, { align: "center" });
 
-  // Parking number — very prominent (40pt bold)
+  // Parking number — large, centered, green, below header
   if (spot.parkingNumber) {
-    doc.setFillColor(64, 145, 108);
-    doc.roundedRect(W - 52, 5, 46, 20, 3, 3, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text(spot.parkingNumber, W - 29, 18, { align: "center" });
-  }
-
-  // Parking number — very prominent below header (40pt bold)
-  if (spot.parkingNumber) {
-    doc.setFontSize(40);
+    doc.setFontSize(44);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(64, 145, 108);
-    doc.text(spot.parkingNumber, W / 2, 46, { align: "center" });
+    doc.text(spot.parkingNumber, W / 2, 70, { align: "center" });
   }
 
-  // Spot title below parking number
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "bold");
-  const titleY = spot.parkingNumber ? 56 : 40;
-  const titleLines = doc.splitTextToSize(spot.title, W - 20);
-  doc.text(titleLines, W / 2, titleY, { align: "center" });
-
-  // Address
-  doc.setFontSize(8.5);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  const addrY = titleY + 8;
-  doc.text(spot.address, W / 2, addrY, { align: "center" });
-
-  // Divider
-  doc.setDrawColor(220, 220, 220);
-  const divY = addrY + 5;
-  doc.line(15, divY, W - 15, divY);
-
-  // Logo above QR code
-  const logoY = divY + 4;
-  const logoSize = 16;
-  if (logoData) {
-    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, logoY, logoSize, logoSize); } catch {}
-  }
-
-  // QR code — centered, prominent
-  const qrSize = 72;
-  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 300, margin: 2 });
-  const qrY = logoY + logoSize + 3;
+  // QR code — large and centered
+  const qrSize = 90;
+  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 400, margin: 2 });
+  const qrY = spot.parkingNumber ? 78 : 62;
   const qrX = (W - qrSize) / 2;
   doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
 
   // Instruction text below QR
-  const instrY = qrY + qrSize + 5;
-  doc.setFontSize(8.5);
+  const instrY = qrY + qrSize + 7;
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
-  const instrText = "Možete platiti parking skeniranjem QR koda ili direktno na aplikaciji.";
+  const instrText = "Skenirajte QR kod za plaćanje parkinga putem CarDrop aplikacije.";
   const instrLines = doc.splitTextToSize(instrText, W - 30);
   doc.text(instrLines, W / 2, instrY, { align: "center" });
-
-  // Divider
-  doc.setDrawColor(220, 220, 220);
-  const div2Y = instrY + 8;
-  doc.line(15, div2Y, W - 15, div2Y);
-
-  // Details row
-  const pricingLabel = spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan';
-  const details = [
-    `Cena: ${spot.pricePerHour} ${spot.currency} / ${pricingLabel}`,
-    `Tip: ${spot.spotType === 'covered' ? 'Pokriveno' : spot.spotType === 'garage' ? 'Garaža' : 'Otvoreno'}`,
-    spot.phone ? `Tel: ${spot.phone}` : null,
-    spot.is24Hours ? "Dostupno 24/7" : null,
-    spot.hasEvCharging ? "EV punjač" : null,
-  ].filter(Boolean) as string[];
-
-  doc.setFontSize(8);
-  doc.setTextColor(60, 60, 60);
-  doc.text(details.join("   •   "), W / 2, div2Y + 7, { align: "center" });
 
   // Dark footer
   doc.setFillColor(30, 30, 30);
