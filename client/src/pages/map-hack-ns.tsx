@@ -2129,7 +2129,7 @@ export default function MapHackNS() {
         >
           <div
             className="rounded-t-2xl px-4 pt-4 pb-6 flex flex-col gap-3"
-            style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "70vh", overflowY: "auto" }}
+            style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.10)", maxHeight: "85svh", overflowY: "auto" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Panel header */}

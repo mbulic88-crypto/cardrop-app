@@ -326,13 +326,11 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   doc.addImage(qrDataUrl, "PNG", (W - qrSize) / 2, qrStartY, qrSize, qrSize);
 
   // Instruction text — below QR, safely above footer (footer starts at 172mm)
-  // With number: instrY = 81+80+6 = 167mm (one text line ~170mm, footer at 172 ✓)
-  const instrY = qrStartY + qrSize + 6;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(50, 50, 50);
-  const instrText = "Skenirajte QR kod za plaćanje parkinga putem CarDrop aplikacije.";
-  doc.text(doc.splitTextToSize(instrText, W - 30), W / 2, instrY, { align: "center" });
+  const instrY = qrStartY + qrSize + 8;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bolditalic");
+  doc.setTextColor(40, 60, 80);
+  doc.text("Skenirajte QR kod za plaćanje putem CarDrop.", W / 2, instrY, { align: "center" });
 
   // Dark footer
   doc.setFillColor(30, 30, 30);
@@ -524,7 +522,7 @@ export default function Admin() {
         longitude: parseFloat(data.longitude) || 0,
         pricePerHour: parseFloat(data.pricePerHour) || 0,
       });
-      return res.json();
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
