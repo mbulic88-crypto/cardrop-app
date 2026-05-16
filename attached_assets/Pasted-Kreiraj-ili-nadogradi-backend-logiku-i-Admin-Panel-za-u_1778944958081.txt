@@ -1,0 +1,19 @@
+Kreiraj ili nadogradi backend logiku i Admin Panel za upravljanje privatnim parkinzima prema sledećim zahtevima:
+
+1. AUTOMATSKO DODELJIVANJE BROJA PARKINGA:
+- Kada se kreira novi parking, aplikacija mu automatski dodeljuje ID (npr. NS1, NS2).
+- Format se sastoji od skraćenice grada u kom se parking nalazi (npr. NS za Novi Sad) i rednog broja koji je sledeći po redu za iznajmljivanje u tom gradu.
+
+2. ADMIN KONTROLA I UPRAVLJANJE:
+- U Admin Panelu dodaj formu "Dodaj parking" gde ja kao admin mogu da popunim sve podatke (lokacija, cene, kačenje slika, tip zakupa).
+- Svaki parking u adminu mora imati "Stripe Link" polje sa prekidačem (toggle) za aktivaciju. Stripe link nije odmah aktivan – tek kada ga ja ručno aktiviram u admin panelu, online plaćanje postaje dostupno.
+- Svi podaci o parkinzima moraju biti promenjivi za mene kao admina u realnom vremenu. Kada promenim podatke i kliknem "Save", promene moraju odmah biti vidljive na mapi.
+
+3. PDF I QR KOD GENERATOR:
+- Za svaki parking, sistem u admin panelu mora automatski generisati PDF dokument spreman za preuzimanje i štampu.
+- Dizajn PDF-a: Na vrhu piše brendirani tekst "Cardrop - parking aplikacija", ispod toga generisani broj parkinga (npr. NS1), a manjim slovima tekst: "Možete platiti parking skeniranjem QR koda ili direktno na aplikaciji klikom na sam parking na koji želite da parkirate".
+- Na dnu ili u sredini PDF-a treba da se nalazi QR kod. Ako je tehnički izvodljivo, ubaci Cardrop logo u samu sredinu QR koda, a ako nije, postavi logo neposredno pre teksta "Cardrop".
+- QR kod mora da sadrži link koji, kada se skenira mobilnim telefonom, vodi korisnika direktno na stranicu za popunjavanje podataka, rezervaciju i plaćanje tog konkretnog parkinga.
+
+4. FLEKSIBILNI TIP IZDAVANJA:
+- Dodaj opciju (dugme/dropdown) prilikom kreiranja/izmena parkinga gde se bira tip izdavanja: "Na sat", "Na dan" ili "Mesečno" (prethodne opcije kratkoročno/dugoročno zameni ovim preciznim opcijama). Omogući da se ovi tipovi i cene mogu slobodno unositi i menjati u panelu.
