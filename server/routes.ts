@@ -1311,6 +1311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
         cancel_url: `${baseUrl}/checkout/cancel?spot_id=${spot.id}`,
         metadata: {
+          type: 'spot_listing',
           spotId: spot.id,
           userId: userId,
           tier: tier,
@@ -1445,6 +1446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
         cancel_url: `${baseUrl}/add-spot?category=${category}`,
         metadata: {
+          type: 'spot_listing',
           spotId: spot.id,
           userId: userId,
           tier: tier,
@@ -1471,11 +1473,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Nedostaje session_id" });
       }
       const session = await stripe.checkout.sessions.retrieve(session_id);
-      const type = session.metadata?.type || 'unknown';
+      const meta = session.metadata || {};
+      let type: string = meta.type || 'unknown';
+      if (type === 'unknown') {
+        if (meta.listingId) type = 'sale_listing';
+        else if (meta.spotId && meta.renterId) type = 'booking';
+        else if (meta.spotId) type = 'spot_listing';
+        else if (meta.plan) type = 'map_hack';
+      }
       return res.json({
         type,
-        spotId: session.metadata?.spotId || null,
-        listingId: session.metadata?.listingId || null,
+        spotId: meta.spotId || null,
+        listingId: meta.listingId || null,
       });
     } catch (error: any) {
       console.error("Error fetching session type:", error);
@@ -1680,6 +1689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
         cancel_url: `${baseUrl}/checkout/cancel?listing_id=${listing.id}`,
         metadata: {
+          type: 'sale_listing',
           listingId: listing.id,
           userId: userId,
           tier: tier,
