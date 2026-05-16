@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { startOfDay } from "date-fns";
 import { usePWA } from "@/hooks/use-pwa";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { useAuth } from "@/hooks/useAuth";
@@ -446,6 +449,13 @@ export default function MapHackNS() {
   const [addMode, setAddMode] = useState<MarkerType | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<MapMarkerWithNickname | null>(null);
   const [selectedParking, setSelectedParking] = useState<ParkingListing | null>(null);
+  const [showParkingBookingForm, setShowParkingBookingForm] = useState(false);
+  const [parkingLicensePlate, setParkingLicensePlate] = useState('');
+  const [parkingBookingStartDate, setParkingBookingStartDate] = useState<Date | undefined>(undefined);
+  const [parkingBookingEndDate, setParkingBookingEndDate] = useState<Date | undefined>(undefined);
+  const [parkingStartHour, setParkingStartHour] = useState(8);
+  const [parkingEndHour, setParkingEndHour] = useState(9);
+  const [parkingNumMonths, setParkingNumMonths] = useState(1);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -802,6 +812,78 @@ export default function MapHackNS() {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
     },
   });
+
+  const parkingCalculatedPrice = useMemo(() => {
+    if (!selectedParking) return 0;
+    const price = Number(selectedParking.pricePerHour);
+    if (selectedParking.pricingType === 'hourly') {
+      const hours = parkingEndHour - parkingStartHour;
+      return hours > 0 && parkingBookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
+    } else if (selectedParking.pricingType === 'daily') {
+      if (!parkingBookingStartDate) return price;
+      if (!parkingBookingEndDate) return price;
+      const days = Math.max(1, Math.ceil((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
+    } else {
+      return parkingNumMonths * price;
+    }
+  }, [selectedParking, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour, parkingNumMonths]);
+
+  function getParkingBookingTimes(): { startTime: Date; endTime: Date } {
+    const base = parkingBookingStartDate || new Date();
+    if (selectedParking?.pricingType === 'hourly') {
+      const start = new Date(base);
+      start.setHours(parkingStartHour, 0, 0, 0);
+      const end = new Date(base);
+      end.setHours(parkingEndHour, 0, 0, 0);
+      return { startTime: start, endTime: end };
+    } else if (selectedParking?.pricingType === 'daily') {
+      const start = new Date(base);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(parkingBookingEndDate || base);
+      end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    } else {
+      const start = new Date(base);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + parkingNumMonths);
+      end.setDate(end.getDate() - 1);
+      end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    }
+  }
+
+  const parkingBookingCheckoutMutation = useMutation({
+    mutationFn: async () => {
+      const { startTime, endTime } = getParkingBookingTimes();
+      return await apiRequest("POST", "/api/stripe/create-booking-checkout", {
+        spotId: selectedParking!.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        licensePlate: parkingLicensePlate,
+      });
+    },
+    onSuccess: (data: { url?: string }) => {
+      if (data?.url) window.location.href = data.url;
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: "Nije moguće pokrenuti plaćanje. Pokušajte ponovo.", variant: "destructive" });
+    },
+  });
+
+  function closeParkingPanel() {
+    setSelectedParking(null);
+    setDescExpanded(false);
+    setShowParkingBookingForm(false);
+    setParkingLicensePlate('');
+    setParkingBookingStartDate(undefined);
+    setParkingBookingEndDate(undefined);
+    setParkingStartHour(8);
+    setParkingEndHour(9);
+    setParkingNumMonths(1);
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -2025,7 +2107,7 @@ export default function MapHackNS() {
         <div
           className="absolute inset-0 z-50 flex flex-col justify-end"
           style={{ background: "rgba(0,0,0,0.5)" }}
-          onClick={() => { setSelectedParking(null); setDescExpanded(false); }}
+          onClick={() => closeParkingPanel()}
         >
           <div
             className="rounded-t-2xl px-4 pt-4 pb-6 flex flex-col gap-3"
@@ -2056,12 +2138,19 @@ export default function MapHackNS() {
                   </div>
                 </div>
               </div>
-              <button onClick={() => { setSelectedParking(null); setDescExpanded(false); }} className="flex-shrink-0 ml-2">
+              <button onClick={() => closeParkingPanel()} className="flex-shrink-0 ml-2">
                 <X size={16} style={{ color: "#9ca3af" }} />
               </button>
             </div>
 
-            {/* Address */}
+            {/* Parking number + Address */}
+            {selectedParking.parkingNumber && (
+              <div className="inline-flex items-center gap-1.5">
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-lg" style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.35)" }}>
+                  #{selectedParking.parkingNumber}
+                </span>
+              </div>
+            )}
             <div className="flex items-start gap-2">
               <MapPin size={13} style={{ color: "#6b7280", marginTop: 2, flexShrink: 0 }} />
               <span className="text-xs" style={{ color: "#9ca3af" }}>{selectedParking.address}</span>
@@ -2196,6 +2285,165 @@ export default function MapHackNS() {
               <Navigation size={14} />
               Otvori u Google Maps
             </a>
+
+            {/* Booking button */}
+            <button
+              data-testid="button-rezervisi-parking"
+              onClick={() => setShowParkingBookingForm(prev => !prev)}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold"
+              style={{ background: "rgba(64,145,108,0.18)", border: "1px solid rgba(82,183,136,0.45)", color: "#52B788" }}
+            >
+              <CreditCard size={14} />
+              Plati ili rezerviši parking
+            </button>
+
+            {/* No payment message */}
+            {showParkingBookingForm && !selectedParking.stripeLinkActive && (
+              <div className="px-3 py-2.5 rounded-xl text-xs text-center" style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.08)" }}>
+                Za ovaj parking nije aktivno online plaćanje. Molimo kontaktirajte vlasnika za plaćanje.
+              </div>
+            )}
+
+            {/* Booking form */}
+            {showParkingBookingForm && selectedParking.stripeLinkActive && (
+              <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {/* License plate */}
+                <div>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Registarska tablica</label>
+                  <Input
+                    placeholder="npr. NS 123-AB"
+                    value={parkingLicensePlate}
+                    onChange={(e) => setParkingLicensePlate(e.target.value.toUpperCase())}
+                    data-testid="input-license-plate-map"
+                    className="bg-transparent border-white/10 text-white placeholder:text-white/30 focus-visible:ring-green-500/40"
+                  />
+                </div>
+
+                {/* Monthly */}
+                {selectedParking.pricingType === 'monthly' && (
+                  <div className="space-y-2">
+                    <p className="text-xs rounded-lg px-2 py-1.5" style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af" }}>
+                      Mesečno iznajmljivanje.
+                    </p>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Datum početka</label>
+                      <Calendar
+                        mode="single"
+                        selected={parkingBookingStartDate}
+                        onSelect={setParkingBookingStartDate}
+                        disabled={(date) => date < startOfDay(new Date())}
+                        className="rounded-xl border-white/10 bg-transparent text-white w-full"
+                        data-testid="calendar-booking-monthly-map"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Broj meseci</label>
+                      <Select value={String(parkingNumMonths)} onValueChange={(v) => setParkingNumMonths(Number(v))}>
+                        <SelectTrigger data-testid="select-num-months-map" className="bg-transparent border-white/10 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 6, 12].map(n => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n} {n === 1 ? 'mesec' : n < 5 ? 'meseca' : 'meseci'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Daily */}
+                {selectedParking.pricingType === 'daily' && (
+                  <div>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Period zakupa</label>
+                    <Calendar
+                      mode="range"
+                      selected={{ from: parkingBookingStartDate, to: parkingBookingEndDate }}
+                      onSelect={(range) => { setParkingBookingStartDate(range?.from); setParkingBookingEndDate(range?.to); }}
+                      disabled={(date) => date < startOfDay(new Date())}
+                      className="rounded-xl border-white/10 bg-transparent text-white w-full"
+                      data-testid="calendar-booking-daily-map"
+                    />
+                  </div>
+                )}
+
+                {/* Hourly */}
+                {selectedParking.pricingType === 'hourly' && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Dan</label>
+                      <Calendar
+                        mode="single"
+                        selected={parkingBookingStartDate}
+                        onSelect={setParkingBookingStartDate}
+                        disabled={(date) => date < startOfDay(new Date())}
+                        className="rounded-xl border-white/10 bg-transparent text-white w-full"
+                        data-testid="calendar-booking-hourly-map"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Od sata</label>
+                        <Select value={String(parkingStartHour)} onValueChange={(v) => { const h = Number(v); setParkingStartHour(h); if (parkingEndHour <= h) setParkingEndHour(h + 1); }}>
+                          <SelectTrigger data-testid="select-start-hour-map" className="bg-transparent border-white/10 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 23 }, (_, i) => i).map(h => (
+                              <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}:00</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Do sata</label>
+                        <Select value={String(parkingEndHour)} onValueChange={(v) => setParkingEndHour(Number(v))}>
+                          <SelectTrigger data-testid="select-end-hour-map" className="bg-transparent border-white/10 text-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
+                              <SelectItem key={h} value={String(h)} disabled={h <= parkingStartHour}>
+                                {String(h).padStart(2, '0')}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Price total */}
+                {parkingCalculatedPrice > 0 && (
+                  <div className="flex justify-between items-center px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>Ukupno:</span>
+                    <span className="text-lg font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">
+                      {parkingCalculatedPrice.toLocaleString('sr-RS')} RSD
+                    </span>
+                  </div>
+                )}
+
+                <p className="text-xs text-center" style={{ color: "#6b7280" }}>
+                  Kada jednom uplatite, sledeći put sve ide na samo jedan klik.
+                </p>
+
+                <button
+                  data-testid="button-nastavi-na-placanje-map"
+                  onClick={() => parkingBookingCheckoutMutation.mutate()}
+                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || parkingCalculatedPrice <= 0}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: "rgba(64,145,108,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
+                >
+                  {parkingBookingCheckoutMutation.isPending
+                    ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
+                    : <><CreditCard size={14} />Nastavi na plaćanje</>
+                  }
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

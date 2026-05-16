@@ -38,6 +38,8 @@ export interface ParkingListing {
   subscriptionType?: string | null;
   imageUrls?: string[] | null;
   city?: string | null;
+  parkingNumber?: string | null;
+  stripeLinkActive?: boolean | null;
 }
 
 export interface MapHackMapProps {

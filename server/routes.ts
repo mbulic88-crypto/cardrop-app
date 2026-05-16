@@ -839,6 +839,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           subscriptionType: s.subscriptionType,
           imageUrls: s.imageUrls,
           city: s.city,
+          parkingNumber: s.parkingNumber,
+          stripeLinkActive: s.stripeLinkActive,
         }));
       res.json(listings);
     } catch (error) {
