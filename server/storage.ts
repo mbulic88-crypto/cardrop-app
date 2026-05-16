@@ -90,6 +90,18 @@ export interface IStorage {
   updateSalesListing(id: string, listing: Partial<InsertSalesListing>): Promise<SalesListing | undefined>;
   deleteSalesListing(id: string): Promise<void>;
 
+  // Pending changes for parking spots
+  setPendingChanges(id: string, changes: Record<string, unknown>, pendingFrom: Date): Promise<ParkingSpot | undefined>;
+  applyAndClearPendingChanges(id: string): Promise<ParkingSpot | undefined>;
+
+  // Owner-received bookings
+  getOwnerReceivedBookings(ownerId: string): Promise<Array<{
+    id: string; spotId: string; spotTitle: string;
+    renterId: string; renterFirstName: string | null; renterLastName: string | null;
+    startTime: Date; endTime: Date; totalPrice: string; currency: string;
+    status: string; paymentStatus: string; createdAt: Date | null;
+  }>>;
+
   // Admin operations
   getAllUsers(): Promise<User[]>;
   deleteUser(id: string): Promise<void>;
@@ -287,6 +299,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(parkingSpots.id, id))
       .returning();
     return spot;
+  }
+
+  async setPendingChanges(id: string, changes: Record<string, unknown>, pendingFrom: Date): Promise<ParkingSpot | undefined> {
+    const [spot] = await db
+      .update(parkingSpots)
+      .set({ pendingChanges: changes, pendingChangesFrom: pendingFrom, updatedAt: new Date() })
+      .where(eq(parkingSpots.id, id))
+      .returning();
+    return spot;
+  }
+
+  async applyAndClearPendingChanges(id: string): Promise<ParkingSpot | undefined> {
+    const current = await this.getParkingSpot(id);
+    if (!current || !current.pendingChanges) return current;
+    const pending = current.pendingChanges as Record<string, unknown>;
+    const [updated] = await db
+      .update(parkingSpots)
+      .set({ ...pending, pendingChanges: null, pendingChangesFrom: null, updatedAt: new Date() })
+      .where(eq(parkingSpots.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getOwnerReceivedBookings(ownerId: string): Promise<Array<{
+    id: string; spotId: string; spotTitle: string;
+    renterId: string; renterFirstName: string | null; renterLastName: string | null;
+    startTime: Date; endTime: Date; totalPrice: string; currency: string;
+    status: string; paymentStatus: string; createdAt: Date | null;
+  }>> {
+    const result = await db
+      .select({
+        id: bookings.id,
+        spotId: bookings.spotId,
+        spotTitle: parkingSpots.title,
+        renterId: bookings.renterId,
+        renterFirstName: users.firstName,
+        renterLastName: users.lastName,
+        startTime: bookings.startTime,
+        endTime: bookings.endTime,
+        totalPrice: bookings.totalPrice,
+        currency: bookings.currency,
+        status: bookings.status,
+        paymentStatus: bookings.paymentStatus,
+        createdAt: bookings.createdAt,
+      })
+      .from(bookings)
+      .innerJoin(parkingSpots, eq(bookings.spotId, parkingSpots.id))
+      .innerJoin(users, eq(bookings.renterId, users.id))
+      .where(eq(parkingSpots.ownerId, ownerId))
+      .orderBy(desc(bookings.createdAt));
+    return result;
   }
 
   // Bookings operations

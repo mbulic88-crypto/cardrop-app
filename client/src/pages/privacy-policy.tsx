@@ -27,7 +27,7 @@ export default function PrivacyPolicy() {
             <h1 className="text-3xl font-bold">Politika Privatnosti</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Poslednje ažurirano: April 2026 &nbsp;·&nbsp; CarDrop LLC
+            Poslednje ažurirano: Maj 2026 &nbsp;·&nbsp; CarDrop LLC
           </p>
         </div>
 
@@ -201,11 +201,38 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 6. GDPR prava */}
+          {/* 6. Platforma za posredovanje */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
+              <h2 className="text-xl font-semibold">6. Platforma za posredovanje i procesuiranje plaćanja</h2>
+            </div>
+            <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
+              <p>
+                CarDrop je isključivo <strong className="text-foreground">platforma za posredovanje</strong> između vlasnika parking prostora i zakupaca. CarDrop ne poseduje, ne upravlja niti direktno iznajmljuje parking prostore koji su prikazani na platformi.
+              </p>
+              <div className="bg-muted/60 rounded-md p-4 space-y-3">
+                <p>
+                  <strong className="text-foreground">6.1 Odgovornost vlasnika prostora.</strong>{" "}
+                  Vlasnici parking prostora su jedini odgovorni za tačnost podataka o prostoru, uslove iznajmljivanja, dostupnost, bezbednost prostora i ispunjavanje zakonskih obaveza vezanih za iznajmljivanje.
+                </p>
+                <p>
+                  <strong className="text-foreground">6.2 Procesuiranje plaćanja.</strong>{" "}
+                  Sva plaćanja pretplata za oglašavanje na platformi obrađuje <strong className="text-foreground">Stripe Inc.</strong>, certificiran prema PCI DSS Level 1 standardu. CarDrop ne prikuplja, ne čuva ni ne obrađuje podatke o platnim karticama korisnika. Plaćanja između zakupaca i vlasnika prostora (zakup parking mesta) odvijaju se direktno — gotovinom ili bankovnim transferom — i nisu posredovana platformom CarDrop.
+                </p>
+                <p>
+                  <strong className="text-foreground">6.3 Ograničenje odgovornosti.</strong>{" "}
+                  CarDrop nije strana u ugovoru između vlasnika parking prostora i zakupca i ne snosi odgovornost za sporove, štetu ili neispunjavanje obaveza između tih strana.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* 7. GDPR prava */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">6. Vaša prava (GDPR)</h2>
+              <h2 className="text-xl font-semibold">7. Vaša prava (GDPR)</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>Korisnicima u EU garantujemo sledeća prava u pogledu ličnih podataka:</p>
@@ -223,11 +250,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 7. Kolačići */}
+          {/* 8. Kolačići */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">7. Kolačići (Cookies)</h2>
+              <h2 className="text-xl font-semibold">8. Kolačići (Cookies)</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -236,11 +263,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 8. Deljenje podataka */}
+          {/* 9. Deljenje podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">8. Deljenje podataka sa trećim stranama</h2>
+              <h2 className="text-xl font-semibold">9. Deljenje podataka sa trećim stranama</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>Vaše podatke <strong className="text-foreground">ne prodajemo</strong> trećim stranama. Delimo ih samo sa:</p>
@@ -252,11 +279,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 9. Prenos podataka */}
+          {/* 10. Prenos podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Server className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">9. Međunarodni prenos podataka</h2>
+              <h2 className="text-xl font-semibold">10. Međunarodni prenos podataka</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -265,11 +292,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 10. Čuvanje podataka */}
+          {/* 11. Čuvanje podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Lock className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">10. Čuvanje i brisanje podataka</h2>
+              <h2 className="text-xl font-semibold">11. Čuvanje i brisanje podataka</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <ul className="space-y-2 list-disc list-inside">
@@ -280,11 +307,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 11. Primenljivo pravo */}
+          {/* 12. Primenljivo pravo */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">11. Primenljivo pravo i nadležnost</h2>
+              <h2 className="text-xl font-semibold">12. Primenljivo pravo i nadležnost</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -293,11 +320,11 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 12. Kontakt */}
+          {/* 13. Kontakt */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">12. Kontakt i DPO</h2>
+              <h2 className="text-xl font-semibold">13. Kontakt i DPO</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>Za sva pitanja u vezi sa privatnošću, zahteve za pristup ili brisanje podataka, kontaktirajte nas:</p>

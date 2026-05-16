@@ -1194,14 +1194,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/parking-spots/:id', async (req, res) => {
     try {
-      const spot = await storage.getParkingSpot(req.params.id);
+      let spot = await storage.getParkingSpot(req.params.id);
       if (!spot) {
         return res.status(404).json({ message: "Parking spot not found" });
+      }
+      // Lazy-apply pending changes if the scheduled time has passed
+      if (spot.pendingChanges && spot.pendingChangesFrom && new Date(spot.pendingChangesFrom) <= new Date()) {
+        const updated = await storage.applyAndClearPendingChanges(req.params.id);
+        if (updated) spot = updated;
       }
       res.json(spot);
     } catch (error) {
       console.error("Error fetching parking spot:", error);
       res.status(500).json({ message: "Failed to fetch parking spot" });
+    }
+  });
+
+  // Get bookings received by the owner (for all spots they own)
+  app.get('/api/bookings/owner-received', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const bookingList = await storage.getOwnerReceivedBookings(userId);
+      res.json(bookingList);
+    } catch (error) {
+      console.error("Error fetching owner-received bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
 
@@ -1935,19 +1952,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const spot = await storage.getParkingSpot(req.params.id);
-      
+
       if (!spot) {
         return res.status(404).json({ message: "Parking mesto nije pronađeno" });
       }
-      
+
       if (spot.ownerId !== userId) {
         return res.status(403).json({ message: "Nemate dozvolu za izmenu ovog mesta" });
       }
-      
+
       const validatedData = parkingSpotEditSchema.parse(req.body);
-      const updated = await storage.updateParkingSpot(req.params.id, validatedData);
-      
-      res.json(updated);
+
+      // Calculate next midnight UTC+1 (23:00 UTC)
+      const now = new Date();
+      const nextMidnight = new Date();
+      nextMidnight.setUTCHours(23, 0, 0, 0);
+      if (now.getUTCHours() >= 23) {
+        nextMidnight.setUTCDate(nextMidnight.getUTCDate() + 1);
+      }
+
+      const updated = await storage.setPendingChanges(req.params.id, validatedData as Record<string, unknown>, nextMidnight);
+      res.json({ ...updated, pendingUntil: nextMidnight.toISOString() });
     } catch (error: any) {
       console.error("Error updating parking spot:", error);
       if (error.name === 'ZodError') {

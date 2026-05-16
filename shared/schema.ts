@@ -109,6 +109,9 @@ export const parkingSpots = pgTable("parking_spots", {
   parkingNumber: varchar("parking_number", { length: 20 }),
   stripeLink: varchar("stripe_link", { length: 500 }),
   stripeLinkActive: boolean("stripe_link_active").notNull().default(false),
+  // Pending changes: owner edits are held here until next midnight UTC+1
+  pendingChanges: jsonb("pending_changes").$type<Record<string, unknown>>(),
+  pendingChangesFrom: timestamp("pending_changes_from"),
 });
 
 export const parkingSpotsRelations = relations(parkingSpots, ({ one, many }) => ({
@@ -159,6 +162,9 @@ export const parkingSpotEditSchema = insertParkingSpotSchema.omit({
   subscriptionType: true,
   autoRenewal: true,
   stripeSessionId: true,
+  parkingNumber: true,
+  stripeLink: true,
+  stripeLinkActive: true,
 } as any);
 
 // Bookings table
