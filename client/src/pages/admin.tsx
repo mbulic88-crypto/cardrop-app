@@ -291,14 +291,14 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
 
   // Logo — centered horizontally
   const logoData = await fetchLogoDataUrl(logoUrl);
-  const logoSize = 28;
+  const logoSize = 30;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 6, logoSize, logoSize); } catch {}
+    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 5, logoSize, logoSize); } catch {}
   }
 
   // "CarDrop" — centered, below logo, inside header
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
+  doc.setFontSize(26);
   doc.setFont("helvetica", "bold");
   doc.text("CarDrop", W / 2, 46, { align: "center" });
 
