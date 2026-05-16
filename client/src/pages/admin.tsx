@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -553,6 +553,26 @@ export default function Admin() {
     },
   });
 
+  const activateStripeMutation = useMutation({
+    mutationFn: async (id: string) =>
+      await apiRequest("POST", `/api/admin/parking-spots/${id}/activate-stripe`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Stripe aktivan — produkt kreiran u dashboardu" });
+    },
+    onError: (e: Error) => toast({ title: e.message || "Greška pri aktivaciji Stripe-a", variant: "destructive" }),
+  });
+
+  const assignNumberMutation = useMutation({
+    mutationFn: async (id: string) =>
+      await apiRequest("POST", `/api/admin/parking-spots/${id}/assign-number`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Parking broj dodijeljen" });
+    },
+    onError: (e: Error) => toast({ title: e.message || "Greška pri dodjeli broja", variant: "destructive" }),
+  });
+
   const getCategoryLabel = (category: string | null | undefined) => {
     const labels: Record<string, string> = {
       private: "Privatni",
@@ -816,6 +836,28 @@ export default function Admin() {
                             title="Uredi koordinate (pin na mapi)"
                           >
                             <MapPin className="h-4 w-4" />
+                          </Button>
+                          {!spot.parkingNumber && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => assignNumberMutation.mutate(spot.id)}
+                              disabled={assignNumberMutation.isPending}
+                              data-testid={`button-assign-number-${spot.id}`}
+                              title="Dodeli parking broj (NS1, BG2...)"
+                            >
+                              {assignNumberMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Hash className="h-4 w-4" />}
+                            </Button>
+                          )}
+                          <Button
+                            variant={spot.stripeLinkActive ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => activateStripeMutation.mutate(spot.id)}
+                            disabled={activateStripeMutation.isPending}
+                            data-testid={`button-activate-stripe-${spot.id}`}
+                            title={spot.stripeLinkActive ? "Stripe aktivan — klikni da ponovo kreiraš produkt" : "Aktiviraj Stripe plaćanje"}
+                          >
+                            {activateStripeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
                           </Button>
                           <Button
                             variant={spot.isActive ? "outline" : "default"}

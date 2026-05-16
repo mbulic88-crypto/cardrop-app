@@ -1562,12 +1562,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         line_items: [{
           price_data: {
             currency,
-            product_data: {
-              name: `Parking: ${spot.title}`,
-              description: spot.parkingNumber
-                ? `${spot.parkingNumber} · ${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`
-                : `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
-            },
+            ...(spot.stripeProductId
+              ? { product: spot.stripeProductId }
+              : {
+                  product_data: {
+                    name: `Parking: ${spot.title}`,
+                    description: spot.parkingNumber
+                      ? `${spot.parkingNumber} · ${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`
+                      : `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
+                  },
+                }),
             unit_amount: amountInSmallestUnit,
           },
           quantity: 1,
@@ -2574,6 +2578,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error full-editing parking spot (admin):", error);
       res.status(500).json({ message: "Failed to update parking spot" });
+    }
+  });
+
+  app.post('/api/admin/parking-spots/:id/activate-stripe', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+
+      let stripeProductId = spot.stripeProductId;
+      if (!stripeProductId) {
+        const productName = spot.parkingNumber
+          ? `Parking ${spot.parkingNumber}`
+          : `Parking: ${spot.title}`;
+        const product = await stripe.products.create({
+          name: productName,
+          metadata: { spotId: spot.id, parkingNumber: spot.parkingNumber ?? '' },
+        });
+        stripeProductId = product.id;
+      }
+
+      const updated = await storage.updateParkingSpot(req.params.id, {
+        stripeProductId,
+        stripeLinkActive: true,
+      } as any);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error activating stripe for parking spot:", error);
+      res.status(500).json({ message: error?.message || "Failed to activate Stripe" });
+    }
+  });
+
+  app.post('/api/admin/parking-spots/:id/assign-number', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      if (spot.parkingNumber) return res.json(spot);
+
+      const parkingNumber = await generateParkingNumber(spot.city);
+      const updated = await storage.updateParkingSpot(req.params.id, { parkingNumber } as any);
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error assigning parking number:", error);
+      res.status(500).json({ message: error?.message || "Failed to assign number" });
     }
   });
 
