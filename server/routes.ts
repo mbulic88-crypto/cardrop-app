@@ -1496,7 +1496,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stripe = await getUncachableStripeClient();
       const userId = req.session.userId;
-      const { spotId, startTime, endTime, licensePlate } = req.body;
+      const { spotId, startTime, endTime } = req.body;
+      const rawPlate: unknown = req.body.licensePlate;
+      const licensePlate: string = typeof rawPlate === 'string'
+        ? rawPlate.trim().toUpperCase().slice(0, 30)
+        : '';
 
       if (!spotId || !startTime || !endTime) {
         return res.status(400).json({ message: "Nedostaju obavezna polja: spotId, startTime, endTime" });

@@ -182,7 +182,7 @@ export default function SpotDetail() {
         licensePlate,
       });
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: { url?: string }) => {
       if (data?.url) {
         window.location.href = data.url;
       }
