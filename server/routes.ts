@@ -1590,6 +1590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscriptionExpiresAt = calculateExpiryDate(plan.id);
 
       const isPremiumPlan = plan.tier === 'gold' || plan.tier === 'silver';
+      const parkingNumber = await generateParkingNumber(validatedData.city);
       const spot = await storage.createParkingSpot({
         ...validatedData,
         category: category || 'private',
@@ -1598,6 +1599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionExpiresAt: isPremiumPlan ? null : subscriptionExpiresAt,
         isPremium: isPremiumPlan,
         isActive: !isPremiumPlan,
+        parkingNumber,
       } as any);
       
       res.status(201).json(spot);
@@ -1786,7 +1788,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Parking spot not found" });
       }
 
-      if (spot.ownerId !== userId) {
+      const currentUser = await storage.getUser(userId);
+      const isAdminUser = currentUser?.isAdmin || ADMIN_EMAIL_LIST.includes(currentUser?.email || '');
+      if (spot.ownerId !== userId && !isAdminUser) {
         return res.status(403).json({ error: "Not authorized" });
       }
 

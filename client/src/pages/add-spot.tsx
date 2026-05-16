@@ -701,7 +701,7 @@ const formSchema = z.object({
   // Residential specific fields
   contactPerson: z.string().optional(),
   // Pricing type for all categories
-  pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily'),
+  pricingType: z.enum(['hourly', 'daily', 'monthly']).default('daily'),
   autoRenewal: z.boolean().default(false),
 });
 
@@ -1214,7 +1214,7 @@ export default function AddSpot() {
                     if (val === 'short') {
                       form.setValue('pricingType', 'hourly');
                     } else {
-                      form.setValue('pricingType', 'weekly');
+                      form.setValue('pricingType', 'daily');
                     }
                   }}
                 >
@@ -1269,8 +1269,6 @@ export default function AddSpot() {
                     const getPriceLabel = () => {
                       switch (watchedPricingType) {
                         case 'hourly': return t.pricePerHourLabel;
-                        case 'daily': return t.pricePerDayLabel;
-                        case 'weekly': return t.pricePerWeek;
                         case 'monthly': return t.pricePerMonth;
                         default: return t.pricePerDayLabel;
                       }
@@ -1278,8 +1276,6 @@ export default function AddSpot() {
                     const getPricePlaceholder = () => {
                       switch (watchedPricingType) {
                         case 'hourly': return t.pricePerHourPlaceholder;
-                        case 'daily': return t.pricePerDayLabelPlaceholder;
-                        case 'weekly': return t.pricePerWeekPlaceholder;
                         case 'monthly': return t.pricePerMonthPlaceholder;
                         default: return t.pricePerDayLabelPlaceholder;
                       }
@@ -1287,8 +1283,6 @@ export default function AddSpot() {
                     const getPriceDescription = () => {
                       switch (watchedPricingType) {
                         case 'hourly': return t.pricePerHourDescription;
-                        case 'daily': return t.pricePerDayLabelDescription;
-                        case 'weekly': return t.pricePerWeekDescription;
                         case 'monthly': return t.pricePerMonthDescription;
                         default: return t.pricePerDayLabelDescription;
                       }

@@ -821,7 +821,7 @@ export default function Admin() {
                                 pricePerHour: spot.pricePerHour || "0",
                                 currency: spot.currency || "RSD",
                                 spotType: spot.spotType || "uncovered",
-                                pricingType: spot.pricingType || "daily",
+                                pricingType: (spot.pricingType === 'weekly' ? 'daily' : spot.pricingType) || "daily",
                                 paymentType: spot.paymentType || "cash",
                                 hasEvCharging: spot.hasEvCharging,
                                 hasSecurityCamera: spot.hasSecurityCamera,
