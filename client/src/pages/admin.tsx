@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -38,12 +40,331 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const SERBIAN_CITIES = [
+  "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
+  "Pančevo", "Čačak", "Kraljevo", "Smederevo", "Leskovac", "Užice",
+  "Valjevo", "Šabac", "Sombor", "Kruševac", "Ostalo"
+];
+
+type SpotFormData = {
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  latitude: string;
+  longitude: string;
+  pricePerHour: string;
+  currency: string;
+  spotType: string;
+  pricingType: string;
+  paymentType: string;
+  hasEvCharging: boolean;
+  hasSecurityCamera: boolean;
+  is24Hours: boolean;
+  phone: string;
+  contactEmail: string;
+  category: string;
+  isActive: boolean;
+  isPremium: boolean;
+  subscriptionType: string;
+  stripeLink: string;
+  stripeLinkActive: boolean;
+};
+
+const defaultSpotForm: SpotFormData = {
+  title: "",
+  description: "",
+  address: "",
+  city: "",
+  latitude: "44.8178",
+  longitude: "20.4569",
+  pricePerHour: "0",
+  currency: "RSD",
+  spotType: "uncovered",
+  pricingType: "daily",
+  paymentType: "cash",
+  hasEvCharging: false,
+  hasSecurityCamera: false,
+  is24Hours: true,
+  phone: "",
+  contactEmail: "",
+  category: "private",
+  isActive: true,
+  isPremium: false,
+  subscriptionType: "standard",
+  stripeLink: "",
+  stripeLinkActive: false,
+};
+
+function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm: (f: SpotFormData) => void; isEdit?: boolean }) {
+  const set = (k: keyof SpotFormData, v: any) => setForm({ ...form, [k]: v });
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2 space-y-1">
+          <label className="text-xs font-medium text-foreground">Naslov *</label>
+          <Input value={form.title} onChange={e => set("title", e.target.value)} placeholder="Parking u centru" data-testid="input-spot-title" />
+        </div>
+        <div className="col-span-2 space-y-1">
+          <label className="text-xs font-medium text-foreground">Adresa *</label>
+          <Input value={form.address} onChange={e => set("address", e.target.value)} placeholder="Bulevar oslobođenja 12, Novi Sad" data-testid="input-spot-address" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Grad</label>
+          <Select value={form.city} onValueChange={v => set("city", v)}>
+            <SelectTrigger data-testid="select-spot-city"><SelectValue placeholder="Izaberi grad" /></SelectTrigger>
+            <SelectContent>
+              {SERBIAN_CITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Kategorija</label>
+          <Select value={form.category} onValueChange={v => set("category", v)}>
+            <SelectTrigger data-testid="select-spot-category"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="private">Privatni</SelectItem>
+              <SelectItem value="company">Firma</SelectItem>
+              <SelectItem value="truck_stop">Kamion</SelectItem>
+              <SelectItem value="residential">Stambena</SelectItem>
+              <SelectItem value="car_lot">Auto plac</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Latitude</label>
+          <Input value={form.latitude} onChange={e => set("latitude", e.target.value)} placeholder="44.8178" data-testid="input-spot-lat" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Longitude</label>
+          <Input value={form.longitude} onChange={e => set("longitude", e.target.value)} placeholder="20.4569" data-testid="input-spot-lng" />
+        </div>
+        {form.latitude && form.longitude && parseFloat(form.latitude) && parseFloat(form.longitude) && (
+          <div className="col-span-2">
+            <DraggableLocationMap
+              latitude={parseFloat(form.latitude)}
+              longitude={parseFloat(form.longitude)}
+              onPositionChange={(lat, lng) => setForm({ ...form, latitude: lat.toFixed(7), longitude: lng.toFixed(7) })}
+              height="180px"
+              hint="Prevucite pin na tačnu lokaciju"
+            />
+          </div>
+        )}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Cena</label>
+          <Input value={form.pricePerHour} onChange={e => set("pricePerHour", e.target.value)} placeholder="0" data-testid="input-spot-price" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Valuta</label>
+          <Select value={form.currency} onValueChange={v => set("currency", v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="RSD">RSD</SelectItem>
+              <SelectItem value="EUR">EUR</SelectItem>
+              <SelectItem value="BAM">BAM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Period naplate</label>
+          <Select value={form.pricingType} onValueChange={v => set("pricingType", v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hourly">Na sat</SelectItem>
+              <SelectItem value="daily">Na dan</SelectItem>
+              <SelectItem value="monthly">Mesečno</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Tip mesta</label>
+          <Select value={form.spotType} onValueChange={v => set("spotType", v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="uncovered">Otvoreno</SelectItem>
+              <SelectItem value="covered">Pokriveno</SelectItem>
+              <SelectItem value="garage">Garaža</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Tip plaćanja</label>
+          <Select value={form.paymentType} onValueChange={v => set("paymentType", v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cash">Keš</SelectItem>
+              <SelectItem value="bank_transfer">Bankovni prenos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Pretplata</label>
+          <Select value={form.subscriptionType} onValueChange={v => set("subscriptionType", v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="silver">Silver</SelectItem>
+              <SelectItem value="gold">Gold</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Kontakt telefon</label>
+          <Input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="+381 64 123 4567" data-testid="input-spot-phone" />
+        </div>
+        <div className="col-span-2 space-y-1">
+          <label className="text-xs font-medium text-foreground">Kontakt email</label>
+          <Input value={form.contactEmail} onChange={e => set("contactEmail", e.target.value)} placeholder="kontakt@email.com" data-testid="input-spot-email" />
+        </div>
+        <div className="col-span-2 space-y-1">
+          <label className="text-xs font-medium text-foreground">Opis</label>
+          <Textarea value={form.description} onChange={e => set("description", e.target.value)} placeholder="Opis parking mesta..." className="min-h-[80px]" data-testid="textarea-spot-description" />
+        </div>
+        <div className="col-span-2 flex flex-wrap gap-4 pt-1">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.hasEvCharging} onCheckedChange={v => set("hasEvCharging", v)} data-testid="switch-ev-charging" />
+            <span className="text-sm">EV punjač</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.hasSecurityCamera} onCheckedChange={v => set("hasSecurityCamera", v)} data-testid="switch-security-camera" />
+            <span className="text-sm">Kamera</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.is24Hours} onCheckedChange={v => set("is24Hours", v)} data-testid="switch-24h" />
+            <span className="text-sm">24/7</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.isPremium} onCheckedChange={v => set("isPremium", v)} data-testid="switch-premium" />
+            <span className="text-sm">Premium</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.isActive} onCheckedChange={v => set("isActive", v)} data-testid="switch-active" />
+            <span className="text-sm">Aktivan</span>
+          </label>
+        </div>
+        {/* Stripe link section */}
+        <div className="col-span-2 space-y-2 pt-2 border-t border-border">
+          <div className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-foreground">Stripe link za plaćanje</span>
+          </div>
+          <Input value={form.stripeLink} onChange={e => set("stripeLink", e.target.value)} placeholder="https://buy.stripe.com/..." data-testid="input-stripe-link" />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.stripeLinkActive} onCheckedChange={v => set("stripeLinkActive", v)} data-testid="switch-stripe-link-active" />
+            <span className="text-sm">Prikaži "Plati online" dugme na strani parking mesta</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function generatePDF(spot: ParkingSpot) {
+  const { jsPDF } = await import("jspdf");
+  const QRCode = (await import("qrcode")).default;
+  const spotUrl = `https://cardrop.app/spot/${spot.id}`;
+  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 200, margin: 2 });
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+
+  doc.setFillColor(30, 30, 30);
+  doc.rect(0, 0, 210, 60, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(26);
+  doc.setFont("helvetica", "bold");
+  doc.text("CarDrop", 15, 25);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text("Platforma za deljenje parking mesta", 15, 35);
+
+  if (spot.parkingNumber) {
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(140, 12, 55, 18, 4, 4, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(spot.parkingNumber, 167.5, 23, { align: "center" });
+  }
+
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text(spot.title, 15, 75);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  doc.text(spot.address, 15, 83);
+
+  doc.setFillColor(240, 240, 240);
+  doc.rect(15, 90, 180, 0.5, "F");
+
+  const lines: [string, string][] = [
+    ["Cena", `${spot.pricePerHour} ${spot.currency} / ${spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : 'mesec'}`],
+    ["Tip mesta", spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Otvoreno"],
+    ["Plaćanje", spot.paymentType === "cash" ? "Keš" : "Bankovni prenos"],
+    ["Dostupno 24/7", spot.is24Hours ? "Da" : "Ne"],
+    ["EV punjač", spot.hasEvCharging ? "Da" : "Ne"],
+    ["Kamera", spot.hasSecurityCamera ? "Da" : "Ne"],
+  ];
+  if (spot.phone) lines.push(["Kontakt telefon", spot.phone]);
+
+  let y = 100;
+  doc.setFontSize(11);
+  for (const [label, value] of lines) {
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text(label + ":", 15, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(value, 65, y);
+    y += 9;
+  }
+
+  if (spot.description) {
+    y += 4;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 30, 30);
+    doc.text("Opis:", 15, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    const descLines = doc.splitTextToSize(spot.description, 120);
+    doc.text(descLines, 15, y);
+  }
+
+  doc.addImage(qrDataUrl, "PNG", 150, 90, 45, 45);
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Skenirajte za detalje", 172.5, 138, { align: "center" });
+
+  doc.setFillColor(30, 30, 30);
+  doc.rect(0, 260, 210, 37, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text("cardrop.app", 105, 272, { align: "center" });
+  doc.setFontSize(8);
+  doc.setTextColor(180, 180, 180);
+  doc.text(spotUrl, 105, 280, { align: "center" });
+
+  const fileName = spot.parkingNumber ? `${spot.parkingNumber}-cardrop.pdf` : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;
+  doc.save(fileName);
+}
+
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [editCoordSpot, setEditCoordSpot] = useState<ParkingSpot | null>(null);
   const [editLat, setEditLat] = useState("");
   const [editLng, setEditLng] = useState("");
+
+  // Add / Edit spot dialogs
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addForm, setAddForm] = useState<SpotFormData>(defaultSpotForm);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editSpot, setEditSpot] = useState<ParkingSpot | null>(null);
+  const [editForm, setEditForm] = useState<SpotFormData>(defaultSpotForm);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   // Grant plan state
   const [grantEmail, setGrantEmail] = useState("");
@@ -168,6 +489,48 @@ export default function Admin() {
     },
     onError: () => {
       toast({ title: "Greška pri ažuriranju koordinata", variant: "destructive" });
+    },
+  });
+
+  const createSpotMutation = useMutation({
+    mutationFn: async (data: SpotFormData) => {
+      const res = await apiRequest("POST", "/api/admin/parking-spots", {
+        ...data,
+        latitude: parseFloat(data.latitude) || 0,
+        longitude: parseFloat(data.longitude) || 0,
+        pricePerHour: parseFloat(data.pricePerHour) || 0,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Parking mesto dodato" });
+      setShowAddDialog(false);
+      setAddForm(defaultSpotForm);
+    },
+    onError: () => {
+      toast({ title: "Greška pri dodavanju parking mesta", variant: "destructive" });
+    },
+  });
+
+  const fullEditMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: SpotFormData }) => {
+      const res = await apiRequest("PATCH", `/api/admin/parking-spots/${id}/full-edit`, {
+        ...data,
+        latitude: parseFloat(data.latitude) || 0,
+        longitude: parseFloat(data.longitude) || 0,
+        pricePerHour: parseFloat(data.pricePerHour) || 0,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Parking mesto ažurirano" });
+      setShowEditDialog(false);
+      setEditSpot(null);
+    },
+    onError: () => {
+      toast({ title: "Greška pri ažuriranju parking mesta", variant: "destructive" });
     },
   });
 
@@ -343,7 +706,17 @@ export default function Admin() {
           <TabsContent value="spots">
             <Card>
               <CardHeader>
-                <CardTitle>Sva parking mesta</CardTitle>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <CardTitle>Sva parking mesta</CardTitle>
+                  <Button
+                    size="sm"
+                    onClick={() => { setAddForm(defaultSpotForm); setShowAddDialog(true); }}
+                    data-testid="button-add-spot"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Dodaj parking
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {spotsLoading ? (
@@ -364,6 +737,9 @@ export default function Admin() {
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
+                            {spot.parkingNumber && (
+                              <Badge className="bg-accent/20 text-accent border-accent/30 font-mono text-xs">{spot.parkingNumber}</Badge>
+                            )}
                             <p className="font-medium text-foreground truncate">{spot.title}</p>
                             {getTierBadge(spot.subscriptionType)}
                             <Badge variant="outline">{getCategoryLabel(spot.category)}</Badge>
@@ -372,13 +748,66 @@ export default function Admin() {
                             ) : (
                               <Badge variant="destructive">Neaktivan</Badge>
                             )}
+                            {(spot as any).stripeLinkActive && (
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Stripe link</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground truncate mt-1">{spot.address}</p>
                           <p className="text-xs text-muted-foreground">
                             Vlasnik: {spot.ownerId} | Cena: {spot.pricePerHour} RSD
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={async () => {
+                              setPdfLoading(spot.id);
+                              try { await generatePDF(spot); } catch (e) { toast({ title: "Greška pri generisanju PDF-a", variant: "destructive" }); }
+                              setPdfLoading(null);
+                            }}
+                            disabled={pdfLoading === spot.id}
+                            data-testid={`button-pdf-spot-${spot.id}`}
+                            title="Preuzmi PDF/QR"
+                          >
+                            {pdfLoading === spot.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setEditSpot(spot);
+                              setEditForm({
+                                title: spot.title,
+                                description: spot.description,
+                                address: spot.address,
+                                city: spot.city || "",
+                                latitude: spot.latitude || "0",
+                                longitude: spot.longitude || "0",
+                                pricePerHour: spot.pricePerHour || "0",
+                                currency: spot.currency || "RSD",
+                                spotType: spot.spotType || "uncovered",
+                                pricingType: spot.pricingType || "daily",
+                                paymentType: spot.paymentType || "cash",
+                                hasEvCharging: spot.hasEvCharging,
+                                hasSecurityCamera: spot.hasSecurityCamera,
+                                is24Hours: spot.is24Hours,
+                                phone: spot.phone || "",
+                                contactEmail: spot.contactEmail || "",
+                                category: spot.category || "private",
+                                isActive: spot.isActive,
+                                isPremium: spot.isPremium,
+                                subscriptionType: spot.subscriptionType || "standard",
+                                stripeLink: (spot as any).stripeLink || "",
+                                stripeLinkActive: (spot as any).stripeLinkActive || false,
+                              });
+                              setShowEditDialog(true);
+                            }}
+                            data-testid={`button-edit-spot-${spot.id}`}
+                            title="Uredi parking"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"
@@ -811,6 +1240,48 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Add Spot Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) setShowAddDialog(false); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="modal-add-spot">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-accent" />
+              Dodaj parking mesto
+            </DialogTitle>
+          </DialogHeader>
+          <SpotFormFields form={addForm} setForm={setAddForm} />
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)} data-testid="button-add-spot-cancel">Otkaži</Button>
+            <Button className="flex-1" onClick={() => createSpotMutation.mutate(addForm)} disabled={createSpotMutation.isPending || !addForm.title || !addForm.address} data-testid="button-add-spot-save">
+              {createSpotMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Dodaj"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Spot Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditSpot(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="modal-edit-spot">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-accent" />
+              Uredi parking: {editSpot?.parkingNumber && <span className="font-mono text-accent">{editSpot.parkingNumber}</span>}
+            </DialogTitle>
+          </DialogHeader>
+          {editSpot && (
+            <>
+              <SpotFormFields form={editForm} setForm={setEditForm} isEdit />
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setShowEditDialog(false); setEditSpot(null); }} data-testid="button-edit-spot-cancel">Otkaži</Button>
+                <Button className="flex-1" onClick={() => fullEditMutation.mutate({ id: editSpot.id, data: editForm })} disabled={fullEditMutation.isPending} data-testid="button-edit-spot-save">
+                  {fullEditMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sačuvaj"}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editCoordSpot} onOpenChange={(open) => { if (!open) setEditCoordSpot(null); }}>
         <DialogContent className="max-w-md" data-testid="modal-edit-coords">

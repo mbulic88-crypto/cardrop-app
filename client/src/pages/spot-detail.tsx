@@ -272,14 +272,25 @@ export default function SpotDetail() {
 
         {/* Price - prominently right below images */}
         <div className="mb-6" data-testid="price-banner">
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-3xl font-bold text-accent" data-testid="text-price-main">
               {spot.pricePerHour} {spot.currency}
             </span>
             <span className="text-lg text-muted-foreground">
-              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'nedelju' : spot.pricingType === 'monthly' ? 'mesec' : 'sat'}
+              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : 'mesec'}
             </span>
+            {spot.parkingNumber && (
+              <Badge className="font-mono bg-accent/15 text-accent border-accent/30 ml-2" data-testid="badge-parking-number">{spot.parkingNumber}</Badge>
+            )}
           </div>
+          {(spot as any).stripeLinkActive && (spot as any).stripeLink && (
+            <a href={(spot as any).stripeLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-3" data-testid="link-plati-online">
+              <Button className="bg-accent hover:bg-accent text-accent-foreground gap-2" data-testid="button-plati-online">
+                <CreditCard className="w-4 h-4" />
+                Plati online
+              </Button>
+            </a>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

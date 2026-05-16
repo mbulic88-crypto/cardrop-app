@@ -2240,6 +2240,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // City abbreviation map for auto-numbering
+  const CITY_ABBREV: Record<string, string> = {
+    "Beograd": "BG", "Novi Sad": "NS", "Niš": "NI", "Kragujevac": "KG",
+    "Subotica": "SU", "Zrenjanin": "ZR", "Pančevo": "PA", "Čačak": "CA",
+    "Novi Pazar": "NP", "Jagodina": "JA", "Šabac": "SA", "Smederevo": "SM",
+    "Valjevo": "VA", "Vranje": "VR", "Kraljevo": "KV", "Leskovac": "LE",
+    "Užice": "UZ", "Sombor": "SO", "Kruševac": "KR", "Ostalo": "SRB",
+  };
+
+  async function generateParkingNumber(city: string | null | undefined): Promise<string> {
+    const abbrev = (city && CITY_ABBREV[city]) ? CITY_ABBREV[city] : "SRB";
+    const allSpots = await storage.getAllParkingSpotsAdmin();
+    const sameCity = allSpots.filter(s => s.parkingNumber && s.parkingNumber.startsWith(abbrev));
+    const n = sameCity.length + 1;
+    return `${abbrev}${n}`;
+  }
+
   app.get('/api/admin/parking-spots', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const spots = await storage.getAllParkingSpotsAdmin();
@@ -2247,6 +2264,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all parking spots:", error);
       res.status(500).json({ message: "Failed to fetch parking spots" });
+    }
+  });
+
+  app.post('/api/admin/parking-spots', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const body = req.body;
+      const parkingNumber = await generateParkingNumber(body.city);
+      const spotData: any = {
+        ownerId: userId,
+        category: body.category || 'private',
+        title: body.title,
+        description: body.description || '',
+        address: body.address,
+        city: body.city || null,
+        latitude: String(body.latitude || '0'),
+        longitude: String(body.longitude || '0'),
+        pricePerHour: String(body.pricePerHour || '0'),
+        currency: body.currency || 'RSD',
+        spotType: body.spotType || 'uncovered',
+        hasEvCharging: body.hasEvCharging || false,
+        hasSecurityCamera: body.hasSecurityCamera || false,
+        is24Hours: body.is24Hours !== undefined ? body.is24Hours : true,
+        phone: body.phone || '',
+        paymentType: body.paymentType || 'cash',
+        contactEmail: body.contactEmail || '',
+        advertiserType: body.advertiserType || 'owner',
+        companyName: body.companyName || null,
+        pib: body.pib || null,
+        numberOfSpots: body.numberOfSpots || null,
+        contactPerson: body.contactPerson || null,
+        pricingType: body.pricingType || 'daily',
+        subscriptionType: body.subscriptionType || 'standard',
+        autoRenewal: body.autoRenewal || false,
+        isPremium: body.isPremium || false,
+        isActive: body.isActive !== undefined ? body.isActive : true,
+        parkingNumber,
+        stripeLink: body.stripeLink || null,
+        stripeLinkActive: body.stripeLinkActive || false,
+      };
+      const spot = await storage.createParkingSpot(spotData);
+      res.status(201).json(spot);
+    } catch (error) {
+      console.error("Error creating parking spot (admin):", error);
+      res.status(500).json({ message: "Failed to create parking spot" });
+    }
+  });
+
+  app.patch('/api/admin/parking-spots/:id/full-edit', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const body = req.body;
+      const updates: any = {};
+      const fields = ['title', 'description', 'address', 'city', 'latitude', 'longitude',
+        'pricePerHour', 'currency', 'spotType', 'hasEvCharging', 'hasSecurityCamera',
+        'is24Hours', 'phone', 'paymentType', 'contactEmail', 'advertiserType',
+        'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
+        'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
+        'stripeLink', 'stripeLinkActive', 'category'];
+      for (const f of fields) {
+        if (body[f] !== undefined) updates[f] = body[f];
+      }
+      if (updates.latitude !== undefined) updates.latitude = String(updates.latitude);
+      if (updates.longitude !== undefined) updates.longitude = String(updates.longitude);
+      if (updates.pricePerHour !== undefined) updates.pricePerHour = String(updates.pricePerHour);
+      const spot = await storage.updateParkingSpot(req.params.id, updates);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      res.json(spot);
+    } catch (error) {
+      console.error("Error full-editing parking spot (admin):", error);
+      res.status(500).json({ message: "Failed to update parking spot" });
     }
   });
 

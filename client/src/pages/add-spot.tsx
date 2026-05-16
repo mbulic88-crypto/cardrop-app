@@ -1245,14 +1245,11 @@ export default function AddSpot() {
                       <SelectContent>
                         {rentalDurationType === 'short' ? (
                           <>
-                            <SelectItem value="hourly">{t.pricingHourly}</SelectItem>
-                            <SelectItem value="daily">{t.pricingDaily}</SelectItem>
+                            <SelectItem value="hourly">Na sat</SelectItem>
+                            <SelectItem value="daily">Na dan</SelectItem>
                           </>
                         ) : (
-                          <>
-                            <SelectItem value="weekly">{t.pricingWeekly}</SelectItem>
-                            <SelectItem value="monthly">{t.pricingMonthly}</SelectItem>
-                          </>
+                          <SelectItem value="monthly">Mesečno</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

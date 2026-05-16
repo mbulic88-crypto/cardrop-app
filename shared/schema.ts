@@ -93,8 +93,8 @@ export const parkingSpots = pgTable("parking_spots", {
   numberOfSpots: integer("number_of_spots"),
   // Residential specific fields
   contactPerson: varchar("contact_person", { length: 255 }),
-  // Pricing type for all categories (hourly/daily/weekly/monthly)
-  pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // hourly, daily, weekly, monthly
+  // Pricing type for all categories (hourly/daily/monthly)
+  pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // hourly, daily, monthly
   // Subscription fields
   subscriptionType: varchar("subscription_type", { length: 50 }).notNull().default('standard'), // standard, silver, gold
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
@@ -105,6 +105,10 @@ export const parkingSpots = pgTable("parking_spots", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Admin-managed fields
+  parkingNumber: varchar("parking_number", { length: 20 }),
+  stripeLink: varchar("stripe_link", { length: 500 }),
+  stripeLinkActive: boolean("stripe_link_active").notNull().default(false),
 });
 
 export const parkingSpotsRelations = relations(parkingSpots, ({ one, many }) => ({
@@ -136,7 +140,10 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     pib: z.string().optional(),
     numberOfSpots: z.number().optional(),
     contactPerson: z.string().optional(),
-    pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily'),
+    pricingType: z.enum(['hourly', 'daily', 'monthly']).default('daily'),
+    parkingNumber: z.string().max(20).optional(),
+    stripeLink: z.string().max(500).optional(),
+    stripeLinkActive: z.boolean().default(false),
     subscriptionType: z.enum(['standard', 'silver', 'gold']).default('standard'),
     autoRenewal: z.boolean().default(false),
     isPremium: z.boolean().default(false),
