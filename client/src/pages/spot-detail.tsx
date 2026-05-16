@@ -277,15 +277,15 @@ export default function SpotDetail() {
               {spot.pricePerHour} {spot.currency}
             </span>
             <span className="text-lg text-muted-foreground">
-              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : 'mesec'}
+              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan'}
             </span>
             {spot.parkingNumber && (
               <Badge className="font-mono bg-accent/15 text-accent border-accent/30 ml-2" data-testid="badge-parking-number">{spot.parkingNumber}</Badge>
             )}
           </div>
-          {(spot as any).stripeLinkActive && (spot as any).stripeLink && (
-            <a href={(spot as any).stripeLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-3" data-testid="link-plati-online">
-              <Button className="bg-accent hover:bg-accent text-accent-foreground gap-2" data-testid="button-plati-online">
+          {spot.stripeLinkActive && spot.stripeLink && (
+            <a href={spot.stripeLink} target="_blank" rel="noopener noreferrer" className="inline-block mt-3" data-testid="link-plati-online">
+              <Button className="bg-accent text-accent-foreground gap-2" data-testid="button-plati-online">
                 <CreditCard className="w-4 h-4" />
                 Plati online
               </Button>
@@ -549,7 +549,7 @@ export default function SpotDetail() {
               <div className="mb-6">
                 <div className="text-3xl font-bold text-accent mb-1" data-testid="text-price">
                   {spot.pricePerHour} {spot.currency}
-                  <span className="text-base text-muted-foreground font-normal">/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : spot.pricingType === 'weekly' ? 'ned' : spot.pricingType === 'monthly' ? 'mes' : 'sat'}</span>
+                  <span className="text-base text-muted-foreground font-normal">/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}</span>
                 </div>
               </div>
 

@@ -11,7 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X } from "lucide-react";
+import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 import {
   Select,
   SelectContent,
@@ -259,93 +262,119 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
   );
 }
 
-async function generatePDF(spot: ParkingSpot) {
+async function fetchLogoDataUrl(logoUrl: string): Promise<string | null> {
+  try {
+    const resp = await fetch(logoUrl);
+    const blob = await resp.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const { jsPDF } = await import("jspdf");
   const QRCode = (await import("qrcode")).default;
   const spotUrl = `https://cardrop.app/spot/${spot.id}`;
-  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 200, margin: 2 });
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
 
+  // Square 210x210mm format
+  const doc = new jsPDF({ unit: "mm", format: [210, 210] });
+  const W = 210;
+
+  // Dark header bar
   doc.setFillColor(30, 30, 30);
-  doc.rect(0, 0, 210, 60, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(26);
-  doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", 15, 25);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
-  doc.text("Platforma za deljenje parking mesta", 15, 35);
+  doc.rect(0, 0, W, 30, "F");
 
+  // Logo image at top-left
+  const logoData = await fetchLogoDataUrl(logoUrl);
+  if (logoData) {
+    try { doc.addImage(logoData, "PNG", 8, 5, 20, 20); } catch {}
+  }
+
+  // "CarDrop" brand text
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("CarDrop", 32, 17);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(180, 180, 180);
+  doc.text("cardrop.app", 32, 24);
+
+  // Parking number — very prominent (40pt bold)
   if (spot.parkingNumber) {
     doc.setFillColor(64, 145, 108);
-    doc.roundedRect(140, 12, 55, 18, 4, 4, "F");
+    doc.roundedRect(W - 52, 5, 46, 20, 3, 3, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text(spot.parkingNumber, 167.5, 23, { align: "center" });
+    doc.text(spot.parkingNumber, W - 29, 18, { align: "center" });
   }
 
-  doc.setTextColor(30, 30, 30);
-  doc.setFontSize(18);
+  // Spot title
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(spot.title, 15, 75);
+  const titleLines = doc.splitTextToSize(spot.title, W - 20);
+  doc.text(titleLines, W / 2, 42, { align: "center" });
 
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.text(spot.address, 15, 83);
-
-  doc.setFillColor(240, 240, 240);
-  doc.rect(15, 90, 180, 0.5, "F");
-
-  const lines: [string, string][] = [
-    ["Cena", `${spot.pricePerHour} ${spot.currency} / ${spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'daily' ? 'dan' : 'mesec'}`],
-    ["Tip mesta", spot.spotType === "covered" ? "Pokriveno" : spot.spotType === "garage" ? "Garaža" : "Otvoreno"],
-    ["Plaćanje", spot.paymentType === "cash" ? "Keš" : "Bankovni prenos"],
-    ["Dostupno 24/7", spot.is24Hours ? "Da" : "Ne"],
-    ["EV punjač", spot.hasEvCharging ? "Da" : "Ne"],
-    ["Kamera", spot.hasSecurityCamera ? "Da" : "Ne"],
-  ];
-  if (spot.phone) lines.push(["Kontakt telefon", spot.phone]);
-
-  let y = 100;
-  doc.setFontSize(11);
-  for (const [label, value] of lines) {
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text(label + ":", 15, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(60, 60, 60);
-    doc.text(value, 65, y);
-    y += 9;
-  }
-
-  if (spot.description) {
-    y += 4;
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 30, 30);
-    doc.text("Opis:", 15, y);
-    y += 7;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(60, 60, 60);
-    const descLines = doc.splitTextToSize(spot.description, 120);
-    doc.text(descLines, 15, y);
-  }
-
-  doc.addImage(qrDataUrl, "PNG", 150, 90, 45, 45);
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text("Skenirajte za detalje", 172.5, 138, { align: "center" });
-
-  doc.setFillColor(30, 30, 30);
-  doc.rect(0, 260, 210, 37, "F");
-  doc.setTextColor(255, 255, 255);
+  // Address
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("cardrop.app", 105, 272, { align: "center" });
-  doc.setFontSize(8);
-  doc.setTextColor(180, 180, 180);
-  doc.text(spotUrl, 105, 280, { align: "center" });
+  doc.setTextColor(80, 80, 80);
+  doc.text(spot.address, W / 2, 52, { align: "center" });
+
+  // Divider
+  doc.setDrawColor(220, 220, 220);
+  doc.line(15, 57, W - 15, 57);
+
+  // QR code — centered, prominent
+  const qrSize = 80;
+  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 300, margin: 2 });
+  const qrX = (W - qrSize) / 2;
+  doc.addImage(qrDataUrl, "PNG", qrX, 62, qrSize, qrSize);
+
+  // Instruction text below QR
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(50, 50, 50);
+  const instrText = "Možete platiti parking skeniranjem QR koda ili direktno na aplikaciji.";
+  const instrLines = doc.splitTextToSize(instrText, W - 30);
+  doc.text(instrLines, W / 2, 148, { align: "center" });
+
+  // Divider
+  doc.setDrawColor(220, 220, 220);
+  doc.line(15, 156, W - 15, 156);
+
+  // Details row
+  const pricingLabel = spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan';
+  const details = [
+    `Cena: ${spot.pricePerHour} ${spot.currency} / ${pricingLabel}`,
+    `Tip: ${spot.spotType === 'covered' ? 'Pokriveno' : spot.spotType === 'garage' ? 'Garaža' : 'Otvoreno'}`,
+    spot.phone ? `Tel: ${spot.phone}` : null,
+    spot.is24Hours ? "Dostupno 24/7" : null,
+    spot.hasEvCharging ? "EV punjač" : null,
+  ].filter(Boolean) as string[];
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(60, 60, 60);
+  doc.text(details.join("   •   "), W / 2, 163, { align: "center" });
+
+  // Dark footer
+  doc.setFillColor(30, 30, 30);
+  doc.rect(0, 172, W, 38, "F");
+  doc.setTextColor(150, 150, 150);
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(spotUrl, W / 2, 185, { align: "center" });
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text("cardrop.app", W / 2, 198, { align: "center" });
 
   const fileName = spot.parkingNumber ? `${spot.parkingNumber}-cardrop.pdf` : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;
   doc.save(fileName);
@@ -361,9 +390,13 @@ export default function Admin() {
   // Add / Edit spot dialogs
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addForm, setAddForm] = useState<SpotFormData>(defaultSpotForm);
+  const [addStep, setAddStep] = useState<1 | 2>(1);
+  const [createdSpotId, setCreatedSpotId] = useState<string | null>(null);
+  const [addUploadedImages, setAddUploadedImages] = useState<string[]>([]);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editSpot, setEditSpot] = useState<ParkingSpot | null>(null);
   const [editForm, setEditForm] = useState<SpotFormData>(defaultSpotForm);
+  const [editUploadedImages, setEditUploadedImages] = useState<string[]>([]);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   // Grant plan state
@@ -502,11 +535,12 @@ export default function Admin() {
       });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: ParkingSpot) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
-      toast({ title: "Parking mesto dodato" });
-      setShowAddDialog(false);
-      setAddForm(defaultSpotForm);
+      toast({ title: "Parking mesto dodato — dodajte slike" });
+      setCreatedSpotId(data.id);
+      setAddUploadedImages(data.imageUrls || []);
+      setAddStep(2);
     },
     onError: () => {
       toast({ title: "Greška pri dodavanju parking mesta", variant: "destructive" });
@@ -748,7 +782,7 @@ export default function Admin() {
                             ) : (
                               <Badge variant="destructive">Neaktivan</Badge>
                             )}
-                            {(spot as any).stripeLinkActive && (
+                            {spot.stripeLinkActive && (
                               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Stripe link</Badge>
                             )}
                           </div>
@@ -763,7 +797,7 @@ export default function Admin() {
                             size="icon"
                             onClick={async () => {
                               setPdfLoading(spot.id);
-                              try { await generatePDF(spot); } catch (e) { toast({ title: "Greška pri generisanju PDF-a", variant: "destructive" }); }
+                              try { await generatePDF(spot, parkInLogo); } catch (e) { toast({ title: "Greška pri generisanju PDF-a", variant: "destructive" }); }
                               setPdfLoading(null);
                             }}
                             disabled={pdfLoading === spot.id}
@@ -798,9 +832,10 @@ export default function Admin() {
                                 isActive: spot.isActive,
                                 isPremium: spot.isPremium,
                                 subscriptionType: spot.subscriptionType || "standard",
-                                stripeLink: (spot as any).stripeLink || "",
-                                stripeLinkActive: (spot as any).stripeLinkActive || false,
+                                stripeLink: spot.stripeLink || "",
+                                stripeLinkActive: spot.stripeLinkActive || false,
                               });
+                              setEditUploadedImages(spot.imageUrls || []);
                               setShowEditDialog(true);
                             }}
                             data-testid={`button-edit-spot-${spot.id}`}
@@ -1242,26 +1277,87 @@ export default function Admin() {
       </main>
 
       {/* Add Spot Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) setShowAddDialog(false); }}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowAddDialog(false);
+          setAddForm(defaultSpotForm);
+          setAddStep(1);
+          setCreatedSpotId(null);
+          setAddUploadedImages([]);
+        }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="modal-add-spot">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-accent" />
-              Dodaj parking mesto
+              {addStep === 1 ? "Dodaj parking mesto" : "Dodajte slike parkinga"}
             </DialogTitle>
           </DialogHeader>
-          <SpotFormFields form={addForm} setForm={setAddForm} />
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)} data-testid="button-add-spot-cancel">Otkaži</Button>
-            <Button className="flex-1" onClick={() => createSpotMutation.mutate(addForm)} disabled={createSpotMutation.isPending || !addForm.title || !addForm.address} data-testid="button-add-spot-save">
-              {createSpotMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Dodaj"}
-            </Button>
-          </div>
+
+          {addStep === 1 && (
+            <>
+              <SpotFormFields form={addForm} setForm={setAddForm} />
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)} data-testid="button-add-spot-cancel">Otkaži</Button>
+                <Button className="flex-1" onClick={() => createSpotMutation.mutate(addForm)} disabled={createSpotMutation.isPending || !addForm.title || !addForm.address} data-testid="button-add-spot-save">
+                  {createSpotMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Dalje →"}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {addStep === 2 && createdSpotId && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Parking je kreiran. Možete dodati do 5 slika (opciono).</p>
+              {addUploadedImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {addUploadedImages.map((img, i) => (
+                    <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-muted">
+                      <img src={img.startsWith("http") ? img : `/api/images/${img}`} alt={`Slika ${i + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {addUploadedImages.length < 5 && (
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={10485760}
+                  onGetUploadParameters={async () => {
+                    const response = await apiRequest("POST", "/api/objects/upload", {});
+                    return { method: "PUT" as const, url: response.uploadURL };
+                  }}
+                  onComplete={async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+                    const uploadURL = result.successful?.[0]?.uploadURL;
+                    if (uploadURL && createdSpotId) {
+                      const resp = await apiRequest("PUT", `/api/parking-spots/${createdSpotId}/images`, { imageURL: uploadURL });
+                      setAddUploadedImages(resp.imageUrls || []);
+                      toast({ title: `Slika dodata (${(resp.imageUrls || []).length}/5)` });
+                    }
+                  }}
+                  buttonClassName="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Dodaj sliku ({addUploadedImages.length}/5)
+                </ObjectUploader>
+              )}
+              <Button className="w-full" onClick={() => {
+                setShowAddDialog(false);
+                setAddForm(defaultSpotForm);
+                setAddStep(1);
+                setCreatedSpotId(null);
+                setAddUploadedImages([]);
+              }} data-testid="button-add-spot-finish">
+                Završi
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Edit Spot Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={(open) => { if (!open) { setShowEditDialog(false); setEditSpot(null); } }}>
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        if (!open) { setShowEditDialog(false); setEditSpot(null); setEditUploadedImages([]); }
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="modal-edit-spot">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1272,8 +1368,48 @@ export default function Admin() {
           {editSpot && (
             <>
               <SpotFormFields form={editForm} setForm={setEditForm} isEdit />
+
+              {/* Image upload section */}
+              <div className="space-y-3 pt-2 border-t">
+                <p className="text-sm font-medium">Slike parkinga</p>
+                {editUploadedImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {editUploadedImages.map((img, i) => (
+                      <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-muted">
+                        <img src={img.startsWith("http") ? img : `/api/images/${img}`} alt={`Slika ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {editUploadedImages.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nema slika.</p>
+                )}
+                {editUploadedImages.length < 5 && (
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={10485760}
+                    onGetUploadParameters={async () => {
+                      const response = await apiRequest("POST", "/api/objects/upload", {});
+                      return { method: "PUT" as const, url: response.uploadURL };
+                    }}
+                    onComplete={async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+                      const uploadURL = result.successful?.[0]?.uploadURL;
+                      if (uploadURL && editSpot) {
+                        const resp = await apiRequest("PUT", `/api/parking-spots/${editSpot.id}/images`, { imageURL: uploadURL });
+                        setEditUploadedImages(resp.imageUrls || []);
+                        toast({ title: `Slika dodata (${(resp.imageUrls || []).length}/5)` });
+                      }
+                    }}
+                    buttonClassName="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Dodaj sliku ({editUploadedImages.length}/5)
+                  </ObjectUploader>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => { setShowEditDialog(false); setEditSpot(null); }} data-testid="button-edit-spot-cancel">Otkaži</Button>
+                <Button variant="outline" className="flex-1" onClick={() => { setShowEditDialog(false); setEditSpot(null); setEditUploadedImages([]); }} data-testid="button-edit-spot-cancel">Otkaži</Button>
                 <Button className="flex-1" onClick={() => fullEditMutation.mutate({ id: editSpot.id, data: editForm })} disabled={fullEditMutation.isPending} data-testid="button-edit-spot-save">
                   {fullEditMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sačuvaj"}
                 </Button>
