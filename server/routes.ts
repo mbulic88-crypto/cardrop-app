@@ -2602,7 +2602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updated = await storage.updateParkingSpot(req.params.id, {
         stripeProductId,
         stripeLinkActive: true,
-      } as any);
+      });
       res.json(updated);
     } catch (error: any) {
       console.error("Error activating stripe for parking spot:", error);
@@ -2617,7 +2617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (spot.parkingNumber) return res.json(spot);
 
       const parkingNumber = await generateParkingNumber(spot.city);
-      const updated = await storage.updateParkingSpot(req.params.id, { parkingNumber } as any);
+      const updated = await storage.updateParkingSpot(req.params.id, { parkingNumber });
       res.json(updated);
     } catch (error: any) {
       console.error("Error assigning parking number:", error);

@@ -22,6 +22,13 @@
       "when": 1747419600000,
       "tag": "0002_booking_stripe_checkout",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1747598400000,
+      "tag": "0003_stripe_product_id",
+      "breakpoints": true
     }
   ]
 }
