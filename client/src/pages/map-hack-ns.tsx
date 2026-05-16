@@ -873,6 +873,12 @@ export default function MapHackNS() {
     },
   });
 
+  useEffect(() => {
+    if (user?.savedLicensePlate && !parkingLicensePlate) {
+      setParkingLicensePlate(user.savedLicensePlate);
+    }
+  }, [user?.savedLicensePlate]);
+
   function closeParkingPanel() {
     setSelectedParking(null);
     setDescExpanded(false);
