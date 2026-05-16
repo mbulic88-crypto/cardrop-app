@@ -1214,7 +1214,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/bookings/owner-received', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      const bookingList = await storage.getOwnerReceivedBookings(userId);
+      const fromParam = req.query.from ? new Date(req.query.from as string) : undefined;
+      const toParam = req.query.to ? new Date(req.query.to as string) : undefined;
+      const from = fromParam && !isNaN(fromParam.getTime()) ? fromParam : undefined;
+      const to = toParam && !isNaN(toParam.getTime()) ? toParam : undefined;
+      const bookingList = await storage.getOwnerReceivedBookings(userId, from, to);
       res.json(bookingList);
     } catch (error) {
       console.error("Error fetching owner-received bookings:", error);

@@ -12,12 +12,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { User, ParkingSpot, SalesListing, Message } from "@shared/schema";
+import type { User, ParkingSpot, SalesListing, Message, Booking, Review } from "@shared/schema";
 import {
   MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone,
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
-  TrendingUp, Activity, ChevronRight,
+  TrendingUp, Activity, ChevronRight, Star,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [dateTo, setDateTo] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
+  const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('received');
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
@@ -115,6 +116,11 @@ export default function Dashboard() {
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
+  const { data: myBookings = [] } = useQuery<Booking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
+  const { data: ownerReviews = [] } = useQuery<Review[]>({
+    queryKey: ["/api/reviews/owner", user?.id],
+    enabled: !!user?.id,
+  });
 
   type EnrichedMessage = Message & { senderName?: string; receiverName?: string; spotTitle?: string | null };
   const { data: allMessages = [], isLoading: messagesLoading } = useQuery<EnrichedMessage[]>({
@@ -211,7 +217,7 @@ export default function Dashboard() {
   const upgradeMutation = useMutation({
     mutationFn: ({ spotId, tier }: { spotId: string; tier: 'silver' | 'gold' }) =>
       apiRequest("POST", "/api/stripe/create-checkout-existing", { spotId, tier }),
-    onSuccess: (data: any) => { if (data.url) window.location.href = data.url; },
+    onSuccess: (data: { url?: string }) => { if (data.url) window.location.href = data.url; },
     onError: () => toast({ title: "Greška", description: "Nije moguće pokrenuti nadogradnju", variant: "destructive" }),
   });
 
@@ -226,11 +232,28 @@ export default function Dashboard() {
   });
 
   // Compute earnings from owner-received bookings
-  const totalEarnings = useMemo(() => {
-    return ownerBookings
+  const totalEarnings = useMemo(() =>
+    ownerBookings
       .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .reduce((sum, b) => sum + parseFloat(b.totalPrice || '0'), 0),
+    [ownerBookings]
+  );
+
+  const earningsThisMonth = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return ownerBookings
+      .filter(b =>
+        (b.status === 'confirmed' || b.status === 'completed') &&
+        b.createdAt && new Date(b.createdAt) >= startOfMonth
+      )
       .reduce((sum, b) => sum + parseFloat(b.totalPrice || '0'), 0);
   }, [ownerBookings]);
+
+  const avgRating = useMemo(() => {
+    if (!ownerReviews.length) return null;
+    return ownerReviews.reduce((sum, r) => sum + r.rating, 0) / ownerReviews.length;
+  }, [ownerReviews]);
 
   // Filter bookings for reservations section
   const filteredBookings = useMemo(() => {
@@ -320,19 +343,34 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Parking mesta</CardTitle>
-              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Ukupna zarada</CardTitle>
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground" data-testid="kpi-spots-count">{mySpots.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">Objavljena mesta</p>
+              <div className="text-2xl font-bold text-accent" data-testid="kpi-total-earnings">
+                {totalEarnings.toLocaleString('sr-RS')}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">RSD (svo vreme)</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Zarada ovog meseca</CardTitle>
+              <Activity className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-accent" data-testid="kpi-earnings-month">
+                {earningsThisMonth.toLocaleString('sr-RS')}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">RSD (potvrđene)</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">Aktivne rezervacije</CardTitle>
-              <Activity className="w-4 h-4 text-muted-foreground" />
+              <Calendar className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground" data-testid="kpi-active-bookings">{activeBookingsCount}</div>
@@ -342,25 +380,16 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ukupna zarada</CardTitle>
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Prosečna ocena</CardTitle>
+              <Star className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-accent" data-testid="kpi-total-earnings">
-                {totalEarnings.toLocaleString('sr-RS')}
+              <div className="text-2xl font-bold text-foreground" data-testid="kpi-avg-rating">
+                {avgRating !== null ? avgRating.toFixed(1) : '—'}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">RSD (potvrđene)</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Nepročitane poruke</CardTitle>
-              <MessageSquare className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground" data-testid="kpi-unread-messages">{totalUnread}</div>
-              <p className="text-xs text-muted-foreground mt-1">Čekaju odgovor</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {ownerReviews.length > 0 ? `${ownerReviews.length} ocen${ownerReviews.length === 1 ? 'a' : 'a'}` : 'Nema ocena'}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -519,91 +548,157 @@ export default function Dashboard() {
     return (
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">Rezervacije</h2>
-          <Button variant="outline" size="sm" onClick={handleCsvExport} disabled={filteredBookings.length === 0}
-            data-testid="button-export-csv">
-            <Download className="w-4 h-4 mr-2" />Izvezi CSV
+          <h2 className="text-2xl font-bold text-foreground">Rezervacije i Zarada</h2>
+        </div>
+
+        {/* Tab switcher */}
+        <div className="flex gap-2 border-b border-border pb-2">
+          <Button size="sm" variant={bookingsTab === 'received' ? 'default' : 'outline'}
+            onClick={() => setBookingsTab('received')} data-testid="tab-received-bookings">
+            Primljene rezervacije
+          </Button>
+          <Button size="sm" variant={bookingsTab === 'mine' ? 'default' : 'outline'}
+            onClick={() => setBookingsTab('mine')} data-testid="tab-my-bookings">
+            Moje rezervacije
           </Button>
         </div>
 
-        <Card className="p-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {(['week', 'month', 'lastmonth', 'all'] as QuickFilter[]).map(f => (
-              <Button key={f} size="sm" variant={quickFilter === f && !dateFrom && !dateTo ? 'default' : 'outline'}
-                onClick={() => { setQuickFilter(f); setDateFrom(''); setDateTo(''); }}
-                data-testid={`filter-${f}`}>
-                {{ week: 'Ova nedelja', month: 'Ovaj mesec', lastmonth: 'Prošli mesec', all: 'Sve' }[f]}
+        {bookingsTab === 'received' ? (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">{filteredBookings.length} rezervacija</span>
+                <span className="text-sm font-semibold text-accent">
+                  Zarada: {filteredEarnings.toLocaleString('sr-RS')} RSD
+                </span>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleCsvExport} disabled={filteredBookings.length === 0}
+                data-testid="button-export-csv">
+                <Download className="w-4 h-4 mr-2" />Izvezi CSV
               </Button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Od</label>
-              <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                className="w-40" data-testid="input-date-from" />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground font-medium">Do</label>
-              <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                className="w-40" data-testid="input-date-to" />
-            </div>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Obriši filter</Button>
+
+            <Card className="p-4">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(['week', 'month', 'lastmonth', 'all'] as QuickFilter[]).map(f => (
+                  <Button key={f} size="sm" variant={quickFilter === f && !dateFrom && !dateTo ? 'default' : 'outline'}
+                    onClick={() => { setQuickFilter(f); setDateFrom(''); setDateTo(''); }}
+                    data-testid={`filter-${f}`}>
+                    {{ week: 'Ova nedelja', month: 'Ovaj mesec', lastmonth: 'Prošli mesec', all: 'Sve' }[f]}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-medium">Od</label>
+                  <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    className="w-40" data-testid="input-date-from" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground font-medium">Do</label>
+                  <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                    className="w-40" data-testid="input-date-to" />
+                </div>
+                {(dateFrom || dateTo) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Obriši filter</Button>
+                )}
+              </div>
+            </Card>
+
+            {filteredBookings.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">Nema rezervacija u izabranom periodu</p>
+              </Card>
+            ) : (
+              <div className="rounded-md border border-border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 border-b border-border">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Stanar</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredBookings.map(b => (
+                        <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
+                          <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle}</td>
+                          <td className="px-4 py-3 text-foreground">
+                            {`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {new Date(b.startTime).toLocaleDateString('sr-RS')}
+                            {' — '}
+                            {new Date(b.endTime).toLocaleDateString('sr-RS')}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
+                            {parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
+                              {STATUS_LABELS[b.status] || b.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
-          </div>
-        </Card>
-
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">{filteredBookings.length} rezervacija</span>
-          <span className="text-sm font-semibold text-accent">
-            Zarada: {filteredEarnings.toLocaleString('sr-RS')} RSD
-          </span>
-        </div>
-
-        {filteredBookings.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Nema rezervacija u izabranom periodu</p>
-          </Card>
+          </>
         ) : (
-          <div className="rounded-md border border-border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b border-border">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Stanar</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredBookings.map(b => (
-                    <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
-                      <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle}</td>
-                      <td className="px-4 py-3 text-foreground">
-                        {`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">
-                        {new Date(b.startTime).toLocaleDateString('sr-RS')}
-                        {' — '}
-                        {new Date(b.endTime).toLocaleDateString('sr-RS')}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
-                        {parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
-                          {STATUS_LABELS[b.status] || b.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          /* Moje rezervacije — bookings the user made as a renter */
+          <>
+            {myBookings.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">Niste još napravili nijednu rezervaciju</p>
+                <Button variant="outline" className="mt-4" onClick={() => setLocation('/parking-spots')} data-testid="button-find-spots">
+                  Pronađi parking mesto
+                </Button>
+              </Card>
+            ) : (
+              <div className="rounded-md border border-border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 border-b border-border">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking ID</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {myBookings.map(b => (
+                        <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`my-booking-row-${b.id}`}>
+                          <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{b.spotId.slice(0, 8)}…</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">
+                            {new Date(b.startTime).toLocaleDateString('sr-RS')}
+                            {' — '}
+                            {new Date(b.endTime).toLocaleDateString('sr-RS')}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
+                            {parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
+                              {STATUS_LABELS[b.status] || b.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -695,7 +790,7 @@ export default function Dashboard() {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     if (replyContent.trim()) {
-                      const payload: any = { receiverId: activeConversation.otherId, content: replyContent.trim() };
+                      const payload: { receiverId: string; content: string; spotId?: string | null } = { receiverId: activeConversation.otherId, content: replyContent.trim() };
                       if (activeConversation.spotId) payload.spotId = activeConversation.spotId;
                       replyMutation.mutate(payload);
                     }
@@ -705,7 +800,7 @@ export default function Dashboard() {
               <Button size="icon" disabled={!replyContent.trim() || replyMutation.isPending}
                 onClick={() => {
                   if (replyContent.trim()) {
-                    const payload: any = { receiverId: activeConversation.otherId, content: replyContent.trim() };
+                    const payload: { receiverId: string; content: string; spotId?: string | null } = { receiverId: activeConversation.otherId, content: replyContent.trim() };
                     if (activeConversation.spotId) payload.spotId = activeConversation.spotId;
                     replyMutation.mutate(payload);
                   }

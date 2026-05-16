@@ -105,18 +105,18 @@ export default function EditSpot() {
         longitude: String(spot.longitude),
         pricePerHour: String(spot.pricePerHour),
         currency: spot.currency,
-        paymentType: spot.paymentType as any,
+        paymentType: spot.paymentType as 'cash' | 'bank_transfer',
         spotType: spot.spotType,
         hasEvCharging: spot.hasEvCharging,
         hasSecurityCamera: spot.hasSecurityCamera,
         is24Hours: spot.is24Hours,
-        pricingType: (spot as any).pricingType || "daily",
-        advertiserType: (spot as any).advertiserType || "owner",
-        companyName: (spot as any).companyName || "",
-        pib: (spot as any).pib || "",
-        contactPerson: (spot as any).contactPerson || "",
+        pricingType: (spot.pricingType as 'hourly' | 'daily' | 'monthly' | 'weekly') || "daily",
+        advertiserType: (spot.advertiserType as 'owner' | 'agency' | 'company') || "owner",
+        companyName: spot.companyName || "",
+        pib: spot.pib || "",
+        contactPerson: spot.contactPerson || "",
       });
-      if ((spot as any).pricingType === 'weekly' || (spot as any).pricingType === 'monthly') {
+      if (spot.pricingType === 'weekly' || spot.pricingType === 'monthly') {
         setRentalDurationType('long');
       } else {
         setRentalDurationType('short');
@@ -127,7 +127,7 @@ export default function EditSpot() {
   const mutation = useMutation({
     mutationFn: (data: z.infer<typeof formSchema>) =>
       apiRequest("PUT", `/api/parking-spots/${spotId}`, data),
-    onSuccess: (response: any) => {
+    onSuccess: (response: { pendingUntil?: string }) => {
       const pendingUntil = response?.pendingUntil;
       if (pendingUntil) {
         const date = new Date(pendingUntil);
@@ -156,8 +156,8 @@ export default function EditSpot() {
     return <div className="min-h-screen bg-background flex items-center justify-center">Parking mesto nije pronađeno</div>;
   }
 
-  const hasPending = !!(spot as any).pendingChanges;
-  const pendingFrom: Date | null = (spot as any).pendingChangesFrom ? new Date((spot as any).pendingChangesFrom) : null;
+  const hasPending = !!spot.pendingChanges;
+  const pendingFrom: Date | null = spot.pendingChangesFrom ? new Date(spot.pendingChangesFrom) : null;
   const pendingActive = hasPending && pendingFrom && pendingFrom > new Date();
 
   return (
@@ -190,13 +190,13 @@ export default function EditSpot() {
             <span className="text-sm font-medium text-muted-foreground">Sistemske informacije (samo za čitanje)</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(spot as any).parkingNumber && (
+            {spot.parkingNumber && (
               <Badge variant="outline" className="text-xs">
-                Broj: {(spot as any).parkingNumber}
+                Broj: {spot.parkingNumber}
               </Badge>
             )}
             <Badge variant="outline" className="text-xs">
-              Kategorija: {CATEGORY_LABELS[(spot as any).category] || (spot as any).category || 'N/A'}
+              Kategorija: {CATEGORY_LABELS[spot.category] || spot.category || 'N/A'}
             </Badge>
             <Badge variant="outline" className="text-xs">
               Plan: {SUB_TYPE_LABELS[spot.subscriptionType] || spot.subscriptionType}
@@ -207,9 +207,9 @@ export default function EditSpot() {
             <Badge variant={spot.isActive ? 'default' : 'secondary'} className="text-xs">
               {spot.isActive ? 'Aktivno' : 'Neaktivno'}
             </Badge>
-            {(spot as any).stripeLink && (
+            {spot.stripeLink && (
               <Badge variant="outline" className="text-xs">
-                Stripe: {(spot as any).stripeLinkActive ? 'Aktivan' : 'Neaktivan'}
+                Stripe: {spot.stripeLinkActive ? 'Aktivan' : 'Neaktivan'}
               </Badge>
             )}
           </div>

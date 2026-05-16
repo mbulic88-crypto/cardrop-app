@@ -155,7 +155,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;
 export type ParkingSpot = typeof parkingSpots.$inferSelect;
 
-// Edit schema: monetisation/activation/payment fields cannot be set by users directly
+// Edit schema: monetisation/activation/payment/identity fields cannot be set by users directly
 export const parkingSpotEditSchema = insertParkingSpotSchema.omit({
   isActive: true,
   isPremium: true,
@@ -165,7 +165,8 @@ export const parkingSpotEditSchema = insertParkingSpotSchema.omit({
   parkingNumber: true,
   stripeLink: true,
   stripeLinkActive: true,
-} as any);
+  category: true,
+} as const);
 
 // Bookings table
 export const bookings = pgTable("bookings", {

@@ -95,7 +95,7 @@ export interface IStorage {
   applyAndClearPendingChanges(id: string): Promise<ParkingSpot | undefined>;
 
   // Owner-received bookings
-  getOwnerReceivedBookings(ownerId: string): Promise<Array<{
+  getOwnerReceivedBookings(ownerId: string, from?: Date, to?: Date): Promise<Array<{
     id: string; spotId: string; spotTitle: string;
     renterId: string; renterFirstName: string | null; renterLastName: string | null;
     startTime: Date; endTime: Date; totalPrice: string; currency: string;
@@ -322,12 +322,15 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getOwnerReceivedBookings(ownerId: string): Promise<Array<{
+  async getOwnerReceivedBookings(ownerId: string, from?: Date, to?: Date): Promise<Array<{
     id: string; spotId: string; spotTitle: string;
     renterId: string; renterFirstName: string | null; renterLastName: string | null;
     startTime: Date; endTime: Date; totalPrice: string; currency: string;
     status: string; paymentStatus: string; createdAt: Date | null;
   }>> {
+    const conditions = [eq(parkingSpots.ownerId, ownerId)];
+    if (from) conditions.push(gte(bookings.createdAt, from));
+    if (to) conditions.push(lte(bookings.createdAt, to));
     const result = await db
       .select({
         id: bookings.id,
@@ -347,7 +350,7 @@ export class DatabaseStorage implements IStorage {
       .from(bookings)
       .innerJoin(parkingSpots, eq(bookings.spotId, parkingSpots.id))
       .innerJoin(users, eq(bookings.renterId, users.id))
-      .where(eq(parkingSpots.ownerId, ownerId))
+      .where(and(...conditions))
       .orderBy(desc(bookings.createdAt));
     return result;
   }
