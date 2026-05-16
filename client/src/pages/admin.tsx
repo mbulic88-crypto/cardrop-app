@@ -325,22 +325,16 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 400, margin: 2 });
   doc.addImage(qrDataUrl, "PNG", (W - qrSize) / 2, qrStartY, qrSize, qrSize);
 
-  // Instruction text — below QR, safely above footer (footer starts at 172mm)
-  const instrY = qrStartY + qrSize + 8;
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bolditalic");
-  doc.setTextColor(40, 60, 80);
-  doc.text("Skenirajte QR kod za plaćanje putem CarDrop.", W / 2, instrY, { align: "center" });
-
-  // Dark footer
+  // Dark footer — instruction + branding (no URL shown)
   doc.setFillColor(30, 30, 30);
   doc.rect(0, 172, W, 38, "F");
-  doc.setTextColor(150, 150, 150);
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "normal");
-  doc.text(spotUrl, W / 2, 185, { align: "center" });
   doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(255, 255, 255);
+  doc.text("Skenirajte QR kod i platite parking putem CarDrop.", W / 2, 185, { align: "center" });
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(82, 183, 136);
   doc.text("cardrop.app", W / 2, 198, { align: "center" });
 
   const fileName = spot.parkingNumber ? `${spot.parkingNumber}-cardrop.pdf` : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;

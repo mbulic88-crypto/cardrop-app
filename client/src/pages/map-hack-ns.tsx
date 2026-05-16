@@ -2145,8 +2145,11 @@ export default function MapHackNS() {
                 })()}
                 <div className="flex flex-col min-w-0">
                   <span className="font-bold text-white text-sm truncate">{selectedParking.title}</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className="text-xs font-semibold" style={{ color: "#14b8a6" }}>Privatni parking</span>
+                    {selectedParking.parkingNumber && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(64,145,108,0.2)", color: "#52B788", border: "1px solid rgba(82,183,136,0.4)" }}>{selectedParking.parkingNumber}</span>
+                    )}
                     {selectedParking.subscriptionType === "gold" && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(218,165,32,0.18)", color: "#fbbf24", border: "1px solid rgba(218,165,32,0.4)" }}>Gold</span>
                     )}
