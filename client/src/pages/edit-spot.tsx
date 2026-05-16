@@ -134,7 +134,7 @@ export default function EditSpot() {
         const formattedDate = date.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
         toast({
           title: "Izmene su sačuvane",
-          description: `Izmene će biti primenjene u ponoć — ${formattedDate}`,
+          description: `Izmene će biti primenjene u ponoć — ${formattedDate}. Stare rezervacije važe po starim uslovima.`,
         });
       } else {
         toast({ title: "Uspešno", description: "Parking mesto je ažurirano" });

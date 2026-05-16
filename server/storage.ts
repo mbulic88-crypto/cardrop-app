@@ -335,8 +335,8 @@ export class DatabaseStorage implements IStorage {
     status: string; paymentStatus: string; createdAt: Date | null;
   }>> {
     const conditions = [eq(parkingSpots.ownerId, ownerId)];
-    if (from) conditions.push(gte(bookings.createdAt, from));
-    if (to) conditions.push(lte(bookings.createdAt, to));
+    if (from) conditions.push(gte(bookings.startTime, from));
+    if (to) conditions.push(lte(bookings.startTime, to));
     const result = await db
       .select({
         id: bookings.id,

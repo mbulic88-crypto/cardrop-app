@@ -254,7 +254,7 @@ export default function Dashboard() {
     return ownerBookings
       .filter(b =>
         (b.status === 'confirmed' || b.status === 'completed') &&
-        b.createdAt && new Date(b.createdAt) >= startOfMonth
+        new Date(b.startTime) >= startOfMonth
       )
       .reduce((sum, b) => sum + parseFloat(b.totalPrice || '0'), 0);
   }, [ownerBookings]);
@@ -270,23 +270,23 @@ export default function Dashboard() {
     const now = new Date();
 
     if (dateFrom || dateTo) {
-      if (dateFrom) result = result.filter(b => b.createdAt && new Date(b.createdAt) >= new Date(dateFrom));
+      if (dateFrom) result = result.filter(b => new Date(b.startTime) >= new Date(dateFrom));
       if (dateTo) {
         const end = new Date(dateTo);
         end.setHours(23, 59, 59, 999);
-        result = result.filter(b => b.createdAt && new Date(b.createdAt) <= end);
+        result = result.filter(b => new Date(b.startTime) <= end);
       }
     } else {
       if (quickFilter === 'week') {
         const cutoff = new Date(now.getTime() - 7 * 24 * 3600000);
-        result = result.filter(b => b.createdAt && new Date(b.createdAt) >= cutoff);
+        result = result.filter(b => new Date(b.startTime) >= cutoff);
       } else if (quickFilter === 'month') {
         const cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
-        result = result.filter(b => b.createdAt && new Date(b.createdAt) >= cutoff);
+        result = result.filter(b => new Date(b.startTime) >= cutoff);
       } else if (quickFilter === 'lastmonth') {
         const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-        result = result.filter(b => b.createdAt && new Date(b.createdAt) >= start && new Date(b.createdAt) <= end);
+        result = result.filter(b => new Date(b.startTime) >= start && new Date(b.startTime) <= end);
       }
     }
     return result;
@@ -471,18 +471,18 @@ export default function Dashboard() {
               <Card
                 key={spot.id}
                 className={`relative overflow-hidden ${
-                  spot.subscriptionType === 'gold' ? 'border-2 border-[#DAA520] ring-2 ring-[#DAA520]/20'
-                  : spot.subscriptionType === 'silver' ? 'border-2 border-[#A8A9AD] ring-2 ring-[#A8A9AD]/20' : ''
+                  spot.subscriptionType === 'gold' ? 'border-2 border-amber-600 ring-2 ring-amber-600/20'
+                  : spot.subscriptionType === 'silver' ? 'border-2 border-zinc-400 ring-2 ring-zinc-400/20' : ''
                 }`}
                 data-testid={`spot-card-${spot.id}`}
               >
                 {spot.subscriptionType === 'gold' && (
-                  <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0">
+                  <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-700 text-white border-0">
                     <Sparkles className="w-3 h-3 mr-1" />Top lokacija
                   </Badge>
                 )}
                 {spot.subscriptionType === 'silver' && (
-                  <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0">
+                  <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-400 text-zinc-800 border-0">
                     <Sparkles className="w-3 h-3 mr-1" />Istaknuto
                   </Badge>
                 )}
@@ -511,13 +511,13 @@ export default function Dashboard() {
                   {(spot.subscriptionType === 'standard' || spot.subscriptionType === 'silver') && (
                     <div className="flex gap-2 mb-3">
                       {spot.subscriptionType === 'standard' && (
-                        <Button variant="outline" size="sm" className="flex-1 text-xs border-[#A8A9AD] text-[#A8A9AD]"
+                        <Button variant="outline" size="sm" className="flex-1 text-xs border-zinc-400 text-zinc-500"
                           onClick={() => upgradeMutation.mutate({ spotId: spot.id, tier: 'silver' })}
                           disabled={upgradeMutation.isPending} data-testid={`button-upgrade-silver-${spot.id}`}>
                           <ArrowUpCircle className="w-3 h-3 mr-1" />Silver
                         </Button>
                       )}
-                      <Button variant="outline" size="sm" className="flex-1 text-xs border-[#DAA520] text-[#DAA520]"
+                      <Button variant="outline" size="sm" className="flex-1 text-xs border-amber-600 text-amber-600"
                         onClick={() => upgradeMutation.mutate({ spotId: spot.id, tier: 'gold' })}
                         disabled={upgradeMutation.isPending} data-testid={`button-upgrade-gold-${spot.id}`}>
                         <ArrowUpCircle className="w-3 h-3 mr-1" />Gold
