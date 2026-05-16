@@ -375,7 +375,7 @@ export default function SpotDetail() {
             <Button
               className="bg-accent text-accent-foreground gap-2 w-full sm:w-auto"
               onClick={() => {
-                if (!isAuthenticated) { setShowLoginDialog(true); return; }
+                if (!isAuthenticated && spot.stripeLinkActive) { setShowLoginDialog(true); return; }
                 setShowBookingForm(!showBookingForm);
               }}
               data-testid="button-rezervisi"

@@ -15,6 +15,13 @@
       "when": 1778949596900,
       "tag": "0001_add_pending_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747419600000,
+      "tag": "0002_booking_stripe_checkout",
+      "breakpoints": true
     }
   ]
 }

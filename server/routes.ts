@@ -1546,7 +1546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           type: 'booking',
           spotId,
-          userId,
+          renterId: userId,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
           licensePlate: licensePlate || '',
@@ -1577,7 +1577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (session.payment_status !== 'paid') {
         return res.status(400).json({ message: "Plaćanje nije završeno", status: session.payment_status });
       }
-      if (session.metadata?.userId !== String(userId)) {
+      if (session.metadata?.renterId !== String(userId)) {
         return res.status(403).json({ message: "Neovlašćen pristup" });
       }
       if (session.metadata?.type !== 'booking') {
