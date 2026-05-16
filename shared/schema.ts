@@ -164,6 +164,7 @@ export const OWNER_EDITABLE_FIELDS = [
   'spotType', 'hasEvCharging', 'hasSecurityCamera', 'is24Hours',
   'phone', 'contactEmail',
   'pricingType', 'advertiserType', 'companyName', 'pib', 'numberOfSpots', 'contactPerson',
+  'imageUrls',
 ] as const;
 
 // Edit schema: only explicitly whitelisted fields — nothing else can enter.
@@ -189,6 +190,7 @@ export const parkingSpotEditSchema = z.object({
   pib: z.string().optional().nullable(),
   numberOfSpots: z.number().optional().nullable(),
   contactPerson: z.string().optional().nullable(),
+  imageUrls: z.array(z.string()).optional(),
 });
 
 // Bookings table
