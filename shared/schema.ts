@@ -155,18 +155,41 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
 export type InsertParkingSpot = z.infer<typeof insertParkingSpotSchema>;
 export type ParkingSpot = typeof parkingSpots.$inferSelect;
 
-// Edit schema: monetisation/activation/payment/identity fields cannot be set by users directly
-export const parkingSpotEditSchema = insertParkingSpotSchema.omit({
-  isActive: true,
-  isPremium: true,
-  subscriptionType: true,
-  autoRenewal: true,
-  stripeSessionId: true,
-  parkingNumber: true,
-  stripeLink: true,
-  stripeLinkActive: true,
-  category: true,
-} as const);
+// Explicit whitelist of fields an owner may edit.
+// Adding a new field here automatically permits it in both the API validator and the pending-changes applier.
+export const OWNER_EDITABLE_FIELDS = [
+  'title', 'description', 'address', 'city',
+  'latitude', 'longitude',
+  'pricePerHour', 'currency', 'paymentType',
+  'spotType', 'hasEvCharging', 'hasSecurityCamera', 'is24Hours',
+  'phone', 'contactEmail',
+  'pricingType', 'advertiserType', 'companyName', 'pib', 'numberOfSpots', 'contactPerson',
+] as const;
+
+// Edit schema: only explicitly whitelisted fields — nothing else can enter.
+export const parkingSpotEditSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  address: z.string().min(1),
+  city: z.string().optional().nullable(),
+  latitude: z.string(),
+  longitude: z.string(),
+  pricePerHour: z.string(),
+  currency: z.string(),
+  paymentType: z.string().optional().nullable(),
+  spotType: z.string(),
+  hasEvCharging: z.boolean().optional().default(false),
+  hasSecurityCamera: z.boolean().optional().default(false),
+  is24Hours: z.boolean().optional().default(false),
+  phone: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  pricingType: z.string().optional().nullable(),
+  advertiserType: z.string().optional().nullable(),
+  companyName: z.string().optional().nullable(),
+  pib: z.string().optional().nullable(),
+  numberOfSpots: z.number().optional().nullable(),
+  contactPerson: z.string().optional().nullable(),
+});
 
 // Bookings table
 export const bookings = pgTable("bookings", {

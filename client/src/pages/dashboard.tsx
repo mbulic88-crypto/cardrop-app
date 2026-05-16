@@ -231,6 +231,15 @@ export default function Dashboard() {
     onError: () => toast({ title: "Greška", description: "Nije moguće obrisati oglas", variant: "destructive" }),
   });
 
+  // Per-spot booking count (all statuses)
+  const bookingsPerSpot = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const b of ownerBookings) {
+      counts[b.spotId] = (counts[b.spotId] || 0) + 1;
+    }
+    return counts;
+  }, [ownerBookings]);
+
   // Compute earnings from owner-received bookings
   const totalEarnings = useMemo(() =>
     ownerBookings
@@ -486,10 +495,16 @@ export default function Dashboard() {
                     <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                     <span className="truncate">{spot.address}</span>
                   </div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-foreground">{spot.pricePerHour} {spot.currency}/h</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${spot.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}>
                       {spot.isActive ? 'Aktivno' : 'Neaktivno'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {bookingsPerSpot[spot.id] ?? 0} rezervacija ukupno
                     </span>
                   </div>
 
@@ -1060,6 +1075,33 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+
+      {/* Mobile bottom navigation — visible on small screens only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex items-stretch h-16">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            data-testid={`mobile-nav-${item.id}`}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors ${
+              activeSection === item.id
+                ? 'text-primary'
+                : 'text-muted-foreground'
+            }`}
+          >
+            <item.icon className="w-5 h-5 shrink-0" />
+            <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+            {item.badge != null && item.badge > 0 && (
+              <span className="absolute top-2 right-[calc(50%-10px)] translate-x-full inline-flex items-center justify-center min-w-[14px] h-[14px] px-0.5 text-[9px] font-bold rounded-full bg-destructive text-destructive-foreground">
+                {item.badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {/* Spacer so content isn't hidden behind the mobile nav */}
+      <div className="md:hidden h-16" />
 
       <AlertDialog open={accountDeletedInfo !== null}>
         <AlertDialogContent data-testid="dialog-account-deleted">

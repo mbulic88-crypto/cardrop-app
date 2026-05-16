@@ -313,10 +313,16 @@ export class DatabaseStorage implements IStorage {
   async applyAndClearPendingChanges(id: string): Promise<ParkingSpot | undefined> {
     const current = await this.getParkingSpot(id);
     if (!current || !current.pendingChanges) return current;
-    const pending = current.pendingChanges as Record<string, unknown>;
+    const raw = current.pendingChanges as Record<string, unknown>;
+    // Only apply fields that are in the owner-editable whitelist — strip everything else
+    const { OWNER_EDITABLE_FIELDS } = await import("../shared/schema");
+    const allowed = new Set<string>(OWNER_EDITABLE_FIELDS);
+    const safeChanges = Object.fromEntries(
+      Object.entries(raw).filter(([k]) => allowed.has(k))
+    );
     const [updated] = await db
       .update(parkingSpots)
-      .set({ ...pending, pendingChanges: null, pendingChangesFrom: null, updatedAt: new Date() })
+      .set({ ...safeChanges, pendingChanges: null, pendingChangesFrom: null, updatedAt: new Date() })
       .where(eq(parkingSpots.id, id))
       .returning();
     return updated;
