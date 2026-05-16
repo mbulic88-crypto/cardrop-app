@@ -285,48 +285,54 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const doc = new jsPDF({ unit: "mm", format: [210, 210] });
   const W = 210;
 
-  // Dark header bar — taller, fully centered branding
-  const headerH = 52;
+  // Dark header — taller, fully centered branding
   doc.setFillColor(30, 30, 30);
-  doc.rect(0, 0, W, headerH, "F");
+  doc.rect(0, 0, W, 54, "F");
 
   // Logo — centered horizontally
   const logoData = await fetchLogoDataUrl(logoUrl);
   const logoSize = 28;
-  const logoX = (W - logoSize) / 2;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", logoX, 6, logoSize, logoSize); } catch {}
+    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 6, logoSize, logoSize); } catch {}
   }
 
-  // "CarDrop" brand text — centered below logo (still inside header)
+  // "CarDrop" — centered, below logo, inside header
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, 44, { align: "center" });
+  doc.text("CarDrop", W / 2, 46, { align: "center" });
 
-  // Parking number — large, centered, green, below header
+  // Parking number — green badge (rounded rect + white text), centered below header
+  let qrStartY = 62;
   if (spot.parkingNumber) {
-    doc.setFontSize(44);
+    const bW = 72;
+    const bH = 17;
+    const bX = (W - bW) / 2;
+    const bY = 58;
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(bX, bY, bW, bH, 4, 4, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(64, 145, 108);
-    doc.text(spot.parkingNumber, W / 2, 70, { align: "center" });
+    doc.text(spot.parkingNumber, W / 2, bY + bH - 3.5, { align: "center" });
+    qrStartY = bY + bH + 6; // 58 + 17 + 6 = 81
   }
 
-  // QR code — large and centered
-  const qrSize = 90;
+  // QR code — large, centered
+  // With number: qrStartY=81, qrSize=80 → ends at 161mm
+  // Without:     qrStartY=62, qrSize=80 → ends at 142mm
+  const qrSize = 80;
   const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 400, margin: 2 });
-  const qrY = spot.parkingNumber ? 78 : 62;
-  const qrX = (W - qrSize) / 2;
-  doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+  doc.addImage(qrDataUrl, "PNG", (W - qrSize) / 2, qrStartY, qrSize, qrSize);
 
-  // Instruction text below QR
-  const instrY = qrY + qrSize + 7;
+  // Instruction text — below QR, safely above footer (footer starts at 172mm)
+  // With number: instrY = 81+80+6 = 167mm (one text line ~170mm, footer at 172 ✓)
+  const instrY = qrStartY + qrSize + 6;
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(50, 50, 50);
   const instrText = "Skenirajte QR kod za plaćanje parkinga putem CarDrop aplikacije.";
-  const instrLines = doc.splitTextToSize(instrText, W - 30);
-  doc.text(instrLines, W / 2, instrY, { align: "center" });
+  doc.text(doc.splitTextToSize(instrText, W - 30), W / 2, instrY, { align: "center" });
 
   // Dark footer
   doc.setFillColor(30, 30, 30);
