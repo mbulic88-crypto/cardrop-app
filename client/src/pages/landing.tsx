@@ -33,7 +33,9 @@ const translations = {
   sr: {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
-    findSpotButton: "Pronađite Parking Mesto",
+    findSpotButton: "Pronađi parking",
+    findSpotSubtitle: "Privatni parkinzi · Javni skriveni parkinzi · Live chat · Štek i zlatni minut",
+    findSpotBranding: "Map Hack RS",
     listSpotButton: "Iznajmite Parking Mesto",
     howItWorks: "Kako Funkcioniše",
     rentOutTitle: "Kako Iznajmiti Parking",
@@ -137,7 +139,9 @@ const translations = {
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
-    findSpotButton: "Find Parking Spot",
+    findSpotButton: "Find Parking",
+    findSpotSubtitle: "Private parking · Hidden public spots · Live chat · Štek & Golden Minute",
+    findSpotBranding: "Map Hack RS",
     listSpotButton: "List Parking Spot",
     howItWorks: "How It Works",
     rentOutTitle: "How to Rent Out Parking",
@@ -511,39 +515,24 @@ export default function Landing() {
           />
         </div>
 
-        {/* Map Hack NS – odmah ispod slike */}
-        <div className="relative z-10 bg-background px-4 pt-5 pb-4">
-          <div className="max-w-xl mx-auto">
-            <Link href="/map-hack">
+        {/* Action Buttons – Pronađi, Iznajmi, Prodaja */}
+        <div className="relative z-10 bg-background px-4 pt-5 pb-5">
+          <div className="max-w-xl mx-auto flex flex-col gap-3">
+            <Link href="/map-hack" className="w-full">
               <button
-                data-testid="button-map-hack-ns"
+                data-testid="button-find-spot-hero"
                 className="w-full flex items-center gap-3 rounded-md bg-green-700 hover:bg-green-600 active:bg-green-800 transition-colors px-4 py-3 text-white shadow-sm"
               >
                 <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-4 h-4 text-white" />
                 </div>
                 <div className="flex-1 flex flex-col items-center text-center gap-0.5">
-                  <span className="font-bold text-lg leading-tight">Map Hack RS</span>
-                  <span className="text-green-100 text-xs leading-tight">Štek parkinzi · Crvene zone · Live chat info · Korisne lokacije · Privatni parkinzi i garaže · Ostalo</span>
+                  <span className="font-bold text-xl leading-tight">{t.findSpotButton}</span>
+                  <span className="text-green-100 text-xs leading-snug">{t.findSpotSubtitle}</span>
+                  <span className="text-white/80 text-sm font-semibold leading-tight mt-0.5">{t.findSpotBranding}</span>
                 </div>
                 <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Action Buttons – Iznajmi, Rezerviši, Prodaja */}
-        <div className="relative z-10 bg-background px-4 pb-5">
-          <div className="max-w-xl mx-auto flex flex-col gap-3">
-            <Link href="/map-hack" className="w-full">
-              <Button
-                size="lg"
-                className="w-full text-base py-5"
-                data-testid="button-find-spot-hero"
-              >
-                <Search className="w-5 h-5 mr-2" />
-                {t.findSpotButton}
-              </Button>
             </Link>
             <Button
               size="lg"
