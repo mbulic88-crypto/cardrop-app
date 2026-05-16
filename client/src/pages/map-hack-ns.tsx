@@ -877,7 +877,7 @@ export default function MapHackNS() {
     if (user?.savedLicensePlate && !parkingLicensePlate) {
       setParkingLicensePlate(user.savedLicensePlate);
     }
-  }, [user?.savedLicensePlate]);
+  }, [user?.savedLicensePlate, selectedParking?.id]);
 
   function closeParkingPanel() {
     setSelectedParking(null);
