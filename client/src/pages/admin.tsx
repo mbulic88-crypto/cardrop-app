@@ -311,7 +311,7 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
     doc.setFontSize(96);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
-    doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 6 });
+    doc.text(spot.parkingNumber, W / 2, numY, { align: "center" });
   } else {
     doc.setFontSize(32);
     doc.setFont("helvetica", "bold");
