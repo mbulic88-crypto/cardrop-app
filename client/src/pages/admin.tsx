@@ -303,7 +303,7 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(56);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, textBase, { align: "center", charSpace: 4 });
+  doc.text("CarDrop", W / 2, textBase, { align: "center" });
 
   // ── PARKING NUMBER / SPOT NAME — very large, centered, prominent ──
   const numY = textBase + 34;
