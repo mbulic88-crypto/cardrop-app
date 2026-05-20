@@ -279,65 +279,112 @@ async function fetchLogoDataUrl(logoUrl: string): Promise<string | null> {
 
 async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const { jsPDF } = await import("jspdf");
-  const QRCode = (await import("qrcode")).default;
-  const spotUrl = `https://cardrop.app/map-hack?parking=${spot.id}`;
 
-  const doc = new jsPDF({ unit: "mm", format: [210, 210] });
+  const doc = new jsPDF({ unit: "mm", format: "a4" }); // 210×297mm
   const W = 210;
 
-  // Dark header — taller, fully centered branding
-  doc.setFillColor(30, 30, 30);
-  doc.rect(0, 0, W, 54, "F");
+  // ── HEADER: two-tone green background ──
+  // Bottom layer (darker green)
+  doc.setFillColor(26, 77, 55);
+  doc.rect(0, 0, W, 118, "F");
+  // Top overlay (brighter green) for depth
+  doc.setFillColor(40, 115, 80);
+  doc.rect(0, 0, W, 65, "F");
 
-  // Logo — centered horizontally
+  // Logo — centered, 46×46mm
   const logoData = await fetchLogoDataUrl(logoUrl);
-  const logoSize = 30;
+  const logoSize = 46;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 5, logoSize, logoSize); } catch {}
+    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 12, logoSize, logoSize); } catch {}
   }
 
-  // "CarDrop" — centered, below logo, inside header
+  // "CarDrop" — white, bold, letter-spaced
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(26);
+  doc.setFontSize(36);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, 46, { align: "center" });
+  doc.text("CarDrop", W / 2, 74, { align: "center", charSpace: 1.5 });
 
-  // Parking number — green badge (rounded rect + white text), centered below header
-  let qrStartY = 62;
-  if (spot.parkingNumber) {
-    const bW = 72;
-    const bH = 17;
-    const bX = (W - bW) / 2;
-    const bY = 58;
-    doc.setFillColor(64, 145, 108);
-    doc.roundedRect(bX, bY, bW, bH, 4, 4, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text(spot.parkingNumber, W / 2, bY + bH - 3.5, { align: "center" });
-    qrStartY = bY + bH + 6; // 58 + 17 + 6 = 81
-  }
-
-  // QR code — large, centered
-  // With number: qrStartY=81, qrSize=80 → ends at 161mm
-  // Without:     qrStartY=62, qrSize=80 → ends at 142mm
-  const qrSize = 80;
-  const qrDataUrl = await QRCode.toDataURL(spotUrl, { width: 400, margin: 2 });
-  doc.addImage(qrDataUrl, "PNG", (W - qrSize) / 2, qrStartY, qrSize, qrSize);
-
-  // Dark footer — instruction + branding (no URL shown)
-  doc.setFillColor(30, 30, 30);
-  doc.rect(0, 172, W, 38, "F");
-  doc.setFontSize(9);
+  // Tagline — light green
+  doc.setFontSize(13);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(255, 255, 255);
-  doc.text("Skenirajte QR kod i platite parking putem CarDrop.", W / 2, 185, { align: "center" });
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(82, 183, 136);
-  doc.text("cardrop.app", W / 2, 198, { align: "center" });
+  doc.setTextColor(167, 243, 208);
+  doc.text("Pametno parkiranje", W / 2, 86, { align: "center" });
 
-  const fileName = spot.parkingNumber ? `${spot.parkingNumber}-cardrop.pdf` : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;
+  // Thin white separator line
+  doc.setDrawColor(255, 255, 255);
+  doc.setLineWidth(0.3);
+  doc.setLineDashPattern([2, 2], 0);
+  doc.line(50, 100, W - 50, 100);
+  doc.setLineDashPattern([], 0);
+
+  // "Parking broj" label — muted below separator
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(167, 243, 208);
+  doc.text("BROJ PARKINGA", W / 2, 110, { align: "center", charSpace: 2 });
+
+  // ── PARKING NUMBER BLOCK ──
+  const bW = 140;
+  const bH = 38;
+  const bX = (W - bW) / 2;
+  const bY = 136;
+
+  if (spot.parkingNumber) {
+    // Green rounded rect
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(bX, bY, bW, bH, 10, 10, "F");
+    // Subtle inner highlight
+    doc.setDrawColor(82, 183, 136);
+    doc.setLineWidth(1);
+    doc.roundedRect(bX, bY, bW, bH, 10, 10, "S");
+    // Number text
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(46);
+    doc.setFont("helvetica", "bold");
+    doc.text(spot.parkingNumber, W / 2, bY + bH - 7, { align: "center", charSpace: 5 });
+  } else {
+    // Fallback: spot title
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(bX, bY, bW, bH, 10, 10, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    const title = doc.splitTextToSize(spot.title, bW - 10);
+    doc.text(title[0], W / 2, bY + bH / 2 + 3, { align: "center" });
+  }
+
+  // ── DECORATIVE DIVIDER ──
+  doc.setDrawColor(64, 145, 108);
+  doc.setLineWidth(0.7);
+  doc.line(35, 192, W - 35, 192);
+
+  // ── CONTACT INFO ──
+  // Email
+  doc.setFontSize(15);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(64, 145, 108);
+  doc.text("info@cardrop.app", W / 2, 206, { align: "center" });
+
+  // Website
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128);
+  doc.text("cardrop.app", W / 2, 216, { align: "center" });
+
+  // ── FOOTER ──
+  doc.setFillColor(18, 22, 30);
+  doc.rect(0, 268, W, 29, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(75, 85, 99);
+  doc.text("© 2025 CarDrop  ·  Za pitanja kontaktirajte: info@cardrop.app", W / 2, 280, { align: "center" });
+  doc.setFontSize(7);
+  doc.setTextColor(55, 65, 81);
+  doc.text("Odštampajte i zalepite na vidno mesto na parkingu.", W / 2, 289, { align: "center" });
+
+  const fileName = spot.parkingNumber
+    ? `${spot.parkingNumber}-cardrop.pdf`
+    : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;
   doc.save(fileName);
 }
 

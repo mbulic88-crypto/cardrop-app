@@ -588,7 +588,18 @@ export default function MapHackNS() {
 
   // Apply parking filters client-side in real time
   const filteredParkingListings = parkingListings.filter(p => {
-    if (parkingFilter.city && p.city !== parkingFilter.city) return false;
+    if (parkingFilter.city) {
+      const q = parkingFilter.city.toLowerCase();
+      const CITY_LABELS_FILTER: Record<string, string> = {
+        beograd: "Beograd", novi_sad: "Novi Sad", nis: "Niš", kragujevac: "Kragujevac",
+        subotica: "Subotica", zrenjanin: "Zrenjanin", pancevo: "Pančevo", cacak: "Čačak",
+        novi_pazar: "Novi Pazar", kraljevo: "Kraljevo", smederevo: "Smederevo",
+        leskovac: "Leskovac", sabac: "Šabac", uzice: "Užice", valjevo: "Valjevo",
+        vranje: "Vranje", ostalo: "Ostalo",
+      };
+      const cityLabel = CITY_LABELS_FILTER[p.city ?? ""] ?? p.city ?? "";
+      if (!cityLabel.toLowerCase().includes(q) && !(p.city ?? "").toLowerCase().includes(q)) return false;
+    }
     if (parkingFilter.pricingType && p.pricingType !== parkingFilter.pricingType) return false;
     if (parkingFilter.evCharging && !p.hasEvCharging) return false;
     if (parkingFilter.is24Hours && !p.is24Hours) return false;
@@ -2848,17 +2859,41 @@ export default function MapHackNS() {
       {/* ── Parking filter bar ── */}
       {!chatFullscreen && parkingListings.length > 0 && (
         <>
-          <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5"
-            style={{ background: "rgba(20,184,166,0.08)", borderBottom: parkingFilterOpen ? "none" : "1px solid rgba(20,184,166,0.15)" }}>
-            <Car size={12} style={{ color: "#14b8a6", flexShrink: 0 }} />
-            <span className="text-xs flex-1" style={{ color: "#14b8a6" }}>
-              Privatni parking oglasi — {filteredParkingListings.length}
-              {parkingFilterCount > 0 && ` / ${parkingListings.length}`}
-            </span>
+          <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2"
+            style={{ background: "rgba(20,184,166,0.08)", borderBottom: (parkingFilterOpen || showParkingSearch) ? "none" : "1px solid rgba(20,184,166,0.15)" }}>
+            {/* Pretraži parking */}
+            <button
+              data-testid="btn-parking-search"
+              onClick={() => { setShowParkingSearch(prev => !prev); if (parkingFilterOpen) setParkingFilterOpen(false); }}
+              className="kraft-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold flex-1"
+              style={{
+                background: showParkingSearch ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.06)",
+                border: `1px solid ${showParkingSearch ? "rgba(20,184,166,0.6)" : "rgba(255,255,255,0.12)"}`,
+                color: showParkingSearch ? "#14b8a6" : "#d1d5db",
+                justifyContent: "center",
+              }}>
+              <ParkingSquare size={12} />
+              <span>Pretraži parking</span>
+            </button>
+            {/* Najbliži parking */}
+            <button
+              data-testid="btn-nearest-parking"
+              onClick={goToNearest}
+              className="kraft-btn flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold flex-1"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#6ee7b7",
+                justifyContent: "center",
+              }}>
+              <LocateFixed size={12} />
+              <span>Najbliži parking</span>
+            </button>
+            {/* Filter */}
             <button
               data-testid="btn-parking-filter-toggle"
-              onClick={() => setParkingFilterOpen(p => !p)}
-              className="kraft-btn flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
+              onClick={() => { setParkingFilterOpen(p => !p); if (showParkingSearch) setShowParkingSearch(false); }}
+              className="kraft-btn flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0"
               style={{
                 background: parkingFilterCount > 0 ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.06)",
                 border: `1px solid ${parkingFilterCount > 0 ? "rgba(20,184,166,0.5)" : "rgba(255,255,255,0.12)"}`,
@@ -2877,49 +2912,94 @@ export default function MapHackNS() {
               <button
                 data-testid="btn-parking-filter-reset"
                 onClick={() => setParkingFilter({ city: "", pricingType: "", evCharging: false, is24Hours: false, hasCamera: false })}
-                className="kraft-btn flex items-center justify-center rounded-full"
-                style={{ width: 20, height: 20, background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171", flexShrink: 0 }}>
+                className="kraft-btn flex items-center justify-center rounded-full flex-shrink-0"
+                style={{ width: 20, height: 20, background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", color: "#f87171" }}>
                 <X size={10} />
               </button>
             )}
           </div>
+
+          {/* ── Parking search panel (inline, below bar) ── */}
+          {showParkingSearch && (
+            <div className="flex-shrink-0 flex flex-col"
+              style={{ background: "rgba(10,14,20,0.98)", borderBottom: "1px solid rgba(20,184,166,0.15)", maxHeight: "42vh", overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+                <Search size={13} style={{ color: "#6b7280", flexShrink: 0 }} />
+                <input
+                  data-testid="input-parking-search"
+                  type="text"
+                  placeholder="Broj ili naziv (NS1, Beograd...)"
+                  value={parkingSearchQuery}
+                  onChange={e => setParkingSearchQuery(e.target.value)}
+                  autoFocus
+                  style={{ flex: 1, background: "transparent", color: "#f3f4f6", border: "none", outline: "none", fontSize: 13 }}
+                />
+                {parkingSearchQuery && (
+                  <button onClick={() => setParkingSearchQuery("")} style={{ color: "#6b7280", flexShrink: 0 }}>
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                {filteredParkingListings
+                  .filter(s => !parkingSearchQuery ||
+                    (s.parkingNumber ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
+                    s.title.toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
+                    (s.address ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase()))
+                  .map(spot => (
+                    <div key={spot.id}
+                      data-testid={`parking-search-item-${spot.id}`}
+                      onClick={() => {
+                        mapFlyToRef.current?.flyTo(parseFloat(spot.latitude), parseFloat(spot.longitude));
+                        setSelectedParking(spot);
+                        setShowParkingSearch(false);
+                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                      {spot.parkingNumber && (
+                        <span style={{ fontWeight: 700, fontSize: 11, flexShrink: 0, color: spot.subscriptionType === "gold" ? "#fbbf24" : "#14b8a6", minWidth: 32 }}>{spot.parkingNumber}</span>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: "#e5e7eb", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{spot.title}</div>
+                        {spot.address && <div style={{ fontSize: 10, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{spot.address}</div>}
+                      </div>
+                    </div>
+                  ))}
+                {filteredParkingListings.filter(s => !parkingSearchQuery ||
+                  (s.parkingNumber ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
+                  s.title.toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
+                  (s.address ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase())).length === 0 && (
+                  <div style={{ padding: "16px 12px", textAlign: "center", color: "#4b5563", fontSize: 12 }}>Nema rezultata</div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── Filter drawer ── */}
           {parkingFilterOpen && (
             <div className="flex-shrink-0 px-3 py-3 flex flex-col gap-3"
               style={{ background: "rgba(13,17,23,0.97)", borderBottom: "1px solid rgba(20,184,166,0.15)" }}>
               {/* City row */}
-              {availableCities.length > 0 && (
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Grad</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {availableCities.map(c => {
-                      const CITY_LABELS: Record<string, string> = {
-                        beograd: "Beograd", novi_sad: "Novi Sad", nis: "Niš", kragujevac: "Kragujevac",
-                        subotica: "Subotica", zrenjanin: "Zrenjanin", pancevo: "Pančevo", cacak: "Čačak",
-                        novi_pazar: "Novi Pazar", kraljevo: "Kraljevo", smederevo: "Smederevo",
-                        leskovac: "Leskovac", sabac: "Šabac", uzice: "Užice", valjevo: "Valjevo",
-                        vranje: "Vranje", ostalo: "Ostalo",
-                      };
-                      const label = CITY_LABELS[c] ?? c;
-                      const active = parkingFilter.city === c;
-                      return (
-                        <button
-                          key={c}
-                          data-testid={`parking-filter-city-${c}`}
-                          onClick={() => setParkingFilter(prev => ({ ...prev, city: active ? "" : c }))}
-                          className="kraft-btn px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{
-                            background: active ? "rgba(20,184,166,0.25)" : "rgba(255,255,255,0.05)",
-                            border: `1px solid ${active ? "#14b8a6" : "rgba(255,255,255,0.1)"}`,
-                            color: active ? "#14b8a6" : "#9ca3af",
-                          }}>
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Grad</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", padding: "5px 8px" }}>
+                  <Search size={11} style={{ color: "#6b7280", flexShrink: 0 }} />
+                  <input
+                    data-testid="input-filter-city"
+                    type="text"
+                    placeholder="Upiši grad (npr. Novi Sad)..."
+                    value={parkingFilter.city}
+                    onChange={e => setParkingFilter(prev => ({ ...prev, city: e.target.value }))}
+                    style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#f3f4f6", fontSize: 12 }}
+                  />
+                  {parkingFilter.city && (
+                    <button onClick={() => setParkingFilter(prev => ({ ...prev, city: "" }))} style={{ color: "#6b7280", flexShrink: 0 }}>
+                      <X size={11} />
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
               {/* Pricing type row */}
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-semibold" style={{ color: "#6b7280" }}>Tip zakupa</span>
@@ -3061,132 +3141,6 @@ export default function MapHackNS() {
           </div>
         )}
 
-        {/* ── Floating parking dugmad — desna strana mape ── */}
-        <div style={{
-          position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-          zIndex: 25, display: "flex", flexDirection: "column", gap: 8,
-        }}>
-          {/* Dugme: pretraga parkinga */}
-          <button
-            data-testid="btn-parking-search"
-            onClick={() => setShowParkingSearch(prev => !prev)}
-            title="Pretraži parkinge"
-            style={{
-              width: 48, height: 48, borderRadius: "50%",
-              background: showParkingSearch ? "#1d4ed8" : "rgba(13,17,23,0.88)",
-              border: `1.5px solid ${showParkingSearch ? "#3b82f6" : "rgba(255,255,255,0.22)"}`,
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 2, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
-            }}>
-            <ParkingSquare size={17} style={{ color: showParkingSearch ? "#bfdbfe" : "#e5e7eb" }} />
-            <span style={{ color: showParkingSearch ? "#bfdbfe" : "#9ca3af", fontSize: 8, fontWeight: 700, letterSpacing: "0.04em" }}>PARKING</span>
-          </button>
-
-          {/* Dugme: najbliži parking */}
-          <button
-            data-testid="btn-nearest-parking"
-            onClick={goToNearest}
-            title="Najbliži parking"
-            style={{
-              width: 48, height: 48, borderRadius: "50%",
-              background: "rgba(13,17,23,0.88)",
-              border: "1.5px solid rgba(255,255,255,0.22)",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: 2, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
-            }}>
-            <LocateFixed size={17} style={{ color: "#6ee7b7" }} />
-            <span style={{ color: "#9ca3af", fontSize: 8, fontWeight: 700, letterSpacing: "0.04em" }}>NAJBLIŽI</span>
-          </button>
-        </div>
-
-        {/* ── Parking search panel ── */}
-        {showParkingSearch && (
-          <div style={{
-            position: "absolute", right: 66, top: "50%", transform: "translateY(-50%)",
-            zIndex: 24, width: 260, maxHeight: "60vh",
-            background: "rgba(15,20,30,0.97)", borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.6)",
-            display: "flex", flexDirection: "column", overflow: "hidden",
-          }}>
-            {/* Search header */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "8px 10px", borderBottom: "1px solid rgba(255,255,255,0.08)",
-              flexShrink: 0,
-            }}>
-              <Search size={13} style={{ color: "#6b7280", flexShrink: 0 }} />
-              <input
-                data-testid="input-parking-search"
-                type="text"
-                placeholder="NS1, naziv parkinga..."
-                value={parkingSearchQuery}
-                onChange={e => setParkingSearchQuery(e.target.value)}
-                autoFocus
-                style={{
-                  flex: 1, background: "transparent", color: "#f3f4f6",
-                  border: "none", outline: "none", fontSize: 13,
-                }}
-              />
-              <button onClick={() => setShowParkingSearch(false)} style={{ flexShrink: 0, color: "#6b7280", cursor: "pointer" }}>
-                <X size={14} />
-              </button>
-            </div>
-
-            {/* Lista parkinga */}
-            <div style={{ overflowY: "auto", flex: 1 }}>
-              {filteredParkingListings
-                .filter(s =>
-                  !parkingSearchQuery ||
-                  (s.parkingNumber ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
-                  s.title.toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
-                  (s.address ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase())
-                )
-                .map(spot => (
-                  <div
-                    key={spot.id}
-                    data-testid={`parking-search-item-${spot.id}`}
-                    onClick={() => {
-                      mapFlyToRef.current?.flyTo(parseFloat(spot.latitude), parseFloat(spot.longitude));
-                      setSelectedParking(spot);
-                      setShowParkingSearch(false);
-                    }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "8px 10px", cursor: "pointer",
-                      borderBottom: "1px solid rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                  >
-                    {spot.parkingNumber && (
-                      <span style={{
-                        flexShrink: 0, fontWeight: 700, fontSize: 11,
-                        color: spot.subscriptionType === "gold" ? "#fbbf24" : "#52B788",
-                        minWidth: 28,
-                      }}>{spot.parkingNumber}</span>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: "#e5e7eb", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{spot.title}</div>
-                      {spot.address && (
-                        <div style={{ fontSize: 10, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{spot.address}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              {filteredParkingListings.filter(s =>
-                !parkingSearchQuery ||
-                (s.parkingNumber ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
-                s.title.toLowerCase().includes(parkingSearchQuery.toLowerCase()) ||
-                (s.address ?? "").toLowerCase().includes(parkingSearchQuery.toLowerCase())
-              ).length === 0 && (
-                <div style={{ padding: "16px 10px", textAlign: "center", color: "#4b5563", fontSize: 12 }}>
-                  Nema rezultata
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
       {/* ── Action bar below map ── */}
       <div className="flex-shrink-0 px-3 pt-2.5"
