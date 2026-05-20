@@ -396,6 +396,15 @@ export default function MapHackNS() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
+  // When parking search panel closes, fire a resize so Mapbox repaints
+  // correctly after mobile keyboard was shown and dismissed
+  useEffect(() => {
+    if (!showParkingSearch) {
+      const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 80);
+      return () => clearTimeout(t);
+    }
+  }, [showParkingSearch]);
+
   // For returning users: check if we need to show the permissions screen
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user || !hasProfile || statusLoading || !mapStatus) return;
@@ -2931,7 +2940,6 @@ export default function MapHackNS() {
                   placeholder="Broj ili naziv (NS1, Beograd...)"
                   value={parkingSearchQuery}
                   onChange={e => setParkingSearchQuery(e.target.value)}
-                  autoFocus
                   style={{ flex: 1, background: "transparent", color: "#f3f4f6", border: "none", outline: "none", fontSize: 13 }}
                 />
                 {parkingSearchQuery && (

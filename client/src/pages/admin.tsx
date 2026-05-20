@@ -283,104 +283,101 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   const doc = new jsPDF({ unit: "mm", format: "a4" }); // 210×297mm
   const W = 210;
 
-  // ── HEADER: two-tone green background ──
-  // Bottom layer (darker green)
+  // ── TOP GREEN SECTION (0–100mm) ──
   doc.setFillColor(26, 77, 55);
-  doc.rect(0, 0, W, 118, "F");
-  // Top overlay (brighter green) for depth
+  doc.rect(0, 0, W, 100, "F");
   doc.setFillColor(40, 115, 80);
-  doc.rect(0, 0, W, 65, "F");
+  doc.rect(0, 0, W, 58, "F");
 
-  // Logo — centered, 46×46mm
+  // Logo — centered, 48×48mm
   const logoData = await fetchLogoDataUrl(logoUrl);
-  const logoSize = 46;
+  const logoSize = 48;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 12, logoSize, logoSize); } catch {}
+    try { doc.addImage(logoData, "PNG", (W - logoSize) / 2, 10, logoSize, logoSize); } catch {}
   }
 
-  // "CarDrop" — white, bold, letter-spaced
+  // "CarDrop"
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(36);
+  doc.setFontSize(34);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, 74, { align: "center", charSpace: 1.5 });
+  doc.text("CarDrop", W / 2, 72, { align: "center", charSpace: 1.5 });
 
-  // Tagline — light green
-  doc.setFontSize(13);
+  // Tagline
+  doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(167, 243, 208);
-  doc.text("Pametno parkiranje", W / 2, 86, { align: "center" });
+  doc.text("Pametno parkiranje", W / 2, 83, { align: "center" });
 
-  // Thin white separator line
+  // Separator (still inside green zone)
   doc.setDrawColor(255, 255, 255);
   doc.setLineWidth(0.3);
   doc.setLineDashPattern([2, 2], 0);
-  doc.line(50, 100, W - 50, 100);
+  doc.line(55, 93, W - 55, 93);
   doc.setLineDashPattern([], 0);
 
-  // "Parking broj" label — muted below separator
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(167, 243, 208);
-  doc.text("BROJ PARKINGA", W / 2, 110, { align: "center", charSpace: 2 });
-
-  // ── PARKING NUMBER BLOCK ──
-  const bW = 140;
-  const bH = 38;
-  const bX = (W - bW) / 2;
-  const bY = 136;
-
-  if (spot.parkingNumber) {
-    // Green rounded rect
-    doc.setFillColor(64, 145, 108);
-    doc.roundedRect(bX, bY, bW, bH, 10, 10, "F");
-    // Subtle inner highlight
-    doc.setDrawColor(82, 183, 136);
-    doc.setLineWidth(1);
-    doc.roundedRect(bX, bY, bW, bH, 10, 10, "S");
-    // Number text
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(46);
-    doc.setFont("helvetica", "bold");
-    doc.text(spot.parkingNumber, W / 2, bY + bH - 7, { align: "center", charSpace: 5 });
-  } else {
-    // Fallback: spot title
-    doc.setFillColor(64, 145, 108);
-    doc.roundedRect(bX, bY, bW, bH, 10, 10, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    const title = doc.splitTextToSize(spot.title, bW - 10);
-    doc.text(title[0], W / 2, bY + bH / 2 + 3, { align: "center" });
-  }
-
-  // ── DECORATIVE DIVIDER ──
-  doc.setDrawColor(64, 145, 108);
-  doc.setLineWidth(0.7);
-  doc.line(35, 192, W - 35, 192);
-
-  // ── CONTACT INFO ──
-  // Email
-  doc.setFontSize(15);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(64, 145, 108);
-  doc.text("info@cardrop.app", W / 2, 206, { align: "center" });
-
-  // Website
-  doc.setFontSize(11);
+  // ── "BROJ PARKINGA" LABEL (just below green zone) ──
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(107, 114, 128);
-  doc.text("cardrop.app", W / 2, 216, { align: "center" });
+  doc.text("BROJ PARKINGA", W / 2, 112, { align: "center", charSpace: 3 });
 
-  // ── FOOTER ──
+  // ── PARKING NUMBER BLOCK (110–170mm) ──
+  const bW = 150;
+  const bH = 58;
+  const bX = (W - bW) / 2;
+  const bY = 118;
+
+  if (spot.parkingNumber) {
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(bX, bY, bW, bH, 12, 12, "F");
+    doc.setDrawColor(82, 183, 136);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(bX, bY, bW, bH, 12, 12, "S");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    doc.text(spot.parkingNumber, W / 2, bY + bH / 2 + 9, { align: "center", charSpace: 5 });
+  } else {
+    doc.setFillColor(64, 145, 108);
+    doc.roundedRect(bX, bY, bW, bH, 12, 12, "F");
+    doc.setDrawColor(82, 183, 136);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(bX, bY, bW, bH, 12, 12, "S");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    const title = doc.splitTextToSize(spot.title, bW - 14);
+    doc.text(title[0], W / 2, bY + bH / 2 + 4, { align: "center" });
+  }
+
+  // ── CONTACT INFO (centered in remaining space) ──
+  // Decorative accent line
+  doc.setDrawColor(64, 145, 108);
+  doc.setLineWidth(0.6);
+  doc.line(40, 192, W - 40, 192);
+
+  // Email
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(64, 145, 108);
+  doc.text("info@cardrop.app", W / 2, 208, { align: "center" });
+
+  // Website
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128);
+  doc.text("cardrop.app", W / 2, 221, { align: "center" });
+
+  // ── FOOTER (bottom of page) ──
   doc.setFillColor(18, 22, 30);
-  doc.rect(0, 268, W, 29, "F");
+  doc.rect(0, 248, W, 49, "F");
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(75, 85, 99);
-  doc.text("© 2025 CarDrop  ·  Za pitanja kontaktirajte: info@cardrop.app", W / 2, 280, { align: "center" });
+  doc.text("© 2025 CarDrop  ·  Za pitanja kontaktirajte: info@cardrop.app", W / 2, 265, { align: "center" });
   doc.setFontSize(7);
   doc.setTextColor(55, 65, 81);
-  doc.text("Odštampajte i zalepite na vidno mesto na parkingu.", W / 2, 289, { align: "center" });
+  doc.text("Odštampajte i zalepite na vidno mesto na parkingu.", W / 2, 276, { align: "center" });
 
   const fileName = spot.parkingNumber
     ? `${spot.parkingNumber}-cardrop.pdf`

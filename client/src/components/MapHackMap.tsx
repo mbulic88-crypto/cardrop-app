@@ -653,7 +653,7 @@ export function MapHackMap({
                   cursor: "pointer",
                   fontWeight: 700,
                   color: pinStyle.text,
-                  fontSize: Math.round(pinStyle.size * ((spot.parkingNumber ?? "P").length > 2 ? 0.28 : 0.37)),
+                  fontSize: Math.round(pinStyle.size * ((spot.parkingNumber ?? "P").length > 2 ? 0.40 : 0.52)),
                   fontFamily: "system-ui,sans-serif",
                   position: "relative",
                   zIndex: pinStyle.zIndex,
