@@ -599,9 +599,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(latNum) || isNaN(lngNum)) {
         return res.status(400).json({ message: "Nevalidne koordinate" });
       }
-      // Bound to NS area
-      if (latNum < 45.20 || latNum > 45.36 || lngNum < 19.72 || lngNum > 19.98) {
-        return res.status(400).json({ message: "Lokacija mora biti u Novom Sadu" });
+      // Serbia-wide bounds (rough bounding box)
+      if (latNum < 42.0 || latNum > 46.5 || lngNum < 18.5 || lngNum > 23.0) {
+        return res.status(400).json({ message: "Lokacija mora biti u Srbiji" });
       }
 
       // Set expiry based on type
