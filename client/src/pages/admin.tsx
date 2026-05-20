@@ -288,41 +288,44 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   doc.setFillColor(26, 77, 55);
   doc.rect(0, 0, W, H, "F");
 
-  // ── LOGO — large square, centered, top ──
+  // ── LOGO — edge-to-edge, fills top of page ──
   const logoData = await fetchLogoDataUrl(logoUrl);
-  const logoSize = 105;
-  const logoX = (W - logoSize) / 2;
-  const logoY = 12;
+  const logoW = 200;      // full width minus 5mm each side
+  const logoH = 190;      // proportional height, dominates upper page
+  const logoX = 5;
+  const logoY = 5;
   if (logoData) {
-    try { doc.addImage(logoData, "PNG", logoX, logoY, logoSize, logoSize); } catch {}
+    try { doc.addImage(logoData, "PNG", logoX, logoY, logoW, logoH); } catch {}
   }
 
-  // ── "CarDrop" — bold white, below logo ──
+  // ── "CarDrop" — elegant, centered below logo ──
+  const textBase = logoY + logoH + 8;
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(38);
+  doc.setFontSize(40);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, logoY + logoSize + 16, { align: "center", charSpace: 2 });
+  doc.text("CarDrop", W / 2, textBase, { align: "center", charSpace: 3 });
 
-  // ── PARKING NUMBER / SPOT NAME ──
-  const numY = logoY + logoSize + 50;
+  // ── PARKING NUMBER / SPOT NAME — centered, prominent ──
+  const numY = textBase + 22;
   if (spot.parkingNumber) {
-    doc.setFontSize(64);
+    doc.setFontSize(56);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 4 });
   } else {
-    doc.setFontSize(28);
+    doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     const title = doc.splitTextToSize(spot.title, W - 40);
     doc.text(title[0], W / 2, numY, { align: "center" });
   }
 
-  // ── EMAIL ──
-  doc.setFontSize(16);
+  // ── EMAIL — centered below number ──
+  const emailY = numY + 26;
+  doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(134, 214, 180);
-  doc.text("info@cardrop.app", W / 2, numY + 38, { align: "center" });
+  doc.text("info@cardrop.app", W / 2, emailY, { align: "center" });
 
   // ── subtle copyright at very bottom (nearly invisible) ──
   doc.setFontSize(7);
