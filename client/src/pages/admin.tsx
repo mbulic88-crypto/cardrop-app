@@ -291,29 +291,29 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   // ── LOGO — edge-to-edge, fills top of page ──
   const logoData = await fetchLogoDataUrl(logoUrl);
   const logoW = 200;      // full width minus 5mm each side
-  const logoH = 160;      // slightly smaller so text sits clearly below
+  const logoH = 125;      // smaller to leave room for large text below
   const logoX = 5;
   const logoY = 8;
   if (logoData) {
     try { doc.addImage(logoData, "PNG", logoX, logoY, logoW, logoH); } catch {}
   }
 
-  // ── "CarDrop" — elegant, centered below logo ──
-  const textBase = logoY + logoH + 24;
+  // ── "CarDrop" — large, bold, centered below logo ──
+  const textBase = logoY + logoH + 20;
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(40);
+  doc.setFontSize(58);
   doc.setFont("helvetica", "bold");
-  doc.text("CarDrop", W / 2, textBase, { align: "center", charSpace: 3 });
+  doc.text("CarDrop", W / 2, textBase, { align: "center", charSpace: 4 });
 
-  // ── PARKING NUMBER / SPOT NAME — centered, prominent ──
-  const numY = textBase + 32;
+  // ── PARKING NUMBER / SPOT NAME — very large, centered, prominent ──
+  const numY = textBase + 38;
   if (spot.parkingNumber) {
-    doc.setFontSize(72);
+    doc.setFontSize(100);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
-    doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 5 });
+    doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 6 });
   } else {
-    doc.setFontSize(30);
+    doc.setFontSize(34);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     const title = doc.splitTextToSize(spot.title, W - 40);
@@ -321,8 +321,8 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   }
 
   // ── EMAIL — centered below number ──
-  const emailY = numY + 40;
-  doc.setFontSize(14);
+  const emailY = numY + 48;
+  doc.setFontSize(16);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(134, 214, 180);
   doc.text("info@cardrop.app", W / 2, emailY, { align: "center" });
