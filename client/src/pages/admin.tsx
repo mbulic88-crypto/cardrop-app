@@ -291,29 +291,29 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   // ── LOGO — edge-to-edge, fills top of page ──
   const logoData = await fetchLogoDataUrl(logoUrl);
   const logoW = 200;      // full width minus 5mm each side
-  const logoH = 190;      // proportional height, dominates upper page
+  const logoH = 160;      // slightly smaller so text sits clearly below
   const logoX = 5;
-  const logoY = 5;
+  const logoY = 8;
   if (logoData) {
     try { doc.addImage(logoData, "PNG", logoX, logoY, logoW, logoH); } catch {}
   }
 
   // ── "CarDrop" — elegant, centered below logo ──
-  const textBase = logoY + logoH + 8;
+  const textBase = logoY + logoH + 24;
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(40);
   doc.setFont("helvetica", "bold");
   doc.text("CarDrop", W / 2, textBase, { align: "center", charSpace: 3 });
 
   // ── PARKING NUMBER / SPOT NAME — centered, prominent ──
-  const numY = textBase + 22;
+  const numY = textBase + 32;
   if (spot.parkingNumber) {
-    doc.setFontSize(56);
+    doc.setFontSize(72);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
-    doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 4 });
+    doc.text(spot.parkingNumber, W / 2, numY, { align: "center", charSpace: 5 });
   } else {
-    doc.setFontSize(26);
+    doc.setFontSize(30);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     const title = doc.splitTextToSize(spot.title, W - 40);
@@ -321,7 +321,7 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string) {
   }
 
   // ── EMAIL — centered below number ──
-  const emailY = numY + 26;
+  const emailY = numY + 40;
   doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(134, 214, 180);
