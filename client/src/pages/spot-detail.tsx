@@ -54,6 +54,7 @@ export default function SpotDetail() {
   const [bookingEndDate, setBookingEndDate] = useState<Date | undefined>(undefined);
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
+  const [dailyStartHour, setDailyStartHour] = useState(0);
   const [numMonths, setNumMonths] = useState(1);
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
@@ -82,6 +83,26 @@ export default function SpotDetail() {
     queryKey: ["/api/reviews/spot", spotId],
     enabled: !!spotId,
   });
+
+  const { data: availability = [] } = useQuery<{ startTime: string; endTime: string }[]>({
+    queryKey: ["/api/spots", spotId, "availability"],
+    queryFn: async () => {
+      const res = await fetch(`/api/spots/${spotId}/availability`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!spotId,
+  });
+
+  const isDateBooked = (date: Date): boolean => {
+    const dayStart = startOfDay(date);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return availability.some(({ startTime, endTime }) => {
+      const s = new Date(startTime);
+      const e = new Date(endTime);
+      return s < dayEnd && e > dayStart;
+    });
+  };
 
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -137,14 +158,12 @@ export default function SpotDetail() {
       const hours = endHour - startHour;
       return hours > 0 && bookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (spot.pricingType === 'daily') {
-      if (!bookingStartDate) return price;
-      if (!bookingEndDate) return price;
-      const days = Math.max(1, Math.ceil((bookingEndDate.getTime() - bookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      return days * price;
+      if (!bookingStartDate) return 0;
+      return price;
     } else {
       return numMonths * price;
     }
-  }, [spot, bookingStartDate, bookingEndDate, startHour, endHour, numMonths]);
+  }, [spot, bookingStartDate, startHour, endHour, numMonths, dailyStartHour]);
 
   function getBookingTimes(): { startTime: Date; endTime: Date } {
     const base = bookingStartDate || new Date();
@@ -156,9 +175,8 @@ export default function SpotDetail() {
       return { startTime: start, endTime: end };
     } else if (spot?.pricingType === 'daily') {
       const start = new Date(base);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(bookingEndDate || base);
-      end.setHours(23, 59, 59, 0);
+      start.setHours(dailyStartHour, 0, 0, 0);
+      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
       return { startTime: start, endTime: end };
     } else {
       const start = new Date(base);
@@ -415,7 +433,7 @@ export default function SpotDetail() {
                         mode="single"
                         selected={bookingStartDate}
                         onSelect={setBookingStartDate}
-                        disabled={(date) => date < startOfDay(new Date())}
+                        disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
                         className="rounded-md border w-full"
                         data-testid="calendar-booking-monthly"
                       />
@@ -439,19 +457,45 @@ export default function SpotDetail() {
                 )}
 
                 {spot.pricingType === 'daily' && (
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block text-card-foreground">Period zakupa</label>
-                    <Calendar
-                      mode="range"
-                      selected={{ from: bookingStartDate, to: bookingEndDate }}
-                      onSelect={(range) => {
-                        setBookingStartDate(range?.from);
-                        setBookingEndDate(range?.to);
-                      }}
-                      disabled={(date) => date < startOfDay(new Date())}
-                      className="rounded-md border w-full"
-                      data-testid="calendar-booking-daily"
-                    />
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block text-card-foreground">Datum</label>
+                      <Calendar
+                        mode="single"
+                        selected={bookingStartDate}
+                        onSelect={setBookingStartDate}
+                        disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                        className="rounded-md border w-full"
+                        data-testid="calendar-booking-daily"
+                      />
+                      {availability.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Zasenjeni datumi su već rezervisani.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block text-card-foreground">Sat početka</label>
+                      <Select value={String(dailyStartHour)} onValueChange={(v) => setDailyStartHour(Number(v))}>
+                        <SelectTrigger data-testid="select-daily-start-hour">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 24 }, (_, i) => i).map(h => (
+                            <SelectItem key={h} value={String(h)}>
+                              {String(h).padStart(2, '0')}:00
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {bookingStartDate && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          {format(bookingStartDate, 'dd. MMM', { locale: sr })} {String(dailyStartHour).padStart(2, '0')}:00
+                          {' → '}
+                          {format(new Date(bookingStartDate.getTime() + 24 * 60 * 60 * 1000), 'dd. MMM', { locale: sr })} {String(dailyStartHour).padStart(2, '0')}:00
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -463,7 +507,7 @@ export default function SpotDetail() {
                         mode="single"
                         selected={bookingStartDate}
                         onSelect={setBookingStartDate}
-                        disabled={(date) => date < startOfDay(new Date())}
+                        disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
                         className="rounded-md border w-full"
                         data-testid="calendar-booking-hourly"
                       />

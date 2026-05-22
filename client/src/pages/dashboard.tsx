@@ -564,6 +564,7 @@ export default function Dashboard() {
 
   function renderBookings() {
     return (
+      <>
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold text-foreground">Rezervacije i Zarada</h2>
@@ -788,6 +789,7 @@ export default function Dashboard() {
           )}
         </DialogContent>
       </Dialog>
+      </>
     );
   }
 

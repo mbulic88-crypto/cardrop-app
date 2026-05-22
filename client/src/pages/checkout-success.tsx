@@ -188,6 +188,12 @@ export default function CheckoutSuccess() {
             </div>
           )}
 
+          <p className="text-sm text-foreground font-medium mb-2">
+            Uspešno ste rezervisali parking! Vaše rezervacije možete pogledati u{" "}
+            <Link href="/dashboard?tab=bookings" className="text-accent underline underline-offset-2">
+              Vašem profilu u meniju
+            </Link>.
+          </p>
           <p className="text-xs text-muted-foreground mb-6">
             Sledeći put tablice i kartica su već sačuvani — sve ide na jedan klik.
           </p>

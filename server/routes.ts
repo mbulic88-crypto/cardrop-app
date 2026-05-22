@@ -1212,6 +1212,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get availability (booked periods) for a spot — public endpoint
+  app.get('/api/spots/:id/availability', async (req, res) => {
+    try {
+      const spotBookings = await storage.getSpotBookings(req.params.id);
+      const active = spotBookings
+        .filter(b => b.status !== 'cancelled' && b.paymentStatus === 'paid')
+        .map(b => ({ startTime: b.startTime, endTime: b.endTime }));
+      res.json(active);
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      res.status(500).json({ message: "Failed to fetch availability" });
+    }
+  });
+
   // Get bookings received by the owner (for all spots they own)
   app.get('/api/bookings/owner-received', isAuthenticated, async (req: any, res) => {
     try {
@@ -1657,6 +1671,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (alreadyConsumed) {
         return res.json({ success: true, booking, alreadyConsumed: true, spot });
       }
+
+      // Push notifikacija vlasniku
+      const startLabel = new Date(startTime).toLocaleDateString('sr-Latn-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      sendPushToUser(spot.ownerId, {
+        title: "Nova rezervacija",
+        body: `${spot.title} — ${startLabel}`,
+        icon: '/icons/icon-192x192.png',
+        tag: `booking-${booking.id}`,
+        url: '/dashboard',
+      }).catch(() => {});
 
       res.json({ success: true, booking, spot });
     } catch (error: any) {
