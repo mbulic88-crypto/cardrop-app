@@ -72,6 +72,8 @@ export default function EditSpot() {
   const { data: spot, isLoading: spotLoading } = useQuery<ParkingSpot & { pendingUntil?: string }>({
     queryKey: ["/api/parking-spots", spotId],
     enabled: !!spotId && isAuthenticated,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

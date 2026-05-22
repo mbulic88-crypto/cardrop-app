@@ -470,6 +470,34 @@ export default function Admin() {
     },
   });
 
+  const deleteImageMutation = useMutation({
+    mutationFn: async ({ spotId, imageUrl }: { spotId: string; imageUrl: string }) => {
+      return await apiRequest("DELETE", `/api/parking-spots/${spotId}/images`, { imageUrl });
+    },
+    onSuccess: (data: { imageUrls: string[] }) => {
+      setEditUploadedImages(data.imageUrls || []);
+      toast({ title: "Slika obrisana" });
+    },
+    onError: () => {
+      toast({ title: "Greška pri brisanju slike", variant: "destructive" });
+    },
+  });
+
+  const applyPendingMutation = useMutation({
+    mutationFn: async (spotId: string) => {
+      return await apiRequest("POST", `/api/admin/parking-spots/${spotId}/apply-pending`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
+      toast({ title: "Izmene su primenjene odmah" });
+      setShowEditDialog(false);
+      setEditSpot(null);
+    },
+    onError: () => {
+      toast({ title: "Greška pri primeni izmena", variant: "destructive" });
+    },
+  });
+
   const updateCoordsMutation = useMutation({
     mutationFn: async ({ id, latitude, longitude }: { id: string; latitude: string; longitude: string }) => {
       return await apiRequest("PATCH", `/api/admin/parking-spots/${id}/update`, { latitude, longitude });
@@ -763,6 +791,9 @@ export default function Admin() {
                             )}
                             {spot.stripeLinkActive && (
                               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Stripe link</Badge>
+                            )}
+                            {spot.pendingChanges && (
+                              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Na čekanju</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground truncate mt-1">{spot.address}</p>
@@ -1370,6 +1401,65 @@ export default function Admin() {
             <>
               <SpotFormFields form={editForm} setForm={setEditForm} isEdit />
 
+              {/* Pending changes section */}
+              {editSpot?.pendingChanges && (() => {
+                const pending = editSpot.pendingChanges as Record<string, unknown>;
+                const fieldLabels: Record<string, string> = {
+                  title: "Naslov", description: "Opis", address: "Adresa", city: "Grad",
+                  pricePerHour: "Cena", currency: "Valuta", spotType: "Tip mesta",
+                  pricingType: "Period naplate", paymentType: "Način plaćanja",
+                  hasEvCharging: "EV punjač", hasSecurityCamera: "Kamera",
+                  is24Hours: "24/7", phone: "Telefon", contactEmail: "Email",
+                  companyName: "Naziv firme", pib: "PIB", contactPerson: "Kontakt osoba",
+                };
+                const changedKeys = Object.keys(pending);
+                if (changedKeys.length === 0) return null;
+                return (
+                  <div className="space-y-2 pt-2 border-t">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Na čekanju ({changedKeys.length})</Badge>
+                        {editSpot.pendingChangesFrom && (
+                          <span className="text-xs text-muted-foreground">
+                            od {new Date(editSpot.pendingChangesFrom).toLocaleString("sr-RS")}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => applyPendingMutation.mutate(editSpot.id)}
+                        disabled={applyPendingMutation.isPending}
+                        data-testid="button-apply-pending"
+                      >
+                        {applyPendingMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                        Primeni odmah
+                      </Button>
+                    </div>
+                    <div className="rounded-md border border-border divide-y divide-border overflow-hidden">
+                      {changedKeys.map((key) => {
+                        const oldVal = (editSpot as unknown as Record<string, unknown>)[key];
+                        const newVal = pending[key];
+                        const label = fieldLabels[key] || key;
+                        const fmt = (v: unknown) => {
+                          if (v === null || v === undefined) return "—";
+                          if (typeof v === "boolean") return v ? "Da" : "Ne";
+                          return String(v);
+                        };
+                        return (
+                          <div key={key} className="flex items-start gap-3 px-3 py-2 text-xs bg-surface">
+                            <span className="text-muted-foreground w-24 shrink-0 pt-0.5">{label}</span>
+                            <span className="text-destructive line-through break-all">{fmt(oldVal)}</span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="text-green-400 break-all">{fmt(newVal)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Image upload section */}
               <div className="space-y-3 pt-2 border-t">
                 <p className="text-sm font-medium">Slike parkinga</p>
@@ -1378,6 +1468,16 @@ export default function Admin() {
                     {editUploadedImages.map((img, i) => (
                       <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-muted">
                         <img src={img.startsWith("http") ? img : `/api/images/${img}`} alt={`Slika ${i + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-0.5 transition-colors"
+                          onClick={() => editSpot && deleteImageMutation.mutate({ spotId: editSpot.id, imageUrl: img })}
+                          disabled={deleteImageMutation.isPending}
+                          data-testid={`button-delete-image-${i}`}
+                          title="Obriši sliku"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
                     ))}
                   </div>

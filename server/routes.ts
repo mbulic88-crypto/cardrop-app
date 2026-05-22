@@ -2090,7 +2090,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Parking spot not found" });
       }
 
-      if (spot.ownerId !== userId) {
+      const currentUser = await storage.getUser(userId);
+      const isAdminUser = currentUser?.isAdmin || ADMIN_EMAIL_LIST.includes(currentUser?.email || '');
+      if (spot.ownerId !== userId && !isAdminUser) {
         return res.status(403).json({ error: "Not authorized" });
       }
 
@@ -2687,6 +2689,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling parking spot:", error);
       res.status(500).json({ message: "Failed to toggle parking spot" });
+    }
+  });
+
+  app.post('/api/admin/parking-spots/:id/apply-pending', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      if (!spot.pendingChanges) return res.status(400).json({ message: "No pending changes" });
+      const updated = await storage.applyAndClearPendingChanges(req.params.id);
+      if (!updated) return res.status(500).json({ message: "Failed to apply pending changes" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error applying pending changes (admin):", error);
+      res.status(500).json({ message: "Failed to apply pending changes" });
     }
   });
 
