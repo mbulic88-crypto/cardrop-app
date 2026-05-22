@@ -2096,6 +2096,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Not authorized" });
       }
 
+      // Verify the imageUrl actually belongs to this spot before any deletion
+      if (!spot.imageUrls.includes(imageUrl)) {
+        return res.status(400).json({ error: "Image not associated with this spot" });
+      }
+
       const updatedImages = spot.imageUrls.filter((url: string) => url !== imageUrl);
 
       // Best-effort: delete the actual object from Object Storage
