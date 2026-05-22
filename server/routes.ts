@@ -2097,6 +2097,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedImages = spot.imageUrls.filter((url: string) => url !== imageUrl);
+
+      // Best-effort: delete the actual object from Object Storage
+      try {
+        const objectStorageService = new ObjectStorageService();
+        const file = await objectStorageService.getObjectEntityFile(imageUrl);
+        await file.delete();
+      } catch (storageErr) {
+        // Non-fatal: log but continue — DB update still removes the URL reference
+        console.warn("Could not delete object from storage (may already be gone):", storageErr);
+      }
+
       await storage.updateParkingSpot(req.params.id, {
         imageUrls: updatedImages,
       });

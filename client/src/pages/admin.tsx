@@ -356,6 +356,7 @@ export default function Admin() {
   const [editSpot, setEditSpot] = useState<ParkingSpot | null>(null);
   const [editForm, setEditForm] = useState<SpotFormData>(defaultSpotForm);
   const [editUploadedImages, setEditUploadedImages] = useState<string[]>([]);
+  const [showPendingDetails, setShowPendingDetails] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   // Grant plan state
@@ -846,6 +847,7 @@ export default function Admin() {
                                 stripeLinkActive: spot.stripeLinkActive || false,
                               });
                               setEditUploadedImages(spot.imageUrls || []);
+                              setShowPendingDetails(false);
                               setShowEditDialog(true);
                             }}
                             data-testid={`button-edit-spot-${spot.id}`}
@@ -1417,14 +1419,20 @@ export default function Admin() {
                 return (
                   <div className="space-y-2 pt-2 border-t">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 text-left"
+                        onClick={() => setShowPendingDetails(v => !v)}
+                        data-testid="button-toggle-pending"
+                      >
                         <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Na čekanju ({changedKeys.length})</Badge>
                         {editSpot.pendingChangesFrom && (
                           <span className="text-xs text-muted-foreground">
                             od {new Date(editSpot.pendingChangesFrom).toLocaleString("sr-RS")}
                           </span>
                         )}
-                      </div>
+                        <span className="text-xs text-muted-foreground">{showPendingDetails ? "▲" : "▼"}</span>
+                      </button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -1436,26 +1444,28 @@ export default function Admin() {
                         Primeni odmah
                       </Button>
                     </div>
-                    <div className="rounded-md border border-border divide-y divide-border overflow-hidden">
-                      {changedKeys.map((key) => {
-                        const oldVal = (editSpot as unknown as Record<string, unknown>)[key];
-                        const newVal = pending[key];
-                        const label = fieldLabels[key] || key;
-                        const fmt = (v: unknown) => {
-                          if (v === null || v === undefined) return "—";
-                          if (typeof v === "boolean") return v ? "Da" : "Ne";
-                          return String(v);
-                        };
-                        return (
-                          <div key={key} className="flex items-start gap-3 px-3 py-2 text-xs bg-surface">
-                            <span className="text-muted-foreground w-24 shrink-0 pt-0.5">{label}</span>
-                            <span className="text-destructive line-through break-all">{fmt(oldVal)}</span>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="text-green-400 break-all">{fmt(newVal)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {showPendingDetails && (
+                      <div className="rounded-md border border-border divide-y divide-border overflow-hidden">
+                        {changedKeys.map((key) => {
+                          const oldVal = (editSpot as unknown as Record<string, unknown>)[key];
+                          const newVal = pending[key];
+                          const label = fieldLabels[key] || key;
+                          const fmt = (v: unknown) => {
+                            if (v === null || v === undefined) return "—";
+                            if (typeof v === "boolean") return v ? "Da" : "Ne";
+                            return String(v);
+                          };
+                          return (
+                            <div key={key} className="flex items-start gap-3 px-3 py-2 text-xs bg-surface">
+                              <span className="text-muted-foreground w-24 shrink-0 pt-0.5">{label}</span>
+                              <span className="text-destructive line-through break-all">{fmt(oldVal)}</span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="text-green-400 break-all">{fmt(newVal)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
