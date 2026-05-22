@@ -24,6 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
@@ -116,8 +117,9 @@ export default function Dashboard() {
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
-  type EnrichedBooking = Booking & { spotTitle?: string | null };
+  type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null };
   const { data: myBookings = [] } = useQuery<EnrichedBooking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
+  const [selectedBooking, setSelectedBooking] = useState<EnrichedBooking | null>(null);
   const { data: ownerReviews = [] } = useQuery<Review[]>({
     queryKey: ["/api/reviews/owner", user?.id],
     enabled: !!user?.id,
@@ -692,7 +694,12 @@ export default function Dashboard() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {myBookings.map(b => (
-                        <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`my-booking-row-${b.id}`}>
+                        <tr
+                          key={b.id}
+                          className="hover:bg-muted/30 transition-colors cursor-pointer"
+                          data-testid={`my-booking-row-${b.id}`}
+                          onClick={() => setSelectedBooking(b)}
+                        >
                           <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle ?? `#${b.spotId.slice(0, 8)}`}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
                             {new Date(b.startTime).toLocaleDateString('sr-RS')}
@@ -717,6 +724,70 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Booking detail dialog */}
+      <Dialog open={!!selectedBooking} onOpenChange={(open) => { if (!open) setSelectedBooking(null); }}>
+        <DialogContent data-testid="dialog-booking-detail">
+          <DialogHeader>
+            <DialogTitle>Detalji Rezervacije</DialogTitle>
+            <DialogDescription>Informacije o vašoj rezervaciji</DialogDescription>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4 pt-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Parking</p>
+                  <p className="text-sm text-foreground font-medium">{selectedBooking.spotTitle ?? `ID: ${selectedBooking.spotId.slice(0, 8)}`}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Status</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[selectedBooking.status] || ''}`}>
+                    {STATUS_LABELS[selectedBooking.status] || selectedBooking.status}
+                  </span>
+                </div>
+              </div>
+              {selectedBooking.spotAddress && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Adresa</p>
+                  <p className="text-sm text-foreground flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                    {selectedBooking.spotAddress}
+                  </p>
+                </div>
+              )}
+              {selectedBooking.spotPhone && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Kontakt vlasnika</p>
+                  <p className="text-sm text-foreground flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-accent shrink-0" />
+                    {selectedBooking.spotPhone}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Period</p>
+                <p className="text-sm text-foreground">
+                  {new Date(selectedBooking.startTime).toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {' — '}
+                  {new Date(selectedBooking.endTime).toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Iznos</p>
+                <p className="text-lg font-bold text-foreground">
+                  {parseFloat(selectedBooking.totalPrice).toLocaleString('sr-RS')} {selectedBooking.currency}
+                </p>
+              </div>
+              {selectedBooking.notes && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Napomena</p>
+                  <p className="text-sm text-foreground">{selectedBooking.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     );
   }
 

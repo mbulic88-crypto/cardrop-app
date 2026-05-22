@@ -97,6 +97,7 @@ const translations = {
     menuSellListing: "Oglasi Prodaju",
     menuMyAccount: "Moj Nalog",
     menuMyProfile: "Moj Profil",
+    menuReservations: "Rezervacije",
     menuLogin: "Prijavi Se",
     menuWhoIsThisFor: "Za Koga Je",
     menuHowItWorks: "Kako Funkcioniše",
@@ -204,6 +205,7 @@ const translations = {
     menuSellListing: "List for Sale",
     menuMyAccount: "My Account",
     menuMyProfile: "My Profile",
+    menuReservations: "Reservations",
     menuLogin: "Log In",
     menuWhoIsThisFor: "Who Is This For",
     menuHowItWorks: "How It Works",
@@ -411,6 +413,12 @@ export default function Landing() {
                           <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-my-profile">
                             <UserIcon className="w-5 h-5 text-accent" />
                             <span className="text-card-foreground font-medium">{t.menuMyProfile}</span>
+                          </div>
+                        </Link>
+                        <Link href="/dashboard?tab=bookings" onClick={() => setMenuOpen(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-reservations">
+                            <CalendarDays className="w-5 h-5 text-accent" />
+                            <span className="text-card-foreground font-medium">{t.menuReservations}</span>
                           </div>
                         </Link>
                       </>

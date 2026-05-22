@@ -4455,7 +4455,7 @@ export default function MapHackNS() {
                       const res = await fetch("/api/map-hack/profile", {
                         method: "PATCH",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ mapNickname: trimmed, mapAvatarId: editAvatarId }),
+                        body: JSON.stringify({ mapNickname: trimmed, mapAvatarId: 1 }),
                       });
                       if (res.status === 429) {
                         const data = await res.json() as { error: string; nextAllowed: string };

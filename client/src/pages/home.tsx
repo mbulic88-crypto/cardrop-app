@@ -483,6 +483,12 @@ export default function Home() {
                         Moj Profil
                       </Button>
                     </Link>
+                    <Link href="/dashboard?tab=bookings" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="button-my-bookings-dashboard">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Rezervacije
+                      </Button>
+                    </Link>
                     <Link href="/my-bookings" onClick={() => setShowMenu(false)}>
                       <Button variant="outline" className="w-full justify-start" data-testid="link-my-bookings">
                         <Calendar className="w-4 h-4 mr-2" />
