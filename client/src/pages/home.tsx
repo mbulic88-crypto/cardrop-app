@@ -471,12 +471,6 @@ export default function Home() {
               <div className="space-y-2">
                 {isAuthenticated ? (
                   <>
-                    <Link href="/dashboard" onClick={() => setShowMenu(false)}>
-                      <Button variant="outline" className="w-full justify-start" data-testid="button-account">
-                        <LayoutDashboard className="w-4 h-4 mr-2" />
-                        Moj Nalog
-                      </Button>
-                    </Link>
                     <Link href="/dashboard?tab=profile" onClick={() => setShowMenu(false)}>
                       <Button variant="outline" className="w-full justify-start" data-testid="button-my-profile">
                         <UserIcon className="w-4 h-4 mr-2" />

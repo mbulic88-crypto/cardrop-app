@@ -17,7 +17,7 @@ import {
   MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone,
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
-  TrendingUp, Activity, ChevronRight, Star,
+  TrendingUp, Activity, ChevronRight, Star, Map, AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('received');
+  const [mapNicknameInput, setMapNicknameInput] = useState('');
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
@@ -189,7 +190,10 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    if (user) form.reset({ firstName: user.firstName || "", lastName: user.lastName || "", phoneNumber: user.phoneNumber || "" });
+    if (user) {
+      form.reset({ firstName: user.firstName || "", lastName: user.lastName || "", phoneNumber: user.phoneNumber || "" });
+      setMapNicknameInput(user.mapNickname || "");
+    }
   }, [user, form]);
 
   const updateProfileMutation = useMutation({
@@ -205,6 +209,32 @@ export default function Dashboard() {
     mutationFn: () => apiRequest("DELETE", "/api/users/me"),
     onSuccess: () => setAccountDeletedInfo({ hadSubscription: !!(authUser?.stripeSubscriptionId) }),
     onError: () => toast({ title: "Greška pri brisanju naloga", variant: "destructive" }),
+  });
+
+  const updateMapNicknameMutation = useMutation({
+    mutationFn: (nickname: string) =>
+      apiRequest("PATCH", "/api/map-hack/profile", {
+        mapNickname: nickname,
+        mapAvatarId: user?.mapAvatarId || 1,
+      }),
+    onSuccess: () => {
+      toast({ title: "Uspešno", description: "Nadimak na mapi je promenjen" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error: any) => {
+      const body = error?.body || error;
+      if (body?.error === 'cooldown' && body?.nextAllowed) {
+        const next = new Date(body.nextAllowed);
+        const daysLeft = Math.ceil((next.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+        toast({
+          title: "Cooldown aktivan",
+          description: `Možeš da menjaš nadimak za ${daysLeft} ${daysLeft === 1 ? 'dan' : 'dana'} (${next.toLocaleDateString('sr-RS')})`,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Greška", description: body?.message || "Nije moguće promeniti nadimak", variant: "destructive" });
+      }
+    },
   });
 
   const deleteSpotMutation = useMutation({
@@ -975,9 +1005,29 @@ export default function Dashboard() {
   }
 
   function renderProfile() {
+    // Cooldown za mapNickname (7 dana)
+    const mapCooldownInfo = (() => {
+      if (!user?.mapProfileLastChangedAt || user?.isAdmin) return null;
+      const lastChanged = new Date(user.mapProfileLastChangedAt);
+      const nextAllowed = new Date(lastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (new Date() < nextAllowed) {
+        const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+        return { daysLeft, nextAllowed };
+      }
+      return null;
+    })();
+
     return (
       <div className="max-w-2xl space-y-6">
-        <h2 className="text-2xl font-bold text-foreground">Profil</h2>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-2xl font-bold text-foreground">Profil</h2>
+          <Link href="/map-hack">
+            <Button variant="outline" size="sm" data-testid="button-go-to-map-hack">
+              <Map className="w-4 h-4 mr-2" />
+              Map Hack NS
+            </Button>
+          </Link>
+        </div>
         <Card className="p-6">
           <h3 className="text-base font-semibold mb-4 text-foreground">Moji Podaci</h3>
           <Form {...form}>
@@ -1035,6 +1085,36 @@ export default function Dashboard() {
               </Button>
             </form>
           </Form>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-base font-semibold mb-1 text-foreground">Nadimak na Mapi</h3>
+          <p className="text-sm text-muted-foreground mb-4">Tvoje ime koje se prikazuje u Map Hack NS. Može se menjati jednom u 7 dana.</p>
+          {mapCooldownInfo && (
+            <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md mb-4">
+              <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">
+                Možeš da menjaš nadimak za <strong>{mapCooldownInfo.daysLeft} {mapCooldownInfo.daysLeft === 1 ? 'dan' : 'dana'}</strong> ({mapCooldownInfo.nextAllowed.toLocaleDateString('sr-RS')})
+              </p>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={mapNicknameInput}
+              onChange={e => setMapNicknameInput(e.target.value)}
+              placeholder="Nadimak (3–20 znakova, a-z 0-9 _ -)"
+              maxLength={20}
+              disabled={!!mapCooldownInfo}
+              data-testid="input-map-nickname"
+            />
+            <Button
+              onClick={() => updateMapNicknameMutation.mutate(mapNicknameInput.trim())}
+              disabled={updateMapNicknameMutation.isPending || !!mapCooldownInfo || mapNicknameInput.trim().length < 3}
+              data-testid="button-save-map-nickname"
+            >
+              {updateMapNicknameMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+            </Button>
+          </div>
         </Card>
 
         <Card className="p-6 border-destructive/40">
