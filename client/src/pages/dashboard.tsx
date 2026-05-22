@@ -115,7 +115,7 @@ export default function Dashboard() {
   }, [isAuthenticated, pushSupported, isSubscribed, pushLoading]);
 
   const { data: user } = useQuery<User>({ queryKey: ["/api/auth/user"], enabled: isAuthenticated });
-  const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated });
+  const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated, staleTime: 0, refetchOnMount: "always" });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
   type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null };
