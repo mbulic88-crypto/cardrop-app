@@ -1005,11 +1005,11 @@ export default function Dashboard() {
   }
 
   function renderProfile() {
-    // Cooldown za mapNickname (7 dana)
+    // Cooldown za mapNickname (30 dana)
     const mapCooldownInfo = (() => {
       if (!user?.mapProfileLastChangedAt || user?.isAdmin) return null;
       const lastChanged = new Date(user.mapProfileLastChangedAt);
-      const nextAllowed = new Date(lastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const nextAllowed = new Date(lastChanged.getTime() + 30 * 24 * 60 * 60 * 1000);
       if (new Date() < nextAllowed) {
         const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
         return { daysLeft, nextAllowed };
@@ -1089,7 +1089,7 @@ export default function Dashboard() {
 
         <Card className="p-6">
           <h3 className="text-base font-semibold mb-1 text-foreground">Nadimak na Mapi</h3>
-          <p className="text-sm text-muted-foreground mb-4">Tvoje ime koje se prikazuje u Map Hack NS. Može se menjati jednom u 7 dana.</p>
+          <p className="text-sm text-muted-foreground mb-4">Tvoje ime koje se prikazuje u Map Hack NS. Može se menjati jednom u 30 dana.</p>
           {mapCooldownInfo && (
             <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md mb-4">
               <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />

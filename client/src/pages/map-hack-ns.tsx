@@ -4379,7 +4379,7 @@ export default function MapHackNS() {
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
               <div>
                 <span className="font-bold text-white text-sm">Promeni profil</span>
-                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Možeš da menjaš jednom u 7 dana</p>
+                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Možeš da menjaš jednom u 30 dana</p>
               </div>
               <button onClick={() => setProfileEditOpen(false)} className="flex items-center justify-center" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }}>
                 <X size={14} style={{ color: "#9ca3af" }} />
@@ -4391,7 +4391,7 @@ export default function MapHackNS() {
               {(() => {
                 if (!user?.mapProfileLastChangedAt || user?.isAdmin) return null;
                 const lastChanged = new Date(user.mapProfileLastChangedAt);
-                const nextAllowed = new Date(lastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const nextAllowed = new Date(lastChanged.getTime() + 30 * 24 * 60 * 60 * 1000);
                 if (new Date() < nextAllowed) {
                   const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
                   return (

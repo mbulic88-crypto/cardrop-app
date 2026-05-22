@@ -84,13 +84,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const currentUser = await storage.getUser(userId);
 
-      // Weekly cooldown for profile changes (skip for admins and first-time onboarding)
+      // 30-day cooldown for profile changes (skip for admins and first-time onboarding)
       const isAdminUser = currentUser?.isAdmin || ADMIN_EMAIL_LIST.includes(currentUser?.email || '');
       const isFirstTimeOnboarding = !currentUser?.mapNickname;
       if (!isAdminUser && !isFirstTimeOnboarding && currentUser?.mapProfileLastChangedAt) {
         const lastChanged = new Date(currentUser.mapProfileLastChangedAt);
-        const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-        const nextAllowed = new Date(lastChanged.getTime() + oneWeekMs);
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const nextAllowed = new Date(lastChanged.getTime() + thirtyDaysMs);
         if (new Date() < nextAllowed) {
           return res.status(429).json({ error: "cooldown", nextAllowed: nextAllowed.toISOString() });
         }
