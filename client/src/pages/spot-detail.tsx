@@ -94,6 +94,7 @@ export default function SpotDetail() {
     enabled: !!spotId,
   });
 
+  // Returns true if any booking overlaps the day — used for daily (24h) calendar
   const isDateBooked = (date: Date): boolean => {
     const dayStart = startOfDay(date);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
@@ -102,6 +103,36 @@ export default function SpotDetail() {
       const e = new Date(endTime);
       return s < dayEnd && e > dayStart;
     });
+  };
+
+  // Returns true only when a booking covers the entire day — used for hourly calendar
+  const isDayFullyBooked = (date: Date): boolean => {
+    const dayStart = startOfDay(date);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return availability.some(({ startTime, endTime }) => {
+      const s = new Date(startTime);
+      const e = new Date(endTime);
+      return s <= dayStart && e >= dayEnd;
+    });
+  };
+
+  // Returns set of hours (0-23) that overlap any booking on the selected day
+  const getBookedHoursForDay = (date: Date | undefined): Set<number> => {
+    if (!date) return new Set();
+    const dayStart = startOfDay(date);
+    const bookedHours = new Set<number>();
+    availability.forEach(({ startTime, endTime }) => {
+      const s = new Date(startTime);
+      const e = new Date(endTime);
+      const periodStart = Math.max(s.getTime(), dayStart.getTime());
+      const periodEnd = Math.min(e.getTime(), dayStart.getTime() + 24 * 60 * 60 * 1000);
+      if (periodStart < periodEnd) {
+        const startH = Math.floor((periodStart - dayStart.getTime()) / (60 * 60 * 1000));
+        const endH = Math.ceil((periodEnd - dayStart.getTime()) / (60 * 60 * 1000));
+        for (let h = startH; h < endH; h++) bookedHours.add(h);
+      }
+    });
+    return bookedHours;
   };
 
   const averageRating = reviews.length > 0 
@@ -208,6 +239,15 @@ export default function SpotDetail() {
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
         setShowLoginDialog(true);
+        return;
+      }
+      const msg = (error as any)?.message || '';
+      if (msg.includes('već rezervisan') || (error as any)?.status === 409) {
+        toast({
+          title: "Termin zauzet",
+          description: "Izabrani termin je već rezervisan. Molimo izaberite drugi datum ili vreme.",
+          variant: "destructive",
+        });
         return;
       }
       toast({
@@ -507,41 +547,50 @@ export default function SpotDetail() {
                         mode="single"
                         selected={bookingStartDate}
                         onSelect={setBookingStartDate}
-                        disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                        disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
                         className="rounded-md border w-full"
                         data-testid="calendar-booking-hourly"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block text-card-foreground">Od sata</label>
-                        <Select value={String(startHour)} onValueChange={(v) => { const h = Number(v); setStartHour(h); if (endHour <= h) setEndHour(h + 1); }}>
-                          <SelectTrigger data-testid="select-start-hour">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 23 }, (_, i) => i).map(h => (
-                              <SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}:00</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block text-card-foreground">Do sata</label>
-                        <Select value={String(endHour)} onValueChange={(v) => setEndHour(Number(v))}>
-                          <SelectTrigger data-testid="select-end-hour">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
-                              <SelectItem key={h} value={String(h)} disabled={h <= startHour}>
-                                {String(h).padStart(2, '0')}:00
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    {(() => {
+                      const bookedHours = getBookedHoursForDay(bookingStartDate);
+                      const isHourConflict = (from: number, to: number) =>
+                        Array.from(bookedHours).some(h => h >= from && h < to);
+                      return (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-sm font-medium mb-1.5 block text-card-foreground">Od sata</label>
+                            <Select value={String(startHour)} onValueChange={(v) => { const h = Number(v); setStartHour(h); if (endHour <= h) setEndHour(h + 1); }}>
+                              <SelectTrigger data-testid="select-start-hour">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 23 }, (_, i) => i).map(h => (
+                                  <SelectItem key={h} value={String(h)} disabled={bookedHours.has(h)}>
+                                    {String(h).padStart(2, '0')}:00{bookedHours.has(h) ? ' ✕' : ''}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-1.5 block text-card-foreground">Do sata</label>
+                            <Select value={String(endHour)} onValueChange={(v) => setEndHour(Number(v))}>
+                              <SelectTrigger data-testid="select-end-hour">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
+                                  <SelectItem key={h} value={String(h)} disabled={h <= startHour || isHourConflict(startHour, h)}>
+                                    {String(h).padStart(2, '0')}:00{isHourConflict(startHour, h) && h > startHour ? ' ✕' : ''}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 

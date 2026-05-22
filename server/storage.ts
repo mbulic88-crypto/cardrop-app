@@ -66,6 +66,7 @@ export interface IStorage {
   getBooking(id: string): Promise<Booking | undefined>;
   getUserBookings(userId: string): Promise<Booking[]>;
   getSpotBookings(spotId: string): Promise<Booking[]>;
+  hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string): Promise<boolean>;
   createBooking(booking: InsertBooking & { renterId: string }): Promise<Booking>;
   updateBooking(id: string, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
   
@@ -383,6 +384,21 @@ export class DatabaseStorage implements IStorage {
       .from(bookings)
       .where(eq(bookings.spotId, spotId))
       .orderBy(desc(bookings.createdAt));
+  }
+
+  async hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string): Promise<boolean> {
+    const conditions = [
+      eq(bookings.spotId, spotId),
+      sql`${bookings.status} != 'cancelled'`,
+      sql`${bookings.paymentStatus} = 'paid'`,
+      sql`${bookings.startTime} < ${endTime.toISOString()}`,
+      sql`${bookings.endTime} > ${startTime.toISOString()}`,
+    ];
+    if (excludeSessionId) {
+      conditions.push(sql`${bookings.bookingStripeSessionId} != ${excludeSessionId}`);
+    }
+    const result = await db.select({ id: bookings.id }).from(bookings).where(and(...conditions)).limit(1);
+    return result.length > 0;
   }
 
   async createBooking(bookingData: InsertBooking & { renterId: string }): Promise<Booking> {

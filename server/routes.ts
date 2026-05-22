@@ -1536,6 +1536,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Nevalidni datumi" });
       }
 
+      // Server-side overlap check — prevent double-booking
+      const overlaps = await storage.hasBookingOverlap(spotId, start, end);
+      if (overlaps) {
+        return res.status(409).json({ message: "Izabrani termin je već rezervisan. Molimo izaberite drugi datum ili vreme." });
+      }
+
       const pricePerUnit = parseFloat(String(spot.pricePerHour));
       let totalPrice: number;
       if (spot.pricingType === 'hourly') {
