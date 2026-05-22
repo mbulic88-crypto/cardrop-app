@@ -116,7 +116,8 @@ export default function Dashboard() {
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
-  const { data: myBookings = [] } = useQuery<Booking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
+  type EnrichedBooking = Booking & { spotTitle?: string | null };
+  const { data: myBookings = [] } = useQuery<EnrichedBooking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
   const { data: ownerReviews = [] } = useQuery<Review[]>({
     queryKey: ["/api/reviews/owner", user?.id],
     enabled: !!user?.id,
@@ -683,7 +684,7 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking ID</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
                         <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
@@ -692,7 +693,7 @@ export default function Dashboard() {
                     <tbody className="divide-y divide-border">
                       {myBookings.map(b => (
                         <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`my-booking-row-${b.id}`}>
-                          <td className="px-4 py-3 text-muted-foreground text-xs font-mono">{b.spotId.slice(0, 8)}…</td>
+                          <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle ?? `#${b.spotId.slice(0, 8)}`}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
                             {new Date(b.startTime).toLocaleDateString('sr-RS')}
                             {' — '}

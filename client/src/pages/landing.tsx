@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone } from "lucide-react";
+import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon } from "lucide-react";
 import { SiInstagram, SiFacebook } from "react-icons/si";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 import heroImage from "@assets/hero-female-driver_2.jpg";
@@ -96,6 +96,7 @@ const translations = {
     menuListParking: "Iznajmi Parking",
     menuSellListing: "Oglasi Prodaju",
     menuMyAccount: "Moj Nalog",
+    menuMyProfile: "Moj Profil",
     menuLogin: "Prijavi Se",
     menuWhoIsThisFor: "Za Koga Je",
     menuHowItWorks: "Kako Funkcioniše",
@@ -202,6 +203,7 @@ const translations = {
     menuListParking: "List Parking",
     menuSellListing: "List for Sale",
     menuMyAccount: "My Account",
+    menuMyProfile: "My Profile",
     menuLogin: "Log In",
     menuWhoIsThisFor: "Who Is This For",
     menuHowItWorks: "How It Works",
@@ -398,12 +400,20 @@ export default function Landing() {
                     </div>
                     <div className="h-px bg-border mx-4 my-1" />
                     {isAuthenticated ? (
-                      <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
-                        <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-my-account">
-                          <LayoutDashboard className="w-5 h-5 text-accent" />
-                          <span className="text-card-foreground font-medium">{t.menuMyAccount}</span>
-                        </div>
-                      </Link>
+                      <>
+                        <Link href="/dashboard" onClick={() => setMenuOpen(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-my-account">
+                            <LayoutDashboard className="w-5 h-5 text-accent" />
+                            <span className="text-card-foreground font-medium">{t.menuMyAccount}</span>
+                          </div>
+                        </Link>
+                        <Link href="/dashboard?tab=profile" onClick={() => setMenuOpen(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-my-profile">
+                            <UserIcon className="w-5 h-5 text-accent" />
+                            <span className="text-card-foreground font-medium">{t.menuMyProfile}</span>
+                          </div>
+                        </Link>
+                      </>
                     ) : (
                       <div
                         onClick={() => { setMenuOpen(false); setShowLoginDialog(true); }}

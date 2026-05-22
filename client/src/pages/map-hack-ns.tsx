@@ -352,7 +352,7 @@ export default function MapHackNS() {
   const { toast } = useToast();
 
   const [nickname, setNickname] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
+  const [selectedAvatar, setSelectedAvatar] = useState<number | null>(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -1011,7 +1011,6 @@ export default function MapHackNS() {
     const nick = nickname.trim();
     if (nick.length < 3) { setError("Nadimak mora imati najmanje 3 znaka"); return; }
     if (!/^[a-zA-Z0-9_\-]+$/.test(nick)) { setError("Samo slova, brojevi, crtica i donja crta"); return; }
-    if (selectedAvatar === null) { setError("Izaberi avatar"); return; }
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
 
     setIsSaving(true);
@@ -1118,10 +1117,9 @@ export default function MapHackNS() {
     const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\-]+$/.test(nickname.trim());
     const alreadyAcceptedPrivacy = !!user.mapPrivacyAcceptedAt;
     const privacyOk = alreadyAcceptedPrivacy || privacyAccepted;
-    const canSubmit = nickOk && selectedAvatar !== null && selectedPlan !== null && privacyOk;
+    const canSubmit = nickOk && selectedPlan !== null && privacyOk;
     let hint = "";
-    if (!selectedAvatar) hint = "Izaberi avatar";
-    else if (!nickOk) hint = "Unesi nadimak (min. 3 znaka)";
+    if (!nickOk) hint = "Unesi nadimak (min. 3 znaka)";
     else if (!selectedPlan) hint = "Izaberi paket";
     else if (!privacyOk) hint = "Prihvati politiku privatnosti";
 
@@ -1132,46 +1130,10 @@ export default function MapHackNS() {
         <div className="flex-1 overflow-y-auto pb-24">
           <div className="max-w-md mx-auto px-4">
 
-            {/* Avatar */}
-            <div className="pt-5 pb-4">
-              <p className="text-sm font-bold text-foreground mb-3">
-                1. Izaberi avatar
-              </p>
-              <div className="grid grid-cols-5 gap-2 justify-items-center">
-                {Array.from({ length: 10 }, (_, i) => {
-                  const avatarId = i + 1;
-                  const isSelected = selectedAvatar === avatarId;
-                  return (
-                    <button
-                      key={avatarId}
-                      type="button"
-                      data-testid={`button-avatar-${avatarId}`}
-                      onClick={() => { setSelectedAvatar(avatarId); setError(""); }}
-                      className={[
-                        "w-[56px] h-[56px] p-0 transition-all duration-150 bg-[#F5EDD8] flex-shrink-0",
-                        isSelected
-                          ? "ring-2 ring-green-600 dark:ring-green-400 ring-offset-2 ring-offset-background rounded-full scale-105"
-                          : "rounded-md ring-1 ring-border",
-                      ].join(" ")}
-                      aria-label={`Avatar ${avatarId}`}
-                      aria-pressed={isSelected}
-                    >
-                      <img
-                        src={`/avatars/avatar-${avatarId}.png`}
-                        alt={`Avatar ${avatarId}`}
-                        className="w-full h-full object-contain"
-                        draggable={false}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Nadimak */}
-            <div className="py-4 border-t border-border">
+            <div className="pt-5 pb-4">
               <p className="text-sm font-bold text-foreground mb-2">
-                2. Tvoj nadimak
+                1. Tvoj nadimak
               </p>
               <Input
                 id="nickname-input"
@@ -2671,6 +2633,20 @@ export default function MapHackNS() {
                       </div>
                       <span>Legenda</span>
                     </button>
+
+                    {/* My Profile link */}
+                    <a
+                      href="/dashboard?tab=profile"
+                      data-testid="btn-my-profile"
+                      onClick={() => setBurgerMenuOpen(false)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
+                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)", textDecoration: "none" }}>
+                      <div className="flex items-center justify-center rounded-full"
+                        style={{ width: 28, height: 28, background: "#0d9488" }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
+                      <span>Moj Profil</span>
+                    </a>
 
                     {/* Notifications toggle */}
                     <button
@@ -4430,27 +4406,6 @@ export default function MapHackNS() {
                 }
                 return null;
               })()}
-
-              {/* Avatar grid */}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>Avatar</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: 8 }, (_, i) => i + 1).map(id => (
-                    <button
-                      key={id}
-                      data-testid={`btn-avatar-${id}`}
-                      onClick={() => setEditAvatarId(id)}
-                      className="rounded-xl overflow-hidden flex-shrink-0"
-                      style={{
-                        background: "rgba(255,255,255,0.05)",
-                        border: `2px solid ${editAvatarId === id ? "#f97316" : "rgba(255,255,255,0.1)"}`,
-                        padding: 3,
-                      }}>
-                      <img src={`/avatars/avatar-${id}.png`} alt={`Avatar ${id}`} className="w-full aspect-square object-contain rounded-lg" style={{ background: "#F5EDD8" }} />
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Nickname input */}
               <div>

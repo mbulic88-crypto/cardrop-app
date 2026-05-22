@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search, X, Calendar, Clock, Zap, Camera, Sparkles, Menu, LogIn, LayoutDashboard, Tag, PlusCircle, ShoppingBag } from "lucide-react";
+import { MapPin, Search, X, Calendar, Clock, Zap, Camera, Sparkles, Menu, LogIn, LayoutDashboard, Tag, PlusCircle, ShoppingBag, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot, SalesListing } from "@shared/schema";
 import { Link } from "wouter";
@@ -475,6 +475,12 @@ export default function Home() {
                       <Button variant="outline" className="w-full justify-start" data-testid="button-account">
                         <LayoutDashboard className="w-4 h-4 mr-2" />
                         Moj Nalog
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard?tab=profile" onClick={() => setShowMenu(false)}>
+                      <Button variant="outline" className="w-full justify-start" data-testid="button-my-profile">
+                        <UserIcon className="w-4 h-4 mr-2" />
+                        Moj Profil
                       </Button>
                     </Link>
                     <Link href="/my-bookings" onClick={() => setShowMenu(false)}>
