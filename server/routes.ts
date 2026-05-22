@@ -1657,6 +1657,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spot = await storage.getParkingSpot(spotId);
       if (!spot) return res.status(404).json({ message: "Parking nije pronađen" });
 
+      // Final overlap check at booking finalization — guards against concurrent checkouts
+      const finalOverlap = await storage.hasBookingOverlap(spotId, new Date(startTime), new Date(endTime), sessionId);
+      if (finalOverlap) {
+        return res.status(409).json({ message: "Ovaj termin je u međuvremenu rezervisan. Molimo pokušajte ponovo sa drugim terminom." });
+      }
+
       const { booking, alreadyConsumed } = await storage.createBookingWithSession({
         spotId,
         renterId: userId,

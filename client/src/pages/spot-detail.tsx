@@ -94,14 +94,15 @@ export default function SpotDetail() {
     enabled: !!spotId,
   });
 
-  // Returns true if any booking overlaps the day — used for daily (24h) calendar
+  // Checks if the specific 24h slot [date+dailyStartHour, +24h] overlaps any booking — used for daily calendar
   const isDateBooked = (date: Date): boolean => {
-    const dayStart = startOfDay(date);
-    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const slotStart = new Date(startOfDay(date));
+    slotStart.setHours(dailyStartHour, 0, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + 24 * 60 * 60 * 1000);
     return availability.some(({ startTime, endTime }) => {
       const s = new Date(startTime);
       const e = new Date(endTime);
-      return s < dayEnd && e > dayStart;
+      return s < slotEnd && e > slotStart;
     });
   };
 
