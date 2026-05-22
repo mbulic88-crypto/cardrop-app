@@ -352,7 +352,6 @@ export default function MapHackNS() {
   const { toast } = useToast();
 
   const [nickname, setNickname] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState<number | null>(1);
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -362,11 +361,6 @@ export default function MapHackNS() {
   const [mapExpanded, setMapExpanded] = useState(true);
   const [showParkingSearch, setShowParkingSearch] = useState(false);
   const [parkingSearchQuery, setParkingSearchQuery] = useState("");
-  const [profileEditOpen, setProfileEditOpen] = useState(false);
-  const [editNickname, setEditNickname] = useState("");
-  const [editAvatarId, setEditAvatarId] = useState(1);
-  const [profileEditError, setProfileEditError] = useState("");
-  const [profileEditSaving, setProfileEditSaving] = useState(false);
   const [premiumUpsellOpen, setPremiumUpsellOpen] = useState(false);
   const [upsellContext, setUpsellContext] = useState<string>("");
   const [upsellFeature, setUpsellFeature] = useState<"stek" | "safe_zone" | "radar" | null>(null);
@@ -382,7 +376,7 @@ export default function MapHackNS() {
     () => !localStorage.getItem("cardrop_perms_asked")
   );
 
-  const hasProfile = !!user?.mapNickname && user?.mapAvatarId != null;
+  const hasProfile = !!user?.mapNickname;
 
   const { data: mapStatus, isLoading: statusLoading } = useQuery<MapHackStatus>({
     queryKey: ["/api/map-hack/status"],
@@ -1020,7 +1014,7 @@ export default function MapHackNS() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nickname: nick,
-          avatarId: selectedAvatar,
+          avatarId: 1,
           ...(privacyAccepted && !user.mapPrivacyAcceptedAt ? { acceptedPrivacy: true } : {}),
         }),
       });
@@ -1154,7 +1148,7 @@ export default function MapHackNS() {
             {/* Paket */}
             <div className="py-4 border-t border-border">
               <p className="text-sm font-bold text-foreground mb-1">
-                3. Izaberi paket
+                2. Izaberi paket
               </p>
               <p className="text-xs text-muted-foreground mb-4">
                 Ulaz je besplatan. Premium donosi sve štek lokacije i live zaštitu.
@@ -1381,13 +1375,6 @@ export default function MapHackNS() {
 
             {/* Profil prikaz (read-only) */}
             <div className="flex items-center gap-3 py-4 border-b border-border">
-              <div className="w-12 h-12 rounded-full bg-[#F5EDD8] overflow-hidden ring-2 ring-border flex-shrink-0">
-                <img
-                  src={`/avatars/avatar-${user.mapAvatarId ?? 1}.png`}
-                  alt="avatar"
-                  className="w-full h-full object-contain"
-                />
-              </div>
               <div>
                 <p className="font-bold text-foreground text-base" data-testid="text-map-nickname">
                   {user.mapNickname}
@@ -2599,24 +2586,19 @@ export default function MapHackNS() {
                       border: "1px solid rgba(255,255,255,0.12)",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
                     }}>
-                    {/* Profile */}
-                    <button
-                      data-testid="btn-profile-edit"
-                      onClick={() => {
-                        setBurgerMenuOpen(false);
-                        setEditNickname(user.mapNickname ?? "");
-                        setEditAvatarId(user.mapAvatarId ?? 1);
-                        setProfileEditError("");
-                        setProfileEditOpen(true);
-                      }}
+                    {/* My Account */}
+                    <a
+                      href="/dashboard"
+                      data-testid="btn-my-account"
+                      onClick={() => setBurgerMenuOpen(false)}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
-                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)", textDecoration: "none" }}>
                       <div className="flex items-center justify-center rounded-full"
                         style={{ width: 28, height: 28, background: "#0f766e" }}>
                         <User size={14} style={{ color: "#fff" }} />
                       </div>
-                      <span>Profil</span>
-                    </button>
+                      <span>Moj Nalog</span>
+                    </a>
 
                     {/* Legend */}
                     <button
@@ -2633,20 +2615,6 @@ export default function MapHackNS() {
                       </div>
                       <span>Legenda</span>
                     </button>
-
-                    {/* My Profile link */}
-                    <a
-                      href="/dashboard?tab=profile"
-                      data-testid="btn-my-profile"
-                      onClick={() => setBurgerMenuOpen(false)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium hover-elevate"
-                      style={{ color: "#e5e7eb", borderBottom: "1px solid rgba(255,255,255,0.07)", textDecoration: "none" }}>
-                      <div className="flex items-center justify-center rounded-full"
-                        style={{ width: 28, height: 28, background: "#0d9488" }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      </div>
-                      <span>Moj Profil</span>
-                    </a>
 
                     {/* Notifications toggle */}
                     <button
@@ -4366,126 +4334,6 @@ export default function MapHackNS() {
         </div>
       )}
 
-      {/* ── Profile Edit Modal ── */}
-      {profileEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)" }}
-          onClick={() => setProfileEditOpen(false)}>
-          <div
-            className="w-full max-w-md rounded-t-2xl overflow-y-auto"
-            style={{ background: "#0d1117", border: "1px solid rgba(255,255,255,0.1)", maxHeight: "85vh" }}
-            onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-              <div>
-                <span className="font-bold text-white text-sm">Promeni profil</span>
-                <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Možeš da menjaš jednom u 30 dana</p>
-              </div>
-              <button onClick={() => setProfileEditOpen(false)} className="flex items-center justify-center" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }}>
-                <X size={14} style={{ color: "#9ca3af" }} />
-              </button>
-            </div>
-
-            <div className="px-4 py-4 space-y-4">
-              {/* Cooldown info if applicable */}
-              {(() => {
-                if (!user?.mapProfileLastChangedAt || user?.isAdmin) return null;
-                const lastChanged = new Date(user.mapProfileLastChangedAt);
-                const nextAllowed = new Date(lastChanged.getTime() + 30 * 24 * 60 * 60 * 1000);
-                if (new Date() < nextAllowed) {
-                  const daysLeft = Math.ceil((nextAllowed.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-                  return (
-                    <div className="rounded-xl px-3 py-2.5 flex items-start gap-2"
-                      style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                      <AlertTriangle size={14} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-                      <p className="text-xs" style={{ color: "#f87171" }}>
-                        Profil možeš promeniti za <strong>{daysLeft} {daysLeft === 1 ? "dan" : "dana"}</strong> ({nextAllowed.toLocaleDateString("sr-RS")})
-                      </p>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
-              {/* Nickname input */}
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Nadimak na mapi</p>
-                <input
-                  data-testid="input-edit-nickname"
-                  value={editNickname}
-                  onChange={e => { setEditNickname(e.target.value); setProfileEditError(""); }}
-                  placeholder="Nadimak (3–20 znakova)"
-                  className="w-full text-sm rounded-xl px-3 py-2.5 outline-none"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.14)", color: "#e5e7eb" }}
-                  maxLength={20}
-                />
-              </div>
-
-              {/* Error */}
-              {profileEditError && (
-                <div className="rounded-xl px-3 py-2 flex items-start gap-2" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }}>
-                  <AlertTriangle size={13} style={{ color: "#f87171", flexShrink: 0, marginTop: 1 }} />
-                  <p className="text-xs" style={{ color: "#f87171" }}>{profileEditError}</p>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2 pb-2">
-                <button
-                  onClick={() => setProfileEditOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  Otkaži
-                </button>
-                <button
-                  data-testid="btn-save-profile-edit"
-                  disabled={profileEditSaving}
-                  onClick={async () => {
-                    const trimmed = editNickname.trim();
-                    if (trimmed.length < 3 || trimmed.length > 20) {
-                      setProfileEditError("Nadimak mora imati između 3 i 20 znakova");
-                      return;
-                    }
-                    if (!/^[a-zA-Z0-9_\-]+$/.test(trimmed)) {
-                      setProfileEditError("Nadimak sme da sadrži samo slova, brojeve, crtice i donju crtu");
-                      return;
-                    }
-                    setProfileEditSaving(true);
-                    try {
-                      const res = await fetch("/api/map-hack/profile", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ mapNickname: trimmed, mapAvatarId: 1 }),
-                      });
-                      if (res.status === 429) {
-                        const data = await res.json() as { error: string; nextAllowed: string };
-                        const next = new Date(data.nextAllowed);
-                        setProfileEditError(`Možeš menjati jednom nedeljno. Sledeća promena: ${next.toLocaleDateString("sr-RS")}`);
-                        return;
-                      }
-                      if (!res.ok) {
-                        const data = await res.json() as { message: string };
-                        setProfileEditError(data.message ?? "Greška pri čuvanju");
-                        return;
-                      }
-                      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-                      setProfileEditOpen(false);
-                      toast({ title: "Profil ažuriran" });
-                    } catch {
-                      setProfileEditError("Greška pri čuvanju profila");
-                    } finally {
-                      setProfileEditSaving(false);
-                    }
-                  }}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold"
-                  style={{ background: profileEditSaving ? "rgba(249,115,22,0.4)" : "#f97316", color: "#fff", opacity: profileEditSaving ? 0.7 : 1 }}>
-                  {profileEditSaving ? "Čuva se..." : "Sačuvaj"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── PWA iOS Install Modal ── */}
       <Dialog open={showPwaModal} onOpenChange={setShowPwaModal}>

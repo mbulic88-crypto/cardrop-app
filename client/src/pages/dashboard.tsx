@@ -17,7 +17,7 @@ import {
   MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone,
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
-  TrendingUp, Activity, ChevronRight, Star, Map, AlertTriangle,
+  TrendingUp, Activity, ChevronRight, Star, AlertTriangle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -1023,8 +1023,8 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-foreground">Profil</h2>
           <Link href="/map-hack">
             <Button variant="outline" size="sm" data-testid="button-go-to-map-hack">
-              <Map className="w-4 h-4 mr-2" />
-              Map Hack NS
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Nazad na mapu
             </Button>
           </Link>
         </div>
