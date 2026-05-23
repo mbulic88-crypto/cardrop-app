@@ -2160,16 +2160,18 @@ export default function MapHackNS() {
               </button>
             </div>
 
-            {/* Booking button — visible immediately at top */}
-            <button
-              data-testid="button-rezervisi-parking"
-              onClick={() => setShowParkingBookingForm(prev => !prev)}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
-              style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.6)", color: "#52B788" }}
-            >
-              <CreditCard size={15} />
-              Plati ili rezerviši parking
-            </button>
+            {/* Booking button — hidden when form is open */}
+            {!showParkingBookingForm && (
+              <button
+                data-testid="button-rezervisi-parking"
+                onClick={() => setShowParkingBookingForm(true)}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
+                style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.6)", color: "#52B788" }}
+              >
+                <CreditCard size={15} />
+                Plati ili rezerviši parking
+              </button>
+            )}
 
             {/* No payment message */}
             {showParkingBookingForm && !selectedParking.stripeLinkActive && (
@@ -2181,6 +2183,18 @@ export default function MapHackNS() {
             {/* Booking form */}
             {showParkingBookingForm && selectedParking.stripeLinkActive && (
               <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowParkingBookingForm(false)}
+                    className="flex items-center gap-1 text-xs font-medium"
+                    style={{ color: "#9ca3af" }}
+                    data-testid="button-back-from-booking"
+                  >
+                    <ChevronLeft size={14} />
+                    Nazad
+                  </button>
+                  <span className="text-xs font-semibold flex-1 text-center truncate" style={{ color: "#e5e7eb" }}>Rezervacija</span>
+                </div>
                 <div>
                   <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Registarska tablica</label>
                   <Input
@@ -2261,6 +2275,8 @@ export default function MapHackNS() {
               </div>
             )}
 
+            {/* Parking details — hidden when booking form is open */}
+            {!showParkingBookingForm && <div className="flex flex-col gap-3">
             {/* Parking number + Address */}
             {selectedParking.parkingNumber && (
               <div className="inline-flex items-center gap-1.5">
@@ -2403,6 +2419,7 @@ export default function MapHackNS() {
               <Navigation size={14} />
               Otvori u Google Maps
             </a>
+            </div>}
 
           </div>
         </div>
