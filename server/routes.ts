@@ -2644,6 +2644,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!spot) return res.status(404).json({ message: "Parking spot not found" });
 
       let stripeProductId = spot.stripeProductId;
+      if (stripeProductId) {
+        try {
+          await stripe.products.retrieve(stripeProductId);
+        } catch {
+          stripeProductId = null;
+        }
+      }
       if (!stripeProductId) {
         const productName = spot.parkingNumber
           ? `Parking ${spot.parkingNumber}`
