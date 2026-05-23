@@ -25,6 +25,176 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
+function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
+  spot: ParkingSpot; owner: UserType | undefined; licensePlate: string; setLicensePlate: (v: string) => void;
+  bookingStartDate: Date | undefined; setBookingStartDate: (d: Date | undefined) => void;
+  startHour: number; setStartHour: (h: number) => void; endHour: number; setEndHour: (h: number) => void;
+  dailyStartHour: number; setDailyStartHour: (h: number) => void; numMonths: number; setNumMonths: (n: number) => void;
+  calculatedPrice: number; isAuthenticated?: boolean; isPending: boolean;
+  bookedHours: Set<number>; isDateBooked: (d: Date) => boolean; isDayFullyBooked: (d: Date) => boolean;
+  onClose: () => void; onSubmit: () => void;
+}) {
+  const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
+  const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
+  return (
+    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, overflowY: "auto", backgroundColor: "var(--background, white)" }}>
+      <header className="sticky top-0 bg-card border-b border-border shadow-sm" style={{ zIndex: 10 }}>
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <Link href="/home" className="flex items-center gap-2 shrink-0">
+            <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
+            <span className="text-lg font-bold text-foreground hidden sm:inline">CarDrop</span>
+          </Link>
+          <div className="flex-1 min-w-0 text-center">
+            <p className="text-sm font-semibold text-foreground truncate">{spot.title}</p>
+            {spot.parkingNumber && <p className="text-xs text-accent font-mono">{spot.parkingNumber}</p>}
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} data-testid="button-close-booking">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
+
+      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center justify-between gap-3 p-4 rounded-md border border-border bg-card">
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground truncate">{spot.title}</p>
+            <p className="text-sm text-muted-foreground truncate">{spot.address}</p>
+            {owner && <p className="text-xs text-muted-foreground mt-0.5">Vlasnik: {owner.firstName} {owner.lastName}</p>}
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-xl font-bold text-accent">{spot.pricePerHour} {spot.currency}</p>
+            <p className="text-xs text-muted-foreground">/ {pricingLabel}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Car className="h-4 w-4 text-accent" />Registarska tablica
+          </label>
+          <div className="rounded-md border-2 border-border focus-within:border-accent transition-colors bg-card overflow-hidden">
+            <div className="flex items-center">
+              <div className="flex flex-col items-center justify-center border-r border-border px-3 py-3 bg-blue-700 dark:bg-blue-800 shrink-0">
+                <span className="text-[10px] font-bold text-white tracking-widest">SRB</span>
+              </div>
+              <Input placeholder="NS 123-AB" value={licensePlate} onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
+                className="border-0 shadow-none text-center text-xl font-bold tracking-widest uppercase h-12 focus-visible:ring-0 bg-transparent"
+                maxLength={15} data-testid="input-license-plate" />
+              {licensePlate && (
+                <button type="button" className="px-3 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setLicensePlate("")} tabIndex={-1}>
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {spot.pricingType === "monthly" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Datum početka</label>
+              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
+                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                className="rounded-md border border-border w-full" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Broj meseci</label>
+              <Select value={String(numMonths)} onValueChange={(v) => setNumMonths(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 6, 12].map(n => (
+                    <SelectItem key={n} value={String(n)}>{n} {n === 1 ? "mesec" : n < 5 ? "meseca" : "meseci"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {spot.pricingType === "daily" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Datum</label>
+              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
+                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                className="rounded-md border border-border w-full" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Sat početka</label>
+              <Select value={String(dailyStartHour)} onValueChange={(v) => setDailyStartHour(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => i).map(h => (
+                    <SelectItem key={h} value={String(h)}>{String(h).padStart(2, "0")}:00</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {spot.pricingType === "hourly" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Dan</label>
+              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
+                disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
+                className="rounded-md border border-border w-full" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Od sata</label>
+                <Select value={String(startHour)} onValueChange={(v) => { const h = Number(v); setStartHour(h); if (endHour <= h) setEndHour(h + 1); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 23 }, (_, i) => i).map(h => (
+                      <SelectItem key={h} value={String(h)} disabled={bookedHours.has(h)}>
+                        {String(h).padStart(2, "0")}:00{bookedHours.has(h) ? " ✕" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">Do sata</label>
+                <Select value={String(endHour)} onValueChange={(v) => setEndHour(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
+                      <SelectItem key={h} value={String(h)} disabled={h <= startHour || isHourConflict(startHour, h)}>
+                        {String(h).padStart(2, "0")}:00
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {calculatedPrice > 0 && (
+          <div className="flex justify-between items-center p-4 rounded-md bg-accent/10 border border-accent/20">
+            <span className="text-sm font-medium text-foreground">Ukupno:</span>
+            <span className="text-2xl font-bold text-accent" data-testid="text-total-price">
+              {calculatedPrice.toLocaleString("sr-RS")} {spot.currency}
+            </span>
+          </div>
+        )}
+
+        <Button className="w-full bg-accent text-accent-foreground h-12 text-base" onClick={onSubmit}
+          disabled={isPending || !licensePlate.trim() || calculatedPrice <= 0} data-testid="button-nastavi-na-placanje">
+          {isPending
+            ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Učitavanje...</>
+            : <><CreditCard className="w-5 h-5 mr-2" />Nastavi na plaćanje</>}
+        </Button>
+
+        <Button variant="ghost" className="w-full" onClick={onClose} data-testid="button-back-to-spot">
+          Nazad na parking
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function formatPhoneForMessaging(phone: string): string {
   let cleaned = phone.replace(/[\s\-\(\)]/g, '');
   if (cleaned.startsWith('0')) {
@@ -720,201 +890,36 @@ export default function SpotDetail() {
       />
 
       {/* Fullscreen Booking Panel — rendered via Portal into document.body */}
-      {showBookingPanel && spot && createPortal((() => {
-        const bookedHours = getBookedHoursForDay(bookingStartDate);
-        const isHourConflict = (from: number, to: number) =>
-          Array.from(bookedHours).some(h => h >= from && h < to);
-        const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
-        return (
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, overflowY: "auto", backgroundColor: "var(--background, #fff)" }}>
-            {/* Header */}
-            <header className="sticky top-0 z-10 bg-card border-b border-border shadow-sm">
-              <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
-                <Link href="/home" className="flex items-center gap-2 shrink-0">
-                  <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
-                  <span className="text-lg font-bold text-foreground hidden sm:inline">CarDrop</span>
-                </Link>
-                <div className="flex-1 min-w-0 text-center">
-                  <p className="text-sm font-semibold text-foreground truncate">{spot.title}</p>
-                  {spot.parkingNumber && (
-                    <p className="text-xs text-accent font-mono">{spot.parkingNumber}</p>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowBookingPanel(false)}
-                  data-testid="button-close-booking"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </header>
-
-            <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-              {/* Spot summary */}
-              <div className="flex items-center justify-between gap-3 p-4 rounded-md border border-border bg-card">
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground truncate">{spot.title}</p>
-                  <p className="text-sm text-muted-foreground truncate">{spot.address}</p>
-                  {owner && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Vlasnik: {owner.firstName} {owner.lastName}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xl font-bold text-accent">{spot.pricePerHour} {spot.currency}</p>
-                  <p className="text-xs text-muted-foreground">/ {pricingLabel}</p>
-                </div>
-              </div>
-
-              {/* License plate */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Car className="h-4 w-4 text-accent" />
-                  Registarska tablica
-                </label>
-                <div className="rounded-md border-2 border-border focus-within:border-accent transition-colors bg-card overflow-hidden">
-                  <div className="flex items-center">
-                    <div className="flex flex-col items-center justify-center border-r border-border px-3 py-3 bg-blue-700 dark:bg-blue-800 shrink-0">
-                      <span className="text-[10px] font-bold text-white tracking-widest">SRB</span>
-                    </div>
-                    <Input
-                      placeholder="NS 123-AB"
-                      value={licensePlate}
-                      onChange={(e) => setLicensePlate(e.target.value.toUpperCase())}
-                      className="border-0 shadow-none text-center text-xl font-bold tracking-widest uppercase h-12 focus-visible:ring-0 bg-transparent"
-                      maxLength={15}
-                      data-testid="input-license-plate"
-                    />
-                    {licensePlate && (
-                      <button type="button" className="px-3 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setLicensePlate("")} tabIndex={-1}>
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Monthly */}
-              {spot.pricingType === "monthly" && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Datum početka</label>
-                    <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                      disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                      className="rounded-md border border-border w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Broj meseci</label>
-                    <Select value={String(numMonths)} onValueChange={(v) => setNumMonths(Number(v))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 6, 12].map(n => (
-                          <SelectItem key={n} value={String(n)}>{n} {n === 1 ? "mesec" : n < 5 ? "meseca" : "meseci"}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Daily */}
-              {spot.pricingType === "daily" && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Datum</label>
-                    <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                      disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                      className="rounded-md border border-border w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Sat početka</label>
-                    <Select value={String(dailyStartHour)} onValueChange={(v) => setDailyStartHour(Number(v))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 24 }, (_, i) => i).map(h => (
-                          <SelectItem key={h} value={String(h)}>{String(h).padStart(2, "0")}:00</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Hourly */}
-              {spot.pricingType === "hourly" && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Dan</label>
-                    <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                      disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
-                      className="rounded-md border border-border w-full" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Od sata</label>
-                      <Select value={String(startHour)} onValueChange={(v) => { const h = Number(v); setStartHour(h); if (endHour <= h) setEndHour(h + 1); }}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 23 }, (_, i) => i).map(h => (
-                            <SelectItem key={h} value={String(h)} disabled={bookedHours.has(h)}>
-                              {String(h).padStart(2, "0")}:00{bookedHours.has(h) ? " ✕" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-foreground">Do sata</label>
-                      <Select value={String(endHour)} onValueChange={(v) => setEndHour(Number(v))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 23 }, (_, i) => i + 1).map(h => (
-                            <SelectItem key={h} value={String(h)} disabled={h <= startHour || isHourConflict(startHour, h)}>
-                              {String(h).padStart(2, "0")}:00
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Total */}
-              {calculatedPrice > 0 && (
-                <div className="flex justify-between items-center p-4 rounded-md bg-accent/10 border border-accent/20">
-                  <span className="text-sm font-medium text-foreground">Ukupno:</span>
-                  <span className="text-2xl font-bold text-accent" data-testid="text-total-price">
-                    {calculatedPrice.toLocaleString("sr-RS")} {spot.currency}
-                  </span>
-                </div>
-              )}
-
-              <Button
-                className="w-full bg-accent text-accent-foreground h-12 text-base"
-                onClick={() => {
-                  if (!isAuthenticated) { setShowLoginDialog(true); setShowBookingPanel(false); return; }
-                  bookingCheckoutMutation.mutate();
-                }}
-                disabled={bookingCheckoutMutation.isPending || !licensePlate.trim() || calculatedPrice <= 0}
-                data-testid="button-nastavi-na-placanje"
-              >
-                {bookingCheckoutMutation.isPending
-                  ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Učitavanje...</>
-                  : <><CreditCard className="w-5 h-5 mr-2" />Nastavi na plaćanje</>
-                }
-              </Button>
-
-              <Button variant="ghost" className="w-full" onClick={() => setShowBookingPanel(false)} data-testid="button-back-to-spot">
-                Nazad na parking
-              </Button>
-            </div>
-          </div>
-        );
-      })()), document.body)}
+      {showBookingPanel && spot && createPortal(
+        <BookingPanel
+          spot={spot}
+          owner={owner}
+          licensePlate={licensePlate}
+          setLicensePlate={setLicensePlate}
+          bookingStartDate={bookingStartDate}
+          setBookingStartDate={setBookingStartDate}
+          startHour={startHour}
+          setStartHour={setStartHour}
+          endHour={endHour}
+          setEndHour={setEndHour}
+          dailyStartHour={dailyStartHour}
+          setDailyStartHour={setDailyStartHour}
+          numMonths={numMonths}
+          setNumMonths={setNumMonths}
+          calculatedPrice={calculatedPrice}
+          isAuthenticated={isAuthenticated}
+          isPending={bookingCheckoutMutation.isPending}
+          bookedHours={getBookedHoursForDay(bookingStartDate)}
+          isDateBooked={isDateBooked}
+          isDayFullyBooked={isDayFullyBooked}
+          onClose={() => setShowBookingPanel(false)}
+          onSubmit={() => {
+            if (!isAuthenticated) { setShowLoginDialog(true); setShowBookingPanel(false); return; }
+            bookingCheckoutMutation.mutate();
+          }}
+        />,
+        document.body
+      )}
     </div>
   );
 }
