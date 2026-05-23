@@ -2259,7 +2259,6 @@ export default function MapHackNS() {
                     <span className="text-lg font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
                   </div>
                 )}
-                <p className="text-xs text-center" style={{ color: "#6b7280" }}>Kada jednom uplatite, sledeći put sve ide na samo jedan klik.</p>
                 <button
                   data-testid="button-nastavi-na-placanje-map"
                   onClick={() => parkingBookingCheckoutMutation.mutate()}
@@ -2272,6 +2271,7 @@ export default function MapHackNS() {
                     : <><CreditCard size={14} />Nastavi na plaćanje</>
                   }
                 </button>
+                <p className="text-xs text-center" style={{ color: "#6b7280" }}>Kada jednom uplatite, sledeći put sve ide na samo jedan klik.</p>
               </div>
             )}
 
