@@ -54,6 +54,10 @@ export default function Booking() {
   });
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (user?.savedLicensePlate && !licensePlate) {
       setLicensePlate(user.savedLicensePlate);
     }

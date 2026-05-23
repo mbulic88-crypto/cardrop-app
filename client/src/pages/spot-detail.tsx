@@ -289,7 +289,7 @@ export default function SpotDetail() {
               onClick={() => {
                 if (!isAuthenticated && spot.stripeLinkActive) { setShowLoginDialog(true); return; }
                 if (!spot.stripeLinkActive) return;
-                setLocation(`/spot/${spotId}/booking`);
+                window.location.href = `/spot/${spotId}/booking`;
               }}
               data-testid="button-rezervisi"
             >
