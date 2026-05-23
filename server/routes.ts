@@ -1582,16 +1582,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         line_items: [{
           price_data: {
             currency,
-            ...(spot.stripeProductId
-              ? { product: spot.stripeProductId }
-              : {
-                  product_data: {
-                    name: `Parking: ${spot.title}`,
-                    description: spot.parkingNumber
-                      ? `${spot.parkingNumber} · ${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`
-                      : `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
-                  },
-                }),
+            product_data: {
+              name: spot.parkingNumber
+                ? `Parking ${spot.parkingNumber} — ${spot.title}`
+                : `Parking: ${spot.title}`,
+              description: `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
+            },
             unit_amount: amountInSmallestUnit,
           },
           quantity: 1,
