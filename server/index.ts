@@ -179,7 +179,7 @@ async function clearSpotExpiry() {
     if (req.path.match(/\.(js|css|woff2?|ttf|eot|png|jpg|jpeg|webp|svg|ico|gif)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     } else if (req.path === '/sw.js' || req.path === '/robots.txt') {
-      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     } else if (req.path === '/' || req.path.endsWith('.html') || !req.path.includes('.')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }

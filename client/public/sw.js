@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cardrop-v7';
+const CACHE_NAME = 'cardrop-v8';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -29,9 +29,6 @@ self.addEventListener('activate', (event) => {
 });
 
 // ─── Push notifications ───────────────────────────────────────────────────────
-// Everything inside event.waitUntil so the push event stays alive until
-// showNotification resolves. A fallback notification is always shown so
-// Chrome/TWA never auto-generates a generic "site updated" message.
 self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
@@ -65,7 +62,6 @@ self.addEventListener('push', (event) => {
         });
       } catch (err) {
         console.error('[SW] Push handler error:', err);
-        // Last-resort fallback — must always call showNotification in TWA
         try {
           await self.registration.showNotification('CarDrop', {
             body: 'Nova poruka',
@@ -97,12 +93,14 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// ─── Fetch caching ────────────────────────────────────────────────────────────
+// ─── Fetch: NETWORK-FIRST for everything ──────────────────────────────────────
+// Always try network first. Cache is only used as offline fallback.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
 
+  // API calls: network only, offline → JSON error
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -115,47 +113,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.match(/\.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|webp|ico)$/)) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(event.request).then((response) => {
-          if (response.ok) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/offline.html').then((offlinePage) => {
-          return offlinePage || caches.match('/') || new Response('Offline', { status: 503 });
-        });
-      })
-    );
-    return;
-  }
-
+  // Everything else: network-first, cache fallback for offline
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((response) => {
-        if (response.ok) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
+    fetch(event.request).then((response) => {
+      if (response.ok) {
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+      }
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        if (event.request.mode === 'navigate') {
+          return caches.match('/offline.html').then((offlinePage) => {
+            return offlinePage || new Response('Offline', { status: 503 });
           });
         }
-        return response;
+        return new Response('Offline', { status: 503 });
       });
-      return cachedResponse || fetchPromise;
     })
   );
 });
