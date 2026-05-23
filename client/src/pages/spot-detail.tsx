@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,15 @@ export default function SpotDetail() {
 
   // Booking panel state
   const [showBookingPanel, setShowBookingPanel] = useState(false);
+
+  useEffect(() => {
+    if (showBookingPanel) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showBookingPanel]);
   const [licensePlate, setLicensePlate] = useState("");
   const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
   const [startHour, setStartHour] = useState(8);
@@ -709,14 +719,14 @@ export default function SpotDetail() {
         redirectPath={`/spot/${spotId}`}
       />
 
-      {/* Fullscreen Booking Panel */}
-      {showBookingPanel && spot && (() => {
+      {/* Fullscreen Booking Panel — rendered via Portal into document.body */}
+      {showBookingPanel && spot && createPortal((() => {
         const bookedHours = getBookedHoursForDay(bookingStartDate);
         const isHourConflict = (from: number, to: number) =>
           Array.from(bookedHours).some(h => h >= from && h < to);
         const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
         return (
-          <div className="fixed inset-0 z-[200] bg-background overflow-y-auto">
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, overflowY: "auto", backgroundColor: "var(--background, #fff)" }}>
             {/* Header */}
             <header className="sticky top-0 z-10 bg-card border-b border-border shadow-sm">
               <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -904,7 +914,7 @@ export default function SpotDetail() {
             </div>
           </div>
         );
-      })()}
+      })()), document.body)}
     </div>
   );
 }
