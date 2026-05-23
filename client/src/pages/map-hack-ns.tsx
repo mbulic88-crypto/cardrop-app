@@ -2182,7 +2182,7 @@ export default function MapHackNS() {
 
             {/* Booking form */}
             {showParkingBookingForm && selectedParking.stripeLinkActive && (
-              <div className="flex flex-col gap-3 rounded-xl p-3" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex flex-col gap-2 rounded-xl p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowParkingBookingForm(false)}
@@ -2254,9 +2254,9 @@ export default function MapHackNS() {
                   </div>
                 )}
                 {parkingCalculatedPrice > 0 && (
-                  <div className="flex justify-between items-center px-3 py-2 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
+                  <div className="flex justify-between items-center px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
                     <span className="text-xs" style={{ color: "#9ca3af" }}>Ukupno:</span>
-                    <span className="text-lg font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
+                    <span className="text-base font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
                   </div>
                 )}
                 <button
