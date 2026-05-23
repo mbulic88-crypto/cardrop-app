@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStart
   const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
   const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
   return (
-    <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, overflowY: "auto", backgroundColor: "var(--background, white)" }}>
+    <div style={{ position: "absolute", top: 0, left: 0, right: 0, minHeight: "100%", zIndex: 50, overflowY: "auto", backgroundColor: "var(--background, white)" }}>
       <header className="sticky top-0 bg-card border-b border-border shadow-sm" style={{ zIndex: 10 }}>
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <Link href="/home" className="flex items-center gap-2 shrink-0">
@@ -461,7 +460,36 @@ export default function SpotDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ position: "relative" }}>
+      {showBookingPanel && spot && (
+        <BookingPanel
+          spot={spot}
+          owner={owner}
+          licensePlate={licensePlate}
+          setLicensePlate={setLicensePlate}
+          bookingStartDate={bookingStartDate}
+          setBookingStartDate={setBookingStartDate}
+          startHour={startHour}
+          setStartHour={setStartHour}
+          endHour={endHour}
+          setEndHour={setEndHour}
+          dailyStartHour={dailyStartHour}
+          setDailyStartHour={setDailyStartHour}
+          numMonths={numMonths}
+          setNumMonths={setNumMonths}
+          calculatedPrice={calculatedPrice}
+          isAuthenticated={isAuthenticated}
+          isPending={bookingCheckoutMutation.isPending}
+          bookedHours={getBookedHoursForDay(bookingStartDate)}
+          isDateBooked={isDateBooked}
+          isDayFullyBooked={isDayFullyBooked}
+          onClose={() => setShowBookingPanel(false)}
+          onSubmit={() => {
+            if (!isAuthenticated) { setShowLoginDialog(true); setShowBookingPanel(false); return; }
+            bookingCheckoutMutation.mutate();
+          }}
+        />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
@@ -889,37 +917,6 @@ export default function SpotDetail() {
         redirectPath={`/spot/${spotId}`}
       />
 
-      {/* Fullscreen Booking Panel — rendered via Portal into document.body */}
-      {showBookingPanel && spot && createPortal(
-        <BookingPanel
-          spot={spot}
-          owner={owner}
-          licensePlate={licensePlate}
-          setLicensePlate={setLicensePlate}
-          bookingStartDate={bookingStartDate}
-          setBookingStartDate={setBookingStartDate}
-          startHour={startHour}
-          setStartHour={setStartHour}
-          endHour={endHour}
-          setEndHour={setEndHour}
-          dailyStartHour={dailyStartHour}
-          setDailyStartHour={setDailyStartHour}
-          numMonths={numMonths}
-          setNumMonths={setNumMonths}
-          calculatedPrice={calculatedPrice}
-          isAuthenticated={isAuthenticated}
-          isPending={bookingCheckoutMutation.isPending}
-          bookedHours={getBookedHoursForDay(bookingStartDate)}
-          isDateBooked={isDateBooked}
-          isDayFullyBooked={isDayFullyBooked}
-          onClose={() => setShowBookingPanel(false)}
-          onSubmit={() => {
-            if (!isAuthenticated) { setShowLoginDialog(true); setShowBookingPanel(false); return; }
-            bookingCheckoutMutation.mutate();
-          }}
-        />,
-        document.body
-      )}
     </div>
   );
 }
