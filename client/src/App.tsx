@@ -12,6 +12,7 @@ import Landing from "@/pages/landing";
 import Terms from "@/pages/terms";
 import Home from "@/pages/home";
 import SpotDetail from "@/pages/spot-detail";
+import Booking from "@/pages/booking";
 import AddSpot from "@/pages/add-spot";
 import MyBookings from "@/pages/my-bookings";
 import Transactions from "@/pages/transactions";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/home" component={Home} />
+      <Route path="/spot/:id/booking" component={Booking} />
       <Route path="/spot/:id" component={SpotDetail} />
       <Route path="/sale/:id" component={SaleDetail} />
       <Route path="/select-category" component={SelectCategory} />
