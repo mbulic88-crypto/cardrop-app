@@ -575,6 +575,26 @@ export default function MapHackNS() {
     refetchInterval: isMapView ? 120000 : false,
   });
 
+  const { data: parkingAvailability = [] } = useQuery<{ startTime: string; endTime: string }[]>({
+    queryKey: ["/api/spots", selectedParking?.id, "availability"],
+    queryFn: async () => {
+      const res = await fetch(`/api/spots/${selectedParking!.id}/availability`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedParking?.id && showParkingBookingForm,
+    staleTime: 30000,
+  });
+
+  const isParkingDayBooked = (date: Date): boolean => {
+    const dayStart = startOfDay(date);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return parkingAvailability.some(({ startTime, endTime }) => {
+      const s = new Date(startTime); const e = new Date(endTime);
+      return s < dayEnd && e > dayStart;
+    });
+  };
+
   // Derive unique cities from loaded listings (for city dropdown)
   const availableCities = Array.from(
     new Set(parkingListings.map(p => p.city).filter(Boolean) as string[])
@@ -2210,7 +2230,7 @@ export default function MapHackNS() {
                     <p className="text-xs rounded-lg px-2 py-1.5" style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af" }}>Mesečno iznajmljivanje.</p>
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Datum početka</label>
-                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={setParkingBookingStartDate} disabled={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-monthly-map" />
+                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-monthly-map" />
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Broj meseci</label>
@@ -2226,14 +2246,14 @@ export default function MapHackNS() {
                 {selectedParking.pricingType === 'daily' && (
                   <div>
                     <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Period zakupa</label>
-                    <Calendar mode="range" selected={{ from: parkingBookingStartDate, to: parkingBookingEndDate }} onSelect={(range) => { setParkingBookingStartDate(range?.from); setParkingBookingEndDate(range?.to); }} disabled={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-daily-map" />
+                    <Calendar mode="range" selected={{ from: parkingBookingStartDate, to: parkingBookingEndDate }} onSelect={(range) => { setParkingBookingStartDate(range?.from); setParkingBookingEndDate(range?.to); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-daily-map" />
                   </div>
                 )}
                 {selectedParking.pricingType === 'hourly' && (
                   <div className="space-y-2">
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Dan</label>
-                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={setParkingBookingStartDate} disabled={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-hourly-map" />
+                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-hourly-map" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>

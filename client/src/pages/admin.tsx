@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import Map, { Marker as MapMarkerPin, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { User, ParkingSpot, SalesListing, MapMarker } from "@shared/schema";
+import type { User, ParkingSpot, SalesListing, MapMarker, Booking } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -389,6 +389,18 @@ export default function Admin() {
   const { data: mapMarkersList, isLoading: markersLoading } = useQuery<MapMarker[]>({
     queryKey: ["/api/admin/map-hack/markers"],
     enabled: !!currentUser?.isAdmin,
+  });
+
+  const [bookingsSpotId, setBookingsSpotId] = useState<string | null>(null);
+
+  const { data: spotBookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ["/api/admin/parking-spots", bookingsSpotId, "bookings"],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/parking-spots/${bookingsSpotId}/bookings`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!bookingsSpotId,
   });
 
   const deleteUserMutation = useMutation({
@@ -770,13 +782,14 @@ export default function Admin() {
                     {parkingSpots.map((spot) => (
                       <div
                         key={spot.id}
-                        className={`flex items-center justify-between gap-3 p-4 rounded-md border ${
+                        className={`rounded-md border ${
                           spot.isActive
                             ? "bg-surface border-border"
                             : "bg-destructive/5 border-destructive/20"
                         }`}
                         data-testid={`row-spot-${spot.id}`}
                       >
+                      <div className="flex items-center justify-between gap-3 p-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             {spot.parkingNumber && (
@@ -803,6 +816,15 @@ export default function Admin() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
+                          <Button
+                            variant={bookingsSpotId === spot.id ? "default" : "outline"}
+                            size="icon"
+                            onClick={() => setBookingsSpotId(bookingsSpotId === spot.id ? null : spot.id)}
+                            data-testid={`button-bookings-spot-${spot.id}`}
+                            title="Prikaži rezervacije"
+                          >
+                            {bookingsSpotId === spot.id ? <ChevronUp className="h-4 w-4" /> : <CalendarDays className="h-4 w-4" />}
+                          </Button>
                           <Button
                             variant="outline"
                             size="icon"
@@ -930,6 +952,36 @@ export default function Admin() {
                             </AlertDialogContent>
                           </AlertDialog>
                         </div>
+                      </div>
+                      {bookingsSpotId === spot.id && (
+                        <div className="border-t border-border px-4 pb-4 pt-3">
+                          {bookingsLoading ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />Učitavam rezervacije...
+                            </div>
+                          ) : spotBookings.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Nema plaćenih rezervacija.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plaćene rezervacije ({spotBookings.length})</p>
+                              {spotBookings.map((b) => (
+                                <div key={b.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40 text-sm flex-wrap">
+                                  <div className="flex flex-col gap-0.5 min-w-0">
+                                    <span className="font-medium text-foreground">{b.licensePlate || "—"}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="text-xs">{Number(b.totalPrice).toLocaleString("sr-RS")} RSD</Badge>
+                                    <Badge className="text-xs bg-green-500/15 text-green-400 border-green-500/30">plaćeno</Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       </div>
                     ))}
                   </div>

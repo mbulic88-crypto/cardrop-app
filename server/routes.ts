@@ -2725,6 +2725,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/parking-spots/:id/bookings', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const bookingList = await storage.getSpotBookings(req.params.id);
+      const paid = bookingList
+        .filter(b => b.paymentStatus === 'paid')
+        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+      res.json(paid);
+    } catch (error) {
+      console.error("Error fetching spot bookings:", error);
+      res.status(500).json({ message: "Failed to fetch spot bookings" });
+    }
+  });
+
   app.patch('/api/admin/parking-spots/:id/update', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { isActive, isPremium, subscriptionType, latitude, longitude } = req.body;
