@@ -40,6 +40,7 @@ export interface ParkingListing {
   city?: string | null;
   parkingNumber?: string | null;
   stripeLinkActive?: boolean | null;
+  totalSpaces?: number | null;
 }
 
 export interface MapHackMapProps {
