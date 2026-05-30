@@ -111,6 +111,8 @@ export const parkingSpots = pgTable("parking_spots", {
   stripeLink: varchar("stripe_link", { length: 500 }),
   stripeLinkActive: boolean("stripe_link_active").notNull().default(false),
   stripeProductId: varchar("stripe_product_id", { length: 100 }),
+  // How many independent bookable spaces this listing has (default 1)
+  totalSpaces: integer("total_spaces").notNull().default(1),
   // Pending changes: owner edits are held here until next midnight UTC+1
   pendingChanges: jsonb("pending_changes").$type<Record<string, unknown>>(),
   pendingChangesFrom: timestamp("pending_changes_from"),
@@ -145,6 +147,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     pib: z.string().optional(),
     numberOfSpots: z.number().optional(),
     contactPerson: z.string().optional(),
+    totalSpaces: z.number().int().min(1).max(100).default(1),
     pricingType: z.enum(['hourly', 'daily', 'monthly']).default('daily'),
     parkingNumber: z.string().max(20).optional(),
     stripeLink: z.string().max(500).optional(),
@@ -166,7 +169,7 @@ export const OWNER_EDITABLE_FIELDS = [
   'spotType', 'hasEvCharging', 'hasSecurityCamera', 'is24Hours',
   'phone', 'contactEmail',
   'pricingType', 'advertiserType', 'companyName', 'pib', 'numberOfSpots', 'contactPerson',
-  'imageUrls',
+  'totalSpaces', 'imageUrls',
 ] as const;
 
 // Edit schema: only explicitly whitelisted fields — nothing else can enter.
@@ -192,6 +195,7 @@ export const parkingSpotEditSchema = z.object({
   pib: z.string().optional().nullable(),
   numberOfSpots: z.number().optional().nullable(),
   contactPerson: z.string().optional().nullable(),
+  totalSpaces: z.number().int().min(1).max(100).optional().nullable(),
   imageUrls: z.array(z.string()).optional(),
 });
 
@@ -210,6 +214,7 @@ export const bookings = pgTable("bookings", {
   monriTransactionId: varchar("monri_transaction_id", { length: 255 }),
   licensePlate: varchar("license_plate", { length: 30 }),
   renterPhone: varchar("renter_phone", { length: 30 }),
+  spaceNumber: integer("space_number").notNull().default(1),
   bookingStripeSessionId: varchar("booking_stripe_session_id", { length: 255 }).unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

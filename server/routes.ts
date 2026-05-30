@@ -1213,11 +1213,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get availability (booked periods) for a spot — public endpoint
+  // ?space=N filters to a specific space number (for multi-space spots)
   app.get('/api/spots/:id/availability', async (req, res) => {
     try {
       const spotBookings = await storage.getSpotBookings(req.params.id);
+      const spaceParam = req.query.space ? parseInt(String(req.query.space), 10) : null;
       const active = spotBookings
-        .filter(b => b.status !== 'cancelled' && b.paymentStatus === 'paid')
+        .filter(b => {
+          if (b.status === 'cancelled' || b.paymentStatus !== 'paid') return false;
+          if (spaceParam !== null && !isNaN(spaceParam)) return b.spaceNumber === spaceParam;
+          return true;
+        })
         .map(b => ({ startTime: b.startTime, endTime: b.endTime }));
       res.json(active);
     } catch (error) {
@@ -1521,6 +1527,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const renterPhone: string = typeof rawPhone === 'string'
         ? rawPhone.trim().slice(0, 30)
         : '';
+      const rawSpace: unknown = req.body.spaceNumber;
+      const spaceNumber: number = typeof rawSpace === 'number' ? rawSpace : (typeof rawSpace === 'string' ? parseInt(rawSpace, 10) : 1);
 
       if (!spotId || !startTime || !endTime) {
         return res.status(400).json({ message: "Nedostaju obavezna polja: spotId, startTime, endTime" });
@@ -1543,8 +1551,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Nevalidni datumi" });
       }
 
-      // Server-side overlap check — prevent double-booking
-      const overlaps = await storage.hasBookingOverlap(spotId, start, end);
+      // Server-side overlap check — prevent double-booking (per space if multi-space)
+      const validSpaceNumber = (!isNaN(spaceNumber) && spaceNumber >= 1) ? spaceNumber : 1;
+      const overlaps = await storage.hasBookingOverlap(spotId, start, end, undefined, validSpaceNumber);
       if (overlaps) {
         return res.status(409).json({ message: "Izabrani termin je već rezervisan. Molimo izaberite drugi datum ili vreme." });
       }
@@ -1613,6 +1622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endTime: end.toISOString(),
           licensePlate: licensePlate || '',
           renterPhone: renterPhone || '',
+          spaceNumber: String(validSpaceNumber),
           totalPrice: String(totalPrice),
           currency: spot.currency,
         },
@@ -1652,6 +1662,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const endTime = session.metadata?.endTime;
       const licensePlate = session.metadata?.licensePlate || '';
       const renterPhone = session.metadata?.renterPhone || '';
+      const spaceNumberMeta = session.metadata?.spaceNumber ? parseInt(session.metadata.spaceNumber, 10) : 1;
+      const validSpaceNumberVerify = (!isNaN(spaceNumberMeta) && spaceNumberMeta >= 1) ? spaceNumberMeta : 1;
       const totalPrice = session.metadata?.totalPrice;
       const currency = session.metadata?.currency || 'RSD';
 
@@ -1662,8 +1674,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const spot = await storage.getParkingSpot(spotId);
       if (!spot) return res.status(404).json({ message: "Parking nije pronađen" });
 
-      // Final overlap check at booking finalization — guards against concurrent checkouts
-      const finalOverlap = await storage.hasBookingOverlap(spotId, new Date(startTime), new Date(endTime), sessionId);
+      // Final overlap check at booking finalization — guards against concurrent checkouts (per space)
+      const finalOverlap = await storage.hasBookingOverlap(spotId, new Date(startTime), new Date(endTime), sessionId, validSpaceNumberVerify);
       if (finalOverlap) {
         return res.status(409).json({ message: "Ovaj termin je u međuvremenu rezervisan. Molimo pokušajte ponovo sa drugim terminom." });
       }
@@ -1679,6 +1691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: 'paid',
         licensePlate: licensePlate || undefined,
         renterPhone: renterPhone || undefined,
+        spaceNumber: validSpaceNumberVerify,
         bookingStripeSessionId: sessionId,
       });
 
@@ -1990,6 +2003,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const licensePlateC: string = typeof rawPlateC === 'string' ? rawPlateC.trim().toUpperCase().slice(0, 30) : '';
       const rawPhoneC: unknown = req.body.renterPhone;
       const renterPhoneC: string = typeof rawPhoneC === 'string' ? rawPhoneC.trim().slice(0, 30) : '';
+      const rawSpaceC: unknown = req.body.spaceNumber;
+      const spaceNumberC: number = typeof rawSpaceC === 'number' ? rawSpaceC : (typeof rawSpaceC === 'string' ? parseInt(rawSpaceC, 10) : 1);
+      const validSpaceC = (!isNaN(spaceNumberC) && spaceNumberC >= 1) ? spaceNumberC : 1;
 
       if (!renterPhoneC) {
         return res.status(400).json({ message: "Broj telefona je obavezan" });
@@ -2014,23 +2030,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60));
       const totalPrice = (parseFloat(spot.pricePerHour) * hours).toFixed(2);
 
-      // Check for conflicting bookings
-      const existingBookings = await storage.getSpotBookings(spotId);
-      const hasConflict = existingBookings.some((booking) => {
-        if (booking.status === 'cancelled') return false;
-        const newStart = startTime;
-        const newEnd = endTime;
-        const existingStart = new Date(booking.startTime);
-        const existingEnd = new Date(booking.endTime);
-        return (
-          (newStart >= existingStart && newStart < existingEnd) ||
-          (newEnd > existingStart && newEnd <= existingEnd) ||
-          (newStart <= existingStart && newEnd >= existingEnd)
-        );
-      });
+      // Check for conflicting bookings (per space)
+      const hasConflict = await storage.hasBookingOverlap(spotId, startTime, endTime, undefined, validSpaceC);
 
       if (hasConflict) {
-        return res.status(400).json({ message: "Time slot is already booked" });
+        return res.status(400).json({ message: "Izabrani termin je već rezervisan za to parking mesto." });
       }
 
       const booking = await storage.createBooking({
@@ -2044,6 +2048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         renterId: userId,
         licensePlate: licensePlateC || undefined,
         renterPhone: renterPhoneC || undefined,
+        spaceNumber: validSpaceC,
       });
 
       // Email notifikacije (vlasnik + zakupac) — gotovina/prenos
@@ -2721,13 +2726,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'is24Hours', 'phone', 'paymentType', 'contactEmail', 'advertiserType',
         'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
         'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
-        'stripeLink', 'stripeLinkActive', 'category'];
+        'stripeLink', 'stripeLinkActive', 'category', 'totalSpaces'];
       for (const f of fields) {
         if (body[f] !== undefined) updates[f] = body[f];
       }
       if (updates.latitude !== undefined) updates.latitude = String(updates.latitude);
       if (updates.longitude !== undefined) updates.longitude = String(updates.longitude);
       if (updates.pricePerHour !== undefined) updates.pricePerHour = String(updates.pricePerHour);
+      if (updates.totalSpaces !== undefined) updates.totalSpaces = parseInt(String(updates.totalSpaces), 10) || 1;
       const spot = await storage.updateParkingSpot(req.params.id, updates);
       if (!spot) return res.status(404).json({ message: "Parking spot not found" });
       res.json(spot);

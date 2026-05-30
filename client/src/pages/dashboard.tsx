@@ -535,11 +535,18 @@ export default function Dashboard() {
                       {spot.isActive ? 'Aktivno' : 'Neaktivno'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {bookingsPerSpot[spot.id] ?? 0} rezervacija ukupno
-                    </span>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {bookingsPerSpot[spot.id] ?? 0} rezervacija ukupno
+                      </span>
+                    </div>
+                    {(spot.totalSpaces ?? 1) > 1 && (
+                      <span className="text-xs text-accent font-medium">
+                        {spot.totalSpaces} mesta
+                      </span>
+                    )}
                   </div>
 
                   {(spot.subscriptionType === 'standard' || spot.subscriptionType === 'silver') && (

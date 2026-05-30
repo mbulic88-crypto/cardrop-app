@@ -24,9 +24,10 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
-function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
+function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, selectedSpace, setSelectedSpace, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
   spot: ParkingSpot; owner: UserType | undefined; licensePlate: string; setLicensePlate: (v: string) => void;
   renterPhone: string; setRenterPhone: (v: string) => void;
+  selectedSpace: number; setSelectedSpace: (n: number) => void;
   bookingStartDate: Date | undefined; setBookingStartDate: (d: Date | undefined) => void;
   startHour: number; setStartHour: (h: number) => void; endHour: number; setEndHour: (h: number) => void;
   dailyStartHour: number; setDailyStartHour: (h: number) => void; numMonths: number; setNumMonths: (n: number) => void;
@@ -66,6 +67,20 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
             <p className="text-xs text-muted-foreground">/ {pricingLabel}</p>
           </div>
         </div>
+
+        {spot.totalSpaces > 1 && (
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Parking mesto (broj)</label>
+            <Select value={String(selectedSpace)} onValueChange={(v) => setSelectedSpace(Number(v))}>
+              <SelectTrigger data-testid="select-space-number"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: spot.totalSpaces }, (_, i) => i + 1).map(n => (
+                  <SelectItem key={n} value={String(n)}>Mesto {n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -246,6 +261,7 @@ export default function SpotDetail() {
     }
     return () => { document.body.style.overflow = ""; };
   }, [showBookingPanel]);
+  const [selectedSpace, setSelectedSpace] = useState(1);
   const [licensePlate, setLicensePlate] = useState("");
   const [renterPhone, setRenterPhone] = useState("");
   const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
@@ -287,9 +303,13 @@ export default function SpotDetail() {
     : null;
 
   const { data: availability = [] } = useQuery<{ startTime: string; endTime: string }[]>({
-    queryKey: ["/api/spots", spotId, "availability"],
+    queryKey: ["/api/spots", spotId, "availability", selectedSpace],
     queryFn: async () => {
-      const res = await fetch(`/api/spots/${spotId}/availability`);
+      const totalSpaces = spot?.totalSpaces ?? 1;
+      const url = totalSpaces > 1
+        ? `/api/spots/${spotId}/availability?space=${selectedSpace}`
+        : `/api/spots/${spotId}/availability`;
+      const res = await fetch(url);
       if (!res.ok) return [];
       return res.json();
     },
@@ -372,6 +392,7 @@ export default function SpotDetail() {
         endTime: endTime.toISOString(),
         licensePlate,
         renterPhone,
+        spaceNumber: selectedSpace,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -488,6 +509,8 @@ export default function SpotDetail() {
           setLicensePlate={setLicensePlate}
           renterPhone={renterPhone}
           setRenterPhone={setRenterPhone}
+          selectedSpace={selectedSpace}
+          setSelectedSpace={setSelectedSpace}
           bookingStartDate={bookingStartDate}
           setBookingStartDate={setBookingStartDate}
           startHour={startHour}

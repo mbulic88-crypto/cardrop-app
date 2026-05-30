@@ -1087,6 +1087,34 @@ export default function AddSpot() {
                 />
               </div>
 
+              <FormField
+                control={form.control}
+                name="totalSpaces"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {language === "sr" ? "Broj parking mesta" : language === "de" ? "Anzahl Stellplätze" : language === "hu" ? "Parkolóhelyek száma" : language === "sk" ? "Počet parkovacích miest" : language === "mk" ? "Број на паркинг места" : "Number of spaces"}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        placeholder="1"
+                        {...field}
+                        value={field.value ?? 1}
+                        onChange={(e) => field.onChange(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        data-testid="input-total-spaces"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {language === "sr" ? "Koliko nezavisnih mesta možete iznajmiti istovremeno (npr. parking sa 3 mesta = 3)" : "How many independent spots can be booked simultaneously"}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Hidden lat/lng fields - auto-populated by address autocomplete */}
               <input type="hidden" {...form.register('latitude')} />
               <input type="hidden" {...form.register('longitude')} />

@@ -52,7 +52,7 @@ export interface IStorage {
   activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
   activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, stripeSessionId: string, userId: string): Promise<{ spot: ParkingSpot | undefined; alreadyConsumed: boolean }>;
   activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }>;
-  createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
+  createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
   saveUserLicensePlate(userId: string, licensePlate: string): Promise<void>;
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -66,7 +66,7 @@ export interface IStorage {
   getBooking(id: string): Promise<Booking | undefined>;
   getUserBookings(userId: string): Promise<Booking[]>;
   getSpotBookings(spotId: string): Promise<Booking[]>;
-  hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string): Promise<boolean>;
+  hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string, spaceNumber?: number): Promise<boolean>;
   createBooking(booking: InsertBooking & { renterId: string }): Promise<Booking>;
   updateBooking(id: string, booking: Partial<InsertBooking>): Promise<Booking | undefined>;
   
@@ -390,7 +390,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(bookings.createdAt));
   }
 
-  async hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string): Promise<boolean> {
+  async hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string, spaceNumber?: number): Promise<boolean> {
     const conditions = [
       eq(bookings.spotId, spotId),
       sql`${bookings.status} != 'cancelled'`,
@@ -400,6 +400,9 @@ export class DatabaseStorage implements IStorage {
     ];
     if (excludeSessionId) {
       conditions.push(sql`${bookings.bookingStripeSessionId} != ${excludeSessionId}`);
+    }
+    if (spaceNumber !== undefined) {
+      conditions.push(eq(bookings.spaceNumber, spaceNumber));
     }
     const result = await db.select({ id: bookings.id }).from(bookings).where(and(...conditions)).limit(1);
     return result.length > 0;

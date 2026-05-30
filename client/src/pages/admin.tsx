@@ -72,6 +72,7 @@ type SpotFormData = {
   subscriptionType: string;
   stripeLink: string;
   stripeLinkActive: boolean;
+  totalSpaces: number;
 };
 
 const defaultSpotForm: SpotFormData = {
@@ -97,6 +98,7 @@ const defaultSpotForm: SpotFormData = {
   subscriptionType: "standard",
   stripeLink: "",
   stripeLinkActive: false,
+  totalSpaces: 1,
 };
 
 function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm: (f: SpotFormData) => void; isEdit?: boolean }) {
@@ -246,6 +248,18 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
           </label>
         </div>
         {/* Stripe link section */}
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Broj mesta (total)</label>
+          <Input
+            type="number"
+            min={1}
+            max={100}
+            value={form.totalSpaces}
+            onChange={e => set("totalSpaces", Math.max(1, parseInt(e.target.value, 10) || 1))}
+            placeholder="1"
+            data-testid="input-total-spaces"
+          />
+        </div>
         <div className="col-span-2 space-y-2 pt-2 border-t border-border">
           <div className="flex items-center gap-2">
             <LinkIcon className="w-4 h-4 text-accent" />
@@ -795,6 +809,9 @@ export default function Admin() {
                             {spot.parkingNumber && (
                               <Badge className="bg-accent/20 text-accent border-accent/30 font-mono text-xs">{spot.parkingNumber}</Badge>
                             )}
+                            {(spot.totalSpaces ?? 1) > 1 && (
+                              <Badge variant="outline" className="text-xs">{spot.totalSpaces} mesta</Badge>
+                            )}
                             <p className="font-medium text-foreground truncate">{spot.title}</p>
                             {getTierBadge(spot.subscriptionType)}
                             <Badge variant="outline">{getCategoryLabel(spot.category)}</Badge>
@@ -867,6 +884,7 @@ export default function Admin() {
                                 subscriptionType: spot.subscriptionType || "standard",
                                 stripeLink: spot.stripeLink || "",
                                 stripeLinkActive: spot.stripeLinkActive || false,
+                                totalSpaces: spot.totalSpaces ?? 1,
                               });
                               setEditUploadedImages(spot.imageUrls || []);
                               setShowPendingDetails(false);
