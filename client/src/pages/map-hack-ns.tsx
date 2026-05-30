@@ -1138,14 +1138,17 @@ export default function MapHackNS() {
     else if (!privacyOk) hint = "Prihvati politiku privatnosti";
 
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-screen bg-background flex flex-col">
         <CompactHero />
 
-        <div className="flex-1 overflow-y-auto pb-24">
-          <div className="max-w-md mx-auto px-4">
+        <div
+          className="flex-1 overflow-y-auto pb-28"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        >
+          <div className="max-w-md mx-auto px-4 py-4 space-y-4">
 
             {/* Nadimak */}
-            <div className="pt-5 pb-4">
+            <div className="rounded-md border border-border bg-card p-4">
               <p className="text-sm font-bold text-foreground mb-2">
                 1. Tvoj nadimak
               </p>
@@ -1158,7 +1161,6 @@ export default function MapHackNS() {
                 maxLength={20}
                 autoCapitalize="none"
                 autoCorrect="off"
-                className="border-2"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
                 Vidljivo svima u chatu i na mapi. Slova, brojevi, _ i -.
@@ -1166,7 +1168,7 @@ export default function MapHackNS() {
             </div>
 
             {/* Paket */}
-            <div className="py-4 border-t border-border">
+            <div className="rounded-md border border-border bg-card p-4">
               <p className="text-sm font-bold text-foreground mb-1">
                 2. Izaberi paket
               </p>
@@ -1181,7 +1183,7 @@ export default function MapHackNS() {
 
             {/* Politika privatnosti */}
             {!alreadyAcceptedPrivacy && (
-              <div className="py-4 border-t border-border">
+              <div className="rounded-md border border-border bg-card p-4">
                 <label className="flex items-start gap-3 cursor-pointer" data-testid="label-privacy-full">
                   <input
                     type="checkbox"
