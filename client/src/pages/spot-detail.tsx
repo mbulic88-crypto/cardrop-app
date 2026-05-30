@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar } from "@/components/ui/calendar";
+
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,70 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
 }) {
   const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
   const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
+
+  const today = startOfDay(new Date());
+  const pickerDate = bookingStartDate || today;
+  const pickerYear = pickerDate.getFullYear();
+  const pickerMonth = pickerDate.getMonth();
+  const pickerDay = pickerDate.getDate();
+  const currentYear = today.getFullYear();
+
+  const MONTHS_SR = ["Januar","Februar","Mart","April","Maj","Jun","Jul","Avgust","Septembar","Oktobar","Novembar","Decembar"];
+
+  function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
+  function isDatePast(y: number, m: number, d: number) {
+    const dt = new Date(y, m, d); dt.setHours(0,0,0,0); return dt < today;
+  }
+  function updateDate(y: number, m: number, d: number) {
+    const daysInM = getDaysInMonth(y, m);
+    const safeD = Math.min(d, daysInM);
+    const newDate = new Date(y, m, safeD); newDate.setHours(0,0,0,0);
+    setBookingStartDate(newDate);
+  }
+
+  const datePicker = (
+    <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Dan</label>
+        <Select value={String(pickerDay)} onValueChange={(v) => updateDate(pickerYear, pickerMonth, Number(v))}>
+          <SelectTrigger data-testid="select-picker-day"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: getDaysInMonth(pickerYear, pickerMonth) }, (_, i) => i + 1).map(d => {
+              const isPast = isDatePast(pickerYear, pickerMonth, d);
+              const date = new Date(pickerYear, pickerMonth, d);
+              const isUnavail = !isPast && (spot.pricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
+              return (
+                <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>
+                  {d}{isUnavail ? " ✕" : ""}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(pickerMonth)} onValueChange={(v) => updateDate(pickerYear, Number(v), pickerDay)}>
+          <SelectTrigger data-testid="select-picker-month"><SelectValue>{MONTHS_SR[pickerMonth]}</SelectValue></SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(pickerYear)} onValueChange={(v) => updateDate(Number(v), pickerMonth, pickerDay)}>
+          <SelectTrigger data-testid="select-picker-year"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ position: "absolute", top: 0, left: 0, right: 0, minHeight: "100%", zIndex: 50, overflowY: "auto", backgroundColor: "var(--background, white)" }}>
       <header className="sticky top-0 bg-card border-b border-border shadow-sm" style={{ zIndex: 10 }}>
@@ -68,20 +132,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         </div>
 
-        {spot.totalSpaces > 1 && (
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">Parking mesto (broj)</label>
-            <Select value={String(selectedSpace)} onValueChange={(v) => setSelectedSpace(Number(v))}>
-              <SelectTrigger data-testid="select-space-number"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: spot.totalSpaces }, (_, i) => i + 1).map(n => (
-                  <SelectItem key={n} value={String(n)}>Mesto {n}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
+        {/* 1. Registarska tablica */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Car className="h-4 w-4 text-accent" />Registarska tablica
@@ -103,6 +154,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         </div>
 
+        {/* 2. Broj telefona */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground" htmlFor="renter-phone">Broj telefona</label>
           <Input
@@ -116,14 +168,27 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           />
         </div>
 
+        {/* 3. Izbor parking mesta (samo ako ima više od 1) */}
+        {spot.totalSpaces > 1 && (
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Parking mesto (broj)</label>
+            <Select value={String(selectedSpace)} onValueChange={(v) => setSelectedSpace(Number(v))}>
+              <SelectTrigger data-testid="select-space-number"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: spot.totalSpaces }, (_, i) => i + 1).map(n => (
+                  <SelectItem key={n} value={String(n)}>Mesto {n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* 4. Datum i vreme */}
         {spot.pricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum početka</label>
-              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                hidden={(date) => date < startOfDay(new Date())}
-                className="rounded-md border border-border w-full" />
+              {datePicker}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Broj meseci</label>
@@ -143,10 +208,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum</label>
-              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                hidden={(date) => date < startOfDay(new Date())}
-                className="rounded-md border border-border w-full" />
+              {datePicker}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Sat početka</label>
@@ -166,10 +228,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Dan</label>
-              <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
-                hidden={(date) => date < startOfDay(new Date())}
-                className="rounded-md border border-border w-full" />
+              {datePicker}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -264,7 +323,7 @@ export default function SpotDetail() {
   const [selectedSpace, setSelectedSpace] = useState(1);
   const [licensePlate, setLicensePlate] = useState("");
   const [renterPhone, setRenterPhone] = useState("");
-  const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
+  const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(startOfDay(new Date()));
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
   const [dailyStartHour, setDailyStartHour] = useState(0);
@@ -693,6 +752,12 @@ export default function SpotDetail() {
 
               {/* Features */}
               <div className="flex flex-wrap gap-3 mb-6">
+                {spot.totalSpaces > 1 && (
+                  <Badge variant="outline" data-testid="badge-total-spaces">
+                    <Car className="w-4 h-4 mr-1" />
+                    {spot.totalSpaces} parking {spot.totalSpaces < 5 ? "mesta" : "mesta"}
+                  </Badge>
+                )}
                 {spot.hasEvCharging && (
                   <Badge variant="outline">
                     <Zap className="w-4 h-4 mr-1" />
