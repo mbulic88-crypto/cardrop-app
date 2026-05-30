@@ -207,13 +207,13 @@ export default function MyBookings({ embedded = false, ...rest }: MyBookingsProp
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
           <div className="flex items-center justify-between gap-1 xs:gap-2">
-            <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
+            <Link href="/map-hack" className="flex items-center gap-1.5 xs:gap-2">
               <img src={parkInLogo} alt="CarDrop" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
               <span className="text-xl font-bold text-foreground hidden sm:inline">CarDrop</span>
             </Link>
 
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
-              <Link href="/home">
+              <Link href="/map-hack">
                 <Button variant="outline" size="icon" data-testid="button-home">
                   <HomeIcon className="w-4 h-4" />
                 </Button>

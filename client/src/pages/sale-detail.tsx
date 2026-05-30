@@ -84,7 +84,7 @@ export default function SaleDetail() {
   const renderHeader = () => (
     <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-        <Link href="/home">
+        <Link href="/map-hack">
           <Button variant="ghost" size="icon" data-testid="button-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -127,7 +127,7 @@ export default function SaleDetail() {
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-foreground mb-2">Oglas nije pronađen</h2>
             <p className="text-muted-foreground mb-6">Ovaj oglas ne postoji ili je uklonjen.</p>
-            <Link href="/home">
+            <Link href="/map-hack">
               <Button data-testid="button-back-to-list">Nazad na listu</Button>
             </Link>
           </Card>
@@ -381,7 +381,7 @@ export default function SaleDetail() {
         </Card>
 
         {/* 5. BACK BUTTON */}
-        <Link href="/home">
+        <Link href="/map-hack">
           <Button variant="outline" className="w-full" data-testid="button-back-to-list">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Nazad na listu

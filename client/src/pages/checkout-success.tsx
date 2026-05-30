@@ -104,7 +104,7 @@ export default function CheckoutSuccess() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="p-8 max-w-md w-full text-center">
           <h2 className="text-xl font-semibold text-foreground mb-2">Nevažeća stranica</h2>
-          <Link href="/home"><Button data-testid="button-go-home">Početna</Button></Link>
+          <Link href="/map-hack"><Button data-testid="button-go-home">Početna</Button></Link>
         </Card>
       </div>
     );
@@ -116,7 +116,7 @@ export default function CheckoutSuccess() {
         <Card className="p-8 max-w-md w-full text-center">
           <h2 className="text-xl font-semibold text-foreground mb-2">Greška pri verifikaciji</h2>
           <p className="text-muted-foreground mb-4">Nije moguće proveriti sesiju plaćanja. Kontaktirajte podršku.</p>
-          <Link href="/home"><Button data-testid="button-go-home">Početna</Button></Link>
+          <Link href="/map-hack"><Button data-testid="button-go-home">Početna</Button></Link>
         </Card>
       </div>
     );
@@ -140,7 +140,7 @@ export default function CheckoutSuccess() {
         <Card className="p-8 max-w-md w-full text-center">
           <h2 className="text-xl font-semibold text-foreground mb-2">Greška pri verifikaciji</h2>
           <p className="text-muted-foreground mb-4">Došlo je do greške pri verifikaciji plaćanja. Kontaktirajte podršku.</p>
-          <Link href="/home"><Button data-testid="button-go-home">Nazad na početnu</Button></Link>
+          <Link href="/map-hack"><Button data-testid="button-go-home">Nazad na početnu</Button></Link>
         </Card>
       </div>
     );
@@ -207,7 +207,7 @@ export default function CheckoutSuccess() {
                 </Button>
               </Link>
             )}
-            <Link href="/home">
+            <Link href="/map-hack">
               <Button variant="outline" className="w-full" data-testid="button-go-home">
                 <Home className="w-4 h-4 mr-2" />
                 Početna stranica
@@ -242,7 +242,7 @@ export default function CheckoutSuccess() {
               </Button>
             </Link>
           )}
-          <Link href="/home">
+          <Link href="/map-hack">
             <Button variant="outline" className="w-full" data-testid="button-go-home">
               <Home className="w-4 h-4 mr-2" />
               Početna stranica

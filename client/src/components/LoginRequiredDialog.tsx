@@ -22,7 +22,7 @@ export default function LoginRequiredDialog({
   open,
   onClose,
   message = "Za ovu akciju potrebna je prijava na nalog.",
-  redirectPath = "/home",
+  redirectPath = "/map-hack",
 }: LoginRequiredDialogProps) {
   const [, setLocation] = useLocation();
 

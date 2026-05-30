@@ -49,7 +49,7 @@ export default function AuthPage() {
       queryClient.setQueryData(["/api/auth/user"], userData);
       const returnTo = localStorage.getItem("cardrop-returnTo");
       localStorage.removeItem("cardrop-returnTo");
-      setLocation(returnTo || "/home");
+      setLocation(returnTo || "/map-hack");
     } catch (error: any) {
       const msg = error.message?.includes(":")
         ? error.message.split(": ").slice(1).join(": ")
@@ -86,7 +86,7 @@ export default function AuthPage() {
       toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
       const returnTo = localStorage.getItem("cardrop-returnTo");
       localStorage.removeItem("cardrop-returnTo");
-      setLocation(returnTo || "/home");
+      setLocation(returnTo || "/map-hack");
     } catch (error: any) {
       toast({
         title: "Google prijava nije uspela",

@@ -40,7 +40,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
     <div style={{ position: "absolute", top: 0, left: 0, right: 0, minHeight: "100%", zIndex: 50, overflowY: "auto", backgroundColor: "var(--background, white)" }}>
       <header className="sticky top-0 bg-card border-b border-border shadow-sm" style={{ zIndex: 10 }}>
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <Link href="/home" className="flex items-center gap-2 shrink-0">
+          <Link href="/map-hack" className="flex items-center gap-2 shrink-0">
             <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
             <span className="text-lg font-bold text-foreground hidden sm:inline">CarDrop</span>
           </Link>
@@ -470,7 +470,7 @@ export default function SpotDetail() {
         <Card className="p-8 text-center">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Mesto Nije Pronađeno</h3>
-          <Link href="/home">
+          <Link href="/map-hack">
             <Button className="mt-4">Nazad na Početnu</Button>
           </Link>
         </Card>
@@ -515,13 +515,13 @@ export default function SpotDetail() {
       <header className="sticky top-0 z-50 bg-card border-b border-card-border shadow-sm">
         <div className="max-w-7xl mx-auto px-1 xs:px-2 sm:px-4 py-2.5 xs:py-3 sm:py-4">
           <div className="flex items-center justify-between gap-1 xs:gap-2">
-            <Link href="/home" className="flex items-center gap-1.5 xs:gap-2">
+            <Link href="/map-hack" className="flex items-center gap-1.5 xs:gap-2">
               <img src={parkInLogo} alt="CarDrop" className="w-7 xs:w-8 h-7 xs:h-8 rounded-lg" />
               <span className="text-xl font-bold text-foreground hidden sm:inline">CarDrop</span>
             </Link>
 
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
-              <Link href="/home">
+              <Link href="/map-hack">
                 <Button variant="outline" size="icon" className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3" data-testid="button-home">
                   <HomeIcon className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Početna</span>

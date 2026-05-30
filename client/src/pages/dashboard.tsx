@@ -1178,7 +1178,7 @@ export default function Dashboard() {
       <div className="flex min-h-screen w-full bg-background">
         <Sidebar collapsible="icon">
           <SidebarHeader className="p-4">
-            <Link href="/home" className="flex items-center gap-2.5" data-testid="link-home">
+            <Link href="/map-hack" className="flex items-center gap-2.5" data-testid="link-home">
               <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg shrink-0" />
               <span className="text-base font-bold text-foreground group-data-[collapsible=icon]:hidden">CarDrop</span>
             </Link>

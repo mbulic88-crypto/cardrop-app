@@ -179,7 +179,7 @@ export default function Booking() {
         <Card className="p-8 text-center">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground mb-4">Parking nije pronađen.</p>
-          <Link href="/home"><Button>Početna</Button></Link>
+          <Link href="/map-hack"><Button>Početna</Button></Link>
         </Card>
       </div>
     );
@@ -206,7 +206,7 @@ export default function Booking() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <Link href="/home" className="flex items-center gap-2 shrink-0">
+          <Link href="/map-hack" className="flex items-center gap-2 shrink-0">
             <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
             <span className="text-lg font-bold text-foreground hidden sm:inline">CarDrop</span>
           </Link>

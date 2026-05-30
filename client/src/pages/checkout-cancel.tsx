@@ -42,7 +42,7 @@ export default function CheckoutCancel() {
               Pokušaj ponovo
             </Button>
           </Link>
-          <Link href="/home">
+          <Link href="/map-hack">
             <Button variant="outline" className="w-full" data-testid="button-go-home">
               Nazad na početnu
             </Button>
