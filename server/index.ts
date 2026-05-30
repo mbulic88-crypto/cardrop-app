@@ -54,8 +54,35 @@ async function clearSpotExpiry() {
   }
 }
 
+async function renameSrb1ToNextNs() {
+  try {
+    // Find the current max NS number
+    const maxResult = await db.execute(sql`
+      SELECT MAX(CAST(SUBSTRING(parking_number FROM 3) AS INTEGER)) AS max_ns
+      FROM parking_spots
+      WHERE parking_number ~ '^NS[0-9]+$'
+    `);
+    const maxNs: number = (maxResult.rows[0] as any)?.max_ns ?? 0;
+    const nextNs = `NS${maxNs + 1}`;
+
+    // Rename SRB1 → next NS number (only if SRB1 exists)
+    const result = await db.execute(sql`
+      UPDATE parking_spots
+      SET parking_number = ${nextNs}
+      WHERE parking_number = 'SRB1'
+      RETURNING id, title, parking_number
+    `);
+    if ((result.rows as any[]).length > 0) {
+      console.log(`Renamed SRB1 → ${nextNs}:`, result.rows);
+    }
+  } catch (error) {
+    console.error('Failed to rename SRB1:', error);
+  }
+}
+
 (async () => {
   await clearSpotExpiry();
+  await renameSrb1ToNextNs();
   await initStripe();
 
   app.use((req, res, next) => {

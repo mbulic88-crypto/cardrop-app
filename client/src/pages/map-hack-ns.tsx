@@ -893,6 +893,21 @@ export default function MapHackNS() {
     setParkingBookingEndDate(newDate);
   }
 
+  // NS9 special rules: available Mon–Fri 18:00–06:00 and Sat 14:00–Mon 06:00.
+  // For daily type the "Do" date is the departure morning (exclusive), so
+  // price = (endDate - startDate) nights, NOT endDate - startDate + 1.
+  const isNs9 = selectedParking?.parkingNumber === 'NS9';
+
+  const ns9Validation = useMemo((): { invalid: boolean; message: string } => {
+    if (!isNs9 || !parkingBookingStartDate) return { invalid: false, message: '' };
+    const startDay = parkingBookingStartDate.getDay(); // 0=Sun
+    const endDay = parkingBookingEndDate ? parkingBookingEndDate.getDay() : -1;
+    if (startDay === 0) return { invalid: true, message: 'Nedeljom nema slobodnog mesta. Rezervišite od ponedeljka ili subote.' };
+    if (endDay === 0) return { invalid: true, message: 'Datum odlaska ne može biti nedelja. Podesite "Do" na ponedeljak (06:00 odlazak).' };
+    if (parkingBookingEndDate && parkingBookingEndDate <= parkingBookingStartDate) return { invalid: true, message: 'Datum odlaska mora biti posle datuma dolaska.' };
+    return { invalid: false, message: '' };
+  }, [isNs9, parkingBookingStartDate, parkingBookingEndDate]);
+
   const parkingCalculatedPrice = useMemo(() => {
     if (!selectedParking) return 0;
     const price = Number(selectedParking.pricePerHour);
@@ -901,14 +916,17 @@ export default function MapHackNS() {
       return hours > 0 && parkingBookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (selectedParking.pricingType === 'daily') {
       if (!parkingBookingStartDate || !parkingBookingEndDate) return 0;
-      const days = Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      return days * price;
+      // NS9: "Do" is departure morning (exclusive) — count nights not calendar days
+      const nights = isNs9
+        ? Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)))
+        : Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return nights * price;
     } else {
       if (!parkingBookingStartDate || !parkingBookingEndDate) return price;
       const months = Math.max(1, (parkingBookingEndDate.getFullYear() - parkingBookingStartDate.getFullYear()) * 12 + (parkingBookingEndDate.getMonth() - parkingBookingStartDate.getMonth()) + 1);
       return months * price;
     }
-  }, [selectedParking, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour]);
+  }, [selectedParking, isNs9, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour]);
 
   function getParkingBookingTimes(): { startTime: Date; endTime: Date } {
     const base = parkingBookingStartDate || new Date();
@@ -2237,6 +2255,17 @@ export default function MapHackNS() {
                   </button>
                   <span className="text-xs font-semibold flex-1 text-center truncate" style={{ color: "#e5e7eb" }}>Rezervacija</span>
                 </div>
+
+                {/* NS9 special hours info banner */}
+                {isNs9 && (
+                  <div className="rounded-lg px-2.5 py-2 text-xs leading-relaxed" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", color: "#93c5fd" }}>
+                    <div className="font-semibold mb-0.5" style={{ color: "#bfdbfe" }}>Posebna pravila NS9</div>
+                    <div>• Pon–Pet: slobodno <strong>18:00–06:00</strong></div>
+                    <div>• Vikend: <strong>Sub 14:00 – Pon 06:00</strong> (= 2 noći)</div>
+                    <div className="mt-1" style={{ color: "#60a5fa" }}>Unesite "Od" = datum dolaska, "Do" = datum odlaska.</div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Registarska tablica</label>
                   <Input
@@ -2457,7 +2486,15 @@ export default function MapHackNS() {
                     </div>
                   </div>
                 )}
-                {parkingCalculatedPrice > 0 && (
+
+                {/* NS9 validation warning */}
+                {isNs9 && ns9Validation.invalid && (
+                  <div className="rounded-lg px-2.5 py-2 text-xs" style={{ background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.35)", color: "#fde047" }}>
+                    {ns9Validation.message}
+                  </div>
+                )}
+
+                {parkingCalculatedPrice > 0 && !ns9Validation.invalid && (
                   <div className="flex justify-between items-center px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
                     <span className="text-xs" style={{ color: "#9ca3af" }}>Ukupno:</span>
                     <span className="text-base font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
@@ -2466,7 +2503,7 @@ export default function MapHackNS() {
                 <button
                   data-testid="button-nastavi-na-placanje-map"
                   onClick={() => parkingBookingCheckoutMutation.mutate()}
-                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0}
+                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "rgba(64,145,108,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
                 >
