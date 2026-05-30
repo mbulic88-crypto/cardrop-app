@@ -155,3 +155,64 @@ export async function sendMapHackCancellationEmail(
   `);
   await sendMail(to, 'Map Hack pretplata otkazana', html);
 }
+
+export async function sendBookingOwnerEmail(opts: {
+  ownerEmail: string;
+  ownerName: string;
+  spotTitle: string;
+  spotAddress: string;
+  renterName: string;
+  licensePlate?: string;
+  startTime: Date;
+  endTime: Date;
+  totalPrice: string | number;
+  currency: string;
+  paymentStatus: 'paid' | 'pending';
+}): Promise<void> {
+  const {
+    ownerEmail, ownerName, spotTitle, spotAddress,
+    renterName, licensePlate, startTime, endTime,
+    totalPrice, currency, paymentStatus,
+  } = opts;
+
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const paymentRow = paymentStatus === 'paid'
+    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Plaćanje:</strong> <span style="color:#16a34a;">✓ Plaćeno karticom</span></td></tr>`
+    : `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Plaćanje:</strong> Gotovina / prenos (na licu mesta)</td></tr>`;
+
+  const plateRow = licensePlate
+    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Tablica:</strong> ${licensePlate}</td></tr>`
+    : '';
+
+  const subject = paymentStatus === 'paid'
+    ? `Nova potvrđena rezervacija — ${spotTitle}`
+    : `Novi zahtev za rezervaciju — ${spotTitle}`;
+
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">
+      ${paymentStatus === 'paid' ? 'Nova rezervacija!' : 'Novi zahtev za rezervaciju'}
+    </h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      ${paymentStatus === 'paid'
+        ? `Tvoj parking <strong>${spotTitle}</strong> je upravo rezervisan i plaćen.`
+        : `Stigao je zahtev za rezervaciju parkinga <strong>${spotTitle}</strong>.`}
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Zakupac:</strong> ${renterName}</td></tr>
+      ${plateRow}
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
+      ${paymentRow}
+    </table>
+    <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Pogledaj u Dashboard-u</a>
+    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala što koristiš CarDrop!</p>
+  `);
+
+  await sendMail(ownerEmail, subject, html);
+}

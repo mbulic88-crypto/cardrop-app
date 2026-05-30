@@ -13,7 +13,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail } from './email';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
@@ -1690,6 +1690,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         url: '/dashboard',
       }).catch(() => {});
 
+      // Email notifikacija vlasniku
+      (async () => {
+        try {
+          const [owner, renter] = await Promise.all([
+            storage.getUser(spot.ownerId),
+            storage.getUser(userId),
+          ]);
+          if (owner?.email) {
+            await sendBookingOwnerEmail({
+              ownerEmail: owner.email,
+              ownerName: owner.firstName || owner.email,
+              spotTitle: spot.title,
+              spotAddress: spot.address,
+              renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+              licensePlate: booking.licensePlate || undefined,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              paymentStatus: 'paid',
+            });
+          }
+        } catch (emailErr) {
+          console.error('[EMAIL] Greška pri slanju notifikacije vlasniku:', emailErr);
+        }
+      })();
+
       res.json({ success: true, booking, spot });
     } catch (error: any) {
       console.error("Error verifying booking payment:", error);
@@ -1985,6 +2012,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: 'pending',
         renterId: userId,
       });
+
+      // Email notifikacija vlasniku (gotovina/prenos)
+      (async () => {
+        try {
+          const [owner, renter] = await Promise.all([
+            storage.getUser(spot.ownerId),
+            storage.getUser(userId),
+          ]);
+          if (owner?.email) {
+            await sendBookingOwnerEmail({
+              ownerEmail: owner.email,
+              ownerName: owner.firstName || owner.email,
+              spotTitle: spot.title,
+              spotAddress: spot.address,
+              renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              paymentStatus: 'pending',
+            });
+          }
+        } catch (emailErr) {
+          console.error('[EMAIL] Greška pri slanju notifikacije vlasniku:', emailErr);
+        }
+      })();
 
       res.status(201).json(booking);
     } catch (error: any) {
