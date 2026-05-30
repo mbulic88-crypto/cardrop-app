@@ -2940,6 +2940,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: one-time rename of SRB1 → next available NS number
+  app.post('/api/admin/rename-srb1', isAuthenticated, isAdmin, async (_req, res) => {
+    try {
+      const maxResult = await db.execute(sql`
+        SELECT MAX(CAST(SUBSTRING(parking_number FROM 3) AS INTEGER)) AS max_ns
+        FROM parking_spots
+        WHERE parking_number ~ '^NS[0-9]+$'
+      `);
+      const maxNs: number = (maxResult.rows[0] as any)?.max_ns ?? 0;
+      const nextNs = `NS${maxNs + 1}`;
+      const result = await db.execute(sql`
+        UPDATE parking_spots
+        SET parking_number = ${nextNs}
+        WHERE parking_number = 'SRB1'
+        RETURNING id, title, parking_number
+      `);
+      const updated = result.rows as any[];
+      if (updated.length === 0) {
+        return res.json({ success: false, message: 'SRB1 nije pronađen — možda je već preimenovan.' });
+      }
+      res.json({ success: true, renamedTo: nextNs, spots: updated });
+    } catch (error) {
+      console.error('Error renaming SRB1:', error);
+      res.status(500).json({ message: 'Greška pri preimenovanju SRB1' });
+    }
+  });
+
   // Sales listings routes
   app.get('/api/sales-listings', async (req, res) => {
     try {

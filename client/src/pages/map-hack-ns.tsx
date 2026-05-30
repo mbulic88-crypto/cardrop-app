@@ -345,6 +345,27 @@ function formatPhoneForMessaging(phone: string): string {
   return cleaned;
 }
 
+// ── NS9 helper ──────────────────────────────────────────────────────────────
+// NS9 special availability: Mon–Fri 18:00–06:00 and Sat 14:00–Mon 06:00.
+// The "Do" (end) date is the *departure morning* (exclusive), so we count
+// nights as (endDate − startDate) days, not +1.
+function ns9CalcNights(startDate: Date, endDate: Date): { totalUnits: number; weeknights: number; hasWeekend: boolean } {
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const days = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / msPerDay));
+  let weeknights = 0;
+  let hasSat = false;
+  let hasSun = false;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(startDate.getTime() + i * msPerDay);
+    const dow = d.getDay(); // 0=Sun, 6=Sat
+    if (dow === 6) hasSat = true;
+    else if (dow === 0) hasSun = true;
+    else weeknights += 1; // Mon–Fri
+  }
+  const hasWeekend = hasSat || hasSun;
+  return { totalUnits: weeknights + (hasWeekend ? 2 : 0), weeknights, hasWeekend };
+}
+
 export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
@@ -894,19 +915,54 @@ export default function MapHackNS() {
   }
 
   // NS9 special rules: available Mon–Fri 18:00–06:00 and Sat 14:00–Mon 06:00.
-  // For daily type the "Do" date is the departure morning (exclusive), so
-  // price = (endDate - startDate) nights, NOT endDate - startDate + 1.
   const isNs9 = selectedParking?.parkingNumber === 'NS9';
 
   const ns9Validation = useMemo((): { invalid: boolean; message: string } => {
-    if (!isNs9 || !parkingBookingStartDate) return { invalid: false, message: '' };
-    const startDay = parkingBookingStartDate.getDay(); // 0=Sun
-    const endDay = parkingBookingEndDate ? parkingBookingEndDate.getDay() : -1;
-    if (startDay === 0) return { invalid: true, message: 'Nedeljom nema slobodnog mesta. Rezervišite od ponedeljka ili subote.' };
-    if (endDay === 0) return { invalid: true, message: 'Datum odlaska ne može biti nedelja. Podesite "Do" na ponedeljak (06:00 odlazak).' };
-    if (parkingBookingEndDate && parkingBookingEndDate <= parkingBookingStartDate) return { invalid: true, message: 'Datum odlaska mora biti posle datuma dolaska.' };
+    if (!isNs9) return { invalid: false, message: '' };
+    const pricingType = selectedParking?.pricingType;
+
+    // ── Hourly ──
+    if (pricingType === 'hourly') {
+      if (!parkingBookingStartDate) return { invalid: false, message: '' };
+      const dow = parkingBookingStartDate.getDay(); // 0=Sun
+      if (dow === 0) return { invalid: true, message: 'NS9 nedeljom nije dostupan. Izaberite drugi dan.' };
+      if (dow === 6) {
+        // Saturday: available from 14:00
+        if (parkingStartHour < 14) return { invalid: true, message: `NS9 subotom je dostupan od 14:00. Izabrani početak (${String(parkingStartHour).padStart(2,'0')}:00) je pre 14:00.` };
+      } else {
+        // Mon–Fri: available from 18:00
+        if (parkingStartHour < 18) return { invalid: true, message: `NS9 radnim danima dostupan od 18:00. Izabrani početak (${String(parkingStartHour).padStart(2,'0')}:00) je pre 18:00.` };
+      }
+      return { invalid: false, message: '' };
+    }
+
+    // ── Daily ──
+    if (!parkingBookingStartDate) return { invalid: false, message: '' };
+    const startDow = parkingBookingStartDate.getDay();
+    if (startDow === 0) return { invalid: true, message: 'NS9 nedeljom nije dostupan. Rezervišite od ponedeljka ili subote.' };
+
+    if (!parkingBookingEndDate) return { invalid: false, message: '' };
+    const endDow = parkingBookingEndDate.getDay();
+    if (endDow === 0) return { invalid: true, message: 'NS9 vikend blok traje do ponedeljka 06:00. Podesite "Do" na ponedeljak ili kasnije.' };
+
+    if (parkingBookingEndDate <= parkingBookingStartDate) return { invalid: true, message: 'Datum odlaska mora biti posle datuma dolaska.' };
+
+    // Saturday start → must end at least Monday (2 nights = full weekend block)
+    if (startDow === 6) {
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const nights = Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / msPerDay);
+      if (nights < 2) return { invalid: true, message: 'Vikend rezervacija (od subote) mora trajati do ponedeljka 06:00 (minimum 2 noći).' };
+    }
+
     return { invalid: false, message: '' };
-  }, [isNs9, parkingBookingStartDate, parkingBookingEndDate]);
+  }, [isNs9, selectedParking?.pricingType, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour]);
+
+  // NS9 price breakdown for UI display
+  const ns9Breakdown = useMemo((): { weeknights: number; hasWeekend: boolean } | null => {
+    if (!isNs9 || selectedParking?.pricingType !== 'daily' || !parkingBookingStartDate || !parkingBookingEndDate) return null;
+    const { weeknights, hasWeekend } = ns9CalcNights(parkingBookingStartDate, parkingBookingEndDate);
+    return { weeknights, hasWeekend };
+  }, [isNs9, selectedParking?.pricingType, parkingBookingStartDate, parkingBookingEndDate]);
 
   const parkingCalculatedPrice = useMemo(() => {
     if (!selectedParking) return 0;
@@ -916,11 +972,13 @@ export default function MapHackNS() {
       return hours > 0 && parkingBookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (selectedParking.pricingType === 'daily') {
       if (!parkingBookingStartDate || !parkingBookingEndDate) return 0;
-      // NS9: "Do" is departure morning (exclusive) — count nights not calendar days
-      const nights = isNs9
-        ? Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)))
-        : Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-      return nights * price;
+      if (isNs9) {
+        // NS9: "Do" is departure morning — count slots via helper (weeknights + weekend block)
+        const { totalUnits } = ns9CalcNights(parkingBookingStartDate, parkingBookingEndDate);
+        return Math.max(1, totalUnits) * price;
+      }
+      const days = Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
     } else {
       if (!parkingBookingStartDate || !parkingBookingEndDate) return price;
       const months = Math.max(1, (parkingBookingEndDate.getFullYear() - parkingBookingStartDate.getFullYear()) * 12 + (parkingBookingEndDate.getMonth() - parkingBookingStartDate.getMonth()) + 1);
@@ -937,8 +995,17 @@ export default function MapHackNS() {
       end.setHours(parkingEndHour, 0, 0, 0);
       return { startTime: start, endTime: end };
     } else if (selectedParking?.pricingType === 'daily') {
-      const start = new Date(base); start.setHours(0, 0, 0, 0);
-      const end = new Date(parkingBookingEndDate || base); end.setHours(23, 59, 59, 0);
+      const start = new Date(base);
+      const end = new Date(parkingBookingEndDate || base);
+      if (isNs9) {
+        // NS9: arrival time = 18:00 weekdays, 14:00 Saturday; departure = 06:00 on "Do" date
+        const startDow = start.getDay();
+        start.setHours(startDow === 6 ? 14 : 18, 0, 0, 0);
+        end.setHours(6, 0, 0, 0);
+      } else {
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 0);
+      }
       return { startTime: start, endTime: end };
     } else {
       const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
@@ -2495,9 +2562,18 @@ export default function MapHackNS() {
                 )}
 
                 {parkingCalculatedPrice > 0 && !ns9Validation.invalid && (
-                  <div className="flex justify-between items-center px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
-                    <span className="text-xs" style={{ color: "#9ca3af" }}>Ukupno:</span>
-                    <span className="text-base font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
+                  <div className="flex flex-col gap-0.5 px-2 py-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
+                    {/* NS9 breakdown */}
+                    {ns9Breakdown && (ns9Breakdown.weeknights > 0 || ns9Breakdown.hasWeekend) && (
+                      <div className="text-xs mb-0.5" style={{ color: "#6b7280" }}>
+                        {ns9Breakdown.weeknights > 0 && <span>{ns9Breakdown.weeknights} {ns9Breakdown.weeknights === 1 ? 'noć' : ns9Breakdown.weeknights < 5 ? 'noći' : 'noći'} (Pon–Pet){ns9Breakdown.hasWeekend ? ' + vikend blok' : ''}</span>}
+                        {!ns9Breakdown.weeknights && ns9Breakdown.hasWeekend && <span>vikend blok (Sub 14:00 – Pon 06:00)</span>}
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: "#9ca3af" }}>Ukupno:</span>
+                      <span className="text-base font-bold" style={{ color: "#52B788" }} data-testid="text-total-price-map">{parkingCalculatedPrice.toLocaleString('sr-RS')} RSD</span>
+                    </div>
                   </div>
                 )}
                 <button
