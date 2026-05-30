@@ -1525,6 +1525,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!spotId || !startTime || !endTime) {
         return res.status(400).json({ message: "Nedostaju obavezna polja: spotId, startTime, endTime" });
       }
+      if (!renterPhone) {
+        return res.status(400).json({ message: "Broj telefona je obavezan" });
+      }
 
       const spot = await storage.getParkingSpot(spotId);
       if (!spot || !spot.isActive) {
@@ -1989,6 +1992,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const licensePlateC: string = typeof rawPlateC === 'string' ? rawPlateC.trim().toUpperCase().slice(0, 30) : '';
       const rawPhoneC: unknown = req.body.renterPhone;
       const renterPhoneC: string = typeof rawPhoneC === 'string' ? rawPhoneC.trim().slice(0, 30) : '';
+
+      if (!renterPhoneC) {
+        return res.status(400).json({ message: "Broj telefona je obavezan" });
+      }
 
       if (endTime <= startTime) {
         return res.status(400).json({ message: "Vreme završetka mora biti posle početka" });

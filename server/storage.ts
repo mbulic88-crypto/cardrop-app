@@ -418,7 +418,7 @@ export class DatabaseStorage implements IStorage {
     return booking;
   }
 
-  async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
+  async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; bookingStripeSessionId: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
     const result = await db
       .insert(bookings)
       .values(data)
