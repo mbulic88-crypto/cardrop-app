@@ -101,6 +101,7 @@ export interface IStorage {
   getOwnerReceivedBookings(ownerId: string, from?: Date, to?: Date): Promise<Array<{
     id: string; spotId: string; spotTitle: string;
     renterId: string; renterFirstName: string | null; renterLastName: string | null;
+    licensePlate: string | null; renterPhone: string | null;
     startTime: Date; endTime: Date; totalPrice: string; currency: string;
     status: string; paymentStatus: string; createdAt: Date | null;
   }>>;
@@ -334,6 +335,7 @@ export class DatabaseStorage implements IStorage {
   async getOwnerReceivedBookings(ownerId: string, from?: Date, to?: Date): Promise<Array<{
     id: string; spotId: string; spotTitle: string;
     renterId: string; renterFirstName: string | null; renterLastName: string | null;
+    licensePlate: string | null; renterPhone: string | null;
     startTime: Date; endTime: Date; totalPrice: string; currency: string;
     status: string; paymentStatus: string; createdAt: Date | null;
   }>> {
@@ -348,6 +350,8 @@ export class DatabaseStorage implements IStorage {
         renterId: bookings.renterId,
         renterFirstName: users.firstName,
         renterLastName: users.lastName,
+        licensePlate: bookings.licensePlate,
+        renterPhone: bookings.renterPhone,
         startTime: bookings.startTime,
         endTime: bookings.endTime,
         totalPrice: bookings.totalPrice,

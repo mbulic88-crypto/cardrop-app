@@ -40,6 +40,7 @@ type Section = 'overview' | 'spots' | 'bookings' | 'messages' | 'sales' | 'profi
 type OwnerBooking = {
   id: string; spotId: string; spotTitle: string;
   renterId: string; renterFirstName: string | null; renterLastName: string | null;
+  licensePlate: string | null; renterPhone: string | null;
   startTime: string; endTime: string; totalPrice: string; currency: string;
   status: string; paymentStatus: string; createdAt: string | null;
 };
@@ -677,7 +678,18 @@ export default function Dashboard() {
                         <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
                           <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle}</td>
                           <td className="px-4 py-3 text-foreground">
-                            {`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}
+                            <div className="flex flex-col gap-0.5">
+                              <span>{`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}</span>
+                              {b.licensePlate && (
+                                <span className="text-xs text-muted-foreground font-mono">{b.licensePlate}</span>
+                              )}
+                              {b.renterPhone && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Phone className="w-3 h-3 shrink-0" />
+                                  {b.renterPhone}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
                             {new Date(b.startTime).toLocaleDateString('sr-RS')}

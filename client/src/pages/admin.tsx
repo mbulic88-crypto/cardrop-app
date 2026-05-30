@@ -968,6 +968,9 @@ export default function Admin() {
                                 <div key={b.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40 text-sm flex-wrap">
                                   <div className="flex flex-col gap-0.5 min-w-0">
                                     <span className="font-medium text-foreground">{b.licensePlate || "—"}</span>
+                                    {b.renterPhone && (
+                                      <span className="text-xs text-muted-foreground">{b.renterPhone}</span>
+                                    )}
                                     <span className="text-xs text-muted-foreground">
                                       {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
                                     </span>
