@@ -1720,7 +1720,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
-              paymentStatus: 'paid',
             });
           }
           if (renter?.email) {
@@ -1734,7 +1733,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
-              paymentStatus: 'paid',
             });
           }
         } catch (emailErr) {
@@ -2068,7 +2066,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
-              paymentStatus: 'pending',
             });
           }
           if (renter?.email) {
@@ -2082,7 +2079,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
-              paymentStatus: 'pending',
             });
           }
         } catch (emailErr) {

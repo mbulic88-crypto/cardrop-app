@@ -168,59 +168,40 @@ export async function sendBookingOwnerEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
-  paymentStatus: 'paid' | 'pending';
 }): Promise<void> {
   const {
     ownerEmail, ownerName, spotTitle, spotAddress,
     renterName, licensePlate, renterPhone, startTime, endTime,
-    totalPrice, currency, paymentStatus,
+    totalPrice, currency,
   } = opts;
 
   const fmt = (d: Date) =>
     d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const paymentRow = paymentStatus === 'paid'
-    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Plaćanje:</strong> <span style="color:#16a34a;">✓ Plaćeno karticom</span></td></tr>`
-    : `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Plaćanje:</strong> Gotovina / prenos (na licu mesta)</td></tr>`;
-
-  const plateRow = licensePlate
-    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Tablica:</strong> ${licensePlate}</td></tr>`
-    : '';
-
-  const phoneRow = renterPhone
-    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Telefon zakupca:</strong> ${renterPhone}</td></tr>`
-    : '';
-
-  const subject = paymentStatus === 'paid'
-    ? `Nova potvrđena rezervacija — ${spotTitle}`
-    : `Novi zahtev za rezervaciju — ${spotTitle}`;
+  const plateValue = licensePlate || '—';
+  const phoneValue = renterPhone || '—';
 
   const html = baseTemplate(`
-    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">
-      ${paymentStatus === 'paid' ? 'Nova rezervacija!' : 'Novi zahtev za rezervaciju'}
-    </h2>
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Nova rezervacija!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
-      ${paymentStatus === 'paid'
-        ? `Tvoj parking <strong>${spotTitle}</strong> je upravo rezervisan i plaćen.`
-        : `Stigao je zahtev za rezervaciju parkinga <strong>${spotTitle}</strong>.`}
+      Tvoj parking <strong>${spotTitle}</strong> je upravo rezervisan i plaćen.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Zakupac:</strong> ${renterName}</td></tr>
-      ${plateRow}
-      ${phoneRow}
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Tablica:</strong> ${plateValue}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Telefon zakupca:</strong> ${phoneValue}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
-      ${paymentRow}
     </table>
     <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Pogledaj u Dashboard-u</a>
     <p style="color:#888;font-size:13px;margin-top:24px;">Hvala što koristiš CarDrop!</p>
   `);
 
-  await sendMail(ownerEmail, subject, html);
+  await sendMail(ownerEmail, `Nova rezervacija potvrđena — ${spotTitle}`, html);
 }
 
 export async function sendBookingRenterConfirmationEmail(opts: {
@@ -233,51 +214,38 @@ export async function sendBookingRenterConfirmationEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
-  paymentStatus: 'paid' | 'pending';
 }): Promise<void> {
   const {
     renterEmail, renterName, spotTitle, spotAddress,
     ownerPhone, startTime, endTime,
-    totalPrice, currency, paymentStatus,
+    totalPrice, currency,
   } = opts;
 
   const fmt = (d: Date) =>
     d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
-  const ownerContactRow = ownerPhone
-    ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Kontakt vlasnika:</strong> ${ownerPhone}</td></tr>`
-    : '';
-
-  const paymentNote = paymentStatus === 'paid'
-    ? `<p style="color:#16a34a;font-size:14px;font-weight:bold;margin:0 0 8px;">✓ Plaćanje je uspešno obrađeno.</p>`
-    : `<p style="color:#d97706;font-size:14px;margin:0 0 8px;">Plaćanje: gotovina ili prenos — dogovorite se sa vlasnikom.</p>`;
-
-  const subject = paymentStatus === 'paid'
-    ? `Potvrda rezervacije — ${spotTitle}`
-    : `Zahtev za rezervaciju primljen — ${spotTitle}`;
+  const ownerContactValue = ownerPhone || '—';
 
   const html = baseTemplate(`
-    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">
-      ${paymentStatus === 'paid' ? 'Rezervacija potvrđena!' : 'Zahtev primljen'}
-    </h2>
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Rezervacija potvrđena!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${renterName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
-      ${paymentStatus === 'paid'
-        ? `Tvoja rezervacija parkinga <strong>${spotTitle}</strong> je potvrđena.`
-        : `Tvoj zahtev za rezervaciju parkinga <strong>${spotTitle}</strong> je primljen. Vlasnik će te kontaktirati.`}
+      Tvoja rezervacija parkinga <strong>${spotTitle}</strong> je potvrđena.
     </p>
-    ${paymentNote}
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
-      ${ownerContactRow}
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Kontakt vlasnika:</strong> ${ownerContactValue}</td></tr>
     </table>
     <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Pogledaj moje rezervacije</a>
-    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala što koristiš CarDrop!</p>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin-top:20px;padding:16px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a;">
+      Preporučujemo vam da pogledate specifičnosti vašeg parkinga u CarDrop aplikaciji (na stranici parking spota) ako već niste — radi vaše sigurnosti i najboljeg mogućeg iskustva za obe strane.
+    </p>
+    <p style="color:#888;font-size:13px;margin-top:16px;">Hvala što koristiš CarDrop!</p>
   `);
 
-  await sendMail(renterEmail, subject, html);
+  await sendMail(renterEmail, `Potvrda rezervacije — ${spotTitle}`, html);
 }
