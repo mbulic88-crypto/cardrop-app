@@ -13,7 +13,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingRenterConfirmationEmail } from './email';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
@@ -1517,6 +1517,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const licensePlate: string = typeof rawPlate === 'string'
         ? rawPlate.trim().toUpperCase().slice(0, 30)
         : '';
+      const rawPhone: unknown = req.body.renterPhone;
+      const renterPhone: string = typeof rawPhone === 'string'
+        ? rawPhone.trim().slice(0, 30)
+        : '';
 
       if (!spotId || !startTime || !endTime) {
         return res.status(400).json({ message: "Nedostaju obavezna polja: spotId, startTime, endTime" });
@@ -1605,6 +1609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           startTime: start.toISOString(),
           endTime: end.toISOString(),
           licensePlate: licensePlate || '',
+          renterPhone: renterPhone || '',
           totalPrice: String(totalPrice),
           currency: spot.currency,
         },
@@ -1643,6 +1648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startTime = session.metadata?.startTime;
       const endTime = session.metadata?.endTime;
       const licensePlate = session.metadata?.licensePlate || '';
+      const renterPhone = session.metadata?.renterPhone || '';
       const totalPrice = session.metadata?.totalPrice;
       const currency = session.metadata?.currency || 'RSD';
 
@@ -1669,6 +1675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'confirmed',
         paymentStatus: 'paid',
         licensePlate: licensePlate || undefined,
+        renterPhone: renterPhone || undefined,
         bookingStripeSessionId: sessionId,
       });
 
@@ -1690,7 +1697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         url: '/dashboard',
       }).catch(() => {});
 
-      // Email notifikacija vlasniku
+      // Email notifikacije (vlasnik + zakupac)
       (async () => {
         try {
           const [owner, renter] = await Promise.all([
@@ -1705,6 +1712,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               spotAddress: spot.address,
               renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
               licensePlate: booking.licensePlate || undefined,
+              renterPhone: booking.renterPhone || undefined,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              paymentStatus: 'paid',
+            });
+          }
+          if (renter?.email) {
+            await sendBookingRenterConfirmationEmail({
+              renterEmail: renter.email,
+              renterName: renter.firstName || renter.email,
+              spotTitle: spot.title,
+              spotAddress: spot.address,
+              ownerPhone: spot.phone || undefined,
               startTime: new Date(booking.startTime),
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
@@ -1713,7 +1735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (emailErr) {
-          console.error('[EMAIL] Greška pri slanju notifikacije vlasniku:', emailErr);
+          console.error('[EMAIL] Greška pri slanju email notifikacija:', emailErr);
         }
       })();
 
@@ -1963,6 +1985,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Only accept user-supplied fields; price/status computed server-side
       const { spotId, startTime, endTime } = bookingCreateSchema.parse(req.body);
+      const rawPlateC: unknown = req.body.licensePlate;
+      const licensePlateC: string = typeof rawPlateC === 'string' ? rawPlateC.trim().toUpperCase().slice(0, 30) : '';
+      const rawPhoneC: unknown = req.body.renterPhone;
+      const renterPhoneC: string = typeof rawPhoneC === 'string' ? rawPhoneC.trim().slice(0, 30) : '';
 
       if (endTime <= startTime) {
         return res.status(400).json({ message: "Vreme završetka mora biti posle početka" });
@@ -2011,9 +2037,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
         paymentStatus: 'pending',
         renterId: userId,
+        licensePlate: licensePlateC || undefined,
+        renterPhone: renterPhoneC || undefined,
       });
 
-      // Email notifikacija vlasniku (gotovina/prenos)
+      // Email notifikacije (vlasnik + zakupac) — gotovina/prenos
       (async () => {
         try {
           const [owner, renter] = await Promise.all([
@@ -2027,6 +2055,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               spotTitle: spot.title,
               spotAddress: spot.address,
               renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+              licensePlate: booking.licensePlate || undefined,
+              renterPhone: booking.renterPhone || undefined,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              paymentStatus: 'pending',
+            });
+          }
+          if (renter?.email) {
+            await sendBookingRenterConfirmationEmail({
+              renterEmail: renter.email,
+              renterName: renter.firstName || renter.email,
+              spotTitle: spot.title,
+              spotAddress: spot.address,
+              ownerPhone: spot.phone || undefined,
               startTime: new Date(booking.startTime),
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
@@ -2035,7 +2079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (emailErr) {
-          console.error('[EMAIL] Greška pri slanju notifikacije vlasniku:', emailErr);
+          console.error('[EMAIL] Greška pri slanju email notifikacija:', emailErr);
         }
       })();
 

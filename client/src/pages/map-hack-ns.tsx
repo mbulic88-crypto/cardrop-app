@@ -456,6 +456,7 @@ export default function MapHackNS() {
   const [selectedParking, setSelectedParking] = useState<ParkingListing | null>(null);
   const [showParkingBookingForm, setShowParkingBookingForm] = useState(false);
   const [parkingLicensePlate, setParkingLicensePlate] = useState('');
+  const [parkingPhone, setParkingPhone] = useState('');
   const [parkingBookingStartDate, setParkingBookingStartDate] = useState<Date | undefined>(undefined);
   const [parkingBookingEndDate, setParkingBookingEndDate] = useState<Date | undefined>(undefined);
   const [parkingStartHour, setParkingStartHour] = useState(8);
@@ -924,6 +925,7 @@ export default function MapHackNS() {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         licensePlate: parkingLicensePlate,
+        renterPhone: parkingPhone,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -945,6 +947,7 @@ export default function MapHackNS() {
     setDescExpanded(false);
     setShowParkingBookingForm(false);
     setParkingLicensePlate('');
+    setParkingPhone('');
     setParkingBookingStartDate(undefined);
     setParkingBookingEndDate(undefined);
     setParkingStartHour(8);
@@ -2227,12 +2230,23 @@ export default function MapHackNS() {
                     className="bg-transparent border-white/10 text-white placeholder:text-white/30 focus-visible:ring-green-500/40"
                   />
                 </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Broj telefona</label>
+                  <Input
+                    type="tel"
+                    placeholder="+381 60 123 4567"
+                    value={parkingPhone}
+                    onChange={(e) => setParkingPhone(e.target.value)}
+                    data-testid="input-renter-phone-map"
+                    className="bg-transparent border-white/10 text-white placeholder:text-white/30 focus-visible:ring-green-500/40"
+                  />
+                </div>
                 {selectedParking.pricingType === 'monthly' && (
                   <div className="space-y-2">
                     <p className="text-xs rounded-lg px-2 py-1.5" style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af" }}>Mesečno iznajmljivanje.</p>
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Datum početka</label>
-                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-monthly-map" />
+                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} hidden={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-monthly-map" />
                     </div>
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Broj meseci</label>
@@ -2248,14 +2262,14 @@ export default function MapHackNS() {
                 {selectedParking.pricingType === 'daily' && (
                   <div>
                     <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Period zakupa</label>
-                    <Calendar mode="range" selected={{ from: parkingBookingStartDate, to: parkingBookingEndDate }} onSelect={(range) => { setParkingBookingStartDate(range?.from); setParkingBookingEndDate(range?.to); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-daily-map" />
+                    <Calendar mode="range" selected={{ from: parkingBookingStartDate, to: parkingBookingEndDate }} onSelect={(range) => { setParkingBookingStartDate(range?.from); setParkingBookingEndDate(range?.to); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} hidden={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-daily-map" />
                   </div>
                 )}
                 {selectedParking.pricingType === 'hourly' && (
                   <div className="space-y-2">
                     <div>
                       <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Dan</label>
-                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-hourly-map" />
+                      <Calendar mode="single" selected={parkingBookingStartDate} onSelect={(d) => { if (d && isParkingDayBooked(d)) return; setParkingBookingStartDate(d); }} disabled={(date) => date < startOfDay(new Date()) || isParkingDayBooked(date)} hidden={(date) => date < startOfDay(new Date())} className="rounded-xl border-white/10 bg-transparent text-white w-full" data-testid="calendar-booking-hourly-map" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -2284,7 +2298,7 @@ export default function MapHackNS() {
                 <button
                   data-testid="button-nastavi-na-placanje-map"
                   onClick={() => parkingBookingCheckoutMutation.mutate()}
-                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || parkingCalculatedPrice <= 0}
+                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "rgba(64,145,108,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
                 >

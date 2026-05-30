@@ -24,8 +24,9 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
-function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
+function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
   spot: ParkingSpot; owner: UserType | undefined; licensePlate: string; setLicensePlate: (v: string) => void;
+  renterPhone: string; setRenterPhone: (v: string) => void;
   bookingStartDate: Date | undefined; setBookingStartDate: (d: Date | undefined) => void;
   startHour: number; setStartHour: (h: number) => void; endHour: number; setEndHour: (h: number) => void;
   dailyStartHour: number; setDailyStartHour: (h: number) => void; numMonths: number; setNumMonths: (n: number) => void;
@@ -87,12 +88,26 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStart
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground" htmlFor="renter-phone">Broj telefona</label>
+          <Input
+            id="renter-phone"
+            type="tel"
+            placeholder="+381 60 123 4567"
+            value={renterPhone}
+            onChange={(e) => setRenterPhone(e.target.value)}
+            className="h-12"
+            data-testid="input-renter-phone"
+          />
+        </div>
+
         {spot.pricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum početka</label>
               <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
                 disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                hidden={(date) => date < startOfDay(new Date())}
                 className="rounded-md border border-border w-full" />
             </div>
             <div className="space-y-2">
@@ -115,6 +130,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStart
               <label className="text-sm font-semibold text-foreground">Datum</label>
               <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
                 disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
+                hidden={(date) => date < startOfDay(new Date())}
                 className="rounded-md border border-border w-full" />
             </div>
             <div className="space-y-2">
@@ -137,6 +153,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStart
               <label className="text-sm font-semibold text-foreground">Dan</label>
               <Calendar mode="single" selected={bookingStartDate} onSelect={setBookingStartDate}
                 disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
+                hidden={(date) => date < startOfDay(new Date())}
                 className="rounded-md border border-border w-full" />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -180,7 +197,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, bookingStart
         )}
 
         <Button className="w-full bg-accent text-accent-foreground h-12 text-base" onClick={onSubmit}
-          disabled={isPending || !licensePlate.trim() || calculatedPrice <= 0} data-testid="button-nastavi-na-placanje">
+          disabled={isPending || !licensePlate.trim() || !renterPhone.trim() || calculatedPrice <= 0} data-testid="button-nastavi-na-placanje">
           {isPending
             ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Učitavanje...</>
             : <><CreditCard className="w-5 h-5 mr-2" />Nastavi na plaćanje</>}
@@ -230,6 +247,7 @@ export default function SpotDetail() {
     return () => { document.body.style.overflow = ""; };
   }, [showBookingPanel]);
   const [licensePlate, setLicensePlate] = useState("");
+  const [renterPhone, setRenterPhone] = useState("");
   const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
@@ -353,6 +371,7 @@ export default function SpotDetail() {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         licensePlate,
+        renterPhone,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -467,6 +486,8 @@ export default function SpotDetail() {
           owner={owner}
           licensePlate={licensePlate}
           setLicensePlate={setLicensePlate}
+          renterPhone={renterPhone}
+          setRenterPhone={setRenterPhone}
           bookingStartDate={bookingStartDate}
           setBookingStartDate={setBookingStartDate}
           startHour={startHour}
