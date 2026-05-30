@@ -40,7 +40,7 @@ type Section = 'overview' | 'spots' | 'bookings' | 'messages' | 'sales' | 'profi
 type OwnerBooking = {
   id: string; spotId: string; spotTitle: string;
   renterId: string; renterFirstName: string | null; renterLastName: string | null;
-  licensePlate: string | null; renterPhone: string | null;
+  licensePlate: string | null; renterPhone: string | null; spaceNumber: number;
   startTime: string; endTime: string; totalPrice: string; currency: string;
   status: string; paymentStatus: string; createdAt: string | null;
 };
@@ -695,6 +695,9 @@ export default function Dashboard() {
                                   <Phone className="w-3 h-3 shrink-0" />
                                   {b.renterPhone}
                                 </span>
+                              )}
+                              {b.spaceNumber > 1 && (
+                                <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>
                               )}
                             </div>
                           </td>

@@ -989,6 +989,9 @@ export default function Admin() {
                                     {b.renterPhone && (
                                       <span className="text-xs text-muted-foreground">{b.renterPhone}</span>
                                     )}
+                                    {b.spaceNumber > 1 && (
+                                      <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>
+                                    )}
                                     <span className="text-xs text-muted-foreground">
                                       {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
                                     </span>
