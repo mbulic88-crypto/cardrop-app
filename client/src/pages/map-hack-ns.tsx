@@ -457,9 +457,9 @@ export default function MapHackNS() {
   const [parkingLicensePlate, setParkingLicensePlate] = useState('');
   const [parkingPhone, setParkingPhone] = useState('');
   const [parkingBookingStartDate, setParkingBookingStartDate] = useState<Date | undefined>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
+  const [parkingBookingEndDate, setParkingBookingEndDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d; });
   const [parkingStartHour, setParkingStartHour] = useState(8);
   const [parkingEndHour, setParkingEndHour] = useState(9);
-  const [parkingNumMonths, setParkingNumMonths] = useState(1);
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
@@ -886,6 +886,12 @@ export default function MapHackNS() {
     const newDate = new Date(y, m, safeD); newDate.setHours(0,0,0,0);
     setParkingBookingStartDate(newDate);
   }
+  function updateParkingEndDate(y: number, m: number, d: number) {
+    const daysInM = getParkingDaysInMonth(y, m);
+    const safeD = Math.min(d, daysInM);
+    const newDate = new Date(y, m, safeD); newDate.setHours(0,0,0,0);
+    setParkingBookingEndDate(newDate);
+  }
 
   const parkingCalculatedPrice = useMemo(() => {
     if (!selectedParking) return 0;
@@ -894,11 +900,15 @@ export default function MapHackNS() {
       const hours = parkingEndHour - parkingStartHour;
       return hours > 0 && parkingBookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (selectedParking.pricingType === 'daily') {
-      return parkingBookingStartDate ? price : 0;
+      if (!parkingBookingStartDate || !parkingBookingEndDate) return 0;
+      const days = Math.max(1, Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
     } else {
-      return parkingNumMonths * price;
+      if (!parkingBookingStartDate || !parkingBookingEndDate) return price;
+      const months = Math.max(1, (parkingBookingEndDate.getFullYear() - parkingBookingStartDate.getFullYear()) * 12 + (parkingBookingEndDate.getMonth() - parkingBookingStartDate.getMonth()) + 1);
+      return months * price;
     }
-  }, [selectedParking, parkingBookingStartDate, parkingStartHour, parkingEndHour, parkingNumMonths]);
+  }, [selectedParking, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour]);
 
   function getParkingBookingTimes(): { startTime: Date; endTime: Date } {
     const base = parkingBookingStartDate || new Date();
@@ -909,18 +919,13 @@ export default function MapHackNS() {
       end.setHours(parkingEndHour, 0, 0, 0);
       return { startTime: start, endTime: end };
     } else if (selectedParking?.pricingType === 'daily') {
-      const start = new Date(base);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(base);
-      end.setHours(23, 59, 59, 0);
+      const start = new Date(base); start.setHours(0, 0, 0, 0);
+      const end = new Date(parkingBookingEndDate || base); end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     } else {
-      const start = new Date(base);
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + parkingNumMonths);
-      end.setDate(end.getDate() - 1);
+      const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
+      const endBase = parkingBookingEndDate || base;
+      const end = new Date(endBase.getFullYear(), endBase.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     }
@@ -960,9 +965,10 @@ export default function MapHackNS() {
     setParkingPhone('');
     const today = new Date(); today.setHours(0,0,0,0);
     setParkingBookingStartDate(today);
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0,0,0,0);
+    setParkingBookingEndDate(tomorrow);
     setParkingStartHour(8);
     setParkingEndHour(9);
-    setParkingNumMonths(1);
     setParkingSelectedSpace(1);
   }
 
@@ -2267,73 +2273,172 @@ export default function MapHackNS() {
                   </div>
                 )}
 
-                {/* Date picker — Dan / Mesec / Godina */}
+                {/* Date pickers — Od / Do */}
                 {(() => {
-                  const pickerDate = parkingBookingStartDate || new Date();
-                  const pickerYear = pickerDate.getFullYear();
-                  const pickerMonth = pickerDate.getMonth();
-                  const pickerDay = pickerDate.getDate();
-                  const currentYear = new Date().getFullYear();
+                  const sDate = parkingBookingStartDate || new Date();
+                  const sYear = sDate.getFullYear(); const sMonth = sDate.getMonth(); const sDay = sDate.getDate();
+                  const eDate = parkingBookingEndDate || new Date();
+                  const eYear = eDate.getFullYear(); const eMonth = eDate.getMonth(); const eDay = eDate.getDate();
+                  const curYear = new Date().getFullYear();
+
+                  if (selectedParking.pricingType === 'hourly') {
+                    return (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Dan</label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Dan</label>
+                            <Select value={String(sDay)} onValueChange={(v) => updateParkingDate(sYear, sMonth, Number(v))}>
+                              <SelectTrigger data-testid="select-picker-day-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: getParkingDaysInMonth(sYear, sMonth) }, (_, i) => i + 1).map(d => {
+                                  const isPast = isParkingDatePast(sYear, sMonth, d);
+                                  const isUnavail = !isPast && isParkingDayBooked(new Date(sYear, sMonth, d));
+                                  return <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>{d}{isUnavail ? " ✕" : ""}</SelectItem>;
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
+                            <Select value={String(sMonth)} onValueChange={(v) => updateParkingDate(sYear, Number(v), sDay)}>
+                              <SelectTrigger data-testid="select-picker-month-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[sMonth]}</SelectValue></SelectTrigger>
+                              <SelectContent>{MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
+                            <Select value={String(sYear)} onValueChange={(v) => updateParkingDate(Number(v), sMonth, sDay)}>
+                              <SelectTrigger data-testid="select-picker-year-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>{[curYear, curYear+1, curYear+2].map(y => <SelectItem key={y} value={String(y)}>{y}.</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (selectedParking.pricingType === 'monthly') {
+                    return (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Od meseca</label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div>
+                              <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
+                              <Select value={String(sMonth)} onValueChange={(v) => updateParkingDate(sYear, Number(v), 1)}>
+                                <SelectTrigger data-testid="select-start-month-monthly-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[sMonth]}</SelectValue></SelectTrigger>
+                                <SelectContent>{MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
+                              <Select value={String(sYear)} onValueChange={(v) => updateParkingDate(Number(v), sMonth, 1)}>
+                                <SelectTrigger data-testid="select-start-year-monthly-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>{[curYear, curYear+1, curYear+2].map(y => <SelectItem key={y} value={String(y)}>{y}.</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Do meseca</label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <div>
+                              <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
+                              <Select value={String(eMonth)} onValueChange={(v) => updateParkingEndDate(eYear, Number(v), 1)}>
+                                <SelectTrigger data-testid="select-end-month-monthly-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[eMonth]}</SelectValue></SelectTrigger>
+                                <SelectContent>
+                                  {MONTHS_SR.map((name, i) => {
+                                    const isBeforeStart = eYear === sYear && i < sMonth;
+                                    return <SelectItem key={i} value={String(i)} disabled={isBeforeStart}>{name}</SelectItem>;
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
+                              <Select value={String(eYear)} onValueChange={(v) => updateParkingEndDate(Number(v), eMonth, 1)}>
+                                <SelectTrigger data-testid="select-end-year-monthly-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>{[curYear, curYear+1, curYear+2].map(y => <SelectItem key={y} value={String(y)}>{y}.</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // daily
                   return (
-                    <div>
-                      <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>
-                        {selectedParking.pricingType === 'monthly' ? 'Datum početka' : selectedParking.pricingType === 'daily' ? 'Datum' : 'Dan'}
-                      </label>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <div>
-                          <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Dan</label>
-                          <Select value={String(pickerDay)} onValueChange={(v) => updateParkingDate(pickerYear, pickerMonth, Number(v))}>
-                            <SelectTrigger data-testid="select-picker-day-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {Array.from({ length: getParkingDaysInMonth(pickerYear, pickerMonth) }, (_, i) => i + 1).map(d => {
-                                const isPast = isParkingDatePast(pickerYear, pickerMonth, d);
-                                const date = new Date(pickerYear, pickerMonth, d);
-                                const isUnavail = !isPast && isParkingDayBooked(date);
-                                return (
-                                  <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>
-                                    {d}{isUnavail ? " ✕" : ""}
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Od datuma</label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Dan</label>
+                            <Select value={String(sDay)} onValueChange={(v) => updateParkingDate(sYear, sMonth, Number(v))}>
+                              <SelectTrigger data-testid="select-start-day-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: getParkingDaysInMonth(sYear, sMonth) }, (_, i) => i + 1).map(d => {
+                                  const isPast = isParkingDatePast(sYear, sMonth, d);
+                                  const isUnavail = !isPast && isParkingDayBooked(new Date(sYear, sMonth, d));
+                                  return <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>{d}{isUnavail ? " ✕" : ""}</SelectItem>;
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
+                            <Select value={String(sMonth)} onValueChange={(v) => updateParkingDate(sYear, Number(v), sDay)}>
+                              <SelectTrigger data-testid="select-start-month-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[sMonth]}</SelectValue></SelectTrigger>
+                              <SelectContent>{MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
+                            <Select value={String(sYear)} onValueChange={(v) => updateParkingDate(Number(v), sMonth, sDay)}>
+                              <SelectTrigger data-testid="select-start-year-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>{[curYear, curYear+1, curYear+2].map(y => <SelectItem key={y} value={String(y)}>{y}.</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <div>
-                          <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
-                          <Select value={String(pickerMonth)} onValueChange={(v) => updateParkingDate(pickerYear, Number(v), pickerDay)}>
-                            <SelectTrigger data-testid="select-picker-month-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[pickerMonth]}</SelectValue></SelectTrigger>
-                            <SelectContent>
-                              {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
-                          <Select value={String(pickerYear)} onValueChange={(v) => updateParkingDate(Number(v), pickerMonth, pickerDay)}>
-                            <SelectTrigger data-testid="select-picker-year-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {[currentYear, currentYear + 1, currentYear + 2].map(y => (
-                                <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Do datuma</label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Dan</label>
+                            <Select value={String(eDay)} onValueChange={(v) => updateParkingEndDate(eYear, eMonth, Number(v))}>
+                              <SelectTrigger data-testid="select-end-day-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: getParkingDaysInMonth(eYear, eMonth) }, (_, i) => i + 1).map(d => {
+                                  const date = new Date(eYear, eMonth, d);
+                                  const isBeforeStart = parkingBookingStartDate ? date < parkingBookingStartDate : false;
+                                  return <SelectItem key={d} value={String(d)} disabled={isBeforeStart}>{d}</SelectItem>;
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Mesec</label>
+                            <Select value={String(eMonth)} onValueChange={(v) => updateParkingEndDate(eYear, Number(v), eDay)}>
+                              <SelectTrigger data-testid="select-end-month-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue>{MONTHS_SR[eMonth]}</SelectValue></SelectTrigger>
+                              <SelectContent>{MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs mb-0.5 block" style={{ color: "#6b7280" }}>Godina</label>
+                            <Select value={String(eYear)} onValueChange={(v) => updateParkingEndDate(Number(v), eMonth, eDay)}>
+                              <SelectTrigger data-testid="select-end-year-daily-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                              <SelectContent>{[curYear, curYear+1, curYear+2].map(y => <SelectItem key={y} value={String(y)}>{y}.</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
                     </div>
                   );
                 })()}
 
-                {selectedParking.pricingType === 'monthly' && (
-                  <div>
-                    <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Broj meseci</label>
-                    <Select value={String(parkingNumMonths)} onValueChange={(v) => setParkingNumMonths(Number(v))}>
-                      <SelectTrigger data-testid="select-num-months-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 6, 12].map(n => (<SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'mesec' : n < 5 ? 'meseca' : 'meseci'}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
                 {selectedParking.pricingType === 'hourly' && (
                   <div className="grid grid-cols-2 gap-2">
                     <div>

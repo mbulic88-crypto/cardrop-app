@@ -24,13 +24,13 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
-function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, selectedSpace, setSelectedSpace, bookingStartDate, setBookingStartDate, startHour, setStartHour, endHour, setEndHour, dailyStartHour, setDailyStartHour, numMonths, setNumMonths, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
+function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, selectedSpace, setSelectedSpace, bookingStartDate, setBookingStartDate, bookingEndDate, setBookingEndDate, startHour, setStartHour, endHour, setEndHour, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
   spot: ParkingSpot; owner: UserType | undefined; licensePlate: string; setLicensePlate: (v: string) => void;
   renterPhone: string; setRenterPhone: (v: string) => void;
   selectedSpace: number; setSelectedSpace: (n: number) => void;
   bookingStartDate: Date | undefined; setBookingStartDate: (d: Date | undefined) => void;
+  bookingEndDate: Date | undefined; setBookingEndDate: (d: Date | undefined) => void;
   startHour: number; setStartHour: (h: number) => void; endHour: number; setEndHour: (h: number) => void;
-  dailyStartHour: number; setDailyStartHour: (h: number) => void; numMonths: number; setNumMonths: (n: number) => void;
   calculatedPrice: number; isAuthenticated?: boolean; isPending: boolean;
   bookedHours: Set<number>; isDateBooked: (d: Date) => boolean; isDayFullyBooked: (d: Date) => boolean;
   onClose: () => void; onSubmit: () => void;
@@ -91,6 +91,109 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
         <label className="text-xs text-muted-foreground">Godina</label>
         <Select value={String(pickerYear)} onValueChange={(v) => updateDate(Number(v), pickerMonth, pickerDay)}>
           <SelectTrigger data-testid="select-picker-year"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const endBase = bookingEndDate || new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  const endPickerYear = endBase.getFullYear();
+  const endPickerMonth = endBase.getMonth();
+  const endPickerDay = endBase.getDate();
+
+  function updateEndDate(y: number, m: number, d: number) {
+    const daysInM = getDaysInMonth(y, m);
+    const safeD = Math.min(d, daysInM);
+    const newDate = new Date(y, m, safeD); newDate.setHours(0, 0, 0, 0);
+    setBookingEndDate(newDate);
+  }
+
+  const endDatePicker = (
+    <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Dan</label>
+        <Select value={String(endPickerDay)} onValueChange={(v) => updateEndDate(endPickerYear, endPickerMonth, Number(v))}>
+          <SelectTrigger data-testid="select-end-picker-day"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: getDaysInMonth(endPickerYear, endPickerMonth) }, (_, i) => i + 1).map(d => {
+              const date = new Date(endPickerYear, endPickerMonth, d);
+              const isBeforeStart = bookingStartDate ? date < bookingStartDate : false;
+              return <SelectItem key={d} value={String(d)} disabled={isBeforeStart}>{d}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(endPickerMonth)} onValueChange={(v) => updateEndDate(endPickerYear, Number(v), endPickerDay)}>
+          <SelectTrigger data-testid="select-end-picker-month"><SelectValue>{MONTHS_SR[endPickerMonth]}</SelectValue></SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(endPickerYear)} onValueChange={(v) => updateEndDate(Number(v), endPickerMonth, endPickerDay)}>
+          <SelectTrigger data-testid="select-end-picker-year"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const monthYearStartPicker = (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(pickerMonth)} onValueChange={(v) => updateDate(pickerYear, Number(v), 1)}>
+          <SelectTrigger data-testid="select-start-month-monthly"><SelectValue>{MONTHS_SR[pickerMonth]}</SelectValue></SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(pickerYear)} onValueChange={(v) => updateDate(Number(v), pickerMonth, 1)}>
+          <SelectTrigger data-testid="select-start-year-monthly"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const monthYearEndPicker = (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(endPickerMonth)} onValueChange={(v) => updateEndDate(endPickerYear, Number(v), 1)}>
+          <SelectTrigger data-testid="select-end-month-monthly"><SelectValue>{MONTHS_SR[endPickerMonth]}</SelectValue></SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => {
+              const isBeforeStart = endPickerYear === pickerYear && i < pickerMonth;
+              return <SelectItem key={i} value={String(i)} disabled={isBeforeStart}>{name}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(endPickerYear)} onValueChange={(v) => updateEndDate(Number(v), endPickerMonth, 1)}>
+          <SelectTrigger data-testid="select-end-year-monthly"><SelectValue /></SelectTrigger>
           <SelectContent>
             {[currentYear, currentYear + 1, currentYear + 2].map(y => (
               <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
@@ -187,19 +290,12 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
         {spot.pricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Datum početka</label>
-              {datePicker}
+              <label className="text-sm font-semibold text-foreground">Od meseca</label>
+              {monthYearStartPicker}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Broj meseci</label>
-              <Select value={String(numMonths)} onValueChange={(v) => setNumMonths(Number(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 6, 12].map(n => (
-                    <SelectItem key={n} value={String(n)}>{n} {n === 1 ? "mesec" : n < 5 ? "meseca" : "meseci"}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-semibold text-foreground">Do meseca</label>
+              {monthYearEndPicker}
             </div>
           </div>
         )}
@@ -207,19 +303,12 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
         {spot.pricingType === "daily" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Datum</label>
+              <label className="text-sm font-semibold text-foreground">Od datuma</label>
               {datePicker}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Sat početka</label>
-              <Select value={String(dailyStartHour)} onValueChange={(v) => setDailyStartHour(Number(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 24 }, (_, i) => i).map(h => (
-                    <SelectItem key={h} value={String(h)}>{String(h).padStart(2, "0")}:00</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-semibold text-foreground">Do datuma</label>
+              {endDatePicker}
             </div>
           </div>
         )}
@@ -324,10 +413,9 @@ export default function SpotDetail() {
   const [licensePlate, setLicensePlate] = useState("");
   const [renterPhone, setRenterPhone] = useState("");
   const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(startOfDay(new Date()));
+  const [bookingEndDate, setBookingEndDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d; });
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
-  const [dailyStartHour, setDailyStartHour] = useState(0);
-  const [numMonths, setNumMonths] = useState(1);
 
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
@@ -377,7 +465,7 @@ export default function SpotDetail() {
 
   const isDateBooked = (date: Date): boolean => {
     const slotStart = new Date(startOfDay(date));
-    slotStart.setHours(dailyStartHour, 0, 0, 0);
+    slotStart.setHours(0, 0, 0, 0);
     const slotEnd = new Date(slotStart.getTime() + 24 * 60 * 60 * 1000);
     return availability.some(({ startTime, endTime }) => {
       const s = new Date(startTime); const e = new Date(endTime);
@@ -418,11 +506,15 @@ export default function SpotDetail() {
       const hours = endHour - startHour;
       return hours > 0 && bookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (spot.pricingType === "daily") {
-      return bookingStartDate ? price : 0;
+      if (!bookingStartDate || !bookingEndDate) return 0;
+      const days = Math.max(1, Math.round((bookingEndDate.getTime() - bookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
     } else {
-      return numMonths * price;
+      if (!bookingStartDate || !bookingEndDate) return price;
+      const months = Math.max(1, (bookingEndDate.getFullYear() - bookingStartDate.getFullYear()) * 12 + (bookingEndDate.getMonth() - bookingStartDate.getMonth()) + 1);
+      return months * price;
     }
-  }, [spot, bookingStartDate, startHour, endHour, numMonths]);
+  }, [spot, bookingStartDate, bookingEndDate, startHour, endHour]);
 
   function getBookingTimes(): { startTime: Date; endTime: Date } {
     const base = bookingStartDate || new Date();
@@ -431,13 +523,14 @@ export default function SpotDetail() {
       const end = new Date(base); end.setHours(endHour, 0, 0, 0);
       return { startTime: start, endTime: end };
     } else if (spot?.pricingType === "daily") {
-      const start = new Date(base); start.setHours(dailyStartHour, 0, 0, 0);
-      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+      const start = new Date(base); start.setHours(0, 0, 0, 0);
+      const end = new Date(bookingEndDate || base); end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     } else {
       const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
-      const end = new Date(start); end.setMonth(end.getMonth() + numMonths);
-      end.setDate(end.getDate() - 1); end.setHours(23, 59, 59, 0);
+      const endBase = bookingEndDate || base;
+      const end = new Date(endBase.getFullYear(), endBase.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     }
   }
@@ -572,14 +665,12 @@ export default function SpotDetail() {
           setSelectedSpace={setSelectedSpace}
           bookingStartDate={bookingStartDate}
           setBookingStartDate={setBookingStartDate}
+          bookingEndDate={bookingEndDate}
+          setBookingEndDate={setBookingEndDate}
           startHour={startHour}
           setStartHour={setStartHour}
           endHour={endHour}
           setEndHour={setEndHour}
-          dailyStartHour={dailyStartHour}
-          setDailyStartHour={setDailyStartHour}
-          numMonths={numMonths}
-          setNumMonths={setNumMonths}
           calculatedPrice={calculatedPrice}
           isAuthenticated={isAuthenticated}
           isPending={bookingCheckoutMutation.isPending}
