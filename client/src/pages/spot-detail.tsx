@@ -725,6 +725,13 @@ export default function SpotDetail() {
                 Za ovaj parking nije aktivno online plaćanje. Kontaktirajte vlasnika.
               </p>
             )}
+            <p className="text-xs text-muted-foreground mt-2" data-testid="text-total-spaces">
+              {spot.parkingNumber && <span className="font-mono text-accent">{spot.parkingNumber}</span>}
+              {spot.parkingNumber && " • "}
+              {(spot.totalSpaces ?? 1) === 1
+                ? "1 parking mesto"
+                : `${spot.totalSpaces} parking mesta`}
+            </p>
           </div>
         </div>
 

@@ -1,22 +1,24 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, CreditCard, Loader2, MapPin, Car } from "lucide-react";
+import { X, CreditCard, Loader2, MapPin, Car, Phone } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
 import type { ParkingSpot, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
-import { format, startOfDay } from "date-fns";
-import { sr } from "date-fns/locale";
+import { startOfDay } from "date-fns";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+
+const MONTHS_SR = ["Januar","Februar","Mart","April","Maj","Jun","Jul","Avgust","Septembar","Oktobar","Novembar","Decembar"];
+
+function getDaysInMonth(y: number, m: number) { return new Date(y, m + 1, 0).getDate(); }
 
 export default function Booking() {
   const [, params] = useRoute("/spot/:id/booking");
@@ -25,9 +27,14 @@ export default function Booking() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
 
+  const today = startOfDay(new Date());
+  const currentYear = today.getFullYear();
+
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [licensePlate, setLicensePlate] = useState("");
-  const [bookingStartDate, setBookingStartDate] = useState<Date | undefined>(undefined);
+  const [licensePlate, setLicensePlate] = useState(user?.savedLicensePlate ?? "");
+  const [renterPhone, setRenterPhone] = useState("");
+  const [selectedSpace, setSelectedSpace] = useState(1);
+  const [bookingStartDate, setBookingStartDate] = useState<Date>(startOfDay(new Date()));
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
   const [dailyStartHour, setDailyStartHour] = useState(0);
@@ -44,99 +51,81 @@ export default function Booking() {
   });
 
   const { data: availability = [] } = useQuery<{ startTime: string; endTime: string }[]>({
-    queryKey: ["/api/spots", spotId, "availability"],
+    queryKey: ["/api/spots", spotId, "availability", selectedSpace],
     queryFn: async () => {
-      const res = await fetch(`/api/spots/${spotId}/availability`);
+      const totalSpaces = spot?.totalSpaces ?? 1;
+      const url = totalSpaces > 1
+        ? `/api/spots/${spotId}/availability?space=${selectedSpace}`
+        : `/api/spots/${spotId}/availability`;
+      const res = await fetch(url);
       if (!res.ok) return [];
       return res.json();
     },
     enabled: !!spotId,
   });
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    if (user?.savedLicensePlate && !licensePlate) {
-      setLicensePlate(user.savedLicensePlate);
-    }
-  }, [user?.savedLicensePlate]);
-
-  const isDateBooked = (date: Date): boolean => {
+  function isDateBooked(date: Date): boolean {
     const slotStart = new Date(startOfDay(date));
     slotStart.setHours(dailyStartHour, 0, 0, 0);
     const slotEnd = new Date(slotStart.getTime() + 24 * 60 * 60 * 1000);
     return availability.some(({ startTime, endTime }) => {
-      const s = new Date(startTime);
-      const e = new Date(endTime);
+      const s = new Date(startTime); const e = new Date(endTime);
       return s < slotEnd && e > slotStart;
     });
-  };
+  }
 
-  const isDayFullyBooked = (date: Date): boolean => {
+  function isDayFullyBooked(date: Date): boolean {
     const dayStart = startOfDay(date);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
     return availability.some(({ startTime, endTime }) => {
-      const s = new Date(startTime);
-      const e = new Date(endTime);
+      const s = new Date(startTime); const e = new Date(endTime);
       return s <= dayStart && e >= dayEnd;
     });
-  };
+  }
 
-  const getBookedHoursForDay = (date: Date | undefined): Set<number> => {
-    if (!date) return new Set();
+  function getBookedHoursForDay(date: Date): Set<number> {
     const dayStart = startOfDay(date);
-    const bookedHours = new Set<number>();
+    const booked = new Set<number>();
     availability.forEach(({ startTime, endTime }) => {
-      const s = new Date(startTime);
-      const e = new Date(endTime);
-      const periodStart = Math.max(s.getTime(), dayStart.getTime());
-      const periodEnd = Math.min(e.getTime(), dayStart.getTime() + 24 * 60 * 60 * 1000);
-      if (periodStart < periodEnd) {
-        const startH = Math.floor((periodStart - dayStart.getTime()) / (60 * 60 * 1000));
-        const endH = Math.ceil((periodEnd - dayStart.getTime()) / (60 * 60 * 1000));
-        for (let h = startH; h < endH; h++) bookedHours.add(h);
+      const s = new Date(startTime); const e = new Date(endTime);
+      const pStart = Math.max(s.getTime(), dayStart.getTime());
+      const pEnd = Math.min(e.getTime(), dayStart.getTime() + 24 * 60 * 60 * 1000);
+      if (pStart < pEnd) {
+        const sh = Math.floor((pStart - dayStart.getTime()) / 3600000);
+        const eh = Math.ceil((pEnd - dayStart.getTime()) / 3600000);
+        for (let h = sh; h < eh; h++) booked.add(h);
       }
     });
-    return bookedHours;
-  };
+    return booked;
+  }
 
   const calculatedPrice = useMemo(() => {
     if (!spot) return 0;
     const price = Number(spot.pricePerHour);
     if (spot.pricingType === "hourly") {
       const hours = endHour - startHour;
-      return hours > 0 && bookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
+      return hours > 0 ? Math.round(hours * price * 100) / 100 : 0;
     } else if (spot.pricingType === "daily") {
-      if (!bookingStartDate) return 0;
       return price;
     } else {
       return numMonths * price;
     }
-  }, [spot, bookingStartDate, startHour, endHour, numMonths, dailyStartHour]);
+  }, [spot, startHour, endHour, numMonths]);
 
   function getBookingTimes(): { startTime: Date; endTime: Date } {
-    const base = bookingStartDate || new Date();
+    const base = bookingStartDate;
     if (spot?.pricingType === "hourly") {
-      const start = new Date(base);
-      start.setHours(startHour, 0, 0, 0);
-      const end = new Date(base);
-      end.setHours(endHour, 0, 0, 0);
+      const start = new Date(base); start.setHours(startHour, 0, 0, 0);
+      const end = new Date(base); end.setHours(endHour, 0, 0, 0);
       return { startTime: start, endTime: end };
     } else if (spot?.pricingType === "daily") {
-      const start = new Date(base);
-      start.setHours(dailyStartHour, 0, 0, 0);
+      const start = new Date(base); start.setHours(dailyStartHour, 0, 0, 0);
       const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
       return { startTime: start, endTime: end };
     } else {
-      const start = new Date(base);
-      start.setDate(1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setMonth(end.getMonth() + numMonths);
-      end.setDate(end.getDate() - 1);
-      end.setHours(23, 59, 59, 0);
+      const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
+      const end = new Date(start); end.setMonth(end.getMonth() + numMonths);
+      end.setDate(end.getDate() - 1); end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     }
   }
@@ -149,6 +138,8 @@ export default function Booking() {
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         licensePlate,
+        renterPhone,
+        spaceNumber: selectedSpace,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -201,6 +192,68 @@ export default function Booking() {
   const isHourConflict = (from: number, to: number) =>
     Array.from(bookedHours).some(h => h >= from && h < to);
   const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
+  const totalSpaces = spot.totalSpaces ?? 1;
+
+  // Date picker state helpers
+  const pickerYear = bookingStartDate.getFullYear();
+  const pickerMonth = bookingStartDate.getMonth();
+  const pickerDay = bookingStartDate.getDate();
+
+  function isDatePast(y: number, m: number, d: number) {
+    const dt = new Date(y, m, d); dt.setHours(0, 0, 0, 0); return dt < today;
+  }
+
+  function updateDate(y: number, m: number, d: number) {
+    const daysInM = getDaysInMonth(y, m);
+    const safeD = Math.min(d, daysInM);
+    const nd = new Date(y, m, safeD); nd.setHours(0, 0, 0, 0);
+    setBookingStartDate(nd);
+  }
+
+  const datePicker = (
+    <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Dan</label>
+        <Select value={String(pickerDay)} onValueChange={(v) => updateDate(pickerYear, pickerMonth, Number(v))}>
+          <SelectTrigger data-testid="select-picker-day"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: getDaysInMonth(pickerYear, pickerMonth) }, (_, i) => i + 1).map(d => {
+              const isPast = isDatePast(pickerYear, pickerMonth, d);
+              const date = new Date(pickerYear, pickerMonth, d);
+              const isUnavail = !isPast && (spot.pricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
+              return (
+                <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>
+                  {d}{isUnavail ? " ✕" : ""}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(pickerMonth)} onValueChange={(v) => updateDate(pickerYear, Number(v), pickerDay)}>
+          <SelectTrigger data-testid="select-picker-month">
+            <SelectValue>{MONTHS_SR[pickerMonth]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(pickerYear)} onValueChange={(v) => updateDate(Number(v), pickerMonth, pickerDay)}>
+          <SelectTrigger data-testid="select-picker-year"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -229,7 +282,7 @@ export default function Booking() {
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Spot summary */}
+        {/* Sažetak parkinga */}
         <div className="flex items-center justify-between gap-3 p-4 rounded-md border border-border bg-card">
           <div className="min-w-0">
             <p className="font-semibold text-foreground truncate">{spot.title}</p>
@@ -246,7 +299,7 @@ export default function Booking() {
           </div>
         </div>
 
-        {/* License plate */}
+        {/* 1. Registarska tablica */}
         <div className="space-y-2">
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Car className="h-4 w-4 text-accent" />
@@ -277,22 +330,46 @@ export default function Booking() {
               )}
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Tablica se čuva radi evidencije rezervacije.</p>
         </div>
 
-        {/* Monthly */}
+        {/* 2. Broj telefona */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground flex items-center gap-2" htmlFor="renter-phone">
+            <Phone className="h-4 w-4 text-accent" />
+            Broj telefona
+          </label>
+          <Input
+            id="renter-phone"
+            type="tel"
+            placeholder="+381 60 123 4567"
+            value={renterPhone}
+            onChange={(e) => setRenterPhone(e.target.value)}
+            className="h-12"
+            data-testid="input-renter-phone"
+          />
+        </div>
+
+        {/* 3. Izbor parking mesta (samo ako ima više od 1) */}
+        {totalSpaces > 1 && (
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Parking mesto (broj)</label>
+            <Select value={String(selectedSpace)} onValueChange={(v) => setSelectedSpace(Number(v))}>
+              <SelectTrigger data-testid="select-space-number"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: totalSpaces }, (_, i) => i + 1).map(n => (
+                  <SelectItem key={n} value={String(n)}>Mesto {n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* 4. Datum i vreme */}
         {spot.pricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum početka</label>
-              <Calendar
-                mode="single"
-                selected={bookingStartDate}
-                onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                className="rounded-md border border-border w-full"
-                data-testid="calendar-booking-monthly"
-              />
+              {datePicker}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Broj meseci</label>
@@ -310,22 +387,11 @@ export default function Booking() {
           </div>
         )}
 
-        {/* Daily */}
         {spot.pricingType === "daily" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum</label>
-              <Calendar
-                mode="single"
-                selected={bookingStartDate}
-                onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDateBooked(date)}
-                className="rounded-md border border-border w-full"
-                data-testid="calendar-booking-daily"
-              />
-              {availability.length > 0 && (
-                <p className="text-xs text-muted-foreground">Zasenjeni datumi su već rezervisani.</p>
-              )}
+              {datePicker}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Sat početka</label>
@@ -337,30 +403,15 @@ export default function Booking() {
                   ))}
                 </SelectContent>
               </Select>
-              {bookingStartDate && (
-                <p className="text-xs text-muted-foreground">
-                  {format(bookingStartDate, "dd. MMM", { locale: sr })} {String(dailyStartHour).padStart(2, "0")}:00
-                  {" → "}
-                  {format(new Date(bookingStartDate.getTime() + 24 * 60 * 60 * 1000), "dd. MMM", { locale: sr })} {String(dailyStartHour).padStart(2, "0")}:00
-                </p>
-              )}
             </div>
           </div>
         )}
 
-        {/* Hourly */}
         {spot.pricingType === "hourly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Dan</label>
-              <Calendar
-                mode="single"
-                selected={bookingStartDate}
-                onSelect={setBookingStartDate}
-                disabled={(date) => date < startOfDay(new Date()) || isDayFullyBooked(date)}
-                className="rounded-md border border-border w-full"
-                data-testid="calendar-booking-hourly"
-              />
+              {datePicker}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -396,7 +447,7 @@ export default function Booking() {
           </div>
         )}
 
-        {/* Total */}
+        {/* Ukupna cena */}
         {calculatedPrice > 0 && (
           <div className="flex justify-between items-center p-4 rounded-md bg-accent/10 border border-accent/20">
             <span className="text-sm font-medium text-foreground">Ukupno:</span>
@@ -406,17 +457,13 @@ export default function Booking() {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground text-center">
-          Kada jednom uplatite, sledeći put sve ide na samo jedan klik.
-        </p>
-
         <Button
           className="w-full bg-accent text-accent-foreground h-12 text-base"
           onClick={() => {
             if (!isAuthenticated) { setShowLoginDialog(true); return; }
             bookingCheckoutMutation.mutate();
           }}
-          disabled={bookingCheckoutMutation.isPending || !licensePlate.trim() || calculatedPrice <= 0}
+          disabled={bookingCheckoutMutation.isPending || !licensePlate.trim() || !renterPhone.trim() || calculatedPrice <= 0}
           data-testid="button-nastavi-na-placanje"
         >
           {bookingCheckoutMutation.isPending
