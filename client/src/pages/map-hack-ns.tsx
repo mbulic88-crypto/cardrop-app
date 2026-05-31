@@ -937,22 +937,13 @@ export default function MapHackNS() {
     }
 
     // ── Daily ──
+    // NS9 je dostupan: Pon–Pet 18:00–06:00, Sub od 14:00, Nedelja ceo dan.
+    // Jedina zabrana po danu ne postoji — zabrana je samo po SATIMA (prikazano u info baneru).
+    // Za daily tip bez biranja sata, jedino blokiramo logički neispravne opsege.
     if (!parkingBookingStartDate) return { invalid: false, message: '' };
-    const startDow = parkingBookingStartDate.getDay();
-    if (startDow === 0) return { invalid: true, message: 'NS9 nedeljom nije dostupan. Rezervišite od ponedeljka ili subote.' };
-
     if (!parkingBookingEndDate) return { invalid: false, message: '' };
-    const endDow = parkingBookingEndDate.getDay();
-    if (endDow === 0) return { invalid: true, message: 'NS9 vikend blok traje do ponedeljka 06:00. Podesite "Do" na ponedeljak ili kasnije.' };
 
     if (parkingBookingEndDate <= parkingBookingStartDate) return { invalid: true, message: 'Datum odlaska mora biti posle datuma dolaska.' };
-
-    // Saturday start → must end at least Monday (2 nights = full weekend block)
-    if (startDow === 6) {
-      const msPerDay = 1000 * 60 * 60 * 24;
-      const nights = Math.round((parkingBookingEndDate.getTime() - parkingBookingStartDate.getTime()) / msPerDay);
-      if (nights < 2) return { invalid: true, message: 'Vikend rezervacija (od subote) mora trajati do ponedeljka 06:00 (minimum 2 noći).' };
-    }
 
     return { invalid: false, message: '' };
   }, [isNs9, selectedParking?.pricingType, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour]);
@@ -2327,9 +2318,10 @@ export default function MapHackNS() {
                 {isNs9 && (
                   <div className="rounded-lg px-2.5 py-2 text-xs leading-relaxed" style={{ background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.3)", color: "#93c5fd" }}>
                     <div className="font-semibold mb-0.5" style={{ color: "#bfdbfe" }}>Posebna pravila NS9</div>
-                    <div>• Pon–Pet: slobodno <strong>18:00–06:00</strong></div>
-                    <div>• Vikend: <strong>Sub 14:00 – Pon 06:00</strong> (= 2 noći)</div>
-                    <div className="mt-1" style={{ color: "#60a5fa" }}>Unesite "Od" = datum dolaska, "Do" = datum odlaska.</div>
+                    <div>• Pon–Pet: dostupno od <strong>18:00</strong> (do 06:00 ujutru)</div>
+                    <div>• Subota: dostupno od <strong>14:00</strong></div>
+                    <div>• <strong>Nedelja: dostupno ceo dan</strong></div>
+                    <div className="mt-1" style={{ color: "#60a5fa" }}>"Od" = datum dolaska &nbsp;·&nbsp; "Do" = datum odlaska (jutro)</div>
                   </div>
                 )}
 
