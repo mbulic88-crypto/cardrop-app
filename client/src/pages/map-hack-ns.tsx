@@ -1119,7 +1119,7 @@ export default function MapHackNS() {
     if (!user) return;
     const nick = nickname.trim();
     if (nick.length < 3) { setError("Nadimak mora imati najmanje 3 znaka"); return; }
-    if (!/^[a-zA-Z0-9_\-]+$/.test(nick)) { setError("Samo slova, brojevi, crtica i donja crta"); return; }
+    if (!/^[a-zA-Z0-9_\- ]+$/.test(nick)) { setError("Samo slova, brojevi, razmak, crtica i donja crta"); return; }
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
 
     setIsSaving(true);
@@ -1223,7 +1223,7 @@ export default function MapHackNS() {
   if (!isAuthenticated || !user) return null;
 
   if (viewMode === "onboarding_full") {
-    const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\-]+$/.test(nickname.trim());
+    const nickOk = nickname.trim().length >= 3 && /^[a-zA-Z0-9_\- ]+$/.test(nickname.trim());
     const alreadyAcceptedPrivacy = !!user.mapPrivacyAcceptedAt;
     const privacyOk = alreadyAcceptedPrivacy || privacyAccepted;
     const canSubmit = nickOk && selectedPlan !== null && privacyOk;
@@ -1258,7 +1258,7 @@ export default function MapHackNS() {
                 autoCorrect="off"
               />
               <p className="text-xs text-muted-foreground mt-1.5">
-                Vidljivo svima u chatu i na mapi. Slova, brojevi, _ i -.
+                Vidljivo svima u chatu i na mapi. Slova, brojevi, razmak, _ i -.
               </p>
             </div>
 

@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (trimmed.length < 3 || trimmed.length > 20) {
         return res.status(400).json({ message: "Nadimak mora imati između 3 i 20 znakova" });
       }
-      if (!/^[a-zA-Z0-9_\-]+$/.test(trimmed)) {
+      if (!/^[a-zA-Z0-9_\- ]+$/.test(trimmed)) {
         return res.status(400).json({ message: "Nadimak sme da sadrži samo slova, brojeve, crtice i donju crtu" });
       }
       if (typeof avatarId !== 'number' || avatarId < 1 || avatarId > 10) {
