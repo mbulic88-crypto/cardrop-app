@@ -530,7 +530,9 @@ export default function Dashboard() {
                     <span className="truncate">{spot.address}</span>
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-foreground">{spot.pricePerHour} {spot.currency}/h</span>
+                    <span className="text-sm font-semibold text-foreground">
+                      {spot.pricePerHour} {spot.currency}/{spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}
+                    </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${spot.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}>
                       {spot.isActive ? 'Aktivno' : 'Neaktivno'}
                     </span>

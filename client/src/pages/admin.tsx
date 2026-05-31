@@ -829,7 +829,7 @@ export default function Admin() {
                           </div>
                           <p className="text-sm text-muted-foreground truncate mt-1">{spot.address}</p>
                           <p className="text-xs text-muted-foreground">
-                            Vlasnik: {spot.ownerId} | Cena: {spot.pricePerHour} RSD
+                            Vlasnik: {spot.ownerId} | Cena: {spot.pricePerHour} RSD/{spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">

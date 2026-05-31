@@ -1311,7 +1311,10 @@ export default function MapHackNS() {
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t px-4 py-3">
           <div className="max-w-md mx-auto">
             {hint && !isSaving && (
-              <p className="text-xs text-muted-foreground text-center mb-2">{hint}</p>
+              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2 mb-2">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">{hint}</p>
+              </div>
             )}
             <Button
               className="w-full"
