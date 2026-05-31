@@ -351,19 +351,18 @@ function formatPhoneForMessaging(phone: string): string {
 // nights as (endDate − startDate) days, not +1.
 function ns9CalcNights(startDate: Date, endDate: Date): { totalUnits: number; weeknights: number; hasWeekend: boolean } {
   const msPerDay = 1000 * 60 * 60 * 24;
-  const days = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / msPerDay));
+  // "Do" je jutro odlaska (ekskluzivno) — Od 1. → Do 2. = 1 noć, Od Sub → Do Pon = 2 noći.
+  const totalUnits = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / msPerDay));
   let weeknights = 0;
   let hasSat = false;
   let hasSun = false;
-  for (let i = 0; i < days; i++) {
-    const d = new Date(startDate.getTime() + i * msPerDay);
-    const dow = d.getDay(); // 0=Sun, 6=Sat
+  for (let i = 0; i < totalUnits; i++) {
+    const dow = new Date(startDate.getTime() + i * msPerDay).getDay();
     if (dow === 6) hasSat = true;
     else if (dow === 0) hasSun = true;
-    else weeknights += 1; // Mon–Fri
+    else weeknights += 1;
   }
-  const hasWeekend = hasSat || hasSun;
-  return { totalUnits: weeknights + (hasWeekend ? 2 : 0), weeknights, hasWeekend };
+  return { totalUnits, weeknights, hasWeekend: hasSat || hasSun };
 }
 
 export default function MapHackNS() {
