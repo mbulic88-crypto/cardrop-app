@@ -359,6 +359,7 @@ export class DatabaseStorage implements IStorage {
         currency: bookings.currency,
         status: bookings.status,
         paymentStatus: bookings.paymentStatus,
+        paymentMethod: bookings.paymentMethod,
         createdAt: bookings.createdAt,
       })
       .from(bookings)

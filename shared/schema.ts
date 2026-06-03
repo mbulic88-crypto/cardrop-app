@@ -216,6 +216,7 @@ export const bookings = pgTable("bookings", {
   renterPhone: varchar("renter_phone", { length: 30 }),
   spaceNumber: integer("space_number").notNull().default(1),
   bookingStripeSessionId: varchar("booking_stripe_session_id", { length: 255 }).unique(),
+  paymentMethod: varchar("payment_method", { length: 20 }).default('cash'), // 'instant' | 'cash' | 'credit'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

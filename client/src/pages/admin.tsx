@@ -406,6 +406,8 @@ export default function Admin() {
   });
 
   const [bookingsSpotId, setBookingsSpotId] = useState<string | null>(null);
+  const [adminBookDateFrom, setAdminBookDateFrom] = useState('');
+  const [adminBookDateTo, setAdminBookDateTo] = useState('');
 
   const { data: spotBookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ["/api/admin/parking-spots", bookingsSpotId, "bookings"],
@@ -971,41 +973,150 @@ export default function Admin() {
                           </AlertDialog>
                         </div>
                       </div>
-                      {bookingsSpotId === spot.id && (
-                        <div className="border-t border-border px-4 pb-4 pt-3">
-                          {bookingsLoading ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Loader2 className="h-4 w-4 animate-spin" />Učitavam rezervacije...
+                      {bookingsSpotId === spot.id && (() => {
+                        // Client-side date filtering
+                        const filtered = spotBookings.filter(b => {
+                          const t = new Date(b.startTime).getTime();
+                          if (adminBookDateFrom && t < new Date(adminBookDateFrom).getTime()) return false;
+                          if (adminBookDateTo && t > new Date(adminBookDateTo + 'T23:59:59').getTime()) return false;
+                          return true;
+                        });
+                        const instantB = filtered.filter(b => (b as any).paymentMethod === 'instant');
+                        const cashB = filtered.filter(b => (b as any).paymentMethod !== 'instant');
+
+                        const APP_FEE_ADM = 0.15;
+                        const calcAdminPayout = (price: number, method: string) => {
+                          const app = price * APP_FEE_ADM;
+                          if (method === 'instant') {
+                            const stripe = price * 0.039 + 35;
+                            return { neto: price - app - stripe, stripe, app };
+                          }
+                          return { neto: price - app, stripe: 0, app };
+                        };
+
+                        const instantTotal = instantB.reduce((s, b) => s + Number(b.totalPrice), 0);
+                        const cashTotal = cashB.reduce((s, b) => s + Number(b.totalPrice), 0);
+                        const instantPayout = instantB.reduce((s, b) => s + calcAdminPayout(Number(b.totalPrice), 'instant').neto, 0);
+                        const cashPayout = cashB.reduce((s, b) => s + calcAdminPayout(Number(b.totalPrice), 'cash').neto, 0);
+
+                        return (
+                          <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                            {/* Date filter */}
+                            <div className="flex flex-wrap gap-2 items-end">
+                              <div className="space-y-0.5">
+                                <p className="text-xs text-muted-foreground">Od</p>
+                                <input type="date" value={adminBookDateFrom}
+                                  onChange={e => setAdminBookDateFrom(e.target.value)}
+                                  className="text-xs border border-border rounded-md px-2 py-1 bg-background text-foreground" />
+                              </div>
+                              <div className="space-y-0.5">
+                                <p className="text-xs text-muted-foreground">Do</p>
+                                <input type="date" value={adminBookDateTo}
+                                  onChange={e => setAdminBookDateTo(e.target.value)}
+                                  className="text-xs border border-border rounded-md px-2 py-1 bg-background text-foreground" />
+                              </div>
+                              {(adminBookDateFrom || adminBookDateTo) && (
+                                <button onClick={() => { setAdminBookDateFrom(''); setAdminBookDateTo(''); }}
+                                  className="text-xs text-muted-foreground underline">Obriši</button>
+                              )}
                             </div>
-                          ) : spotBookings.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Nema plaćenih rezervacija.</p>
-                          ) : (
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Plaćene rezervacije ({spotBookings.length})</p>
-                              {spotBookings.map((b) => (
-                                <div key={b.id} className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/40 text-sm flex-wrap">
-                                  <div className="flex flex-col gap-0.5 min-w-0">
-                                    <span className="font-medium text-foreground">{b.licensePlate || "—"}</span>
-                                    {b.renterPhone && (
-                                      <span className="text-xs text-muted-foreground">{b.renterPhone}</span>
-                                    )}
-                                    {b.spaceNumber > 1 && (
-                                      <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>
-                                    )}
-                                    <span className="text-xs text-muted-foreground">
-                                      {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
+
+                            {bookingsLoading ? (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />Učitavam...
+                              </div>
+                            ) : filtered.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">Nema plaćenih rezervacija u ovom periodu.</p>
+                            ) : (
+                              <>
+                                {/* INSTANT */}
+                                {instantB.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                      <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
+                                        Instant plaćanja ({instantB.length})
+                                      </p>
+                                      <div className="flex gap-3 text-xs text-muted-foreground">
+                                        <span>Ukupno: <span className="font-semibold text-foreground">{instantTotal.toLocaleString('sr-RS')} RSD</span></span>
+                                        <span>Za isplatu: <span className="font-semibold text-green-400">{Math.round(instantPayout).toLocaleString('sr-RS')} RSD</span></span>
+                                      </div>
+                                    </div>
+                                    {instantB.map(b => {
+                                      const price = Number(b.totalPrice);
+                                      const { neto, stripe: sf } = calcAdminPayout(price, 'instant');
+                                      return (
+                                        <div key={b.id} className="flex items-start justify-between gap-3 p-2 rounded-md bg-blue-500/5 border border-blue-500/15 text-sm flex-wrap">
+                                          <div className="flex flex-col gap-0.5 min-w-0">
+                                            <span className="font-medium text-foreground">{b.licensePlate || "—"}</span>
+                                            {b.renterPhone && <span className="text-xs text-muted-foreground">{b.renterPhone}</span>}
+                                            {(b as any).spaceNumber > 1 && <span className="text-xs text-accent font-medium">Mesto {(b as any).spaceNumber}</span>}
+                                            <span className="text-xs text-muted-foreground">
+                                              {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
+                                            </span>
+                                          </div>
+                                          <div className="flex flex-col items-end gap-0.5 text-xs">
+                                            <span className="text-foreground font-semibold">{price.toLocaleString('sr-RS')} RSD ukupno</span>
+                                            <span className="text-green-400">Neto: {Math.round(neto).toLocaleString('sr-RS')} RSD</span>
+                                            <span className="text-muted-foreground">Stripe: {Math.round(sf).toLocaleString('sr-RS')} RSD</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* KEŠ */}
+                                {cashB.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                      <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
+                                        Keš plaćanja ({cashB.length})
+                                      </p>
+                                      <div className="flex gap-3 text-xs text-muted-foreground">
+                                        <span>Ukupno: <span className="font-semibold text-foreground">{cashTotal.toLocaleString('sr-RS')} RSD</span></span>
+                                        <span>Za isplatu: <span className="font-semibold text-green-400">{Math.round(cashPayout).toLocaleString('sr-RS')} RSD</span></span>
+                                      </div>
+                                    </div>
+                                    {cashB.map(b => {
+                                      const price = Number(b.totalPrice);
+                                      const { neto } = calcAdminPayout(price, 'cash');
+                                      return (
+                                        <div key={b.id} className="flex items-start justify-between gap-3 p-2 rounded-md bg-amber-500/5 border border-amber-500/15 text-sm flex-wrap">
+                                          <div className="flex flex-col gap-0.5 min-w-0">
+                                            <span className="font-medium text-foreground">{b.licensePlate || "—"}</span>
+                                            {b.renterPhone && <span className="text-xs text-muted-foreground">{b.renterPhone}</span>}
+                                            {(b as any).spaceNumber > 1 && <span className="text-xs text-accent font-medium">Mesto {(b as any).spaceNumber}</span>}
+                                            <span className="text-xs text-muted-foreground">
+                                              {new Date(b.startTime).toLocaleDateString("sr-RS")} → {new Date(b.endTime).toLocaleDateString("sr-RS")}
+                                            </span>
+                                          </div>
+                                          <div className="flex flex-col items-end gap-0.5 text-xs">
+                                            <span className="text-foreground font-semibold">{price.toLocaleString('sr-RS')} RSD</span>
+                                            <span className="text-green-400">Neto: {Math.round(neto).toLocaleString('sr-RS')} RSD</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* UKUPNO ZA ISPLATU */}
+                                <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
+                                  <div className="flex items-center justify-between flex-wrap gap-2">
+                                    <span className="text-sm font-semibold text-foreground">Ukupno za isplatu vlasniku</span>
+                                    <span className="text-lg font-bold text-green-400">
+                                      {Math.round(instantPayout + cashPayout).toLocaleString('sr-RS')} RSD
                                     </span>
                                   </div>
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="text-xs">{Number(b.totalPrice).toLocaleString("sr-RS")} RSD</Badge>
-                                    <Badge className="text-xs bg-green-500/15 text-green-400 border-green-500/30">plaćeno</Badge>
-                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Od ukupno {(instantTotal + cashTotal).toLocaleString('sr-RS')} RSD · {filtered.length} rezervacija
+                                  </p>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
                       </div>
                     ))}
                   </div>

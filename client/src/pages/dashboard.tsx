@@ -42,8 +42,28 @@ type OwnerBooking = {
   renterId: string; renterFirstName: string | null; renterLastName: string | null;
   licensePlate: string | null; renterPhone: string | null; spaceNumber: number;
   startTime: string; endTime: string; totalPrice: string; currency: string;
-  status: string; paymentStatus: string; createdAt: string | null;
+  status: string; paymentStatus: string; paymentMethod: string | null; createdAt: string | null;
 };
+
+// Payout helpers — 35 RSD ≈ €0.30 Stripe per-transaction fee
+const APP_FEE = 0.15;
+const INSTANT_STRIPE_PCT = 0.039;
+const INSTANT_STRIPE_FIXED = 35; // RSD
+const CREDIT_STRIPE_PCT = 0.015;
+
+function calcPayout(price: number, method: string | null): { neto: number; stripeFee: number; appFee: number } {
+  const appFee = price * APP_FEE;
+  if (method === 'instant') {
+    const stripeFee = price * INSTANT_STRIPE_PCT + INSTANT_STRIPE_FIXED;
+    return { neto: price - appFee - stripeFee, stripeFee, appFee };
+  }
+  if (method === 'credit') {
+    const stripeFee = price * CREDIT_STRIPE_PCT;
+    return { neto: price - appFee - stripeFee, stripeFee, appFee };
+  }
+  // cash — no Stripe fee
+  return { neto: price - appFee, stripeFee: 0, appFee };
+}
 
 const TAB_MAP: Record<string, Section> = {
   spots: 'spots', bookings: 'bookings', messages: 'messages',
@@ -85,6 +105,8 @@ export default function Dashboard() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('received');
+  const [payMethodFilter, setPayMethodFilter] = useState<'all' | 'instant' | 'cash'>('all');
+  const [showPayoutCard, setShowPayoutCard] = useState(false);
   const [mapNicknameInput, setMapNicknameInput] = useState('');
 
   const handlePushToggle = async () => {
@@ -331,6 +353,22 @@ export default function Dashboard() {
       .reduce((sum, b) => sum + parseFloat(b.totalPrice || '0'), 0),
     [filteredBookings]
   );
+
+  // Split by payment method and apply payment method filter
+  const payMethodFiltered = useMemo(() => {
+    if (payMethodFilter === 'instant') return filteredBookings.filter(b => b.paymentMethod === 'instant');
+    if (payMethodFilter === 'cash') return filteredBookings.filter(b => b.paymentMethod !== 'instant');
+    return filteredBookings;
+  }, [filteredBookings, payMethodFilter]);
+
+  const { totalPayout, instantPayout, cashPayout, instantCount, cashCount } = useMemo(() => {
+    const paid = filteredBookings.filter(b => b.paymentStatus === 'paid' || b.status === 'confirmed' || b.status === 'completed');
+    const instB = paid.filter(b => b.paymentMethod === 'instant');
+    const cashB = paid.filter(b => b.paymentMethod !== 'instant');
+    const iP = instB.reduce((s, b) => s + calcPayout(parseFloat(b.totalPrice), 'instant').neto, 0);
+    const cP = cashB.reduce((s, b) => s + calcPayout(parseFloat(b.totalPrice), 'cash').neto, 0);
+    return { totalPayout: iP + cP, instantPayout: iP, cashPayout: cP, instantCount: instB.length, cashCount: cashB.length };
+  }, [filteredBookings]);
 
   // CSV export
   const handleCsvExport = () => {
@@ -624,19 +662,7 @@ export default function Dashboard() {
 
         {bookingsTab === 'received' ? (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">{filteredBookings.length} rezervacija</span>
-                <span className="text-sm font-semibold text-accent">
-                  Zarada: {filteredEarnings.toLocaleString('sr-RS')} RSD
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={handleCsvExport} disabled={filteredBookings.length === 0}
-                data-testid="button-export-csv">
-                <Download className="w-4 h-4 mr-2" />Izvezi CSV
-              </Button>
-            </div>
-
+            {/* Date + export controls */}
             <Card className="p-4">
               <div className="flex flex-wrap gap-2 mb-4">
                 {(['week', 'month', 'lastmonth', 'all'] as QuickFilter[]).map(f => (
@@ -647,24 +673,75 @@ export default function Dashboard() {
                   </Button>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-3 items-end">
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-medium">Od</label>
-                  <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-40" data-testid="input-date-from" />
+              <div className="flex flex-wrap gap-3 items-end justify-between">
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-medium">Od</label>
+                    <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                      className="w-40" data-testid="input-date-from" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground font-medium">Do</label>
+                    <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                      className="w-40" data-testid="input-date-to" />
+                  </div>
+                  {(dateFrom || dateTo) && (
+                    <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Obriši filter</Button>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground font-medium">Do</label>
-                  <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-40" data-testid="input-date-to" />
-                </div>
-                {(dateFrom || dateTo) && (
-                  <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Obriši filter</Button>
-                )}
+                <Button variant="outline" size="sm" onClick={handleCsvExport} disabled={filteredBookings.length === 0}
+                  data-testid="button-export-csv">
+                  <Download className="w-4 h-4 mr-2" />Izvezi CSV
+                </Button>
               </div>
             </Card>
 
-            {filteredBookings.length === 0 ? (
+            {/* Payment method filter tabs */}
+            <div className="flex gap-2 flex-wrap">
+              {(['all', 'instant', 'cash'] as const).map(m => (
+                <Button key={m} size="sm"
+                  variant={payMethodFilter === m ? 'default' : 'outline'}
+                  onClick={() => setPayMethodFilter(m)}
+                  data-testid={`filter-method-${m}`}>
+                  { m === 'all' ? `Sve (${filteredBookings.length})` : m === 'instant' ? `Instant (${filteredBookings.filter(b => b.paymentMethod === 'instant').length})` : `Keš (${filteredBookings.filter(b => b.paymentMethod !== 'instant').length})` }
+                </Button>
+              ))}
+              <Button size="sm" variant={showPayoutCard ? 'default' : 'outline'}
+                onClick={() => setShowPayoutCard(v => !v)}
+                data-testid="button-toggle-payout">
+                <TrendingUp className="w-4 h-4 mr-1" />Za isplatu
+              </Button>
+            </div>
+
+            {/* Payout summary card */}
+            {showPayoutCard && (
+              <Card className="p-4 border-green-500/30 bg-green-500/5">
+                <p className="text-sm font-semibold text-foreground mb-3">Obračun isplate — {filteredBookings.length} rezervacija</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {instantCount > 0 && (
+                    <div className="rounded-md bg-blue-500/10 border border-blue-500/20 p-3">
+                      <p className="text-xs text-blue-400 font-semibold mb-1">Instant ({instantCount})</p>
+                      <p className="text-lg font-bold text-foreground">{Math.round(instantPayout).toLocaleString('sr-RS')} RSD</p>
+                      <p className="text-xs text-muted-foreground">posle 15% app + 3.9% + 35 RSD Stripe</p>
+                    </div>
+                  )}
+                  {cashCount > 0 && (
+                    <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3">
+                      <p className="text-xs text-amber-400 font-semibold mb-1">Keš ({cashCount})</p>
+                      <p className="text-lg font-bold text-foreground">{Math.round(cashPayout).toLocaleString('sr-RS')} RSD</p>
+                      <p className="text-xs text-muted-foreground">posle 15% app provizije</p>
+                    </div>
+                  )}
+                  <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
+                    <p className="text-xs text-green-400 font-semibold mb-1">Ukupno za isplatu</p>
+                    <p className="text-lg font-bold text-green-400">{Math.round(totalPayout).toLocaleString('sr-RS')} RSD</p>
+                    <p className="text-xs text-muted-foreground">od {filteredEarnings.toLocaleString('sr-RS')} RSD ukupno</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {payMethodFiltered.length === 0 ? (
               <Card className="p-8 text-center">
                 <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">Nema rezervacija u izabranom periodu</p>
@@ -678,46 +755,61 @@ export default function Dashboard() {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Stanar</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
-                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena / Neto</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {filteredBookings.map(b => (
-                        <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
-                          <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle}</td>
-                          <td className="px-4 py-3 text-foreground">
-                            <div className="flex flex-col gap-0.5">
-                              <span>{`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}</span>
-                              {b.licensePlate && (
-                                <span className="text-xs text-muted-foreground font-mono">{b.licensePlate}</span>
+                      {payMethodFiltered.map(b => {
+                        const price = parseFloat(b.totalPrice);
+                        const { neto, stripeFee } = calcPayout(price, b.paymentMethod);
+                        const isInstant = b.paymentMethod === 'instant';
+                        return (
+                          <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
+                            <td className="px-4 py-3 text-foreground font-medium max-w-[150px] truncate">{b.spotTitle}</td>
+                            <td className="px-4 py-3 text-foreground">
+                              <div className="flex flex-col gap-0.5">
+                                <span>{`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}</span>
+                                {b.licensePlate && <span className="text-xs text-muted-foreground font-mono">{b.licensePlate}</span>}
+                                {b.renterPhone && (
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Phone className="w-3 h-3 shrink-0" />{b.renterPhone}
+                                  </span>
+                                )}
+                                {b.spaceNumber > 1 && <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground text-xs">
+                              {new Date(b.startTime).toLocaleDateString('sr-RS')}
+                              {' — '}
+                              {new Date(b.endTime).toLocaleDateString('sr-RS')}
+                            </td>
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              {isInstant ? (
+                                <div className="flex flex-col gap-0.5 items-end">
+                                  <span className="font-semibold text-foreground">{Math.round(neto).toLocaleString('sr-RS')} RSD</span>
+                                  <span className="text-xs text-muted-foreground">+ {Math.round(stripeFee).toLocaleString('sr-RS')} RSD Stripe</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-0.5 items-end">
+                                  <span className="font-semibold text-foreground">{Math.round(neto).toLocaleString('sr-RS')} RSD</span>
+                                  <span className="text-xs text-muted-foreground">keš</span>
+                                </div>
                               )}
-                              {b.renterPhone && (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Phone className="w-3 h-3 shrink-0" />
-                                  {b.renterPhone}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-1">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
+                                  {STATUS_LABELS[b.status] || b.status}
                                 </span>
-                              )}
-                              {b.spaceNumber > 1 && (
-                                <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">
-                            {new Date(b.startTime).toLocaleDateString('sr-RS')}
-                            {' — '}
-                            {new Date(b.endTime).toLocaleDateString('sr-RS')}
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
-                            {parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
-                              {STATUS_LABELS[b.status] || b.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                                {isInstant && (
+                                  <span className="text-xs text-blue-400 font-medium">instant</span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
