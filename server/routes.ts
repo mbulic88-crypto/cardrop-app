@@ -1560,16 +1560,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const reqPricingType: string = typeof req.body.pricingType === 'string' ? req.body.pricingType : (spot.pricingType || 'daily');
-      let pricePerUnit: number;
-      if (reqPricingType === 'hourly') {
-        pricePerUnit = parseFloat(String(spot.pricePerHour)) || 0;
-      } else if (reqPricingType === 'daily') {
-        pricePerUnit = parseFloat(String(spot.pricePerDay ?? spot.pricePerHour)) || 0;
-      } else if (reqPricingType === 'weekly') {
-        pricePerUnit = parseFloat(String(spot.pricePerWeek ?? spot.pricePerHour)) || 0;
-      } else {
-        pricePerUnit = parseFloat(String(spot.pricePerMonth ?? spot.pricePerHour)) || 0;
+      // Server-side validation: reject pricingType if that price column is null/zero for this spot
+      const allowedTypes: Record<string, number | null> = {
+        hourly: spot.pricePerHour ? parseFloat(String(spot.pricePerHour)) : null,
+        daily: spot.pricePerDay ? parseFloat(String(spot.pricePerDay)) : null,
+        weekly: spot.pricePerWeek ? parseFloat(String(spot.pricePerWeek)) : null,
+        monthly: spot.pricePerMonth ? parseFloat(String(spot.pricePerMonth)) : null,
+      };
+      // Legacy fallback: if all new columns null, fall back to pricePerHour for the legacy pricingType
+      const hasAnyNewPrice = Object.values(allowedTypes).some(p => p && p > 0);
+      if (!hasAnyNewPrice) {
+        allowedTypes[spot.pricingType || 'daily'] = parseFloat(String(spot.pricePerHour)) || null;
       }
+      const priceForType = allowedTypes[reqPricingType];
+      if (!priceForType || priceForType <= 0) {
+        return res.status(400).json({ message: `Tip cene '${reqPricingType}' nije dostupan za ovaj parking` });
+      }
+      const pricePerUnit: number = priceForType;
       let totalPrice: number;
       if (reqPricingType === 'hourly') {
         const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
@@ -1639,6 +1646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           spaceNumber: String(validSpaceNumber),
           totalPrice: String(totalPrice),
           currency: spot.currency,
+          pricingType: reqPricingType,
         },
       });
 
@@ -1694,6 +1702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Ovaj termin je u međuvremenu rezervisan. Molimo pokušajte ponovo sa drugim terminom." });
       }
 
+      const sessionPricingType = (session.metadata?.pricingType as string) || 'daily';
       const { booking, alreadyConsumed } = await storage.createBookingWithSession({
         spotId,
         renterId: userId,
@@ -1707,6 +1716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         renterPhone: renterPhone || undefined,
         spaceNumber: validSpaceNumberVerify,
         bookingStripeSessionId: sessionId,
+        pricingType: sessionPricingType,
       });
 
       if (licensePlate) {
@@ -2063,6 +2073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         licensePlate: licensePlateC || undefined,
         renterPhone: renterPhoneC || undefined,
         spaceNumber: validSpaceC,
+        pricingType: spot.pricingType || 'daily',
       });
 
       // Email notifikacije (vlasnik + zakupac) — gotovina/prenos
@@ -2700,7 +2711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         city: body.city || null,
         latitude: String(body.latitude || '0'),
         longitude: String(body.longitude || '0'),
-        pricePerHour: String(body.pricePerHour || '0'),
+        pricePerHour: body.pricePerHour ? String(parseFloat(String(body.pricePerHour))) : null,
+        pricePerDay: body.pricePerDay ? String(parseFloat(String(body.pricePerDay))) : null,
+        pricePerWeek: body.pricePerWeek ? String(parseFloat(String(body.pricePerWeek))) : null,
+        pricePerMonth: body.pricePerMonth ? String(parseFloat(String(body.pricePerMonth))) : null,
         currency: body.currency || 'RSD',
         spotType: body.spotType || 'uncovered',
         hasEvCharging: body.hasEvCharging || false,

@@ -220,6 +220,7 @@ export const bookings = pgTable("bookings", {
   spaceNumber: integer("space_number").notNull().default(1),
   bookingStripeSessionId: varchar("booking_stripe_session_id", { length: 255 }).unique(),
   paymentMethod: varchar("payment_method", { length: 20 }).default('cash'), // 'instant' | 'cash' | 'credit'
+  pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // hourly, daily, weekly, monthly
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
