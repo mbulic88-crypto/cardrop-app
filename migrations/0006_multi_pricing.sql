@@ -1,9 +1,10 @@
+-- Make price_per_hour nullable (was NOT NULL in original schema)
+ALTER TABLE "parking_spots" ALTER COLUMN "price_per_hour" DROP NOT NULL;
+
 -- Add multi-pricing columns to parking_spots
 ALTER TABLE "parking_spots" ADD COLUMN IF NOT EXISTS "price_per_day" numeric(10, 2);
 ALTER TABLE "parking_spots" ADD COLUMN IF NOT EXISTS "price_per_week" numeric(10, 2);
 ALTER TABLE "parking_spots" ADD COLUMN IF NOT EXISTS "price_per_month" numeric(10, 2);
-
--- price_per_hour is already nullable in production (no DROP NOT NULL needed)
 
 -- Backfill: for spots with daily pricingType, copy pricePerHour into pricePerDay (if not already set)
 UPDATE "parking_spots" SET "price_per_day" = "price_per_hour"

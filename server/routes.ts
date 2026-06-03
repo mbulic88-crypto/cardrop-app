@@ -2050,9 +2050,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ne možete rezervisati sopstveno parking mesto" });
       }
 
-      // Compute total price server-side from spot's hourly rate
-      const hours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60));
-      const totalPrice = (parseFloat(spot.pricePerHour) * hours).toFixed(2);
+      // Determine pricing type from request body, validated against spot's offered types
+      const reqPricingTypeC: string = typeof req.body.pricingType === 'string' ? req.body.pricingType : (spot.pricingType || 'daily');
+      const allowedTypesC: Record<string, number | null> = {
+        hourly: spot.pricePerHour ? parseFloat(String(spot.pricePerHour)) : null,
+        daily: spot.pricePerDay ? parseFloat(String(spot.pricePerDay)) : null,
+        weekly: spot.pricePerWeek ? parseFloat(String(spot.pricePerWeek)) : null,
+        monthly: spot.pricePerMonth ? parseFloat(String(spot.pricePerMonth)) : null,
+      };
+      const hasAnyNewPriceC = Object.values(allowedTypesC).some(p => p && p > 0);
+      if (!hasAnyNewPriceC) {
+        allowedTypesC[spot.pricingType || 'daily'] = parseFloat(String(spot.pricePerHour)) || null;
+      }
+      const priceForTypeC = allowedTypesC[reqPricingTypeC];
+      if (!priceForTypeC || priceForTypeC <= 0) {
+        return res.status(400).json({ message: `Tip cene '${reqPricingTypeC}' nije dostupan za ovaj parking` });
+      }
+      // Compute total price server-side based on selected pricing type
+      let totalPrice: string;
+      if (reqPricingTypeC === 'hourly') {
+        const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+        totalPrice = (Math.round(priceForTypeC * hours * 100) / 100).toFixed(2);
+      } else if (reqPricingTypeC === 'weekly') {
+        const weeks = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 7));
+        totalPrice = (priceForTypeC * Math.max(1, weeks)).toFixed(2);
+      } else if (reqPricingTypeC === 'monthly') {
+        const months = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24 * 30));
+        totalPrice = (priceForTypeC * Math.max(1, months)).toFixed(2);
+      } else {
+        const days = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24));
+        totalPrice = (priceForTypeC * Math.max(1, days)).toFixed(2);
+      }
+      if (parseFloat(totalPrice) <= 0) {
+        return res.status(400).json({ message: "Ukupna cena mora biti veća od 0" });
+      }
 
       // Check for conflicting bookings (per space)
       const hasConflict = await storage.hasBookingOverlap(spotId, startTime, endTime, undefined, validSpaceC);
@@ -2073,7 +2104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         licensePlate: licensePlateC || undefined,
         renterPhone: renterPhoneC || undefined,
         spaceNumber: validSpaceC,
-        pricingType: spot.pricingType || 'daily',
+        pricingType: reqPricingTypeC,
       });
 
       // Email notifikacije (vlasnik + zakupac) — gotovina/prenos
