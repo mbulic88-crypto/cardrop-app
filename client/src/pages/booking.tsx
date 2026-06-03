@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,9 @@ export default function Booking() {
   const [endHour, setEndHour] = useState(9);
   const [dailyStartHour, setDailyStartHour] = useState(0);
   const [numMonths, setNumMonths] = useState(1);
+  const [numWeeks, setNumWeeks] = useState(1);
+  const [selectedPricingType, setSelectedPricingType] = useState<string>("daily");
+  const [bookingEndDate, setBookingEndDate] = useState<Date>(() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d; });
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
     queryKey: ["/api/parking-spots", spotId],
@@ -63,6 +66,27 @@ export default function Booking() {
     },
     enabled: !!spotId,
   });
+
+  function getAvailableTypes(s: ParkingSpot): Array<{type: string; price: number; label: string}> {
+    const ph = Number(s.pricePerHour) || 0;
+    const pd = Number(s.pricePerDay) || 0;
+    const pw = Number(s.pricePerWeek) || 0;
+    const pm = Number(s.pricePerMonth) || 0;
+    const types: Array<{type: string; price: number; label: string}> = [];
+    if (ph > 0) types.push({ type: 'hourly', price: ph, label: 'sat' });
+    if (pd > 0) types.push({ type: 'daily', price: pd, label: 'dan' });
+    if (pw > 0) types.push({ type: 'weekly', price: pw, label: 'nedelja' });
+    if (pm > 0) types.push({ type: 'monthly', price: pm, label: 'mesec' });
+    if (types.length === 0) types.push({ type: s.pricingType || 'daily', price: ph, label: s.pricingType === 'hourly' ? 'sat' : s.pricingType === 'monthly' ? 'mesec' : 'dan' });
+    return types;
+  }
+
+  useEffect(() => {
+    if (spot) {
+      const types = getAvailableTypes(spot);
+      setSelectedPricingType(prev => types.some(t => t.type === prev) ? prev : types[0].type);
+    }
+  }, [spot?.id]);
 
   function isDateBooked(date: Date): boolean {
     const slotStart = new Date(startOfDay(date));
@@ -101,26 +125,36 @@ export default function Booking() {
 
   const calculatedPrice = useMemo(() => {
     if (!spot) return 0;
-    const price = Number(spot.pricePerHour);
-    if (spot.pricingType === "hourly") {
+    const types = getAvailableTypes(spot);
+    const chosen = types.find(t => t.type === selectedPricingType) || types[0];
+    const price = chosen.price;
+    if (selectedPricingType === "hourly") {
       const hours = endHour - startHour;
       return hours > 0 ? Math.round(hours * price * 100) / 100 : 0;
-    } else if (spot.pricingType === "daily") {
-      return price;
+    } else if (selectedPricingType === "daily") {
+      const days = Math.max(1, Math.round((bookingEndDate.getTime() - bookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+      return days * price;
+    } else if (selectedPricingType === "weekly") {
+      return numWeeks * price;
     } else {
       return numMonths * price;
     }
-  }, [spot, startHour, endHour, numMonths]);
+  }, [spot, selectedPricingType, startHour, endHour, bookingStartDate, bookingEndDate, numWeeks, numMonths]);
 
   function getBookingTimes(): { startTime: Date; endTime: Date } {
     const base = bookingStartDate;
-    if (spot?.pricingType === "hourly") {
+    if (selectedPricingType === "hourly") {
       const start = new Date(base); start.setHours(startHour, 0, 0, 0);
       const end = new Date(base); end.setHours(endHour, 0, 0, 0);
       return { startTime: start, endTime: end };
-    } else if (spot?.pricingType === "daily") {
-      const start = new Date(base); start.setHours(dailyStartHour, 0, 0, 0);
-      const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    } else if (selectedPricingType === "daily") {
+      const start = new Date(base); start.setHours(0, 0, 0, 0);
+      const end = new Date(bookingEndDate); end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    } else if (selectedPricingType === "weekly") {
+      const start = new Date(base); start.setHours(0, 0, 0, 0);
+      const end = new Date(start.getTime() + numWeeks * 7 * 24 * 60 * 60 * 1000 - 1000);
+      end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     } else {
       const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
@@ -140,6 +174,7 @@ export default function Booking() {
         licensePlate,
         renterPhone,
         spaceNumber: selectedSpace,
+        pricingType: selectedPricingType,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -191,7 +226,8 @@ export default function Booking() {
   const bookedHours = getBookedHoursForDay(bookingStartDate);
   const isHourConflict = (from: number, to: number) =>
     Array.from(bookedHours).some(h => h >= from && h < to);
-  const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
+  const availableTypes = getAvailableTypes(spot);
+  const chosenType = availableTypes.find(t => t.type === selectedPricingType) || availableTypes[0];
   const totalSpaces = spot.totalSpaces ?? 1;
 
   // Date picker state helpers
@@ -220,7 +256,7 @@ export default function Booking() {
             {Array.from({ length: getDaysInMonth(pickerYear, pickerMonth) }, (_, i) => i + 1).map(d => {
               const isPast = isDatePast(pickerYear, pickerMonth, d);
               const date = new Date(pickerYear, pickerMonth, d);
-              const isUnavail = !isPast && (spot.pricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
+              const isUnavail = !isPast && (selectedPricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
               return (
                 <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>
                   {d}{isUnavail ? " ✕" : ""}
@@ -245,6 +281,57 @@ export default function Booking() {
         <label className="text-xs text-muted-foreground">Godina</label>
         <Select value={String(pickerYear)} onValueChange={(v) => updateDate(Number(v), pickerMonth, pickerDay)}>
           <SelectTrigger data-testid="select-picker-year"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[currentYear, currentYear + 1, currentYear + 2].map(y => (
+              <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const endPickerYear = bookingEndDate.getFullYear();
+  const endPickerMonth = bookingEndDate.getMonth();
+  const endPickerDay = bookingEndDate.getDate();
+
+  function updateEndDate(y: number, m: number, d: number) {
+    const daysInM = getDaysInMonth(y, m);
+    const safeD = Math.min(d, daysInM);
+    const nd = new Date(y, m, safeD); nd.setHours(0, 0, 0, 0);
+    setBookingEndDate(nd);
+  }
+
+  const endDatePicker = (
+    <div className="grid grid-cols-3 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Dan</label>
+        <Select value={String(endPickerDay)} onValueChange={(v) => updateEndDate(endPickerYear, endPickerMonth, Number(v))}>
+          <SelectTrigger data-testid="select-end-picker-day"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: getDaysInMonth(endPickerYear, endPickerMonth) }, (_, i) => i + 1).map(d => {
+              const date = new Date(endPickerYear, endPickerMonth, d);
+              const isBeforeStart = date < bookingStartDate;
+              return <SelectItem key={d} value={String(d)} disabled={isBeforeStart}>{d}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Mesec</label>
+        <Select value={String(endPickerMonth)} onValueChange={(v) => updateEndDate(endPickerYear, Number(v), endPickerDay)}>
+          <SelectTrigger data-testid="select-end-picker-month">
+            <SelectValue>{MONTHS_SR[endPickerMonth]}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {MONTHS_SR.map((name, i) => <SelectItem key={i} value={String(i)}>{name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Godina</label>
+        <Select value={String(endPickerYear)} onValueChange={(v) => updateEndDate(Number(v), endPickerMonth, endPickerDay)}>
+          <SelectTrigger data-testid="select-end-picker-year"><SelectValue /></SelectTrigger>
           <SelectContent>
             {[currentYear, currentYear + 1, currentYear + 2].map(y => (
               <SelectItem key={y} value={String(y)}>{y}.</SelectItem>
@@ -294,8 +381,8 @@ export default function Booking() {
             )}
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xl font-bold text-accent">{spot.pricePerHour} {spot.currency}</p>
-            <p className="text-xs text-muted-foreground">/ {pricingLabel}</p>
+            <p className="text-xl font-bold text-accent">{chosenType.price.toLocaleString("sr-RS")} {spot.currency}</p>
+            <p className="text-xs text-muted-foreground">/ {chosenType.label}</p>
           </div>
         </div>
 
@@ -364,8 +451,27 @@ export default function Booking() {
           </div>
         )}
 
-        {/* 4. Datum i vreme */}
-        {spot.pricingType === "monthly" && (
+        {/* 4. Tip cene + datum i vreme */}
+        {availableTypes.length > 1 && (
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Vrsta rezervacije</label>
+            <div className="flex gap-2 flex-wrap">
+              {availableTypes.map(t => (
+                <Button
+                  key={t.type}
+                  variant={selectedPricingType === t.type ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedPricingType(t.type)}
+                  data-testid={`button-pricing-type-${t.type}`}
+                >
+                  {t.price.toLocaleString("sr-RS")} {spot.currency} / {t.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedPricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Datum početka</label>
@@ -387,19 +493,21 @@ export default function Booking() {
           </div>
         )}
 
-        {spot.pricingType === "daily" && (
+        {selectedPricingType === "weekly" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Datum</label>
+              <label className="text-sm font-semibold text-foreground">Datum početka</label>
               {datePicker}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Sat početka</label>
-              <Select value={String(dailyStartHour)} onValueChange={(v) => setDailyStartHour(Number(v))}>
-                <SelectTrigger data-testid="select-daily-start-hour"><SelectValue /></SelectTrigger>
+              <label className="text-sm font-semibold text-foreground">Broj nedelja</label>
+              <Select value={String(numWeeks)} onValueChange={(v) => setNumWeeks(Number(v))}>
+                <SelectTrigger data-testid="select-num-weeks"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 24 }, (_, i) => i).map(h => (
-                    <SelectItem key={h} value={String(h)}>{String(h).padStart(2, "0")}:00</SelectItem>
+                  {[1, 2, 3, 4].map(n => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} {n === 1 ? "nedelja" : n < 5 ? "nedelje" : "nedelja"}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -407,7 +515,20 @@ export default function Booking() {
           </div>
         )}
 
-        {spot.pricingType === "hourly" && (
+        {selectedPricingType === "daily" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Od datuma</label>
+              {datePicker}
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Do datuma</label>
+              {endDatePicker}
+            </div>
+          </div>
+        )}
+
+        {selectedPricingType === "hourly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Dan</label>

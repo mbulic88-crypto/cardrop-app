@@ -1559,14 +1559,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Izabrani termin je već rezervisan. Molimo izaberite drugi datum ili vreme." });
       }
 
-      const pricePerUnit = parseFloat(String(spot.pricePerHour));
+      const reqPricingType: string = typeof req.body.pricingType === 'string' ? req.body.pricingType : (spot.pricingType || 'daily');
+      let pricePerUnit: number;
+      if (reqPricingType === 'hourly') {
+        pricePerUnit = parseFloat(String(spot.pricePerHour)) || 0;
+      } else if (reqPricingType === 'daily') {
+        pricePerUnit = parseFloat(String(spot.pricePerDay ?? spot.pricePerHour)) || 0;
+      } else if (reqPricingType === 'weekly') {
+        pricePerUnit = parseFloat(String(spot.pricePerWeek ?? spot.pricePerHour)) || 0;
+      } else {
+        pricePerUnit = parseFloat(String(spot.pricePerMonth ?? spot.pricePerHour)) || 0;
+      }
       let totalPrice: number;
-      if (spot.pricingType === 'hourly') {
+      if (reqPricingType === 'hourly') {
         const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
         totalPrice = Math.round(pricePerUnit * hours * 100) / 100;
-      } else if (spot.pricingType === 'monthly') {
+      } else if (reqPricingType === 'monthly') {
         const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
         totalPrice = pricePerUnit * Math.max(1, months);
+      } else if (reqPricingType === 'weekly') {
+        const weeks = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7));
+        totalPrice = pricePerUnit * Math.max(1, weeks);
       } else {
         const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         totalPrice = pricePerUnit * Math.max(1, days);
@@ -2723,7 +2736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const body = req.body;
       const updates: any = {};
       const fields = ['title', 'description', 'address', 'city', 'latitude', 'longitude',
-        'pricePerHour', 'currency', 'spotType', 'hasEvCharging', 'hasSecurityCamera',
+        'pricePerHour', 'pricePerDay', 'pricePerWeek', 'pricePerMonth',
+        'currency', 'spotType', 'hasEvCharging', 'hasSecurityCamera',
         'is24Hours', 'phone', 'paymentType', 'contactEmail', 'advertiserType',
         'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
         'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
@@ -2733,7 +2747,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (updates.latitude !== undefined) updates.latitude = String(updates.latitude);
       if (updates.longitude !== undefined) updates.longitude = String(updates.longitude);
-      if (updates.pricePerHour !== undefined) updates.pricePerHour = String(updates.pricePerHour);
+      const nullOrStr = (v: any) => (v === "" || v === null || v === undefined || isNaN(parseFloat(String(v)))) ? null : String(parseFloat(String(v)));
+      if (updates.pricePerHour !== undefined) updates.pricePerHour = nullOrStr(updates.pricePerHour);
+      if (updates.pricePerDay !== undefined) updates.pricePerDay = nullOrStr(updates.pricePerDay);
+      if (updates.pricePerWeek !== undefined) updates.pricePerWeek = nullOrStr(updates.pricePerWeek);
+      if (updates.pricePerMonth !== undefined) updates.pricePerMonth = nullOrStr(updates.pricePerMonth);
       if (updates.totalSpaces !== undefined) updates.totalSpaces = parseInt(String(updates.totalSpaces), 10) || 1;
       const spot = await storage.updateParkingSpot(req.params.id, updates);
       if (!spot) return res.status(404).json({ message: "Parking spot not found" });

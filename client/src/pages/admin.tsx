@@ -57,6 +57,9 @@ type SpotFormData = {
   latitude: string;
   longitude: string;
   pricePerHour: string;
+  pricePerDay: string;
+  pricePerWeek: string;
+  pricePerMonth: string;
   currency: string;
   spotType: string;
   pricingType: string;
@@ -82,7 +85,10 @@ const defaultSpotForm: SpotFormData = {
   city: "",
   latitude: "44.8178",
   longitude: "20.4569",
-  pricePerHour: "0",
+  pricePerHour: "",
+  pricePerDay: "",
+  pricePerWeek: "",
+  pricePerMonth: "",
   currency: "RSD",
   spotType: "uncovered",
   pricingType: "daily",
@@ -156,10 +162,6 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
           </div>
         )}
         <div className="space-y-1">
-          <label className="text-xs font-medium text-foreground">Cena</label>
-          <Input value={form.pricePerHour} onChange={e => set("pricePerHour", e.target.value)} placeholder="0" data-testid="input-spot-price" />
-        </div>
-        <div className="space-y-1">
           <label className="text-xs font-medium text-foreground">Valuta</label>
           <Select value={form.currency} onValueChange={v => set("currency", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -171,15 +173,20 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
           </Select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-foreground">Period naplate</label>
-          <Select value={form.pricingType} onValueChange={v => set("pricingType", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hourly">Na sat</SelectItem>
-              <SelectItem value="daily">Na dan</SelectItem>
-              <SelectItem value="monthly">Mesečno</SelectItem>
-            </SelectContent>
-          </Select>
+          <label className="text-xs font-medium text-foreground">Cena / sat (opciono)</label>
+          <Input value={form.pricePerHour} onChange={e => set("pricePerHour", e.target.value)} placeholder="npr. 200" data-testid="input-spot-price-hour" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Cena / dan (opciono)</label>
+          <Input value={form.pricePerDay} onChange={e => set("pricePerDay", e.target.value)} placeholder="npr. 1000" data-testid="input-spot-price-day" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Cena / nedelja (opciono)</label>
+          <Input value={form.pricePerWeek} onChange={e => set("pricePerWeek", e.target.value)} placeholder="npr. 5000" data-testid="input-spot-price-week" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Cena / mesec (opciono)</label>
+          <Input value={form.pricePerMonth} onChange={e => set("pricePerMonth", e.target.value)} placeholder="npr. 15000" data-testid="input-spot-price-month" />
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-foreground">Tip mesta</label>
@@ -543,11 +550,20 @@ export default function Admin() {
 
   const createSpotMutation = useMutation({
     mutationFn: async (data: SpotFormData) => {
+      const ph = parseFloat(data.pricePerHour) || null;
+      const pd = parseFloat(data.pricePerDay) || null;
+      const pw = parseFloat(data.pricePerWeek) || null;
+      const pm = parseFloat(data.pricePerMonth) || null;
+      const derivedPricingType = pm ? 'monthly' : pd ? 'daily' : ph ? 'hourly' : 'daily';
       const res = await apiRequest("POST", "/api/admin/parking-spots", {
         ...data,
         latitude: parseFloat(data.latitude) || 0,
         longitude: parseFloat(data.longitude) || 0,
-        pricePerHour: parseFloat(data.pricePerHour) || 0,
+        pricePerHour: ph,
+        pricePerDay: pd,
+        pricePerWeek: pw,
+        pricePerMonth: pm,
+        pricingType: derivedPricingType,
       });
       return res.json();
     },
@@ -565,11 +581,20 @@ export default function Admin() {
 
   const fullEditMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SpotFormData }) => {
+      const ph = parseFloat(data.pricePerHour) || null;
+      const pd = parseFloat(data.pricePerDay) || null;
+      const pw = parseFloat(data.pricePerWeek) || null;
+      const pm = parseFloat(data.pricePerMonth) || null;
+      const derivedPricingType = pm ? 'monthly' : pd ? 'daily' : ph ? 'hourly' : 'daily';
       const res = await apiRequest("PATCH", `/api/admin/parking-spots/${id}/full-edit`, {
         ...data,
         latitude: parseFloat(data.latitude) || 0,
         longitude: parseFloat(data.longitude) || 0,
-        pricePerHour: parseFloat(data.pricePerHour) || 0,
+        pricePerHour: ph,
+        pricePerDay: pd,
+        pricePerWeek: pw,
+        pricePerMonth: pm,
+        pricingType: derivedPricingType,
       });
       return res;
     },
@@ -870,10 +895,13 @@ export default function Admin() {
                                 city: spot.city || "",
                                 latitude: spot.latitude || "0",
                                 longitude: spot.longitude || "0",
-                                pricePerHour: spot.pricePerHour || "0",
+                                pricePerHour: spot.pricePerHour ? String(spot.pricePerHour) : "",
+                                pricePerDay: spot.pricePerDay ? String(spot.pricePerDay) : "",
+                                pricePerWeek: spot.pricePerWeek ? String(spot.pricePerWeek) : "",
+                                pricePerMonth: spot.pricePerMonth ? String(spot.pricePerMonth) : "",
                                 currency: spot.currency || "RSD",
                                 spotType: spot.spotType || "uncovered",
-                                pricingType: (spot.pricingType === 'weekly' ? 'daily' : spot.pricingType) || "daily",
+                                pricingType: spot.pricingType || "daily",
                                 paymentType: spot.paymentType || "cash",
                                 hasEvCharging: spot.hasEvCharging,
                                 hasSecurityCamera: spot.hasSecurityCamera,

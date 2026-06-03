@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle, X, Car, Loader2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import { SiViber, SiWhatsapp } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -24,19 +25,36 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { SpotLocationMap } from "@/components/SpotLocationMap";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
 
-function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, selectedSpace, setSelectedSpace, bookingStartDate, setBookingStartDate, bookingEndDate, setBookingEndDate, startHour, setStartHour, endHour, setEndHour, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
+function getAvailableTypesSD(s: ParkingSpot): Array<{type: string; price: number; label: string}> {
+  const ph = Number(s.pricePerHour) || 0;
+  const pd = Number(s.pricePerDay) || 0;
+  const pw = Number(s.pricePerWeek) || 0;
+  const pm = Number(s.pricePerMonth) || 0;
+  const types: Array<{type: string; price: number; label: string}> = [];
+  if (ph > 0) types.push({ type: 'hourly', price: ph, label: 'sat' });
+  if (pd > 0) types.push({ type: 'daily', price: pd, label: 'dan' });
+  if (pw > 0) types.push({ type: 'weekly', price: pw, label: 'nedelja' });
+  if (pm > 0) types.push({ type: 'monthly', price: pm, label: 'mesec' });
+  if (types.length === 0) types.push({ type: s.pricingType || 'daily', price: ph, label: s.pricingType === 'hourly' ? 'sat' : s.pricingType === 'monthly' ? 'mesec' : 'dan' });
+  return types;
+}
+
+function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone, setRenterPhone, selectedSpace, setSelectedSpace, bookingStartDate, setBookingStartDate, bookingEndDate, setBookingEndDate, startHour, setStartHour, endHour, setEndHour, selectedPricingType, setSelectedPricingType, numWeeks, setNumWeeks, calculatedPrice, isPending, bookedHours, isDateBooked, isDayFullyBooked, onClose, onSubmit }: {
   spot: ParkingSpot; owner: UserType | undefined; licensePlate: string; setLicensePlate: (v: string) => void;
   renterPhone: string; setRenterPhone: (v: string) => void;
   selectedSpace: number; setSelectedSpace: (n: number) => void;
   bookingStartDate: Date | undefined; setBookingStartDate: (d: Date | undefined) => void;
   bookingEndDate: Date | undefined; setBookingEndDate: (d: Date | undefined) => void;
   startHour: number; setStartHour: (h: number) => void; endHour: number; setEndHour: (h: number) => void;
+  selectedPricingType: string; setSelectedPricingType: (t: string) => void;
+  numWeeks: number; setNumWeeks: (n: number) => void;
   calculatedPrice: number; isAuthenticated?: boolean; isPending: boolean;
   bookedHours: Set<number>; isDateBooked: (d: Date) => boolean; isDayFullyBooked: (d: Date) => boolean;
   onClose: () => void; onSubmit: () => void;
 }) {
   const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
-  const pricingLabel = spot.pricingType === "hourly" ? "sat" : spot.pricingType === "monthly" ? "mesec" : "dan";
+  const availableTypesSD = getAvailableTypesSD(spot);
+  const chosenTypeSD = availableTypesSD.find(t => t.type === selectedPricingType) || availableTypesSD[0];
 
   const today = startOfDay(new Date());
   const pickerDate = bookingStartDate || today;
@@ -68,7 +86,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
             {Array.from({ length: getDaysInMonth(pickerYear, pickerMonth) }, (_, i) => i + 1).map(d => {
               const isPast = isDatePast(pickerYear, pickerMonth, d);
               const date = new Date(pickerYear, pickerMonth, d);
-              const isUnavail = !isPast && (spot.pricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
+              const isUnavail = !isPast && (selectedPricingType === "hourly" ? isDayFullyBooked(date) : isDateBooked(date));
               return (
                 <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>
                   {d}{isUnavail ? " ✕" : ""}
@@ -230,8 +248,8 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
             {owner && <p className="text-xs text-muted-foreground mt-0.5">Vlasnik: {owner.firstName} {owner.lastName}</p>}
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xl font-bold text-accent">{spot.pricePerHour} {spot.currency}</p>
-            <p className="text-xs text-muted-foreground">/ {pricingLabel}</p>
+            <p className="text-xl font-bold text-accent">{chosenTypeSD.price.toLocaleString("sr-RS")} {spot.currency}</p>
+            <p className="text-xs text-muted-foreground">/ {chosenTypeSD.label}</p>
           </div>
         </div>
 
@@ -286,8 +304,27 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         )}
 
-        {/* 4. Datum i vreme */}
-        {spot.pricingType === "monthly" && (
+        {/* 4. Tip cene + datum i vreme */}
+        {availableTypesSD.length > 1 && (
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">Vrsta rezervacije</label>
+            <div className="flex gap-2 flex-wrap">
+              {availableTypesSD.map(t => (
+                <Button
+                  key={t.type}
+                  variant={selectedPricingType === t.type ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedPricingType(t.type)}
+                  data-testid={`button-pricing-type-${t.type}`}
+                >
+                  {t.price.toLocaleString("sr-RS")} {spot.currency} / {t.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedPricingType === "monthly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Od meseca</label>
@@ -300,7 +337,29 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         )}
 
-        {spot.pricingType === "daily" && (
+        {selectedPricingType === "weekly" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Datum početka</label>
+              {datePicker}
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">Broj nedelja</label>
+              <Select value={String(numWeeks)} onValueChange={(v) => setNumWeeks(Number(v))}>
+                <SelectTrigger data-testid="select-num-weeks"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4].map(n => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} {n === 1 ? "nedelja" : n < 5 ? "nedelje" : "nedelja"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {selectedPricingType === "daily" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Od datuma</label>
@@ -313,7 +372,7 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         )}
 
-        {spot.pricingType === "hourly" && (
+        {selectedPricingType === "hourly" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Dan</label>
@@ -416,6 +475,8 @@ export default function SpotDetail() {
   const [bookingEndDate, setBookingEndDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d; });
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(9);
+  const [selectedPricingType, setSelectedPricingType] = useState<string>("daily");
+  const [numWeeks, setNumWeeks] = useState(1);
 
 
   const { data: spot, isLoading } = useQuery<ParkingSpot>({
@@ -501,30 +562,46 @@ export default function SpotDetail() {
 
   const calculatedPrice = useMemo(() => {
     if (!spot) return 0;
-    const price = Number(spot.pricePerHour);
-    if (spot.pricingType === "hourly") {
+    const types = getAvailableTypesSD(spot);
+    const chosen = types.find(t => t.type === selectedPricingType) || types[0];
+    const price = chosen.price;
+    if (selectedPricingType === "hourly") {
       const hours = endHour - startHour;
       return hours > 0 && bookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
-    } else if (spot.pricingType === "daily") {
+    } else if (selectedPricingType === "daily") {
       if (!bookingStartDate || !bookingEndDate) return 0;
       const days = Math.max(1, Math.round((bookingEndDate.getTime() - bookingStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
       return days * price;
+    } else if (selectedPricingType === "weekly") {
+      return numWeeks * price;
     } else {
       if (!bookingStartDate || !bookingEndDate) return price;
       const months = Math.max(1, (bookingEndDate.getFullYear() - bookingStartDate.getFullYear()) * 12 + (bookingEndDate.getMonth() - bookingStartDate.getMonth()) + 1);
       return months * price;
     }
-  }, [spot, bookingStartDate, bookingEndDate, startHour, endHour]);
+  }, [spot, selectedPricingType, bookingStartDate, bookingEndDate, startHour, endHour, numWeeks]);
+
+  useEffect(() => {
+    if (spot) {
+      const types = getAvailableTypesSD(spot);
+      setSelectedPricingType(prev => types.some(t => t.type === prev) ? prev : types[0].type);
+    }
+  }, [spot?.id]);
 
   function getBookingTimes(): { startTime: Date; endTime: Date } {
     const base = bookingStartDate || new Date();
-    if (spot?.pricingType === "hourly") {
+    if (selectedPricingType === "hourly") {
       const start = new Date(base); start.setHours(startHour, 0, 0, 0);
       const end = new Date(base); end.setHours(endHour, 0, 0, 0);
       return { startTime: start, endTime: end };
-    } else if (spot?.pricingType === "daily") {
+    } else if (selectedPricingType === "daily") {
       const start = new Date(base); start.setHours(0, 0, 0, 0);
       const end = new Date(bookingEndDate || base); end.setHours(23, 59, 59, 0);
+      return { startTime: start, endTime: end };
+    } else if (selectedPricingType === "weekly") {
+      const start = new Date(base); start.setHours(0, 0, 0, 0);
+      const end = new Date(start.getTime() + numWeeks * 7 * 24 * 60 * 60 * 1000 - 1000);
+      end.setHours(23, 59, 59, 0);
       return { startTime: start, endTime: end };
     } else {
       const start = new Date(base); start.setDate(1); start.setHours(0, 0, 0, 0);
@@ -545,6 +622,7 @@ export default function SpotDetail() {
         licensePlate,
         renterPhone,
         spaceNumber: selectedSpace,
+        pricingType: selectedPricingType,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -671,6 +749,10 @@ export default function SpotDetail() {
           setStartHour={setStartHour}
           endHour={endHour}
           setEndHour={setEndHour}
+          selectedPricingType={selectedPricingType}
+          setSelectedPricingType={setSelectedPricingType}
+          numWeeks={numWeeks}
+          setNumWeeks={setNumWeeks}
           calculatedPrice={calculatedPrice}
           isAuthenticated={isAuthenticated}
           isPending={bookingCheckoutMutation.isPending}
@@ -789,13 +871,15 @@ export default function SpotDetail() {
 
         {/* Price - prominently right below images */}
         <div className="mb-6" data-testid="price-banner">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-3xl font-bold text-accent" data-testid="text-price-main">
-              {spot.pricePerHour} {spot.currency}
-            </span>
-            <span className="text-lg text-muted-foreground">
-              / {spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mesec' : 'dan'}
-            </span>
+          <div className="flex items-baseline gap-3 flex-wrap">
+            {getAvailableTypesSD(spot).map(t => (
+              <span key={t.type} className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-accent" data-testid={`text-price-main-${t.type}`}>
+                  {Number(t.price).toLocaleString("sr-RS")}
+                </span>
+                <span className="text-lg text-muted-foreground">{spot.currency} / {t.label}</span>
+              </span>
+            ))}
           </div>
           <div className="mt-3">
             <Button
@@ -1089,9 +1173,12 @@ export default function SpotDetail() {
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Card className="p-6">
               <div className="mb-6">
-                <div className="text-3xl font-bold text-accent mb-1" data-testid="text-price">
-                  {spot.pricePerHour} {spot.currency}
-                  <span className="text-base text-muted-foreground font-normal">/{spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}</span>
+                <div className="flex flex-col gap-1" data-testid="text-price">
+                  {getAvailableTypesSD(spot).map(t => (
+                    <div key={t.type} className="text-2xl font-bold text-accent">
+                      {Number(t.price).toLocaleString("sr-RS")} <span className="text-base text-muted-foreground font-normal">{spot.currency}/{t.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

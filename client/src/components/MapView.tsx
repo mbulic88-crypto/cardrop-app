@@ -193,10 +193,18 @@ export function MapView({ spots }: MapViewProps) {
         container.insertBefore(numBadge, address);
       }
 
-      const priceUnit = spot.pricingType === 'hourly' ? 'sat' : spot.pricingType === 'monthly' ? 'mes' : 'dan';
       const price = document.createElement('div');
-      price.className = 'text-lg font-bold text-accent';
-      price.textContent = `${spot.pricePerHour} ${spot.currency}/${priceUnit}`;
+      price.className = 'text-sm font-bold text-accent';
+      const priceParts: string[] = [];
+      if (Number(spot.pricePerHour) > 0) priceParts.push(`${spot.pricePerHour}/${spot.currency === 'RSD' ? 'h' : 'h'}`);
+      if (Number((spot as any).pricePerDay) > 0) priceParts.push(`${(spot as any).pricePerDay}/dan`);
+      if (Number((spot as any).pricePerWeek) > 0) priceParts.push(`${(spot as any).pricePerWeek}/ned`);
+      if (Number((spot as any).pricePerMonth) > 0) priceParts.push(`${(spot as any).pricePerMonth}/mes`);
+      if (priceParts.length === 0) {
+        const priceUnit = spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? 'mes' : 'dan';
+        priceParts.push(`${spot.pricePerHour}/${priceUnit}`);
+      }
+      price.textContent = `${priceParts.join(' · ')} ${spot.currency}`;
       container.appendChild(price);
       
       // Add click handler directly to the DOM element

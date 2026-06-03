@@ -76,7 +76,10 @@ export const parkingSpots = pgTable("parking_spots", {
   city: varchar("city", { length: 100 }),
   latitude: decimal("latitude", { precision: 10, scale: 7 }).notNull(),
   longitude: decimal("longitude", { precision: 10, scale: 7 }).notNull(),
-  pricePerHour: decimal("price_per_hour", { precision: 10, scale: 2 }).notNull(),
+  pricePerHour: decimal("price_per_hour", { precision: 10, scale: 2 }),
+  pricePerDay: decimal("price_per_day", { precision: 10, scale: 2 }),
+  pricePerWeek: decimal("price_per_week", { precision: 10, scale: 2 }),
+  pricePerMonth: decimal("price_per_month", { precision: 10, scale: 2 }),
   currency: varchar("currency", { length: 3 }).notNull().default('RSD'),
   spotType: varchar("spot_type", { length: 50 }).notNull(), // covered, uncovered, garage
   hasEvCharging: boolean("has_ev_charging").notNull().default(false),
