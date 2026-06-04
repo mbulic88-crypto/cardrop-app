@@ -50,8 +50,9 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
   numWeeks: number; setNumWeeks: (n: number) => void;
   calculatedPrice: number; isAuthenticated?: boolean; isPending: boolean;
   bookedHours: Set<number>; isDateBooked: (d: Date) => boolean; isDayFullyBooked: (d: Date) => boolean;
-  onClose: () => void; onSubmit: () => void;
+  onClose: () => void; onSubmit: (paymentMethod: 'instant' | 'cash') => void;
 }) {
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'instant' | 'cash'>('instant');
   const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
   const availableTypesSD = getAvailableTypesSD(spot);
   const chosenTypeSD = availableTypesSD.find(t => t.type === selectedPricingType) || availableTypesSD[0];
@@ -418,11 +419,44 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           </div>
         )}
 
-        <Button className="w-full bg-accent text-accent-foreground h-12 text-base" onClick={onSubmit}
+        {/* Način plaćanja */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground">Način plaćanja</label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedPaymentMethod('instant')}
+              className={`flex flex-col gap-1 p-4 rounded-md border-2 text-left transition-colors ${selectedPaymentMethod === 'instant' ? 'border-accent bg-accent/10' : 'border-border bg-card'}`}
+              data-testid="button-payment-instant"
+            >
+              <div className="flex items-center gap-2">
+                <CreditCard className={`w-4 h-4 ${selectedPaymentMethod === 'instant' ? 'text-accent' : 'text-muted-foreground'}`} />
+                <span className="font-semibold text-sm text-foreground">Instant</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Platite karticom odmah i dobijete potvrdu rezervacije</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedPaymentMethod('cash')}
+              className={`flex flex-col gap-1 p-4 rounded-md border-2 text-left transition-colors ${selectedPaymentMethod === 'cash' ? 'border-accent bg-accent/10' : 'border-border bg-card'}`}
+              data-testid="button-payment-cash"
+            >
+              <div className="flex items-center gap-2">
+                <Car className={`w-4 h-4 ${selectedPaymentMethod === 'cash' ? 'text-accent' : 'text-muted-foreground'}`} />
+                <span className="font-semibold text-sm text-foreground">Keš / Kredit</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Dogovorite se s vlasnikom, platite na licu mesta</p>
+            </button>
+          </div>
+        </div>
+
+        <Button className="w-full bg-accent text-accent-foreground h-12 text-base" onClick={() => onSubmit(selectedPaymentMethod)}
           disabled={isPending || !licensePlate.trim() || !renterPhone.trim() || calculatedPrice <= 0} data-testid="button-nastavi-na-placanje">
           {isPending
             ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Učitavanje...</>
-            : <><CreditCard className="w-5 h-5 mr-2" />Nastavi na plaćanje</>}
+            : selectedPaymentMethod === 'instant'
+              ? <><CreditCard className="w-5 h-5 mr-2" />Plati karticom</>
+              : <><Car className="w-5 h-5 mr-2" />Rezerviši (keš)</>}
         </Button>
 
         <Button variant="ghost" className="w-full" onClick={onClose} data-testid="button-back-to-spot">
@@ -654,6 +688,37 @@ export default function SpotDetail() {
     },
   });
 
+  const cashBookingMutation = useMutation({
+    mutationFn: async () => {
+      const { startTime, endTime } = getBookingTimes();
+      return await apiRequest("POST", "/api/bookings", {
+        spotId: spot!.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        licensePlate,
+        renterPhone,
+        spaceNumber: selectedSpace,
+        pricingType: selectedPricingType,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Rezervacija kreirana!",
+        description: "Kontaktirajte vlasnika za dogovor oko plaćanja i preuzimanja mesta.",
+      });
+      setShowBookingPanel(false);
+    },
+    onError: (error: Error) => {
+      if (isUnauthorizedError(error)) { setShowLoginDialog(true); return; }
+      const msg = (error as any)?.message || "";
+      if (msg.includes("već rezervisan") || (error as any)?.status === 409 || (error as any)?.status === 400) {
+        toast({ title: "Termin zauzet", description: msg || "Izabrani termin je već rezervisan.", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Greška", description: "Nije moguće kreirati rezervaciju. Pokušajte ponovo.", variant: "destructive" });
+    },
+  });
+
   // ── Ramp control ──────────────────────────────────────────────────────────
   const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
@@ -802,14 +867,18 @@ export default function SpotDetail() {
           setNumWeeks={setNumWeeks}
           calculatedPrice={calculatedPrice}
           isAuthenticated={isAuthenticated}
-          isPending={bookingCheckoutMutation.isPending}
+          isPending={bookingCheckoutMutation.isPending || cashBookingMutation.isPending}
           bookedHours={getBookedHoursForDay(bookingStartDate)}
           isDateBooked={isDateBooked}
           isDayFullyBooked={isDayFullyBooked}
           onClose={() => setShowBookingPanel(false)}
-          onSubmit={() => {
+          onSubmit={(paymentMethod) => {
             if (!isAuthenticated) { setShowLoginDialog(true); setShowBookingPanel(false); return; }
-            bookingCheckoutMutation.mutate();
+            if (paymentMethod === 'instant') {
+              bookingCheckoutMutation.mutate();
+            } else {
+              cashBookingMutation.mutate();
+            }
           }}
         />
       )}
@@ -1030,6 +1099,27 @@ export default function SpotDetail() {
                 )}
               </div>
             </div>
+
+            {/* Cenovnik */}
+            {(() => {
+              const prices = getAvailableTypesSD(spot).filter(t => t.price > 0);
+              if (prices.length === 0) return null;
+              return (
+                <Card className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 text-card-foreground">Cenovnik</h2>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {prices.map(t => (
+                      <div key={t.type} className="flex flex-col items-center p-3 rounded-md bg-accent/10 border border-accent/20">
+                        <span className="text-lg font-bold text-accent" data-testid={`text-price-${t.type}`}>
+                          {t.price.toLocaleString("sr-RS")}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{spot.currency} / {t.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              );
+            })()}
 
             {/* Description */}
             <Card className="p-6">

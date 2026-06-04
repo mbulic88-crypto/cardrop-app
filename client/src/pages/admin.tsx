@@ -206,16 +206,6 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
           </Select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium text-foreground">Tip plaćanja</label>
-          <Select value={form.paymentType} onValueChange={v => set("paymentType", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cash">Keš</SelectItem>
-              <SelectItem value="bank_transfer">Bankovni prenos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
           <label className="text-xs font-medium text-foreground">Pretplata</label>
           <Select value={form.subscriptionType} onValueChange={v => set("subscriptionType", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
