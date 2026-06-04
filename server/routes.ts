@@ -1225,6 +1225,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const rampCooldowns = new Map<string, number>();
   const RAMP_COOLDOWN_MS = 30 * 1000; // 30 seconds
 
+  // In-memory queue for Tasker polling
+  interface RampTrigger { phone: string; spotTitle: string; triggeredAt: number; }
+  const rampPendingQueue: RampTrigger[] = [];
+  const RAMP_TRIGGER_TTL_MS = 60_000; // triggers expire after 60s
+
+  // GET /api/ramp-poll?key=NTFY_TOPIC — Tasker polls this every 5s
+  app.get('/api/ramp-poll', (req: any, res) => {
+    const key = (req.query.key as string) ?? '';
+    const ntfyTopic = process.env.NTFY_TOPIC ?? '';
+    if (!ntfyTopic || key !== ntfyTopic) {
+      return res.status(401).json({ phone: null });
+    }
+    const now = Date.now();
+    // Remove expired triggers
+    while (rampPendingQueue.length && now - rampPendingQueue[0].triggeredAt > RAMP_TRIGGER_TTL_MS) {
+      rampPendingQueue.shift();
+    }
+    if (rampPendingQueue.length > 0) {
+      const trigger = rampPendingQueue.shift()!;
+      console.log(`[RampPoll] Dispatching trigger: ${trigger.spotTitle} → ${trigger.phone}`);
+      return res.json({ phone: trigger.phone, spotTitle: trigger.spotTitle });
+    }
+    res.json({ phone: null });
+  });
+
   // Helper: find an active booking for this user + spot within ±10 min window
   async function getActiveRampBooking(userId: string, spotId: string) {
     const now = new Date();
@@ -1309,20 +1334,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
         }
 
-        if (!process.env.NTFY_TOPIC) {
-          return res.status(503).json({ message: "Sistem za otvaranje rampe nije konfigurisan" });
+        // Push to Tasker polling queue
+        rampPendingQueue.push({ phone: spot.rampPhone, spotTitle: spot.title, triggeredAt: Date.now() });
+        console.log(`[Ramp] Trigger queued for polling: ${spot.title}`);
+
+        // Also send ntfy as a visual notification (optional backup)
+        if (process.env.NTFY_TOPIC) {
+          sendRampNtfy(spot.rampPhone, spot.title).catch(() => {});
         }
-        const ok = await sendRampNtfy(spot.rampPhone, spot.title);
-        if (!ok) return res.status(502).json({ message: "Greška pri slanju signala rampi" });
 
         rampCooldowns.set(booking.id, Date.now());
       } else {
         // Admin test trigger — no booking required, no cooldown
-        if (!process.env.NTFY_TOPIC) {
-          return res.status(503).json({ message: "NTFY_TOPIC nije podešen" });
+        rampPendingQueue.push({ phone: spot.rampPhone, spotTitle: `[TEST] ${spot.title}`, triggeredAt: Date.now() });
+        console.log(`[Ramp] Test trigger queued for polling: ${spot.title}`);
+
+        // Also send ntfy as a visual notification (optional backup)
+        if (process.env.NTFY_TOPIC) {
+          sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`).catch(() => {});
         }
-        const ok = await sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`);
-        if (!ok) return res.status(502).json({ message: "Greška pri slanju test signala" });
       }
 
       res.json({ ok: true });
