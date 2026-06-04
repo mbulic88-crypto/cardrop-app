@@ -1246,13 +1246,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper: send ntfy notification for ramp
   async function sendRampNtfy(rampPhone: string, spotTitle: string): Promise<boolean> {
+    // Try AutoRemote first (reliable on Xiaomi — bypasses notification listener)
+    const autoRemoteKey = process.env.AUTOREMOTE_KEY;
+    if (autoRemoteKey) {
+      // Message format: "rampa=:=PHONE" — Tasker reads %arpar1 to get the phone number
+      const message = encodeURIComponent(`rampa=:=${rampPhone}`);
+      const sender = encodeURIComponent(`CarDrop: ${spotTitle}`);
+      const url = `https://autoremotejoaomgcd.appspot.com/sendmessage?key=${autoRemoteKey}&message=${message}&sender=${sender}`;
+      try {
+        const resp = await fetch(url);
+        if (resp.ok) {
+          console.log("Ramp signal sent via AutoRemote");
+          return true;
+        }
+        console.warn("AutoRemote failed, falling back to ntfy:", resp.status);
+      } catch (e) {
+        console.warn("AutoRemote error, falling back to ntfy:", e);
+      }
+    }
+
+    // Fallback: ntfy.sh
     const ntfyTopic = process.env.NTFY_TOPIC;
     if (!ntfyTopic) {
-      console.error("NTFY_TOPIC env var not set");
+      console.error("Neither AUTOREMOTE_KEY nor NTFY_TOPIC is set");
       return false;
     }
     // Title = phone digits (Tasker reads %ntitle to auto-dial)
-    // Body  = spot name (human-readable context)
     const resp = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
       method: "POST",
       headers: {
@@ -1310,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
         }
 
-        if (!process.env.NTFY_TOPIC) {
+        if (!process.env.AUTOREMOTE_KEY && !process.env.NTFY_TOPIC) {
           return res.status(503).json({ message: "Sistem za otvaranje rampe nije konfigurisan" });
         }
         const ok = await sendRampNtfy(spot.rampPhone, spot.title);
@@ -1319,8 +1338,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rampCooldowns.set(booking.id, Date.now());
       } else {
         // Admin test trigger — no booking required, no cooldown
-        if (!process.env.NTFY_TOPIC) {
-          return res.status(503).json({ message: "NTFY_TOPIC nije podešen" });
+        if (!process.env.AUTOREMOTE_KEY && !process.env.NTFY_TOPIC) {
+          return res.status(503).json({ message: "AUTOREMOTE_KEY ili NTFY_TOPIC nisu podešeni" });
         }
         const ok = await sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`);
         if (!ok) return res.status(502).json({ message: "Greška pri slanju test signala" });
