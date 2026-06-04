@@ -50,9 +50,12 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
   numWeeks: number; setNumWeeks: (n: number) => void;
   calculatedPrice: number; isAuthenticated?: boolean; isPending: boolean;
   bookedHours: Set<number>; isDateBooked: (d: Date) => boolean; isDayFullyBooked: (d: Date) => boolean;
+  stripeLinkActive?: boolean;
   onClose: () => void; onSubmit: (paymentMethod: 'instant' | 'cash') => void;
 }) {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'instant' | 'cash'>('instant');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'instant' | 'cash'>(
+    stripeLinkActive ? 'instant' : 'cash'
+  );
   const isHourConflict = (from: number, to: number) => Array.from(bookedHours).some(h => h >= from && h < to);
   const availableTypesSD = getAvailableTypesSD(spot);
   const chosenTypeSD = availableTypesSD.find(t => t.type === selectedPricingType) || availableTypesSD[0];
@@ -425,15 +428,16 @@ function BookingPanel({ spot, owner, licensePlate, setLicensePlate, renterPhone,
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setSelectedPaymentMethod('instant')}
-              className={`flex flex-col gap-1 p-4 rounded-md border-2 text-left transition-colors ${selectedPaymentMethod === 'instant' ? 'border-accent bg-accent/10' : 'border-border bg-card'}`}
+              onClick={() => { if (stripeLinkActive) setSelectedPaymentMethod('instant'); }}
+              disabled={!stripeLinkActive}
+              className={`flex flex-col gap-1 p-4 rounded-md border-2 text-left transition-colors ${!stripeLinkActive ? 'border-border bg-card opacity-40 cursor-not-allowed' : selectedPaymentMethod === 'instant' ? 'border-accent bg-accent/10' : 'border-border bg-card'}`}
               data-testid="button-payment-instant"
             >
               <div className="flex items-center gap-2">
-                <CreditCard className={`w-4 h-4 ${selectedPaymentMethod === 'instant' ? 'text-accent' : 'text-muted-foreground'}`} />
+                <CreditCard className={`w-4 h-4 ${selectedPaymentMethod === 'instant' && stripeLinkActive ? 'text-accent' : 'text-muted-foreground'}`} />
                 <span className="font-semibold text-sm text-foreground">Instant</span>
               </div>
-              <p className="text-xs text-muted-foreground">Platite karticom odmah i dobijete potvrdu rezervacije</p>
+              <p className="text-xs text-muted-foreground">{stripeLinkActive ? 'Platite karticom odmah i dobijete potvrdu rezervacije' : 'Kartica nije dostupna za ovaj parking'}</p>
             </button>
             <button
               type="button"
@@ -867,6 +871,7 @@ export default function SpotDetail() {
           setNumWeeks={setNumWeeks}
           calculatedPrice={calculatedPrice}
           isAuthenticated={isAuthenticated}
+          stripeLinkActive={spot.stripeLinkActive}
           isPending={bookingCheckoutMutation.isPending || cashBookingMutation.isPending}
           bookedHours={getBookedHoursForDay(bookingStartDate)}
           isDateBooked={isDateBooked}
@@ -1001,8 +1006,7 @@ export default function SpotDetail() {
             <Button
               className="bg-accent text-accent-foreground gap-2 w-full sm:w-auto"
               onClick={() => {
-                if (!isAuthenticated && spot.stripeLinkActive) { setShowLoginDialog(true); return; }
-                if (!spot.stripeLinkActive) return;
+                if (!isAuthenticated) { setShowLoginDialog(true); return; }
                 setShowBookingPanel(true);
               }}
               data-testid="button-rezervisi"

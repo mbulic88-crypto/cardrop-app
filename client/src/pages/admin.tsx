@@ -406,7 +406,16 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string, spaceNumber?: num
   const fileName = spaceNumber !== undefined
     ? `${baseName}-mesto${spaceNumber}.pdf`
     : `${baseName}.pdf`;
-  doc.save(fileName);
+  // Use blob URL for better mobile/Android compatibility
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
 }
 
 export default function Admin() {
