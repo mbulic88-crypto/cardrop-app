@@ -325,65 +325,97 @@ async function fetchLogoDataUrl(logoUrl: string): Promise<string | null> {
   }
 }
 
-async function generatePDF(spot: ParkingSpot, logoUrl: string) {
+async function generatePDF(spot: ParkingSpot, logoUrl: string, spaceNumber?: number) {
   const { jsPDF } = await import("jspdf");
+  const QRCode = (await import("qrcode")).default;
 
-  const doc = new jsPDF({ unit: "mm", format: "a4" }); // 210×297mm
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210;
   const H = 297;
 
-  // ── FULL PAGE BACKGROUND — single dark green ──
+  // ── BACKGROUND ──
   doc.setFillColor(26, 77, 55);
   doc.rect(0, 0, W, H, "F");
 
-  // ── LOGO — edge-to-edge, fills top of page ──
+  // ── LOGO ──
   const logoData = await fetchLogoDataUrl(logoUrl);
-  const logoW = 200;      // full width minus 5mm each side
-  const logoH = 190;      // tall, dominates upper page as before
+  const logoW = 200;
+  const logoH = 175;
   const logoX = 5;
   const logoY = 5;
   if (logoData) {
     try { doc.addImage(logoData, "PNG", logoX, logoY, logoW, logoH); } catch {}
   }
 
-  // ── "CarDrop" — large, bold, centered below logo ──
-  const textBase = logoY + logoH + 20;
+  // ── "CarDrop" ──
+  const textBase = logoY + logoH + 14;
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(56);
+  doc.setFontSize(50);
   doc.setFont("helvetica", "bold");
   doc.text("CarDrop", W / 2, textBase, { align: "center" });
 
-  // ── PARKING NUMBER / SPOT NAME — very large, centered, prominent ──
-  const numY = textBase + 34;
+  // ── PARKING NUMBER / SPOT NAME ──
+  const numY = textBase + 28;
   if (spot.parkingNumber) {
-    doc.setFontSize(96);
+    doc.setFontSize(80);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     doc.text(spot.parkingNumber, W / 2, numY, { align: "center" });
   } else {
-    doc.setFontSize(32);
+    doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(167, 243, 208);
     const title = doc.splitTextToSize(spot.title, W - 40);
     doc.text(title[0], W / 2, numY, { align: "center" });
   }
 
-  // ── EMAIL — centered below number ──
-  const emailY = numY + 46;
-  doc.setFontSize(16);
+  // ── SPACE NUMBER (multi-space) ──
+  let afterNumY = numY + 34;
+  if (spaceNumber !== undefined) {
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text(`MESTO ${spaceNumber}`, W / 2, afterNumY, { align: "center" });
+    afterNumY += 14;
+  }
+
+  // ── EMAIL ──
+  doc.setFontSize(13);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(134, 214, 180);
-  doc.text("info@cardrop.app", W / 2, emailY, { align: "center" });
+  doc.text("info@cardrop.app", W / 2, afterNumY, { align: "center" });
 
-  // ── subtle copyright at very bottom (nearly invisible) ──
+  // ── QR CODE — bottom center, links to this spot's page ──
+  try {
+    const spotUrl = `${window.location.origin}/spot/${spot.id}`;
+    const qrDataUrl = await QRCode.toDataURL(spotUrl, {
+      width: 200, margin: 1,
+      color: { dark: "#1a4d37", light: "#ffffff" }
+    });
+    const qrSize = 40;
+    const qrX = (W - qrSize) / 2;
+    const qrY = H - qrSize - 20;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 3, 3, "F");
+    doc.addImage(qrDataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(134, 214, 180);
+    doc.text("Skenirajte za detalje parkinga", W / 2, qrY + qrSize + 9, { align: "center" });
+  } catch {}
+
+  // ── copyright ──
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(34, 90, 65);
-  doc.text("© 2025 CarDrop", W / 2, H - 6, { align: "center" });
+  doc.text("© 2025 CarDrop", W / 2, H - 4, { align: "center" });
 
-  const fileName = spot.parkingNumber
-    ? `${spot.parkingNumber}-cardrop.pdf`
-    : `parking-${spot.id.slice(0, 8)}-cardrop.pdf`;
+  const baseName = spot.parkingNumber
+    ? `${spot.parkingNumber}-cardrop`
+    : `parking-${spot.id.slice(0, 8)}-cardrop`;
+  const fileName = spaceNumber !== undefined
+    ? `${baseName}-mesto${spaceNumber}.pdf`
+    : `${baseName}.pdf`;
   doc.save(fileName);
 }
 
@@ -901,7 +933,16 @@ export default function Admin() {
                             size="icon"
                             onClick={async () => {
                               setPdfLoading(spot.id);
-                              try { await generatePDF(spot, parkInLogo); } catch (e) { toast({ title: "Greška pri generisanju PDF-a", variant: "destructive" }); }
+                              try {
+                                const spaces = spot.totalSpaces ?? 1;
+                                if (spaces > 1) {
+                                  for (let i = 1; i <= spaces; i++) {
+                                    await generatePDF(spot, parkInLogo, i);
+                                  }
+                                } else {
+                                  await generatePDF(spot, parkInLogo);
+                                }
+                              } catch (e) { toast({ title: "Greška pri generisanju PDF-a", variant: "destructive" }); }
                               setPdfLoading(null);
                             }}
                             disabled={pdfLoading === spot.id}

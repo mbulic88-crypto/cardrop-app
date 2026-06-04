@@ -456,7 +456,21 @@ export default function SpotDetail() {
   const [messageContent, setMessageContent] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showOwnerContact, setShowOwnerContact] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") setLightboxIndex(i => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setLightboxIndex(i => Math.min((spot?.imageUrls?.length ?? 1) - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen, spot?.imageUrls?.length]);
 
   // Booking panel state
   const [showBookingPanel, setShowBookingPanel] = useState(false);
@@ -837,7 +851,7 @@ export default function SpotDetail() {
                     key={index}
                     className="flex-shrink-0 w-full snap-center"
                   >
-                    <div className="aspect-video">
+                    <div className="aspect-video cursor-zoom-in" onClick={() => { setLightboxIndex(index); setLightboxOpen(true); }}>
                       <img
                         src={imageUrl}
                         alt={`${spot.title} - Slika ${index + 1}`}
@@ -1266,6 +1280,74 @@ export default function SpotDetail() {
         message="Za slanje poruke vlasniku potrebna je prijava na nalog."
         redirectPath={`/spot/${spotId}`}
       />
+
+      {/* Image Lightbox */}
+      {lightboxOpen && spot?.imageUrls && spot.imageUrls.length > 0 && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+          onClick={() => setLightboxOpen(false)}
+          data-testid="lightbox-overlay"
+        >
+          {/* Close button */}
+          <button
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 hover:bg-black/80 transition-colors"
+            onClick={() => setLightboxOpen(false)}
+            data-testid="button-lightbox-close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Counter */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+            {lightboxIndex + 1} / {spot.imageUrls.length}
+          </div>
+
+          {/* Left arrow */}
+          {lightboxIndex > 0 && (
+            <button
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white bg-black/50 rounded-full p-3 hover:bg-black/80 transition-colors"
+              onClick={e => { e.stopPropagation(); setLightboxIndex(i => i - 1); }}
+              data-testid="button-lightbox-prev"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Image */}
+          <img
+            src={spot.imageUrls[lightboxIndex]}
+            alt={`${spot.title} - Slika ${lightboxIndex + 1}`}
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
+            onClick={e => e.stopPropagation()}
+            data-testid="lightbox-image"
+          />
+
+          {/* Right arrow */}
+          {lightboxIndex < spot.imageUrls.length - 1 && (
+            <button
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white bg-black/50 rounded-full p-3 hover:bg-black/80 transition-colors"
+              onClick={e => { e.stopPropagation(); setLightboxIndex(i => i + 1); }}
+              data-testid="button-lightbox-next"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Dot indicators */}
+          {spot.imageUrls.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              {spot.imageUrls.map((_, i) => (
+                <button
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-all ${i === lightboxIndex ? 'bg-white w-4' : 'bg-white/40'}`}
+                  onClick={e => { e.stopPropagation(); setLightboxIndex(i); }}
+                  data-testid={`button-lightbox-dot-${i}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );
