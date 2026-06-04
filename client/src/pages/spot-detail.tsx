@@ -498,18 +498,6 @@ export default function SpotDetail() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard navigation for lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightboxOpen(false);
-      if (e.key === "ArrowLeft") setLightboxIndex(i => Math.max(0, i - 1));
-      if (e.key === "ArrowRight") setLightboxIndex(i => Math.min((spot?.imageUrls?.length ?? 1) - 1, i + 1));
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [lightboxOpen, spot?.imageUrls?.length]);
-
   // Booking panel state
   const [showBookingPanel, setShowBookingPanel] = useState(false);
 
@@ -548,6 +536,19 @@ export default function SpotDetail() {
       });
     }
   }, [spot?.id]);
+
+  // Keyboard navigation for lightbox — must be after `spot` is declared
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const imageCount = spot?.imageUrls?.length ?? 1;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") setLightboxIndex(i => Math.max(0, i - 1));
+      if (e.key === "ArrowRight") setLightboxIndex(i => Math.min(imageCount - 1, i + 1));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [lightboxOpen, spot?.imageUrls?.length]);
 
   const { data: owner } = useQuery<UserType>({
     queryKey: ["/api/users", spot?.ownerId],
