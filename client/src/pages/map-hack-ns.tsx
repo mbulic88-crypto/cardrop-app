@@ -481,6 +481,7 @@ export default function MapHackNS() {
   const [parkingStartHour, setParkingStartHour] = useState(8);
   const [parkingEndHour, setParkingEndHour] = useState(9);
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
+  const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash'>('instant');
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -1026,11 +1027,46 @@ export default function MapHackNS() {
     },
   });
 
+  const parkingCashMutation = useMutation({
+    mutationFn: async () => {
+      const { startTime, endTime } = getParkingBookingTimes();
+      return await apiRequest("POST", "/api/bookings", {
+        spotId: selectedParking!.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        licensePlate: parkingLicensePlate,
+        renterPhone: parkingPhone,
+        spaceNumber: parkingSelectedSpace,
+        pricingType: selectedParking!.pricingType,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Rezervacija kreirana!", description: "Kontaktirajte vlasnika za dogovor oko uplate i preuzimanja mesta." });
+      setShowParkingBookingForm(false);
+    },
+    onError: (err: any) => {
+      const msg = (err as any)?.message || "";
+      if (msg.includes("već rezervisan") || (err as any)?.status === 409 || (err as any)?.status === 400) {
+        toast({ title: "Termin zauzet", description: msg || "Izabrani termin je već rezervisan.", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Greška", description: "Nije moguće kreirati rezervaciju. Pokušajte ponovo.", variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
     if (user?.savedLicensePlate && !parkingLicensePlate) {
       setParkingLicensePlate(user.savedLicensePlate);
     }
   }, [user?.savedLicensePlate, selectedParking?.id]);
+
+  useEffect(() => {
+    if (selectedParking && !selectedParking.stripeLinkActive) {
+      setParkingPaymentMethod('cash');
+    } else {
+      setParkingPaymentMethod('instant');
+    }
+  }, [selectedParking?.id]);
 
   function closeParkingPanel() {
     setSelectedParking(null);
@@ -1045,6 +1081,7 @@ export default function MapHackNS() {
     setParkingStartHour(8);
     setParkingEndHour(9);
     setParkingSelectedSpace(1);
+    setParkingPaymentMethod('instant');
   }
 
   useEffect(() => {
@@ -2293,15 +2330,8 @@ export default function MapHackNS() {
               </button>
             )}
 
-            {/* No payment message */}
-            {showParkingBookingForm && !selectedParking.stripeLinkActive && (
-              <div className="px-3 py-2.5 rounded-xl text-xs text-center" style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.08)" }}>
-                Za ovaj parking nije aktivno online plaćanje. Molimo kontaktirajte vlasnika za plaćanje.
-              </div>
-            )}
-
             {/* Booking form */}
-            {showParkingBookingForm && selectedParking.stripeLinkActive && (
+            {showParkingBookingForm && (
               <div className="flex flex-col gap-2 rounded-xl p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <button
@@ -2570,19 +2600,67 @@ export default function MapHackNS() {
                     </div>
                   </div>
                 )}
+                {/* Način plaćanja */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { if (selectedParking.stripeLinkActive) setParkingPaymentMethod('instant'); }}
+                    disabled={!selectedParking.stripeLinkActive}
+                    className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
+                    style={{
+                      background: !selectedParking.stripeLinkActive ? "rgba(255,255,255,0.03)" : parkingPaymentMethod === 'instant' ? "rgba(82,183,136,0.15)" : "rgba(255,255,255,0.04)",
+                      border: parkingPaymentMethod === 'instant' && selectedParking.stripeLinkActive ? "1.5px solid rgba(82,183,136,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                      opacity: !selectedParking.stripeLinkActive ? 0.4 : 1,
+                      cursor: !selectedParking.stripeLinkActive ? "not-allowed" : "pointer",
+                    }}
+                    data-testid="button-payment-instant-map"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <CreditCard size={13} style={{ color: parkingPaymentMethod === 'instant' && selectedParking.stripeLinkActive ? "#52B788" : "#6b7280" }} />
+                      <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Instant</span>
+                    </div>
+                    <span className="text-xs" style={{ color: "#6b7280" }}>{selectedParking.stripeLinkActive ? "Platite karticom odmah" : "Nije dostupno"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setParkingPaymentMethod('cash')}
+                    className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
+                    style={{
+                      background: parkingPaymentMethod === 'cash' ? "rgba(82,183,136,0.15)" : "rgba(255,255,255,0.04)",
+                      border: parkingPaymentMethod === 'cash' ? "1.5px solid rgba(82,183,136,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                      cursor: "pointer",
+                    }}
+                    data-testid="button-payment-cash-map"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Car size={13} style={{ color: parkingPaymentMethod === 'cash' ? "#52B788" : "#6b7280" }} />
+                      <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Kredit</span>
+                    </div>
+                    <span className="text-xs" style={{ color: "#6b7280" }}>Uplatom na račun</span>
+                  </button>
+                </div>
+
                 <button
                   data-testid="button-nastavi-na-placanje-map"
-                  onClick={() => parkingBookingCheckoutMutation.mutate()}
-                  disabled={parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
+                  onClick={() => {
+                    if (parkingPaymentMethod === 'instant') {
+                      parkingBookingCheckoutMutation.mutate();
+                    } else {
+                      parkingCashMutation.mutate();
+                    }
+                  }}
+                  disabled={(parkingBookingCheckoutMutation.isPending || parkingCashMutation.isPending) || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "rgba(64,145,108,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
                 >
-                  {parkingBookingCheckoutMutation.isPending
+                  {(parkingBookingCheckoutMutation.isPending || parkingCashMutation.isPending)
                     ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
-                    : <><CreditCard size={14} />Nastavi na plaćanje</>
+                    : parkingPaymentMethod === 'instant'
+                      ? <><CreditCard size={14} />Plati karticom</>
+                      : <><Car size={14} />Rezerviši (kredit)</>
                   }
                 </button>
-                <p className="text-xs text-center" style={{ color: "#6b7280" }}>Kada jednom uplatite, sledeći put sve ide na samo jedan klik.</p>
+                {parkingPaymentMethod === 'instant' && <p className="text-xs text-center" style={{ color: "#6b7280" }}>Kada jednom uplatite, sledeći put sve ide na samo jedan klik.</p>}
               </div>
             )}
 
