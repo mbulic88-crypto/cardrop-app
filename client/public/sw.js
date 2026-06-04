@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cardrop-v10';
+const CACHE_NAME = 'cardrop-v11';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
@@ -24,7 +24,14 @@ self.addEventListener('activate', (event) => {
           .filter((name) => name !== CACHE_NAME)
           .map((name) => caches.delete(name))
       );
-    }).then(() => self.clients.claim())
+    }).then(() => self.clients.claim()).then(() => {
+      // Force all open pages to reload so they immediately get the new version.
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) => {
+          client.navigate(client.url);
+        });
+      });
+    })
   );
 });
 
