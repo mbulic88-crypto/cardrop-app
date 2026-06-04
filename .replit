@@ -63,6 +63,7 @@ SMTP_HOST = "mail.privateemail.com"
 SMTP_PORT = "465"
 SMTP_USER = "info@cardrop.app"
 SMTP_FROM = "CarDrop <info@cardrop.app>"
+NTFY_TOPIC = "cardrop-ntfy-marko-rampe"
 
 [postMerge]
 path = "scripts/post-merge.sh"
