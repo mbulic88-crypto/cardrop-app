@@ -141,9 +141,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
   .extend({
     category: z.enum(['private', 'company', 'truck', 'residential', 'carlot']).default('private'),
     phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera").max(50, "Telefon može imati maksimalno 50 karaktera"),
-    paymentType: z.enum(['cash', 'bank_transfer'], {
-      errorMap: () => ({ message: "Tip plaćanja mora biti: Keš ili Preko računa" })
-    }),
+    paymentType: z.enum(['cash', 'bank_transfer']).default('cash').optional(),
     contactEmail: z.string().email("Unesite validnu email adresu"),
     advertiserType: z.enum(['owner', 'agency', 'company']).default('owner'),
     companyName: z.string().optional(),
@@ -151,7 +149,7 @@ export const insertParkingSpotSchema = createInsertSchema(parkingSpots)
     numberOfSpots: z.number().optional(),
     contactPerson: z.string().optional(),
     totalSpaces: z.number().int().min(1).max(100).default(1),
-    pricingType: z.enum(['hourly', 'daily', 'monthly']).default('daily'),
+    pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily').optional(),
     parkingNumber: z.string().max(20).optional(),
     stripeLink: z.string().max(500).optional(),
     stripeLinkActive: z.boolean().default(false),
@@ -168,7 +166,7 @@ export type ParkingSpot = typeof parkingSpots.$inferSelect;
 export const OWNER_EDITABLE_FIELDS = [
   'title', 'description', 'address', 'city',
   'latitude', 'longitude',
-  'pricePerHour', 'currency', 'paymentType',
+  'pricePerHour', 'pricePerDay', 'pricePerWeek', 'pricePerMonth', 'currency', 'paymentType',
   'spotType', 'hasEvCharging', 'hasSecurityCamera', 'is24Hours',
   'phone', 'contactEmail',
   'pricingType', 'advertiserType', 'companyName', 'pib', 'numberOfSpots', 'contactPerson',
@@ -183,7 +181,10 @@ export const parkingSpotEditSchema = z.object({
   city: z.string().optional().nullable(),
   latitude: z.string(),
   longitude: z.string(),
-  pricePerHour: z.string(),
+  pricePerHour: z.string().optional().nullable(),
+  pricePerDay: z.string().optional().nullable(),
+  pricePerWeek: z.string().optional().nullable(),
+  pricePerMonth: z.string().optional().nullable(),
   currency: z.string(),
   paymentType: z.string().optional().nullable(),
   spotType: z.string(),

@@ -684,11 +684,11 @@ const formSchema = z.object({
   contactEmail: z.string().email("Unesite validnu email adresu"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
-  pricePerHour: z.string().min(1, "Cena je obavezna"),
+  pricePerHour: z.string().optional(),
+  pricePerDay: z.string().optional(),
+  pricePerWeek: z.string().optional(),
+  pricePerMonth: z.string().optional(),
   currency: z.string().default("RSD"),
-  paymentType: z.enum(['cash', 'bank_transfer'], {
-    errorMap: () => ({ message: "Tip plaćanja mora biti izabran" })
-  }),
   spotType: z.string().min(1, "Tip mesta je obavezan"),
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
@@ -700,8 +700,6 @@ const formSchema = z.object({
   pib: z.string().optional(),
   // Residential specific fields
   contactPerson: z.string().optional(),
-  // Pricing type for all categories
-  pricingType: z.enum(['hourly', 'daily', 'monthly']).default('daily'),
   autoRenewal: z.boolean().default(false),
 });
 
@@ -745,8 +743,10 @@ export default function AddSpot() {
       latitude: "45.2671",
       longitude: "19.8335",
       pricePerHour: "",
+      pricePerDay: "",
+      pricePerWeek: "",
+      pricePerMonth: "",
       currency: "RSD",
-      paymentType: "cash",
       spotType: "uncovered",
       hasEvCharging: false,
       hasSecurityCamera: false,
@@ -755,13 +755,10 @@ export default function AddSpot() {
       companyName: "",
       pib: "",
       contactPerson: "",
-      pricingType: "hourly",
       autoRenewal: false,
     },
   });
 
-  // Watch pricingType for dynamic price label
-  const watchedPricingType = form.watch("pricingType");
   const watchedLat = form.watch("latitude");
   const watchedLng = form.watch("longitude");
   const hasCustomLocation = watchedLat && watchedLng && watchedLat !== "45.2671" && watchedLng !== "19.8335";
@@ -812,7 +809,14 @@ export default function AddSpot() {
 
   const mutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema> & { subscriptionType: SubscriptionType; category: CategoryType }) => {
-      return await apiRequest("POST", "/api/parking-spots", data);
+      const nullPrice = (v?: string) => (v && parseFloat(v) > 0 ? v : null);
+      return await apiRequest("POST", "/api/parking-spots", {
+        ...data,
+        pricePerHour: nullPrice(data.pricePerHour),
+        pricePerDay: nullPrice(data.pricePerDay),
+        pricePerWeek: nullPrice(data.pricePerWeek),
+        pricePerMonth: nullPrice(data.pricePerMonth),
+      });
     },
     onSuccess: (data) => {
       setSpotId(data.id);
@@ -886,6 +890,13 @@ export default function AddSpot() {
     }
 
     if (mutation.isPending || spotId) {
+      return;
+    }
+
+    const hasPrice = [values.pricePerHour, values.pricePerDay, values.pricePerWeek, values.pricePerMonth]
+      .some(p => p && parseFloat(p) > 0);
+    if (!hasPrice) {
+      form.setError('pricePerHour', { message: language === 'sr' ? 'Unesite bar jednu cenu' : 'Enter at least one price' });
       return;
     }
     
@@ -1232,112 +1243,87 @@ export default function AddSpot() {
                 </>
               )}
 
-              {/* Pricing Period - direct 3-option selector */}
-              <FormField
-                control={form.control}
-                name="pricingType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t.pricingPeriod}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-pricing-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="hourly">Na sat</SelectItem>
-                        <SelectItem value="daily">Na dan</SelectItem>
-                        <SelectItem value="monthly">Mesečno</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {t.pricingPeriodDescription}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="pricePerHour"
-                  render={({ field }) => {
-                    const getPriceLabel = () => {
-                      switch (watchedPricingType) {
-                        case 'hourly': return t.pricePerHourLabel;
-                        case 'monthly': return t.pricePerMonth;
-                        default: return t.pricePerDayLabel;
-                      }
-                    };
-                    const getPricePlaceholder = () => {
-                      switch (watchedPricingType) {
-                        case 'hourly': return t.pricePerHourPlaceholder;
-                        case 'monthly': return t.pricePerMonthPlaceholder;
-                        default: return t.pricePerDayLabelPlaceholder;
-                      }
-                    };
-                    const getPriceDescription = () => {
-                      switch (watchedPricingType) {
-                        case 'hourly': return t.pricePerHourDescription;
-                        case 'monthly': return t.pricePerMonthDescription;
-                        default: return t.pricePerDayLabelDescription;
-                      }
-                    };
-                    return (
+              {/* Multi-pricing — owners set one or more price types */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {language === 'sr' ? 'Cene iznajmljivanja' : language === 'de' ? 'Mietpreise' : language === 'hu' ? 'Bérleti árak' : language === 'sk' ? 'Ceny prenájmu' : language === 'mk' ? 'Цени за изнајмување' : 'Rental prices'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {language === 'sr' ? 'Unesite bar jednu cenu. Zakupci biraju koji tip im odgovara.' : language === 'de' ? 'Geben Sie mindestens einen Preis ein. Mieter wählen den passenden Typ.' : language === 'hu' ? 'Adjon meg legalább egy árat. A bérlők választják ki a megfelelő típust.' : language === 'sk' ? 'Zadajte aspoň jednu cenu. Nájomníci si vyberú vhodný typ.' : language === 'mk' ? 'Внесете барем една цена. Закупците избираат кој тип им одговара.' : 'Enter at least one price. Renters choose which type suits them.'}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="pricePerHour"
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{getPriceLabel()}</FormLabel>
+                        <FormLabel>{t.pricePerHourLabel}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder={getPricePlaceholder()} {...field} data-testid="input-price" />
+                          <Input type="number" step="0.01" min="0" placeholder={t.pricePerHourPlaceholder} {...field} data-testid="input-price-hourly" />
                         </FormControl>
-                        <FormDescription>
-                          {getPriceDescription()}
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
-                    );
-                  }}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t.currency}</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pricePerDay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.pricePerDayLabel}</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-currency">
-                            <SelectValue />
-                          </SelectTrigger>
+                          <Input type="number" step="0.01" min="0" placeholder={t.pricePerDayLabelPlaceholder} {...field} data-testid="input-price-daily" />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="RSD">RSD (Dinar)</SelectItem>
-                          <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pricePerWeek"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.pricePerWeek}</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" placeholder={t.pricePerWeekPlaceholder} {...field} data-testid="input-price-weekly" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="pricePerMonth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t.pricePerMonth}</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" placeholder={t.pricePerMonthPlaceholder} {...field} data-testid="input-price-monthly" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <FormField
                 control={form.control}
-                name="paymentType"
+                name="currency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t.paymentType}</FormLabel>
+                    <FormLabel>{t.currency}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger data-testid="select-payment-type">
+                        <SelectTrigger data-testid="select-currency">
                           <SelectValue />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="cash">{t.paymentCash}</SelectItem>
-                        <SelectItem value="bank_transfer">{t.paymentBankTransfer}</SelectItem>
+                        <SelectItem value="RSD">RSD (Dinar)</SelectItem>
+                        <SelectItem value="EUR">EUR (Euro)</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

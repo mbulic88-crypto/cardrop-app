@@ -29,14 +29,15 @@ const formSchema = z.object({
   contactEmail: z.string().email("Unesite validnu email adresu"),
   latitude: z.string().min(1, "Geografska širina je obavezna"),
   longitude: z.string().min(1, "Geografska dužina je obavezna"),
-  pricePerHour: z.string().min(1, "Cena je obavezna"),
+  pricePerHour: z.string().optional(),
+  pricePerDay: z.string().optional(),
+  pricePerWeek: z.string().optional(),
+  pricePerMonth: z.string().optional(),
   currency: z.string().default("RSD"),
-  paymentType: z.enum(['cash', 'bank_transfer']),
   spotType: z.string().min(1, "Tip mesta je obavezan"),
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
   is24Hours: z.boolean().default(true),
-  pricingType: z.enum(['hourly', 'daily', 'weekly', 'monthly']).default('daily'),
   advertiserType: z.enum(['owner', 'agency', 'company']).default('owner'),
   companyName: z.string().optional(),
   pib: z.string().optional(),
@@ -67,7 +68,6 @@ export default function EditSpot() {
   const [match, params] = useRoute("/edit-spot/:id");
   const spotId = params?.id as string | undefined;
   const { toast } = useToast();
-  const [rentalDurationType, setRentalDurationType] = useState<'short' | 'long'>('short');
 
   const { data: spot, isLoading: spotLoading } = useQuery<ParkingSpot & { pendingUntil?: string }>({
     queryKey: ["/api/parking-spots", spotId],
@@ -80,15 +80,32 @@ export default function EditSpot() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "", description: "", address: "", city: "", phone: "", contactEmail: "",
-      latitude: "45.2671", longitude: "19.8335", pricePerHour: "", currency: "RSD",
-      paymentType: "cash", spotType: "uncovered", hasEvCharging: false,
-      hasSecurityCamera: false, is24Hours: true, pricingType: "daily",
+      latitude: "45.2671", longitude: "19.8335",
+      pricePerHour: "", pricePerDay: "", pricePerWeek: "", pricePerMonth: "",
+      currency: "RSD", spotType: "uncovered", hasEvCharging: false,
+      hasSecurityCamera: false, is24Hours: true,
       advertiserType: "owner", companyName: "", pib: "", contactPerson: "",
     },
   });
 
-  const watchedPricingType = form.watch("pricingType");
   const watchedAdvertiserType = form.watch("advertiserType");
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const hasPrice = [values.pricePerHour, values.pricePerDay, values.pricePerWeek, values.pricePerMonth]
+      .some(p => p && parseFloat(p) > 0);
+    if (!hasPrice) {
+      form.setError('pricePerHour', { message: 'Unesite bar jednu cenu' });
+      return;
+    }
+    const nullPrice = (v?: string) => (v && parseFloat(v) > 0 ? v : null);
+    mutation.mutate({
+      ...values,
+      pricePerHour: nullPrice(values.pricePerHour) as any,
+      pricePerDay: nullPrice(values.pricePerDay) as any,
+      pricePerWeek: nullPrice(values.pricePerWeek) as any,
+      pricePerMonth: nullPrice(values.pricePerMonth) as any,
+    });
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) setLocation("/");
@@ -105,24 +122,20 @@ export default function EditSpot() {
         contactEmail: spot.contactEmail,
         latitude: String(spot.latitude),
         longitude: String(spot.longitude),
-        pricePerHour: String(spot.pricePerHour),
+        pricePerHour: spot.pricePerHour ? String(spot.pricePerHour) : "",
+        pricePerDay: (spot as any).pricePerDay ? String((spot as any).pricePerDay) : "",
+        pricePerWeek: (spot as any).pricePerWeek ? String((spot as any).pricePerWeek) : "",
+        pricePerMonth: (spot as any).pricePerMonth ? String((spot as any).pricePerMonth) : "",
         currency: spot.currency,
-        paymentType: spot.paymentType as 'cash' | 'bank_transfer',
         spotType: spot.spotType,
         hasEvCharging: spot.hasEvCharging,
         hasSecurityCamera: spot.hasSecurityCamera,
         is24Hours: spot.is24Hours,
-        pricingType: (spot.pricingType as 'hourly' | 'daily' | 'monthly' | 'weekly') || "daily",
         advertiserType: (spot.advertiserType as 'owner' | 'agency' | 'company') || "owner",
         companyName: spot.companyName || "",
         pib: spot.pib || "",
         contactPerson: spot.contactPerson || "",
       });
-      if (spot.pricingType === 'weekly' || spot.pricingType === 'monthly') {
-        setRentalDurationType('long');
-      } else {
-        setRentalDurationType('short');
-      }
     }
   }, [spot, form]);
 
@@ -234,7 +247,7 @@ export default function EditSpot() {
 
         <Card className="p-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Naslov</FormLabel>
@@ -296,76 +309,42 @@ export default function EditSpot() {
                 )} />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground block">Trajanje zakupa</label>
-                <Select value={rentalDurationType} onValueChange={(val: 'short' | 'long') => {
-                  setRentalDurationType(val);
-                  form.setValue('pricingType', val === 'short' ? 'hourly' : 'weekly');
-                }}>
-                  <SelectTrigger data-testid="select-rental-duration">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">Kratkoročno (sat/dan)</SelectItem>
-                    <SelectItem value="long">Dugoročno (nedelja/mesec)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <FormField control={form.control} name="pricingType" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Period naplate</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-pricing-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {rentalDurationType === 'short' ? (
-                        <>
-                          <SelectItem value="hourly">Po satu</SelectItem>
-                          <SelectItem value="daily">Po danu</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="weekly">Po nedelji</SelectItem>
-                          <SelectItem value="monthly">Po mesecu</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="pricePerHour" render={({ field }) => {
-                  const label = { hourly: 'Cena po satu', daily: 'Cena po danu', weekly: 'Cena po nedelji', monthly: 'Cena po mesecu' }[watchedPricingType] || 'Cena po danu';
-                  return (
+              {/* Multi-pricing — up to 4 independent optional price types */}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Cene iznajmljivanja</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Unesite bar jednu cenu. Zakupci biraju koji tip im odgovara.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="pricePerHour" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{label}</FormLabel>
-                      <FormControl><Input type="number" step="0.01" placeholder="Cena" {...field} data-testid="input-price" /></FormControl>
+                      <FormLabel>Cena po satu</FormLabel>
+                      <FormControl><Input type="number" step="0.01" min="0" placeholder="200" {...field} data-testid="input-price-hourly" /></FormControl>
                       <FormMessage />
                     </FormItem>
-                  );
-                }} />
-
-                <FormField control={form.control} name="paymentType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tip Plaćanja</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-payment"><SelectValue /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cash">Keš</SelectItem>
-                        <SelectItem value="bank_transfer">Preko računa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                  )} />
+                  <FormField control={form.control} name="pricePerDay" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cena po danu</FormLabel>
+                      <FormControl><Input type="number" step="0.01" min="0" placeholder="1000" {...field} data-testid="input-price-daily" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="pricePerWeek" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cena po nedelji</FormLabel>
+                      <FormControl><Input type="number" step="0.01" min="0" placeholder="3000" {...field} data-testid="input-price-weekly" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="pricePerMonth" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cena po mesecu</FormLabel>
+                      <FormControl><Input type="number" step="0.01" min="0" placeholder="5000" {...field} data-testid="input-price-monthly" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
               </div>
 
               <FormField control={form.control} name="spotType" render={({ field }) => (
