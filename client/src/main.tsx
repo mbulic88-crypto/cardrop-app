@@ -10,9 +10,20 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Version check: detect new deploys and reload stale cached JS automatically.
-// The server returns its start timestamp — changes on every deploy.
-// We store the last seen version in localStorage; if it differs, force reload.
+async function hardReload() {
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch {}
+  window.location.reload();
+}
+
 (async () => {
   try {
     const res = await fetch('/api/version', { cache: 'no-store' });
@@ -21,7 +32,7 @@ if ('serviceWorker' in navigator) {
     const stored = localStorage.getItem('cardrop_app_version');
     localStorage.setItem('cardrop_app_version', version);
     if (stored && stored !== version) {
-      window.location.reload();
+      await hardReload();
       return;
     }
   } catch {
