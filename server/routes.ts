@@ -27,9 +27,17 @@ function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: n
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const SERVER_START_VERSION = Date.now().toString();
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // Public version endpoint — client uses this to detect deploys and reload stale JS
+  app.get('/api/version', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ version: SERVER_START_VERSION });
+  });
 
   const ADMIN_EMAIL_LIST = ['m.bulic88@gmail.com'];
 
