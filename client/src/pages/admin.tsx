@@ -76,6 +76,8 @@ type SpotFormData = {
   stripeLink: string;
   stripeLinkActive: boolean;
   totalSpaces: number;
+  hasRamp: boolean;
+  rampPhone: string;
 };
 
 const defaultSpotForm: SpotFormData = {
@@ -105,6 +107,8 @@ const defaultSpotForm: SpotFormData = {
   stripeLink: "",
   stripeLinkActive: false,
   totalSpaces: 1,
+  hasRamp: false,
+  rampPhone: "",
 };
 
 function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm: (f: SpotFormData) => void; isEdit?: boolean }) {
@@ -277,6 +281,21 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
             <Switch checked={form.stripeLinkActive} onCheckedChange={v => set("stripeLinkActive", v)} data-testid="switch-stripe-link-active" />
             <span className="text-sm">Prikaži "Plati online" dugme na strani parking mesta</span>
           </label>
+        </div>
+        <div className="col-span-2 space-y-2 pt-2 border-t border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">Rampa / barijera (admin only)</span>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.hasRamp} onCheckedChange={v => set("hasRamp", v)} data-testid="switch-has-ramp" />
+            <span className="text-sm">Ovo mesto ima automatsku rampu</span>
+          </label>
+          {form.hasRamp && (
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">Broj rampe (poziva se automatski, NIKAD se ne prikazuje korisnicima)</label>
+              <Input value={form.rampPhone} onChange={e => set("rampPhone", e.target.value)} placeholder="+381 64 ..." data-testid="input-ramp-phone" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -915,6 +934,8 @@ export default function Admin() {
                                 stripeLink: spot.stripeLink || "",
                                 stripeLinkActive: spot.stripeLinkActive || false,
                                 totalSpaces: spot.totalSpaces ?? 1,
+                                hasRamp: spot.hasRamp ?? false,
+                                rampPhone: (spot as any).rampPhone || "",
                               });
                               setEditUploadedImages(spot.imageUrls || []);
                               setShowPendingDetails(false);

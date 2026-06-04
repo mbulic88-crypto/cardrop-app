@@ -116,6 +116,9 @@ export const parkingSpots = pgTable("parking_spots", {
   stripeProductId: varchar("stripe_product_id", { length: 100 }),
   // How many independent bookable spaces this listing has (default 1)
   totalSpaces: integer("total_spaces").notNull().default(1),
+  // Ramp / barrier control — rampPhone is server-only, never sent to frontend
+  hasRamp: boolean("has_ramp").notNull().default(false),
+  rampPhone: varchar("ramp_phone", { length: 50 }),
   // Pending changes: owner edits are held here until next midnight UTC+1
   pendingChanges: jsonb("pending_changes").$type<Record<string, unknown>>(),
   pendingChangesFrom: timestamp("pending_changes_from"),

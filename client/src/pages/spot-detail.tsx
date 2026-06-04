@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle, X, Car, Loader2 } from "lucide-react";
+import { MapPin, Zap, Camera, Clock, Home as HomeIcon, Star, MessageSquare, Phone, CreditCard, Send, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, MessageCircle, X, Car, Loader2, DoorOpen } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { SiViber, SiWhatsapp } from "react-icons/si";
 import { apiRequest } from "@/lib/queryClient";
@@ -639,6 +639,34 @@ export default function SpotDetail() {
     },
   });
 
+  // ── Ramp control ──────────────────────────────────────────────────────────
+  const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
+    canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
+  }>({
+    queryKey: ["/api/parking-spots", spotId, "ramp-status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/parking-spots/${spotId}/ramp-status`, { credentials: "include" });
+      if (!res.ok) return { canOpen: false };
+      return res.json();
+    },
+    enabled: !!spot?.hasRamp && isAuthenticated,
+    refetchInterval: 30_000,
+  });
+
+  const openRampMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/parking-spots/${spotId}/open-ramp`, {});
+    },
+    onSuccess: () => {
+      toast({ title: "Rampa se otvara!", description: "Zahtev je poslat. Barijera će se otvoriti za trenutak." });
+      setTimeout(() => refetchRampStatus(), 3000);
+    },
+    onError: (error: Error) => {
+      const msg = (error as any)?.message || "Nije moguće otvoriti rampu";
+      toast({ title: "Greška", description: msg, variant: "destructive" });
+    },
+  });
+
   const messageMutation = useMutation({
     mutationFn: async (data: { receiverId: string; spotId: string; content: string }) => {
       return await apiRequest("POST", "/api/messages", data);
@@ -881,7 +909,7 @@ export default function SpotDetail() {
               </span>
             ))}
           </div>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               className="bg-accent text-accent-foreground gap-2 w-full sm:w-auto"
               onClick={() => {
@@ -895,8 +923,31 @@ export default function SpotDetail() {
               Plati ili rezerviši parking
             </Button>
 
+            {spot.hasRamp && isAuthenticated && (
+              <Button
+                variant={rampStatus?.canOpen ? "default" : "outline"}
+                className={rampStatus?.canOpen ? "w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700 text-white" : "w-full sm:w-auto gap-2"}
+                disabled={!rampStatus?.canOpen || openRampMutation.isPending}
+                onClick={() => openRampMutation.mutate()}
+                data-testid="button-otvori-rampu"
+                title={!rampStatus?.canOpen ? "Dugme je aktivno samo tokom vaše aktivne rezervacije (±10 min)" : undefined}
+              >
+                {openRampMutation.isPending
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <DoorOpen className="w-4 h-4" />}
+                Otvori rampu
+              </Button>
+            )}
+
+            {spot.hasRamp && !isAuthenticated && (
+              <Button variant="outline" className="w-full sm:w-auto gap-2" disabled data-testid="button-otvori-rampu-locked">
+                <Lock className="w-4 h-4" />
+                Otvori rampu
+              </Button>
+            )}
+
             {!spot.stripeLinkActive && (
-              <p className="text-xs text-muted-foreground mt-2" data-testid="text-payment-inactive">
+              <p className="text-xs text-muted-foreground mt-1 w-full" data-testid="text-payment-inactive">
                 Za ovaj parking nije aktivno online plaćanje. Kontaktirajte vlasnika.
               </p>
             )}

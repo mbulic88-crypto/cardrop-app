@@ -11,7 +11,7 @@ import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
-import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable } from "@shared/schema";
+import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
 import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingRenterConfirmationEmail } from './email';
 
@@ -1173,10 +1173,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Parking spots routes
+  // Strip sensitive server-only fields before sending spot to client
+  function safeSpot<T extends { rampPhone?: string | null }>(spot: T): Omit<T, 'rampPhone'> {
+    const { rampPhone: _rp, ...safe } = spot;
+    return safe;
+  }
+
   app.get('/api/parking-spots', async (req, res) => {
     try {
       const spots = await storage.getAllParkingSpots();
-      res.json(spots);
+      res.json(spots.map(safeSpot));
     } catch (error) {
       console.error("Error fetching parking spots:", error);
       res.status(500).json({ message: "Failed to fetch parking spots" });
@@ -1188,7 +1194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const spots = await storage.getUserParkingSpots(userId);
-      res.json(spots);
+      res.json(spots.map(safeSpot));
     } catch (error) {
       console.error("Error fetching user parking spots:", error);
       res.status(500).json({ message: "Greška pri učitavanju parking mesta" });
@@ -1206,10 +1212,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updated = await storage.applyAndClearPendingChanges(req.params.id);
         if (updated) spot = updated;
       }
-      res.json(spot);
+      res.json(safeSpot(spot));
     } catch (error) {
       console.error("Error fetching parking spot:", error);
       res.status(500).json({ message: "Failed to fetch parking spot" });
+    }
+  });
+
+  // ─── Ramp / barrier control ───────────────────────────────────────────────
+
+  // In-memory rate limit: userId+spotId → last trigger timestamp
+  const rampCooldowns = new Map<string, number>();
+  const RAMP_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+
+  // Helper: find an active booking for this user + spot within ±10 min window
+  async function getActiveRampBooking(userId: string, spotId: string) {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 10 * 60 * 1000);
+    const windowEnd = new Date(now.getTime() + 10 * 60 * 1000);
+    const results = await db
+      .select()
+      .from(bookings)
+      .where(
+        sql`${bookings.spotId} = ${spotId}
+          AND ${bookings.renterId} = ${userId}
+          AND ${bookings.status} = 'confirmed'
+          AND ${bookings.paymentStatus} = 'paid'
+          AND ${bookings.startTime} <= ${windowEnd.toISOString()}
+          AND ${bookings.endTime} >= ${windowStart.toISOString()}`
+      )
+      .limit(1);
+    return results[0] ?? null;
+  }
+
+  // GET /api/parking-spots/:id/ramp-status — can the current user open the ramp?
+  app.get('/api/parking-spots/:id/ramp-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      if (!spot.hasRamp) return res.json({ canOpen: false, reason: "no_ramp" });
+
+      const booking = await getActiveRampBooking(userId, req.params.id);
+      if (!booking) return res.json({ canOpen: false, reason: "no_active_booking" });
+
+      const key = `${userId}:${req.params.id}`;
+      const lastAt = rampCooldowns.get(key) ?? 0;
+      const cooldownLeft = Math.max(0, RAMP_COOLDOWN_MS - (Date.now() - lastAt));
+
+      res.json({ canOpen: true, cooldownLeft, bookingId: booking.id });
+    } catch (error) {
+      console.error("Error checking ramp status:", error);
+      res.status(500).json({ message: "Greška pri proveri rampe" });
+    }
+  });
+
+  // POST /api/parking-spots/:id/open-ramp — trigger the ramp via ntfy.sh
+  app.post('/api/parking-spots/:id/open-ramp', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      if (!spot.hasRamp) return res.status(400).json({ message: "Ovo parking mesto nema rampu" });
+      if (!spot.rampPhone) return res.status(503).json({ message: "Broj rampe nije konfigurisan" });
+
+      const booking = await getActiveRampBooking(userId, req.params.id);
+      if (!booking) return res.status(403).json({ message: "Nemate aktivnu rezervaciju za ovo mesto" });
+
+      const key = `${userId}:${req.params.id}`;
+      const lastAt = rampCooldowns.get(key) ?? 0;
+      if (Date.now() - lastAt < RAMP_COOLDOWN_MS) {
+        const secsLeft = Math.ceil((RAMP_COOLDOWN_MS - (Date.now() - lastAt)) / 1000);
+        return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
+      }
+
+      const ntfyTopic = process.env.NTFY_TOPIC;
+      if (!ntfyTopic) {
+        console.error("NTFY_TOPIC env var not set");
+        return res.status(503).json({ message: "Sistem za otvaranje rampe nije konfigurisan" });
+      }
+
+      await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+        method: "POST",
+        headers: {
+          "Title": `Otvori rampu - ${spot.title}`,
+          "Priority": "urgent",
+          "Tags": "parking_ramp",
+          "Content-Type": "text/plain",
+        },
+        body: spot.rampPhone,
+      });
+
+      rampCooldowns.set(key, Date.now());
+      res.json({ ok: true });
+    } catch (error) {
+      console.error("Error opening ramp:", error);
+      res.status(500).json({ message: "Greška pri otvaranju rampe" });
     }
   });
 
@@ -2786,7 +2884,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'is24Hours', 'phone', 'paymentType', 'contactEmail', 'advertiserType',
         'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
         'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
-        'stripeLink', 'stripeLinkActive', 'category', 'totalSpaces'];
+        'stripeLink', 'stripeLinkActive', 'category', 'totalSpaces',
+        'hasRamp', 'rampPhone'];
       for (const f of fields) {
         if (body[f] !== undefined) updates[f] = body[f];
       }
