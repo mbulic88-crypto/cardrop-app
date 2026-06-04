@@ -78,6 +78,7 @@ type SpotFormData = {
   totalSpaces: number;
   hasRamp: boolean;
   rampPhone: string;
+  rampWebhookUrl: string;
 };
 
 const defaultSpotForm: SpotFormData = {
@@ -109,6 +110,7 @@ const defaultSpotForm: SpotFormData = {
   totalSpaces: 1,
   hasRamp: false,
   rampPhone: "",
+  rampWebhookUrl: "",
 };
 
 function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm: (f: SpotFormData) => void; isEdit?: boolean }) {
@@ -291,9 +293,15 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
             <span className="text-sm">Ovo mesto ima automatsku rampu</span>
           </label>
           {form.hasRamp && (
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Broj rampe (poziva se automatski, NIKAD se ne prikazuje korisnicima)</label>
-              <Input value={form.rampPhone} onChange={e => set("rampPhone", e.target.value)} placeholder="+381 64 ..." data-testid="input-ramp-phone" />
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Broj rampe (NIKAD se ne prikazuje korisnicima)</label>
+                <Input value={form.rampPhone} onChange={e => set("rampPhone", e.target.value)} placeholder="+381 64 ..." data-testid="input-ramp-phone" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">MacroDroid Webhook URL (za ovaj parking specifično)</label>
+                <Input value={form.rampWebhookUrl} onChange={e => set("rampWebhookUrl", e.target.value)} placeholder="https://trigger.macrodroid.com/..." data-testid="input-ramp-webhook-url" />
+              </div>
             </div>
           )}
         </div>
@@ -940,11 +948,11 @@ export default function Admin() {
                               setEditUploadedImages(spot.imageUrls || []);
                               setShowPendingDetails(false);
                               setShowEditDialog(true);
-                              // Fetch ramp config separately (rampPhone is never included in public/admin list)
+                              // Fetch ramp config separately (rampPhone/rampWebhookUrl are never included in public/admin list)
                               if (spot.hasRamp) {
                                 fetch(`/api/admin/parking-spots/${spot.id}/ramp-config`, { credentials: "include" })
                                   .then(r => r.ok ? r.json() : null)
-                                  .then(cfg => { if (cfg) setEditForm(prev => ({ ...prev, rampPhone: cfg.rampPhone || "" })); })
+                                  .then(cfg => { if (cfg) setEditForm(prev => ({ ...prev, rampPhone: cfg.rampPhone || "", rampWebhookUrl: cfg.rampWebhookUrl || "" })); })
                                   .catch(() => {});
                               }
                             }}

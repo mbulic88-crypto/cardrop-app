@@ -1174,8 +1174,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Parking spots routes
   // Strip sensitive server-only fields before sending spot to client
-  function safeSpot<T extends { rampPhone?: string | null }>(spot: T): Omit<T, 'rampPhone'> {
-    const { rampPhone: _rp, ...safe } = spot;
+  function safeSpot<T extends { rampPhone?: string | null; rampWebhookUrl?: string | null }>(spot: T): Omit<T, 'rampPhone' | 'rampWebhookUrl'> {
+    const { rampPhone: _rp, rampWebhookUrl: _rwu, ...safe } = spot;
     return safe;
   }
 
@@ -1270,10 +1270,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Helper: trigger MacroDroid webhook (primary ramp mechanism)
-  async function sendMacroDroid(rampPhone: string, spotTitle: string): Promise<boolean> {
-    const webhookUrl = process.env.MACRODROID_WEBHOOK_URL;
+  // Uses per-spot webhookUrl if provided, falls back to global MACRODROID_WEBHOOK_URL env var
+  async function sendMacroDroid(rampPhone: string, spotTitle: string, spotWebhookUrl?: string | null): Promise<boolean> {
+    const webhookUrl = spotWebhookUrl || process.env.MACRODROID_WEBHOOK_URL;
     if (!webhookUrl) {
-      console.error("[Ramp] MACRODROID_WEBHOOK_URL is not set");
+      console.error("[Ramp] No webhook URL configured (neither per-spot nor global MACRODROID_WEBHOOK_URL)");
       return false;
     }
     try {
@@ -1358,8 +1359,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
         }
 
-        // Primary: MacroDroid webhook — instant push to phone
-        const macroOk = await sendMacroDroid(spot.rampPhone, spot.title);
+        // Primary: MacroDroid webhook — per-spot URL, falls back to global env var
+        const macroOk = await sendMacroDroid(spot.rampPhone, spot.title, spot.rampWebhookUrl);
         if (!macroOk) {
           console.warn(`[Ramp] MacroDroid webhook failed for booking ${booking.id}`);
         }
@@ -1370,7 +1371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         rampCooldowns.set(booking.id, Date.now());
       } else {
         // Admin test trigger — no booking required, no cooldown
-        const macroOk = await sendMacroDroid(spot.rampPhone, `[TEST] ${spot.title}`);
+        const macroOk = await sendMacroDroid(spot.rampPhone, `[TEST] ${spot.title}`, spot.rampWebhookUrl);
         if (!macroOk) {
           console.warn(`[Ramp] MacroDroid webhook failed for admin test`);
         }
@@ -2901,12 +2902,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin-only: get ramp config for a specific spot (includes rampPhone)
+  // Admin-only: get ramp config for a specific spot (includes rampPhone + rampWebhookUrl)
   app.get('/api/admin/parking-spots/:id/ramp-config', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const spot = await storage.getParkingSpot(req.params.id);
       if (!spot) return res.status(404).json({ message: "Parking spot not found" });
-      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "" });
+      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "", rampWebhookUrl: spot.rampWebhookUrl ?? "" });
     } catch (error) {
       console.error("Error fetching ramp config:", error);
       res.status(500).json({ message: "Greška pri učitavanju konfiguracije rampe" });
@@ -2916,12 +2917,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin-only: set ramp config for a spot
   app.patch('/api/admin/parking-spots/:id/set-ramp', isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { hasRamp, rampPhone } = req.body;
+      const { hasRamp, rampPhone, rampWebhookUrl } = req.body;
       if (typeof hasRamp !== 'boolean') return res.status(400).json({ message: "hasRamp mora biti boolean" });
       const phone = hasRamp ? (rampPhone ?? "").trim() : null;
-      const spot = await storage.updateParkingSpot(req.params.id, { hasRamp, rampPhone: phone } as any);
+      const webhookUrl = hasRamp ? (rampWebhookUrl ?? "").trim() || null : null;
+      const spot = await storage.updateParkingSpot(req.params.id, { hasRamp, rampPhone: phone, rampWebhookUrl: webhookUrl } as any);
       if (!spot) return res.status(404).json({ message: "Parking spot not found" });
-      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "" });
+      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "", rampWebhookUrl: spot.rampWebhookUrl ?? "" });
     } catch (error) {
       console.error("Error setting ramp config:", error);
       res.status(500).json({ message: "Greška pri podešavanju rampe" });
