@@ -1280,7 +1280,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const url = new URL(webhookUrl);
       url.searchParams.set("phone", rampPhone);
       url.searchParams.set("spot", spotTitle);
-      const resp = await fetch(url.toString(), { method: "GET" });
+      url.searchParams.set("t", Date.now().toString()); // unique per request, prevents deduplication
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const resp = await fetch(url.toString(), { method: "GET", signal: controller.signal });
+      clearTimeout(timer);
       console.log(`[Ramp] MacroDroid webhook → ${resp.status} for ${spotTitle}`);
       return resp.ok;
     } catch (err) {
