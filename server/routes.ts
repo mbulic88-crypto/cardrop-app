@@ -1253,16 +1253,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const message = encodeURIComponent(`rampa=:=${rampPhone}`);
       const sender = encodeURIComponent(`CarDrop: ${spotTitle}`);
       const url = `https://autoremotejoaomgcd.appspot.com/sendmessage?key=${autoRemoteKey}&message=${message}&sender=${sender}`;
+      console.log("[AutoRemote] Sending to:", url.replace(autoRemoteKey, "KEY_HIDDEN"));
       try {
         const resp = await fetch(url);
-        if (resp.ok) {
-          console.log("Ramp signal sent via AutoRemote");
+        const body = await resp.text();
+        console.log(`[AutoRemote] status=${resp.status} body="${body}"`);
+        // AutoRemote returns "OK" in body on success
+        if (body.trim().toUpperCase() === "OK" || resp.ok) {
+          console.log("[AutoRemote] Signal sent successfully");
           return true;
         }
-        console.warn("AutoRemote failed, falling back to ntfy:", resp.status);
+        console.warn("[AutoRemote] Failed, falling back to ntfy. Body:", body);
       } catch (e) {
-        console.warn("AutoRemote error, falling back to ntfy:", e);
+        console.warn("[AutoRemote] Network error, falling back to ntfy:", e);
       }
+    } else {
+      console.warn("[AutoRemote] AUTOREMOTE_KEY not set, skipping AutoRemote");
     }
 
     // Fallback: ntfy.sh
