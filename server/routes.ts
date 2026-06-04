@@ -1269,25 +1269,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return results[0] ?? null;
   }
 
-  // Helper: send ntfy notification for ramp trigger
-  async function sendRampNtfy(rampPhone: string, spotTitle: string): Promise<boolean> {
-    const ntfyTopic = process.env.NTFY_TOPIC;
-    if (!ntfyTopic) {
-      console.error("NTFY_TOPIC is not set");
+  // Helper: trigger MacroDroid webhook (primary ramp mechanism)
+  async function sendMacroDroid(rampPhone: string, spotTitle: string): Promise<boolean> {
+    const webhookUrl = process.env.MACRODROID_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.error("[Ramp] MACRODROID_WEBHOOK_URL is not set");
       return false;
     }
-    // Title = phone digits (Tasker reads %ntitle to auto-dial)
-    const resp = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
-      method: "POST",
-      headers: {
-        "Title": rampPhone,
-        "Priority": "urgent",
-        "Tags": "parking_ramp",
-        "Content-Type": "text/plain",
-      },
-      body: spotTitle,
-    });
-    return resp.ok;
+    try {
+      const url = new URL(webhookUrl);
+      url.searchParams.set("phone", rampPhone);
+      url.searchParams.set("spot", spotTitle);
+      const resp = await fetch(url.toString(), { method: "GET" });
+      console.log(`[Ramp] MacroDroid webhook → ${resp.status} for ${spotTitle}`);
+      return resp.ok;
+    } catch (err) {
+      console.error("[Ramp] MacroDroid webhook error:", err);
+      return false;
+    }
+  }
+
+  // Helper: send ntfy notification (visual backup only)
+  async function sendRampNtfy(rampPhone: string, spotTitle: string): Promise<boolean> {
+    const ntfyTopic = process.env.NTFY_TOPIC;
+    if (!ntfyTopic) return false;
+    try {
+      const resp = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+        method: "POST",
+        headers: {
+          "Title": rampPhone,
+          "Priority": "urgent",
+          "Tags": "parking_ramp",
+          "Content-Type": "text/plain",
+        },
+        body: spotTitle,
+      });
+      return resp.ok;
+    } catch {
+      return false;
+    }
   }
 
   // GET /api/parking-spots/:id/ramp-status — can the current user open the ramp?
@@ -1334,25 +1354,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
         }
 
-        // Push to Tasker polling queue
-        rampPendingQueue.push({ phone: spot.rampPhone, spotTitle: spot.title, triggeredAt: Date.now() });
-        console.log(`[Ramp] Trigger queued for polling: ${spot.title}`);
-
-        // Also send ntfy as a visual notification (optional backup)
-        if (process.env.NTFY_TOPIC) {
-          sendRampNtfy(spot.rampPhone, spot.title).catch(() => {});
+        // Primary: MacroDroid webhook — instant push to phone
+        const macroOk = await sendMacroDroid(spot.rampPhone, spot.title);
+        if (!macroOk) {
+          console.warn(`[Ramp] MacroDroid webhook failed for booking ${booking.id}`);
         }
+
+        // Backup: ntfy visual notification
+        sendRampNtfy(spot.rampPhone, spot.title).catch(() => {});
 
         rampCooldowns.set(booking.id, Date.now());
       } else {
         // Admin test trigger — no booking required, no cooldown
-        rampPendingQueue.push({ phone: spot.rampPhone, spotTitle: `[TEST] ${spot.title}`, triggeredAt: Date.now() });
-        console.log(`[Ramp] Test trigger queued for polling: ${spot.title}`);
-
-        // Also send ntfy as a visual notification (optional backup)
-        if (process.env.NTFY_TOPIC) {
-          sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`).catch(() => {});
+        const macroOk = await sendMacroDroid(spot.rampPhone, `[TEST] ${spot.title}`);
+        if (!macroOk) {
+          console.warn(`[Ramp] MacroDroid webhook failed for admin test`);
         }
+
+        // Backup: ntfy visual notification
+        sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`).catch(() => {});
       }
 
       res.json({ ok: true });
