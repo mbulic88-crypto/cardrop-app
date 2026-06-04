@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cardrop-v9';
+const CACHE_NAME = 'cardrop-v10';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
