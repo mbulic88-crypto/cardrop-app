@@ -1221,9 +1221,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ─── Ramp / barrier control ───────────────────────────────────────────────
 
-  // In-memory rate limit: userId+spotId → last trigger timestamp
+  // In-memory rate limit: bookingId → last trigger timestamp
   const rampCooldowns = new Map<string, number>();
-  const RAMP_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+  const RAMP_COOLDOWN_MS = 30 * 1000; // 30 seconds
 
   // Helper: find an active booking for this user + spot within ±10 min window
   async function getActiveRampBooking(userId: string, spotId: string) {
@@ -1237,12 +1237,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sql`${bookings.spotId} = ${spotId}
           AND ${bookings.renterId} = ${userId}
           AND ${bookings.status} = 'confirmed'
-          AND ${bookings.paymentStatus} = 'paid'
           AND ${bookings.startTime} <= ${windowEnd.toISOString()}
           AND ${bookings.endTime} >= ${windowStart.toISOString()}`
       )
       .limit(1);
     return results[0] ?? null;
+  }
+
+  // Helper: send ntfy notification for ramp
+  async function sendRampNtfy(rampPhone: string, spotTitle: string): Promise<boolean> {
+    const ntfyTopic = process.env.NTFY_TOPIC;
+    if (!ntfyTopic) {
+      console.error("NTFY_TOPIC env var not set");
+      return false;
+    }
+    // Title = phone digits (Tasker reads %ntitle to auto-dial)
+    // Body  = spot name (human-readable context)
+    const resp = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+      method: "POST",
+      headers: {
+        "Title": rampPhone,
+        "Priority": "urgent",
+        "Tags": "parking_ramp",
+        "Content-Type": "text/plain",
+      },
+      body: spotTitle,
+    });
+    return resp.ok;
   }
 
   // GET /api/parking-spots/:id/ramp-status — can the current user open the ramp?
@@ -1256,11 +1277,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await getActiveRampBooking(userId, req.params.id);
       if (!booking) return res.json({ canOpen: false, reason: "no_active_booking" });
 
-      const key = `${userId}:${req.params.id}`;
-      const lastAt = rampCooldowns.get(key) ?? 0;
+      const lastAt = rampCooldowns.get(booking.id) ?? 0;
       const cooldownLeft = Math.max(0, RAMP_COOLDOWN_MS - (Date.now() - lastAt));
 
-      res.json({ canOpen: true, cooldownLeft, bookingId: booking.id });
+      res.json({ canOpen: cooldownLeft === 0, cooldownLeft, bookingId: booking.id });
     } catch (error) {
       console.error("Error checking ramp status:", error);
       res.status(500).json({ message: "Greška pri proveri rampe" });
@@ -1276,34 +1296,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!spot.hasRamp) return res.status(400).json({ message: "Ovo parking mesto nema rampu" });
       if (!spot.rampPhone) return res.status(503).json({ message: "Broj rampe nije konfigurisan" });
 
-      const booking = await getActiveRampBooking(userId, req.params.id);
-      if (!booking) return res.status(403).json({ message: "Nemate aktivnu rezervaciju za ovo mesto" });
+      // Check if user is admin — admins can test-trigger without a booking window
+      const user = await storage.getUser(userId);
+      const isAdminUser = user?.isAdmin || ADMIN_EMAIL_LIST.includes(user?.email || '');
 
-      const key = `${userId}:${req.params.id}`;
-      const lastAt = rampCooldowns.get(key) ?? 0;
-      if (Date.now() - lastAt < RAMP_COOLDOWN_MS) {
-        const secsLeft = Math.ceil((RAMP_COOLDOWN_MS - (Date.now() - lastAt)) / 1000);
-        return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
+      if (!isAdminUser) {
+        const booking = await getActiveRampBooking(userId, req.params.id);
+        if (!booking) return res.status(403).json({ message: "Nemate aktivnu rezervaciju za ovo mesto" });
+
+        const lastAt = rampCooldowns.get(booking.id) ?? 0;
+        if (Date.now() - lastAt < RAMP_COOLDOWN_MS) {
+          const secsLeft = Math.ceil((RAMP_COOLDOWN_MS - (Date.now() - lastAt)) / 1000);
+          return res.status(429).json({ message: `Pričekajte još ${secsLeft}s pre sledećeg zahteva` });
+        }
+
+        if (!process.env.NTFY_TOPIC) {
+          return res.status(503).json({ message: "Sistem za otvaranje rampe nije konfigurisan" });
+        }
+        const ok = await sendRampNtfy(spot.rampPhone, spot.title);
+        if (!ok) return res.status(502).json({ message: "Greška pri slanju signala rampi" });
+
+        rampCooldowns.set(booking.id, Date.now());
+      } else {
+        // Admin test trigger — no booking required, no cooldown
+        if (!process.env.NTFY_TOPIC) {
+          return res.status(503).json({ message: "NTFY_TOPIC nije podešen" });
+        }
+        const ok = await sendRampNtfy(spot.rampPhone, `[TEST] ${spot.title}`);
+        if (!ok) return res.status(502).json({ message: "Greška pri slanju test signala" });
       }
 
-      const ntfyTopic = process.env.NTFY_TOPIC;
-      if (!ntfyTopic) {
-        console.error("NTFY_TOPIC env var not set");
-        return res.status(503).json({ message: "Sistem za otvaranje rampe nije konfigurisan" });
-      }
-
-      await fetch(`https://ntfy.sh/${ntfyTopic}`, {
-        method: "POST",
-        headers: {
-          "Title": `Otvori rampu - ${spot.title}`,
-          "Priority": "urgent",
-          "Tags": "parking_ramp",
-          "Content-Type": "text/plain",
-        },
-        body: spot.rampPhone,
-      });
-
-      rampCooldowns.set(key, Date.now());
       res.json({ ok: true });
     } catch (error) {
       console.error("Error opening ramp:", error);
@@ -2819,10 +2841,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/admin/parking-spots', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const spots = await storage.getAllParkingSpotsAdmin();
-      res.json(spots);
+      res.json(spots.map(safeSpot));
     } catch (error) {
       console.error("Error fetching all parking spots:", error);
       res.status(500).json({ message: "Failed to fetch parking spots" });
+    }
+  });
+
+  // Admin-only: get ramp config for a specific spot (includes rampPhone)
+  app.get('/api/admin/parking-spots/:id/ramp-config', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const spot = await storage.getParkingSpot(req.params.id);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "" });
+    } catch (error) {
+      console.error("Error fetching ramp config:", error);
+      res.status(500).json({ message: "Greška pri učitavanju konfiguracije rampe" });
+    }
+  });
+
+  // Admin-only: set ramp config for a spot
+  app.patch('/api/admin/parking-spots/:id/set-ramp', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { hasRamp, rampPhone } = req.body;
+      if (typeof hasRamp !== 'boolean') return res.status(400).json({ message: "hasRamp mora biti boolean" });
+      const phone = hasRamp ? (rampPhone ?? "").trim() : null;
+      const spot = await storage.updateParkingSpot(req.params.id, { hasRamp, rampPhone: phone } as any);
+      if (!spot) return res.status(404).json({ message: "Parking spot not found" });
+      res.json({ hasRamp: spot.hasRamp, rampPhone: spot.rampPhone ?? "" });
+    } catch (error) {
+      console.error("Error setting ramp config:", error);
+      res.status(500).json({ message: "Greška pri podešavanju rampe" });
     }
   });
 

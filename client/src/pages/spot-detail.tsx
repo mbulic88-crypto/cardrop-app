@@ -452,6 +452,7 @@ export default function SpotDetail() {
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [rampClickLocked, setRampClickLocked] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showOwnerContact, setShowOwnerContact] = useState(false);
@@ -659,7 +660,11 @@ export default function SpotDetail() {
     },
     onSuccess: () => {
       toast({ title: "Rampa se otvara!", description: "Zahtev je poslat. Barijera će se otvoriti za trenutak." });
-      setTimeout(() => refetchRampStatus(), 3000);
+      setRampClickLocked(true);
+      setTimeout(() => {
+        setRampClickLocked(false);
+        refetchRampStatus();
+      }, 3000);
     },
     onError: (error: Error) => {
       const msg = (error as any)?.message || "Nije moguće otvoriti rampu";
@@ -927,8 +932,8 @@ export default function SpotDetail() {
               <Button
                 variant={rampStatus?.canOpen ? "default" : "outline"}
                 className={rampStatus?.canOpen ? "w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700 text-white" : "w-full sm:w-auto gap-2"}
-                disabled={!rampStatus?.canOpen || openRampMutation.isPending}
-                onClick={() => openRampMutation.mutate()}
+                disabled={!rampStatus?.canOpen || openRampMutation.isPending || rampClickLocked}
+                onClick={() => { if (!rampClickLocked) openRampMutation.mutate(); }}
                 data-testid="button-otvori-rampu"
                 title={!rampStatus?.canOpen ? "Dugme je aktivno samo tokom vaše aktivne rezervacije (±10 min)" : undefined}
               >

@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp, DoorOpen } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -935,11 +935,18 @@ export default function Admin() {
                                 stripeLinkActive: spot.stripeLinkActive || false,
                                 totalSpaces: spot.totalSpaces ?? 1,
                                 hasRamp: spot.hasRamp ?? false,
-                                rampPhone: (spot as any).rampPhone || "",
+                                rampPhone: "",
                               });
                               setEditUploadedImages(spot.imageUrls || []);
                               setShowPendingDetails(false);
                               setShowEditDialog(true);
+                              // Fetch ramp config separately (rampPhone is never included in public/admin list)
+                              if (spot.hasRamp) {
+                                fetch(`/api/admin/parking-spots/${spot.id}/ramp-config`, { credentials: "include" })
+                                  .then(r => r.ok ? r.json() : null)
+                                  .then(cfg => { if (cfg) setEditForm(prev => ({ ...prev, rampPhone: cfg.rampPhone || "" })); })
+                                  .catch(() => {});
+                              }
                             }}
                             data-testid={`button-edit-spot-${spot.id}`}
                             title="Uredi parking"
@@ -959,6 +966,28 @@ export default function Admin() {
                           >
                             <MapPin className="h-4 w-4" />
                           </Button>
+                          {spot.hasRamp && (
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={async () => {
+                                try {
+                                  const r = await fetch(`/api/parking-spots/${spot.id}/open-ramp`, {
+                                    method: "POST", credentials: "include",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({}),
+                                  });
+                                  const data = await r.json();
+                                  if (!r.ok) toast({ title: "Greška", description: data.message, variant: "destructive" });
+                                  else toast({ title: "Test signal poslat", description: "ntfy.sh → Tasker signal je poslat na broj rampe." });
+                                } catch { toast({ title: "Greška", description: "Nije moguće poslati test signal.", variant: "destructive" }); }
+                              }}
+                              data-testid={`button-test-ramp-${spot.id}`}
+                              title="Test: pošalji signal za otvaranje rampe (admin bypass)"
+                            >
+                              <DoorOpen className="h-4 w-4" />
+                            </Button>
+                          )}
                           {!spot.parkingNumber && (
                             <Button
                               variant="outline"
