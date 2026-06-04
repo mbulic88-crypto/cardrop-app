@@ -210,6 +210,16 @@ async function clearSpotExpiry() {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
+    // Serve all SPA routes (no file extension) with strict no-cache headers
+    // BEFORE express.static, so express.static never overrides Cache-Control on HTML.
+    const indexHtmlPath = nodePath.resolve(import.meta.dirname, 'public/index.html');
+    app.get('*', (req, res, next) => {
+      if (req.path.includes('.')) return next(); // assets handled by express.static below
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.sendFile(indexHtmlPath);
+    });
     serveStatic(app);
   }
 
