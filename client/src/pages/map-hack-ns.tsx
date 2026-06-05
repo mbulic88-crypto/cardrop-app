@@ -409,6 +409,17 @@ export default function MapHackNS() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
+  useEffect(() => {
+    if (!showMapCreditTopup) return;
+    const handler = (e: MouseEvent) => {
+      if (mapCreditTopupRef.current && !mapCreditTopupRef.current.contains(e.target as Node)) {
+        setShowMapCreditTopup(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMapCreditTopup]);
+
   // When parking search panel closes, fire a resize so Mapbox repaints
   // correctly after mobile keyboard was shown and dismissed
   useEffect(() => {
@@ -491,6 +502,7 @@ export default function MapHackNS() {
   const [showInstantInfoTooltip, setShowInstantInfoTooltip] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [showMapCreditTopup, setShowMapCreditTopup] = useState(false);
+  const mapCreditTopupRef = useRef<HTMLDivElement>(null);
   const [topupAmount, setTopupAmount] = useState('1000');
   const [rampClickLocked, setRampClickLocked] = useState(false);
   const [showRampExplanation, setShowRampExplanation] = useState(false);
@@ -3686,11 +3698,11 @@ export default function MapHackNS() {
         })()}
         {/* Credit balance badge — visible to all logged-in users */}
         {user && (
-          <div className="relative flex-shrink-0">
+          <div ref={mapCreditTopupRef} className="relative flex-shrink-0">
             <button
               type="button"
               onClick={() => setShowMapCreditTopup(v => !v)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full hover-elevate"
               style={{ background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.35)", cursor: "pointer" }}
               data-testid="button-credit-badge-topup"
             >
