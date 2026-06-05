@@ -2610,7 +2610,11 @@ export default function MapHackNS() {
                       >
                         {creditTopupMutation.isPending
                           ? <><Loader2 size={12} className="animate-spin" />Učitavanje...</>
-                          : <><CreditCard size={12} />Uplati {parseInt(topupAmount) >= 1000 ? parseInt(topupAmount).toLocaleString('sr-RS') : ''} RSD →</>}
+                          : (() => {
+                              const net = parseInt(topupAmount);
+                              const total = net >= 1000 ? Math.round(net * 1.015) : 0;
+                              return <><CreditCard size={12} />Uplati ukupno {total > 0 ? total.toLocaleString('sr-RS') : ''} RSD (kredit: {net >= 1000 ? net.toLocaleString('sr-RS') : ''} RSD) →</>;
+                            })()}
                       </button>
                       <button type="button" onClick={() => setShowCreditTopupField(false)} className="text-xs text-center" style={{ color: "#6b7280" }}>Odustani</button>
                     </div>
@@ -2644,11 +2648,14 @@ export default function MapHackNS() {
                             {selectedParking.stripeLinkActive ? "Instant plaćanje" : "Instant (nije dostupno)"}
                           </span>
                           {selectedParking.stripeLinkActive && (() => {
-                            const basePrice = parseFloat(selectedParking.pricePerHour) || 0;
-                            const stripeFee = Math.round(basePrice * 0.039 + 35);
+                            const fee = parkingCalculatedPrice > 0
+                              ? Math.round(parkingCalculatedPrice * 0.039 + 35)
+                              : null;
                             return (
                               <span className="text-xs" style={{ color: "#9ca3af" }}>
-                                {basePrice > 0 ? `+ ~${stripeFee} RSD procesna naknada` : "Uključuje malu procesnu naknadu"}
+                                {fee !== null
+                                  ? `Ukupno ~${(parkingCalculatedPrice + fee).toLocaleString('sr-RS')} RSD (naknada ${fee} RSD)`
+                                  : "Uključuje malu procesnu naknadu"}
                               </span>
                             );
                           })()}

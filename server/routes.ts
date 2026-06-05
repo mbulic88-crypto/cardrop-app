@@ -1809,7 +1809,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
       const currency = (spot.currency || 'RSD').toLowerCase();
-      const amountInSmallestUnit = Math.round(totalPrice * 100);
+      const stripeFeeRsd = Math.round(totalPrice * 0.039 + 35);
+      const amountInSmallestUnit = Math.round((totalPrice + stripeFeeRsd) * 100);
 
       const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
@@ -3199,7 +3200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price_data: {
             currency: 'rsd',
             product_data: { name: `CarDrop Kredit — ${label}` },
-            unit_amount: amountRsd * 100,
+            unit_amount: Math.round(amountRsd * 1.015) * 100,
           },
           quantity: 1,
         }],
