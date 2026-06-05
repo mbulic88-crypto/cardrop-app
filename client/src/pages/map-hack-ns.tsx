@@ -18,7 +18,7 @@ import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters, par
 import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
-import { SiViber, SiWhatsapp } from "react-icons/si";
+import { SiViber, SiWhatsapp, SiStripe } from "react-icons/si";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 
 type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
@@ -484,7 +484,11 @@ export default function MapHackNS() {
   const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
   const [parkingRentalType, setParkingRentalType] = useState<'hourly' | 'daily' | 'weekly' | 'monthly'>('daily');
   const [parkingWeeks, setParkingWeeks] = useState(1);
+  const skipPaymentMethodDefaultRef = useRef(false);
   const [resumeParkingId, setResumeParkingId] = useState<string | null>(null);
+  const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
+  const [showCreditInfoTooltip, setShowCreditInfoTooltip] = useState(false);
+  const [showInstantInfoTooltip, setShowInstantInfoTooltip] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
   const [rampClickLocked, setRampClickLocked] = useState(false);
@@ -1153,6 +1157,10 @@ export default function MapHackNS() {
   }, [user?.savedLicensePlate, selectedParking?.id]);
 
   useEffect(() => {
+    if (skipPaymentMethodDefaultRef.current) {
+      skipPaymentMethodDefaultRef.current = false;
+      return;
+    }
     if (selectedParking && !selectedParking.stripeLinkActive) {
       setParkingPaymentMethod('credit');
     } else {
@@ -1178,6 +1186,9 @@ export default function MapHackNS() {
     setSelectedParking(null);
     setDescExpanded(false);
     setShowParkingBookingForm(false);
+    setShowPaymentMethodPicker(false);
+    setShowCreditInfoTooltip(false);
+    setShowInstantInfoTooltip(false);
     setParkingLicensePlate('');
     setParkingPhone('');
     const today = new Date(); today.setHours(0,0,0,0);
@@ -1208,13 +1219,15 @@ export default function MapHackNS() {
     }
   }, [parkingListings]);
 
-  // Credit topup resume: after successful Stripe topup, auto-open booking form directly
+  // Credit topup resume: after successful Stripe topup, auto-open booking form with credit method
   useEffect(() => {
     if (!resumeParkingId || parkingListings.length === 0) return;
     const found = parkingListings.find(p => String(p.id) === String(resumeParkingId));
     if (found) {
+      skipPaymentMethodDefaultRef.current = true;
       setSelectedParking(found);
       setParkingPaymentMethod('credit');
+      setShowPaymentMethodPicker(false);
       setShowParkingBookingForm(true);
       setResumeParkingId(null);
     }
@@ -2481,16 +2494,208 @@ export default function MapHackNS() {
               </button>
             </div>
 
-            {/* Booking button — hidden when form is open */}
-            {!showParkingBookingForm && (
+            {/* Payment method picker — appears before the booking form */}
+            {!showParkingBookingForm && showPaymentMethodPicker && (
+              <div className="flex flex-col gap-2 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <button onClick={() => { setShowPaymentMethodPicker(false); setShowCreditTopupField(false); setShowCreditInfoTooltip(false); setShowInstantInfoTooltip(false); }} className="flex items-center gap-1 text-xs font-medium" style={{ color: "#9ca3af" }}>
+                    <ChevronLeft size={14} />Nazad
+                  </button>
+                  <span className="text-xs font-semibold flex-1 text-center" style={{ color: "#e5e7eb" }}>Način plaćanja</span>
+                </div>
+
+                {/* ── KREDIT opcija ── */}
+                <div className="rounded-xl p-2.5 flex flex-col gap-2" style={{ background: "rgba(82,183,136,0.07)", border: "1.5px solid rgba(82,183,136,0.5)" }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1">
+                      <Wallet size={15} style={{ color: "#52B788", flexShrink: 0 }} />
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-bold" style={{ color: "#52B788" }}>Uplati kredit</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(82,183,136,0.25)", color: "#52B788", border: "1px solid rgba(82,183,136,0.5)", letterSpacing: "0.02em" }}>Preporučeno</span>
+                        </div>
+                        <span className="text-xs" style={{ color: "#9ca3af" }}>Uplati kredit i izbegni Stripe provizije</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {creditBalance > 0 && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.3)" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowCreditInfoTooltip(v => !v); setShowInstantInfoTooltip(false); }}
+                        className="flex-shrink-0 rounded-full flex items-center justify-center"
+                        style={{ width: 18, height: 18, background: "rgba(82,183,136,0.15)", border: "1px solid rgba(82,183,136,0.3)" }}
+                        data-testid="button-credit-info"
+                      >
+                        <Info size={10} style={{ color: "#52B788" }} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {showCreditInfoTooltip && (
+                    <div className="rounded-lg p-2.5 flex flex-col gap-2" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(82,183,136,0.25)" }}>
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="flex flex-col gap-1.5 flex-1">
+                          <span className="text-xs font-semibold" style={{ color: "#52B788" }}>Kada koristiti kredit?</span>
+                          <div className="flex flex-col gap-1">
+                            {[
+                              "Parkirate često — uplatite jednom, koristite po potrebi",
+                              "Hoćete najniže troškove — samo 1.5% pri uplati, bez fiksnih naknada",
+                              "Koristite više parkinga od istog vlasnika",
+                            ].map((item, i) => (
+                              <div key={i} className="flex items-start gap-1.5">
+                                <Check size={11} style={{ color: "#52B788", flexShrink: 0, marginTop: 1 }} />
+                                <span className="text-xs" style={{ color: "#9ca3af" }}>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <span className="text-xs" style={{ color: "#6b7280" }}>Kredit ostaje na nalogu i ne ističe.</span>
+                        </div>
+                        <button type="button" onClick={() => setShowCreditInfoTooltip(false)} className="flex-shrink-0 mt-0.5">
+                          <X size={12} style={{ color: "#6b7280" }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!showCreditTopupField ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCreditTopupField(true)}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
+                      style={{ background: "rgba(82,183,136,0.22)", border: "1px solid rgba(82,183,136,0.55)", color: "#52B788", cursor: "pointer" }}
+                      data-testid="button-payment-credit-map"
+                    >
+                      <Wallet size={12} />
+                      Uplati kredit i nastavi
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium" style={{ color: "#9ca3af" }}>Iznos (min 1.000 RSD)</label>
+                        <input
+                          type="number"
+                          min={1000}
+                          step={100}
+                          value={topupAmount}
+                          onChange={e => setTopupAmount(e.target.value)}
+                          className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
+                          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(82,183,136,0.4)", color: "#e5e7eb", outline: "none" }}
+                          data-testid="input-topup-amount"
+                        />
+                        {parseInt(topupAmount) < 1000 && topupAmount !== '' && (
+                          <span className="text-xs" style={{ color: "#f87171" }}>Minimum je 1.000 RSD</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={creditTopupMutation.isPending || !selectedParking || parseInt(topupAmount) < 1000}
+                        onClick={() => {
+                          const amount = parseInt(topupAmount);
+                          if (!selectedParking || amount < 1000) return;
+                          creditTopupMutation.mutate({ amount, resumeParkingId: selectedParking.id });
+                        }}
+                        className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
+                        style={{ background: creditTopupMutation.isPending ? "rgba(82,183,136,0.1)" : "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788", cursor: creditTopupMutation.isPending ? "not-allowed" : "pointer" }}
+                        data-testid="button-topup-confirm"
+                      >
+                        {creditTopupMutation.isPending ? <><Loader2 size={12} className="animate-spin" />Učitavanje...</> : <><CreditCard size={12} />Uplati {parseInt(topupAmount) >= 1000 ? parseInt(topupAmount).toLocaleString('sr-RS') : ''} RSD →</>}
+                      </button>
+                      <button type="button" onClick={() => setShowCreditTopupField(false)} className="text-xs text-center" style={{ color: "#6b7280" }}>Odustani</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── INSTANT opcija ── */}
+                <div className="rounded-xl flex flex-col gap-2" style={{ opacity: selectedParking.stripeLinkActive ? 1 : 0.45 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedParking.stripeLinkActive) return;
+                      setParkingPaymentMethod('instant');
+                      setShowPaymentMethodPicker(false);
+                      setShowParkingBookingForm(true);
+                    }}
+                    disabled={!selectedParking.stripeLinkActive}
+                    className="flex flex-col gap-1 p-2.5 rounded-xl text-left"
+                    style={{
+                      background: "rgba(82,183,136,0.04)",
+                      border: "1px solid rgba(82,183,136,0.25)",
+                      cursor: selectedParking.stripeLinkActive ? "pointer" : "not-allowed",
+                    }}
+                    data-testid="button-payment-instant-map"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <CreditCard size={14} style={{ color: "#52B788", flexShrink: 0 }} />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold" style={{ color: "#52B788" }}>
+                            {selectedParking.stripeLinkActive ? "Instant plaćanje" : "Instant (nije dostupno)"}
+                          </span>
+                          {selectedParking.stripeLinkActive && (() => {
+                            const basePrice = parseFloat(selectedParking.pricePerHour) || 0;
+                            const stripeFee = Math.round(basePrice * 0.039 + 35);
+                            return (
+                              <span className="text-xs" style={{ color: "#9ca3af" }}>
+                                {basePrice > 0 ? `+ ~${stripeFee} RSD procesna naknada` : "Uključuje malu procesnu naknadu"}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowInstantInfoTooltip(v => !v); setShowCreditInfoTooltip(false); }}
+                        className="flex-shrink-0 rounded-full flex items-center justify-center"
+                        style={{ width: 18, height: 18, background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.3)" }}
+                        data-testid="button-instant-info"
+                      >
+                        <Info size={10} style={{ color: "#52B788" }} />
+                      </button>
+                    </div>
+                  </button>
+                  {showInstantInfoTooltip && (
+                    <div className="rounded-lg p-2.5 flex flex-col gap-2" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(82,183,136,0.15)" }}>
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="flex flex-col gap-1.5 flex-1">
+                          <span className="text-xs font-semibold" style={{ color: "#52B788" }}>Kada koristiti instant?</span>
+                          <div className="flex flex-col gap-1">
+                            {[
+                              "Jednokratno parkiranje, ne parkirate često",
+                              "Ne želite da unapred uplaćujete sredstva",
+                            ].map((item, i) => (
+                              <div key={i} className="flex items-start gap-1.5">
+                                <Check size={11} style={{ color: "#52B788", flexShrink: 0, marginTop: 1 }} />
+                                <span className="text-xs" style={{ color: "#9ca3af" }}>{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <SiStripe size={12} style={{ color: "#635BFF", flexShrink: 0 }} />
+                            <span className="text-xs" style={{ color: "#6b7280" }}>Plaćanje ide kroz Stripe — sigurno i trenutno. Mala procesna naknada se automatski dodaje na cenu.</span>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => setShowInstantInfoTooltip(false)} className="flex-shrink-0 mt-0.5">
+                          <X size={12} style={{ color: "#6b7280" }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Booking button — hidden when form or picker is open */}
+            {!showParkingBookingForm && !showPaymentMethodPicker && (
               <button
                 data-testid="button-rezervisi-parking"
-                onClick={() => { setShowCreditTopupField(false); setShowParkingBookingForm(true); }}
+                onClick={() => setShowPaymentMethodPicker(true)}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
                 style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.6)", color: "#52B788" }}
               >
                 <CreditCard size={15} />
-                Rezerviši parking
+                Plati ili rezerviši parking
               </button>
             )}
 
