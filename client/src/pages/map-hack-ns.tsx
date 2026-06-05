@@ -492,6 +492,7 @@ export default function MapHackNS() {
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
   const [rampClickLocked, setRampClickLocked] = useState(false);
+  const [showRampExplanation, setShowRampExplanation] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -1200,6 +1201,8 @@ export default function MapHackNS() {
     setParkingSelectedSpace(1);
     setParkingPaymentMethod('instant');
     setParkingWeeks(1);
+    setShowRampExplanation(false);
+    setShowCreditTopupField(false);
   }
 
   useEffect(() => {
@@ -2559,23 +2562,59 @@ export default function MapHackNS() {
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    disabled={!selectedParking.stripeLinkActive}
-                    onClick={() => {
-                      if (!selectedParking.stripeLinkActive) return;
-                      setParkingPaymentMethod('credit');
-                      setShowCreditTopupField(false);
-                      setShowPaymentMethodPicker(false);
-                      setShowParkingBookingForm(true);
-                    }}
-                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
-                    style={{ background: "rgba(82,183,136,0.22)", border: "1px solid rgba(82,183,136,0.55)", color: "#52B788", cursor: selectedParking.stripeLinkActive ? "pointer" : "not-allowed" }}
-                    data-testid="button-payment-credit-map"
-                  >
-                    <Wallet size={12} />
-                    {creditBalance > 0 ? `Nastavi sa kreditom (${creditBalance.toLocaleString('sr-RS')} RSD)` : "Nastavi i uplati kredit"}
-                  </button>
+                  {!showCreditTopupField ? (
+                    <button
+                      type="button"
+                      disabled={!selectedParking.stripeLinkActive}
+                      onClick={() => {
+                        if (!selectedParking.stripeLinkActive) return;
+                        setParkingPaymentMethod('credit');
+                        setShowCreditTopupField(true);
+                      }}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
+                      style={{ background: "rgba(82,183,136,0.22)", border: "1px solid rgba(82,183,136,0.55)", color: "#52B788", cursor: selectedParking.stripeLinkActive ? "pointer" : "not-allowed" }}
+                      data-testid="button-payment-credit-map"
+                    >
+                      <Wallet size={12} />
+                      Uplati kredit i nastavi
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium" style={{ color: "#9ca3af" }}>Iznos (min 1.000 RSD)</label>
+                        <input
+                          type="number"
+                          min={1000}
+                          step={100}
+                          value={topupAmount}
+                          onChange={e => setTopupAmount(e.target.value)}
+                          className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
+                          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(82,183,136,0.4)", color: "#e5e7eb", outline: "none" }}
+                          data-testid="input-topup-amount-picker"
+                        />
+                        {parseInt(topupAmount) < 1000 && topupAmount !== '' && (
+                          <span className="text-xs" style={{ color: "#f87171" }}>Minimum je 1.000 RSD</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={creditTopupMutation.isPending || !selectedParking || parseInt(topupAmount) < 1000}
+                        onClick={() => {
+                          const amount = parseInt(topupAmount);
+                          if (!selectedParking || amount < 1000) return;
+                          creditTopupMutation.mutate({ amount, resumeParkingId: selectedParking.id });
+                        }}
+                        className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold disabled:opacity-50"
+                        style={{ background: "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
+                        data-testid="button-topup-confirm-picker"
+                      >
+                        {creditTopupMutation.isPending
+                          ? <><Loader2 size={12} className="animate-spin" />Učitavanje...</>
+                          : <><CreditCard size={12} />Uplati {parseInt(topupAmount) >= 1000 ? parseInt(topupAmount).toLocaleString('sr-RS') : ''} RSD →</>}
+                      </button>
+                      <button type="button" onClick={() => setShowCreditTopupField(false)} className="text-xs text-center" style={{ color: "#6b7280" }}>Odustani</button>
+                    </div>
+                  )}
                 </div>
 
                 {/* ── INSTANT opcija ── */}
@@ -2672,29 +2711,44 @@ export default function MapHackNS() {
 
             {/* Ramp button — visible always when parking has ramp */}
             {selectedParking.hasRamp && (
-              <button
-                data-testid="button-otvori-rampu-map"
-                onClick={() => { if (!rampClickLocked && rampStatus?.canOpen) openRampMutation.mutate(); }}
-                disabled={!rampStatus?.canOpen || openRampMutation.isPending || rampClickLocked}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-opacity"
-                title={!rampStatus?.canOpen ? "Dugme je aktivno 10 min pre, tokom i 10 min posle vaše rezervacije" : undefined}
-                style={{
-                  background: rampStatus?.canOpen
-                    ? "rgba(34,197,94,0.22)"
-                    : "rgba(255,255,255,0.04)",
-                  border: rampStatus?.canOpen
-                    ? "1.5px solid rgba(34,197,94,0.6)"
-                    : "1px solid rgba(255,255,255,0.10)",
-                  color: rampStatus?.canOpen ? "#4ade80" : "#6b7280",
-                  cursor: rampStatus?.canOpen && !rampClickLocked ? "pointer" : "not-allowed",
-                  opacity: rampStatus?.canOpen ? 1 : 0.6,
-                }}
-              >
-                {openRampMutation.isPending
-                  ? <><Loader2 size={15} className="animate-spin" />Otvaranje...</>
-                  : <><DoorOpen size={15} />Otvori rampu</>
-                }
-              </button>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  data-testid="button-otvori-rampu-map"
+                  onClick={() => {
+                    if (!rampStatus?.canOpen) {
+                      setShowRampExplanation(true);
+                      return;
+                    }
+                    if (!rampClickLocked) openRampMutation.mutate();
+                  }}
+                  disabled={openRampMutation.isPending || rampClickLocked}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-opacity disabled:cursor-not-allowed"
+                  style={{
+                    background: rampStatus?.canOpen
+                      ? "rgba(34,197,94,0.22)"
+                      : "rgba(255,255,255,0.04)",
+                    border: rampStatus?.canOpen
+                      ? "1.5px solid rgba(34,197,94,0.6)"
+                      : "1px solid rgba(255,255,255,0.10)",
+                    color: rampStatus?.canOpen ? "#4ade80" : "#6b7280",
+                    cursor: rampStatus?.canOpen && !rampClickLocked ? "pointer" : "default",
+                    opacity: rampStatus?.canOpen ? 1 : 0.6,
+                  }}
+                >
+                  {openRampMutation.isPending
+                    ? <><Loader2 size={15} className="animate-spin" />Otvaranje...</>
+                    : <><DoorOpen size={15} />Otvori rampu</>
+                  }
+                </button>
+                {showRampExplanation && (
+                  <div className="flex items-start justify-between gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>Napravite rezervaciju da bi otvorili rampu.</span>
+                    <button type="button" onClick={() => setShowRampExplanation(false)} className="flex-shrink-0 mt-0.5">
+                      <X size={12} style={{ color: "#6b7280" }} />
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Booking form */}
@@ -3041,91 +3095,33 @@ export default function MapHackNS() {
                     </div>
                   </div>
                 )}
-                {/* Payment buttons */}
+                {/* Payment button — single action per selected method */}
                 <div className="flex flex-col gap-2">
-                  {/* Plati karticom (Stripe instant) */}
-                  {selectedParking.stripeLinkActive && (
+                  {parkingPaymentMethod === 'credit' && (
                     <button
-                      data-testid="button-plati-karticom-map"
-                      onClick={() => { setParkingPaymentMethod('instant'); parkingBookingCheckoutMutation.mutate(); }}
+                      data-testid="button-rezervisi-kreditom-map"
+                      onClick={() => parkingCreditMutation.mutate()}
+                      disabled={parkingCreditMutation.isPending || parkingBookingCheckoutMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
+                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: "rgba(82,183,136,0.22)", border: "1.5px solid rgba(82,183,136,0.55)", color: "#52B788" }}
+                    >
+                      {parkingCreditMutation.isPending
+                        ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
+                        : <><Wallet size={14} />Rezerviši</>}
+                    </button>
+                  )}
+                  {parkingPaymentMethod === 'instant' && (
+                    <button
+                      data-testid="button-nastavi-sa-placanjem-map"
+                      onClick={() => parkingBookingCheckoutMutation.mutate()}
                       disabled={parkingBookingCheckoutMutation.isPending || parkingCreditMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
                       className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.55)", color: "#52B788" }}
                     >
                       {parkingBookingCheckoutMutation.isPending
                         ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
-                        : <><CreditCard size={14} />Plati karticom</>}
+                        : <><CreditCard size={14} />Nastavi sa plaćanjem</>}
                     </button>
-                  )}
-
-                  {/* Plati kreditom — samo ako ima dovoljno balansa */}
-                  {creditBalance >= parkingCalculatedPrice && parkingCalculatedPrice > 0 && (
-                    <button
-                      data-testid="button-plati-kreditom-map"
-                      onClick={() => { setParkingPaymentMethod('credit'); parkingCreditMutation.mutate(); }}
-                      disabled={parkingBookingCheckoutMutation.isPending || parkingCreditMutation.isPending || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
-                      className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={{ background: "rgba(82,183,136,0.1)", border: "1px solid rgba(82,183,136,0.35)", color: "#52B788" }}
-                    >
-                      {parkingCreditMutation.isPending
-                        ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
-                        : <><Wallet size={14} />Plati kreditom ({creditBalance.toLocaleString('sr-RS')} RSD)</>}
-                    </button>
-                  )}
-
-                  {/* Kupi kredit — ako balans nije dovoljan */}
-                  {creditBalance < parkingCalculatedPrice && parkingCalculatedPrice > 0 && (
-                    <div className="flex flex-col gap-1.5">
-                      {!showCreditTopupField ? (
-                        <button
-                          type="button"
-                          onClick={() => setShowCreditTopupField(true)}
-                          data-testid="button-kupi-kredit-map"
-                          className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold"
-                          style={{ background: "rgba(82,183,136,0.08)", border: "1px solid rgba(82,183,136,0.3)", color: "#9ca3af" }}
-                        >
-                          <Wallet size={12} style={{ color: "#52B788" }} />
-                          <span>Kupi kredit</span>
-                          {creditBalance > 0 && <span style={{ color: "#6b7280" }}>({creditBalance.toLocaleString('sr-RS')} RSD na nalogu)</span>}
-                        </button>
-                      ) : (
-                        <div className="flex flex-col gap-2 p-2.5 rounded-xl" style={{ background: "rgba(82,183,136,0.06)", border: "1px solid rgba(82,183,136,0.3)" }}>
-                          <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium" style={{ color: "#9ca3af" }}>Iznos kredita (min 1.000 RSD)</label>
-                            <input
-                              type="number"
-                              min={1000}
-                              step={100}
-                              value={topupAmount}
-                              onChange={e => setTopupAmount(e.target.value)}
-                              className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
-                              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(82,183,136,0.4)", color: "#e5e7eb", outline: "none" }}
-                              data-testid="input-topup-amount"
-                            />
-                            {parseInt(topupAmount) < 1000 && topupAmount !== '' && (
-                              <span className="text-xs" style={{ color: "#f87171" }}>Minimum je 1.000 RSD</span>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            disabled={creditTopupMutation.isPending || !selectedParking || parseInt(topupAmount) < 1000}
-                            onClick={() => {
-                              const amount = parseInt(topupAmount);
-                              if (!selectedParking || amount < 1000) return;
-                              creditTopupMutation.mutate({ amount, resumeParkingId: selectedParking.id });
-                            }}
-                            className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold disabled:opacity-50"
-                            style={{ background: "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
-                            data-testid="button-topup-confirm"
-                          >
-                            {creditTopupMutation.isPending
-                              ? <><Loader2 size={12} className="animate-spin" />Učitavanje...</>
-                              : <><CreditCard size={12} />Uplati {parseInt(topupAmount) >= 1000 ? parseInt(topupAmount).toLocaleString('sr-RS') : ''} RSD →</>}
-                          </button>
-                          <button type="button" onClick={() => setShowCreditTopupField(false)} className="text-xs text-center" style={{ color: "#6b7280" }}>Odustani</button>
-                        </div>
-                      )}
-                    </div>
                   )}
                 </div>
               </div>
