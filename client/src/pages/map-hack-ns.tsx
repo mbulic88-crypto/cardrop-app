@@ -1145,7 +1145,6 @@ export default function MapHackNS() {
     setSelectedParking(null);
     setDescExpanded(false);
     setShowParkingBookingForm(false);
-    setShowPaymentMethodPicker(false);
     setParkingLicensePlate('');
     setParkingPhone('');
     const today = new Date(); today.setHours(0,0,0,0);
@@ -1211,7 +1210,22 @@ export default function MapHackNS() {
       });
   }, []);
 
-  // Auto-verify credit topup from map-hack Stripe redirect
+  // Handle ?creditSuccess=true&resumeParkingId=X redirect (simple success flag format)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const creditSuccess = params.get("creditSuccess");
+    const resumeParkingIdStr = params.get("resumeParkingId");
+    if (creditSuccess !== "true") return;
+    window.history.replaceState({}, "", "/map-hack");
+    queryClient.invalidateQueries({ queryKey: ["/api/credits/balance"] });
+    toast({ title: "Kredit uspešno uplaćen!", description: "Možete nastaviti sa rezervacijom." });
+    if (resumeParkingIdStr) {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/parking-listings"] });
+      setResumeParkingId(resumeParkingIdStr);
+    }
+  }, []);
+
+  // Auto-verify credit topup from map-hack Stripe redirect (credit_session format)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const creditSession = params.get("credit_session");
