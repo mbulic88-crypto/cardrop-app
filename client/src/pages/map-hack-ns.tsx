@@ -409,17 +409,6 @@ export default function MapHackNS() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
-  useEffect(() => {
-    if (!showMapCreditTopup) return;
-    const handler = (e: MouseEvent) => {
-      if (mapCreditTopupRef.current && !mapCreditTopupRef.current.contains(e.target as Node)) {
-        setShowMapCreditTopup(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showMapCreditTopup]);
-
   // When parking search panel closes, fire a resize so Mapbox repaints
   // correctly after mobile keyboard was shown and dismissed
   useEffect(() => {
@@ -503,6 +492,16 @@ export default function MapHackNS() {
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [showMapCreditTopup, setShowMapCreditTopup] = useState(false);
   const mapCreditTopupRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!showMapCreditTopup) return;
+    const handler = (e: MouseEvent) => {
+      if (mapCreditTopupRef.current && !mapCreditTopupRef.current.contains(e.target as Node)) {
+        setShowMapCreditTopup(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMapCreditTopup]);
   const [topupAmount, setTopupAmount] = useState('1000');
   const [rampClickLocked, setRampClickLocked] = useState(false);
   const [showRampExplanation, setShowRampExplanation] = useState(false);
