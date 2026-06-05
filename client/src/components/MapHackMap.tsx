@@ -27,6 +27,9 @@ export interface ParkingListing {
   latitude: string;
   longitude: string;
   pricePerHour: string;
+  pricePerDay?: string | null;
+  pricePerWeek?: string | null;
+  pricePerMonth?: string | null;
   pricingType: string;
   description?: string | null;
   phone?: string | null;
