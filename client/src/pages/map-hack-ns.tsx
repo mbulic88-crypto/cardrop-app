@@ -490,6 +490,7 @@ export default function MapHackNS() {
   const [showCreditInfoTooltip, setShowCreditInfoTooltip] = useState(false);
   const [showInstantInfoTooltip, setShowInstantInfoTooltip] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
+  const [showMapCreditTopup, setShowMapCreditTopup] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
   const [rampClickLocked, setRampClickLocked] = useState(false);
   const [showRampExplanation, setShowRampExplanation] = useState(false);
@@ -1103,7 +1104,7 @@ export default function MapHackNS() {
   });
 
   const creditTopupMutation = useMutation({
-    mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: string }) => {
+    mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: string | null }) => {
       return await apiRequest("POST", "/api/credits/checkout", {
         customAmount: amount,
         resumeParkingId,
@@ -3685,10 +3686,71 @@ export default function MapHackNS() {
         })()}
         {/* Credit balance badge — visible to all logged-in users */}
         {user && (
-          <div className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full"
-            style={{ background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.35)" }}>
-            <Wallet size={10} style={{ color: "#52B788" }} />
-            <span className="text-xs font-bold" style={{ color: "#52B788" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+          <div className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowMapCreditTopup(v => !v)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full"
+              style={{ background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.35)", cursor: "pointer" }}
+              data-testid="button-credit-badge-topup"
+            >
+              <Wallet size={10} style={{ color: "#52B788" }} />
+              <span className="text-xs font-bold" style={{ color: "#52B788" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+            </button>
+            {showMapCreditTopup && (
+              <div
+                className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-2 p-3 rounded-xl"
+                style={{ minWidth: 240, background: "rgba(20,20,20,0.97)", border: "1px solid rgba(82,183,136,0.35)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold" style={{ color: "#52B788" }}>Dopuni kredit</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowMapCreditTopup(false)}
+                    className="flex items-center justify-center rounded-full"
+                    style={{ width: 18, height: 18, background: "rgba(255,255,255,0.07)" }}
+                  >
+                    <X size={10} style={{ color: "#9ca3af" }} />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs" style={{ color: "#9ca3af" }}>Iznos (min 1.000 RSD)</label>
+                  <input
+                    type="number"
+                    min={1000}
+                    step={100}
+                    value={topupAmount}
+                    onChange={e => setTopupAmount(e.target.value)}
+                    className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(82,183,136,0.4)", color: "#e5e7eb", outline: "none" }}
+                    data-testid="input-topup-amount-badge"
+                  />
+                  {parseInt(topupAmount) < 1000 && topupAmount !== '' && (
+                    <span className="text-xs" style={{ color: "#f87171" }}>Minimum je 1.000 RSD</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={creditTopupMutation.isPending || parseInt(topupAmount) < 1000}
+                  onClick={() => {
+                    const amount = parseInt(topupAmount);
+                    if (amount < 1000) return;
+                    creditTopupMutation.mutate({ amount, resumeParkingId: null });
+                  }}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold disabled:opacity-50"
+                  style={{ background: "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
+                  data-testid="button-topup-confirm-badge"
+                >
+                  {creditTopupMutation.isPending ? (
+                    <><Loader2 size={12} className="animate-spin" />Učitavanje...</>
+                  ) : (() => {
+                    const net = parseInt(topupAmount);
+                    const total = net >= 1000 ? Math.round(net * 1.015) : 0;
+                    return <><CreditCard size={12} />Uplati {total > 0 ? total.toLocaleString('sr-RS') : ''} RSD (kredit: {net >= 1000 ? net.toLocaleString('sr-RS') : ''} RSD) →</>;
+                  })()}
+                </button>
+              </div>
+            )}
           </div>
         )}
         {/* Aktivno dropdown */}
