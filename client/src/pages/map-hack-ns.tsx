@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -487,6 +487,7 @@ export default function MapHackNS() {
   const [resumeParkingId, setResumeParkingId] = useState<string | null>(null);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
+  const [rampClickLocked, setRampClickLocked] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -1062,6 +1063,38 @@ export default function MapHackNS() {
     queryKey: ["/api/credits/balance"], enabled: !!user,
   });
   const creditBalance = creditData?.balance ?? 0;
+
+  const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
+    canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
+  }>({
+    queryKey: ["/api/parking-spots", selectedParking?.id, "ramp-status"],
+    queryFn: async () => {
+      if (!selectedParking) return { canOpen: false };
+      const res = await fetch(`/api/parking-spots/${selectedParking.id}/ramp-status`, { credentials: "include" });
+      if (!res.ok) return { canOpen: false };
+      return res.json();
+    },
+    enabled: !!selectedParking?.hasRamp && !!user,
+    refetchInterval: 10_000,
+  });
+
+  const openRampMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/parking-spots/${selectedParking!.id}/open-ramp`, {});
+    },
+    onSuccess: () => {
+      toast({ title: "Rampa se otvara!", description: "Zahtev je poslat. Barijera će se otvoriti za trenutak." });
+      setRampClickLocked(true);
+      setTimeout(() => {
+        setRampClickLocked(false);
+        refetchRampStatus();
+      }, 3000);
+    },
+    onError: (error: any) => {
+      const msg = error?.body?.message || error?.message || "Nije moguće otvoriti rampu";
+      toast({ title: "Greška", description: msg, variant: "destructive" });
+    },
+  });
 
   const creditTopupMutation = useMutation({
     mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: string }) => {
@@ -2458,6 +2491,33 @@ export default function MapHackNS() {
               >
                 <CreditCard size={15} />
                 Rezerviši parking
+              </button>
+            )}
+
+            {/* Ramp button — visible always when parking has ramp */}
+            {selectedParking.hasRamp && (
+              <button
+                data-testid="button-otvori-rampu-map"
+                onClick={() => { if (!rampClickLocked && rampStatus?.canOpen) openRampMutation.mutate(); }}
+                disabled={!rampStatus?.canOpen || openRampMutation.isPending || rampClickLocked}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-opacity"
+                title={!rampStatus?.canOpen ? "Dugme je aktivno 10 min pre, tokom i 10 min posle vaše rezervacije" : undefined}
+                style={{
+                  background: rampStatus?.canOpen
+                    ? "rgba(34,197,94,0.22)"
+                    : "rgba(255,255,255,0.04)",
+                  border: rampStatus?.canOpen
+                    ? "1.5px solid rgba(34,197,94,0.6)"
+                    : "1px solid rgba(255,255,255,0.10)",
+                  color: rampStatus?.canOpen ? "#4ade80" : "#6b7280",
+                  cursor: rampStatus?.canOpen && !rampClickLocked ? "pointer" : "not-allowed",
+                  opacity: rampStatus?.canOpen ? 1 : 0.6,
+                }}
+              >
+                {openRampMutation.isPending
+                  ? <><Loader2 size={15} className="animate-spin" />Otvaranje...</>
+                  : <><DoorOpen size={15} />Otvori rampu</>
+                }
               </button>
             )}
 

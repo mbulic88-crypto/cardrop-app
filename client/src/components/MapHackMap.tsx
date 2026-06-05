@@ -44,6 +44,7 @@ export interface ParkingListing {
   parkingNumber?: string | null;
   stripeLinkActive?: boolean | null;
   totalSpaces?: number | null;
+  hasRamp?: boolean | null;
 }
 
 export interface MapHackMapProps {

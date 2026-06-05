@@ -865,6 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           parkingNumber: s.parkingNumber,
           stripeLinkActive: s.stripeLinkActive,
           totalSpaces: s.totalSpaces ?? 1,
+          hasRamp: s.hasRamp ?? false,
         }));
       res.json(listings);
     } catch (error) {
