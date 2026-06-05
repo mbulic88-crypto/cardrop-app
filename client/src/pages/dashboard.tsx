@@ -106,7 +106,7 @@ export default function Dashboard() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
   const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('received');
-  const [payMethodFilter, setPayMethodFilter] = useState<'all' | 'instant' | 'cash'>('all');
+  const [payMethodFilter, setPayMethodFilter] = useState<'all' | 'instant' | 'credit'>('all');
   const [showPayoutCard, setShowPayoutCard] = useState(false);
   const [mapNicknameInput, setMapNicknameInput] = useState('');
   const [creditVerified, setCreditVerified] = useState(false);
@@ -390,17 +390,17 @@ export default function Dashboard() {
   // Split by payment method and apply payment method filter
   const payMethodFiltered = useMemo(() => {
     if (payMethodFilter === 'instant') return filteredBookings.filter(b => b.paymentMethod === 'instant');
-    if (payMethodFilter === 'cash') return filteredBookings.filter(b => b.paymentMethod !== 'instant');
+    if (payMethodFilter === 'credit') return filteredBookings.filter(b => b.paymentMethod === 'credit');
     return filteredBookings;
   }, [filteredBookings, payMethodFilter]);
 
-  const { totalPayout, instantPayout, cashPayout, instantCount, cashCount } = useMemo(() => {
+  const { totalPayout, instantPayout, creditPayout, instantCount, creditCount } = useMemo(() => {
     const paid = filteredBookings.filter(b => b.paymentStatus === 'paid' || b.status === 'confirmed' || b.status === 'completed');
     const instB = paid.filter(b => b.paymentMethod === 'instant');
-    const cashB = paid.filter(b => b.paymentMethod !== 'instant');
+    const credB = paid.filter(b => b.paymentMethod === 'credit');
     const iP = instB.reduce((s, b) => s + calcPayout(parseFloat(b.totalPrice), 'instant').neto, 0);
-    const cP = cashB.reduce((s, b) => s + calcPayout(parseFloat(b.totalPrice), 'cash').neto, 0);
-    return { totalPayout: iP + cP, instantPayout: iP, cashPayout: cP, instantCount: instB.length, cashCount: cashB.length };
+    const cP = credB.reduce((s, b) => s + calcPayout(parseFloat(b.totalPrice), 'credit').neto, 0);
+    return { totalPayout: iP + cP, instantPayout: iP, creditPayout: cP, instantCount: instB.length, creditCount: credB.length };
   }, [filteredBookings]);
 
   // CSV export
@@ -731,14 +731,20 @@ export default function Dashboard() {
 
             {/* Payment method filter tabs */}
             <div className="flex gap-2 flex-wrap">
-              {(['all', 'instant', 'cash'] as const).map(m => (
-                <Button key={m} size="sm"
-                  variant={payMethodFilter === m ? 'default' : 'outline'}
-                  onClick={() => setPayMethodFilter(m)}
-                  data-testid={`filter-method-${m}`}>
-                  { m === 'all' ? `Sve (${filteredBookings.length})` : m === 'instant' ? `Instant (${filteredBookings.filter(b => b.paymentMethod === 'instant').length})` : `Keš (${filteredBookings.filter(b => b.paymentMethod !== 'instant').length})` }
-                </Button>
-              ))}
+              {(['all', 'instant', 'credit'] as const).map(m => {
+                const count = m === 'all'
+                  ? filteredBookings.length
+                  : filteredBookings.filter(b => b.paymentMethod === m).length;
+                const label = m === 'all' ? 'Sve' : m === 'instant' ? 'Instant' : 'Kredit';
+                return (
+                  <Button key={m} size="sm"
+                    variant={payMethodFilter === m ? 'default' : 'outline'}
+                    onClick={() => setPayMethodFilter(m)}
+                    data-testid={`filter-method-${m}`}>
+                    {`${label} (${count})`}
+                  </Button>
+                );
+              })}
               <Button size="sm" variant={showPayoutCard ? 'default' : 'outline'}
                 onClick={() => setShowPayoutCard(v => !v)}
                 data-testid="button-toggle-payout">
@@ -758,11 +764,11 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground">posle 15% app + 3.9% + 35 RSD Stripe</p>
                     </div>
                   )}
-                  {cashCount > 0 && (
-                    <div className="rounded-md bg-amber-500/10 border border-amber-500/20 p-3">
-                      <p className="text-xs text-amber-400 font-semibold mb-1">Keš ({cashCount})</p>
-                      <p className="text-lg font-bold text-foreground">{Math.round(cashPayout).toLocaleString('sr-RS')} RSD</p>
-                      <p className="text-xs text-muted-foreground">posle 15% app provizije</p>
+                  {creditCount > 0 && (
+                    <div className="rounded-md bg-purple-500/10 border border-purple-500/20 p-3">
+                      <p className="text-xs text-purple-400 font-semibold mb-1">Kredit ({creditCount})</p>
+                      <p className="text-lg font-bold text-foreground">{Math.round(creditPayout).toLocaleString('sr-RS')} RSD</p>
+                      <p className="text-xs text-muted-foreground">posle 15% app + 1.5% Stripe</p>
                     </div>
                   )}
                   <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
@@ -797,6 +803,7 @@ export default function Dashboard() {
                         const price = parseFloat(b.totalPrice);
                         const { neto, stripeFee } = calcPayout(price, b.paymentMethod);
                         const isInstant = b.paymentMethod === 'instant';
+                        const isCredit = b.paymentMethod === 'credit';
                         return (
                           <tr key={b.id} className="hover:bg-muted/30 transition-colors" data-testid={`booking-row-${b.id}`}>
                             <td className="px-4 py-3 text-foreground font-medium max-w-[150px] truncate">{b.spotTitle}</td>
@@ -818,26 +825,20 @@ export default function Dashboard() {
                               {new Date(b.endTime).toLocaleDateString('sr-RS')}
                             </td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
-                              {isInstant ? (
-                                <div className="flex flex-col gap-0.5 items-end">
-                                  <span className="font-semibold text-foreground">{Math.round(neto).toLocaleString('sr-RS')} RSD</span>
-                                  <span className="text-xs text-muted-foreground">+ {Math.round(stripeFee).toLocaleString('sr-RS')} RSD Stripe</span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col gap-0.5 items-end">
-                                  <span className="font-semibold text-foreground">{Math.round(neto).toLocaleString('sr-RS')} RSD</span>
-                                  <span className="text-xs text-muted-foreground">keš</span>
-                                </div>
-                              )}
+                              <div className="flex flex-col gap-0.5 items-end">
+                                <span className="font-semibold text-foreground">{Math.round(price).toLocaleString('sr-RS')} RSD</span>
+                                <span className="text-xs text-muted-foreground">
+                                  neto: {Math.round(neto).toLocaleString('sr-RS')} + {Math.round(stripeFee).toLocaleString('sr-RS')} RSD Stripe
+                                </span>
+                              </div>
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-1">
                                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
                                   {STATUS_LABELS[b.status] || b.status}
                                 </span>
-                                {isInstant && (
-                                  <span className="text-xs text-blue-400 font-medium">instant</span>
-                                )}
+                                {isInstant && <span className="text-xs text-blue-400 font-medium">instant</span>}
+                                {isCredit && <span className="text-xs text-purple-400 font-medium">kredit</span>}
                               </div>
                             </td>
                           </tr>
