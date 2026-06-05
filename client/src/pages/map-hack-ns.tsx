@@ -482,6 +482,7 @@ export default function MapHackNS() {
   const [parkingEndHour, setParkingEndHour] = useState(9);
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
   const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
+  const skipPaymentMethodDefaultRef = useRef(false);
   const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
@@ -1121,6 +1122,10 @@ export default function MapHackNS() {
   }, [user?.savedLicensePlate, selectedParking?.id]);
 
   useEffect(() => {
+    if (skipPaymentMethodDefaultRef.current) {
+      skipPaymentMethodDefaultRef.current = false;
+      return;
+    }
     if (selectedParking && !selectedParking.stripeLinkActive) {
       setParkingPaymentMethod('credit');
     } else {
@@ -1159,6 +1164,7 @@ export default function MapHackNS() {
     if (!idToUse) return;
     const found = parkingListings.find(p => String(p.id) === String(idToUse));
     if (found) {
+      skipPaymentMethodDefaultRef.current = true;
       setSelectedParking(found);
       setParkingPaymentMethod('credit');
       setShowPaymentMethodPicker(false);
@@ -3440,8 +3446,8 @@ export default function MapHackNS() {
             </button>
           );
         })()}
-        {/* Credit balance badge — visible only to logged-in users */}
-        {user && creditBalance > 0 && (
+        {/* Credit balance badge — visible to all logged-in users */}
+        {user && (
           <div className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full"
             style={{ background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.35)" }}>
             <Wallet size={10} style={{ color: "#52B788" }} />
