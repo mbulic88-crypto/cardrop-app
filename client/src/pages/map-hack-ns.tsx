@@ -1102,7 +1102,7 @@ export default function MapHackNS() {
 
   useEffect(() => {
     if (selectedParking && !selectedParking.stripeLinkActive) {
-      setParkingPaymentMethod('cash');
+      setParkingPaymentMethod('credit');
     } else {
       setParkingPaymentMethod('instant');
     }

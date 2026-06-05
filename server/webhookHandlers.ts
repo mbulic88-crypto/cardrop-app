@@ -115,6 +115,45 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
   }
 }
 
+async function handleCreditTopupWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
+  if (event.type !== 'checkout.session.completed') return;
+
+  const session = event.data.object;
+  const metadata = session.metadata as Record<string, string> | undefined;
+  if (metadata?.type !== 'credit_topup') return;
+
+  const userId = metadata?.userId;
+  const amountRsdStr = metadata?.amountRsd;
+  const stripeSessionId = session.id as string | undefined;
+
+  if (!userId || !amountRsdStr || !stripeSessionId) {
+    console.error('[Credits Webhook] Missing metadata fields', { userId, amountRsdStr, stripeSessionId });
+    return;
+  }
+
+  const paymentStatus = session.payment_status as string | undefined;
+  if (paymentStatus !== 'paid') {
+    console.log(`[Credits Webhook] Session ${stripeSessionId} payment_status=${paymentStatus}, skipping`);
+    return;
+  }
+
+  const amountRsd = parseInt(amountRsdStr, 10);
+  if (!amountRsd || amountRsd <= 0) {
+    console.error('[Credits Webhook] Invalid amountRsd:', amountRsdStr);
+    return;
+  }
+
+  // Idempotency: skip if session already consumed
+  const already = await storage.isCreditSessionConsumed(stripeSessionId);
+  if (already) {
+    console.log(`[Credits Webhook] Session ${stripeSessionId} already consumed, skipping`);
+    return;
+  }
+
+  await storage.addCreditTopup(userId, amountRsd, stripeSessionId);
+  console.log(`[Credits Webhook] Credited ${amountRsd} RSD to user ${userId} (session ${stripeSessionId})`);
+}
+
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
     if (!Buffer.isBuffer(payload)) {
@@ -130,12 +169,13 @@ export class WebhookHandlers {
     await sync.processWebhook(payload, signature);
 
     // After the Replit sync has verified the signature and processed its events,
-    // also handle Map Hack subscription events.
+    // also handle Map Hack subscription events and credit topups.
     try {
       const event = JSON.parse(payload.toString()) as { type: string; data: { object: Record<string, unknown> } };
       await handleMapHackWebhookEvent(event);
+      await handleCreditTopupWebhookEvent(event);
     } catch (err) {
-      console.error('[MapHack Webhook] Error handling Map Hack event:', err);
+      console.error('[Webhook] Error handling custom event:', err);
     }
   }
 }
