@@ -3131,7 +3131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin — sve rezervacije sa filterom po datumu
+  // Admin — sve rezervacije sa filterom po datumu (start_time)
   app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { from, to } = req.query;
@@ -3151,14 +3151,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN parking_spots s ON b.spot_id = s.id
         JOIN users r ON b.renter_id = r.id
         JOIN users o ON s.owner_id = o.id
-        WHERE b.created_at >= ${fromDate} AND b.created_at <= ${toDate}
-        ORDER BY b.created_at DESC
+        WHERE b.start_time >= ${fromDate} AND b.start_time <= ${toDate}
+        ORDER BY b.start_time DESC
       `);
 
       res.json(result.rows);
     } catch (error) {
       console.error("Error fetching admin bookings:", error);
       res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
+  // Admin — agregirane metrike za rezervacije u periodu
+  app.get('/api/admin/bookings/metrics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { from, to } = req.query;
+      const fromDate = from ? new Date(from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const toDate = to ? new Date(to as string) : new Date();
+      toDate.setHours(23, 59, 59, 999);
+
+      const EUR_TO_RSD = 117;
+      const STRIPE_FIXED_RSD = 0.30 * EUR_TO_RSD;
+
+      const result = await db.execute(sql`
+        SELECT
+          COUNT(*) AS total_count,
+          COUNT(*) FILTER (WHERE b.payment_status = 'paid') AS paid_count,
+          COUNT(*) FILTER (WHERE b.payment_status = 'paid' AND b.payment_method = 'instant') AS instant_count,
+          COUNT(*) FILTER (WHERE b.payment_status = 'paid' AND (b.payment_method IS NULL OR b.payment_method != 'instant')) AS kredit_count,
+          COALESCE(SUM(b.total_price) FILTER (WHERE b.payment_status = 'paid'), 0) AS total_revenue,
+          COALESCE(SUM(b.total_price * 0.811 - ${STRIPE_FIXED_RSD}) FILTER (WHERE b.payment_status = 'paid' AND b.payment_method = 'instant'), 0) AS instant_payout,
+          COALESCE(SUM(b.total_price * 0.835) FILTER (WHERE b.payment_status = 'paid' AND (b.payment_method IS NULL OR b.payment_method != 'instant')), 0) AS kredit_payout
+        FROM bookings b
+        WHERE b.start_time >= ${fromDate} AND b.start_time <= ${toDate}
+      `);
+
+      const row = result.rows[0] as any;
+      const instantPayout = parseFloat(row.instant_payout || '0');
+      const kreditPayout = parseFloat(row.kredit_payout || '0');
+
+      res.json({
+        totalCount: parseInt(row.total_count || '0'),
+        paidCount: parseInt(row.paid_count || '0'),
+        instantCount: parseInt(row.instant_count || '0'),
+        kreditCount: parseInt(row.kredit_count || '0'),
+        totalRevenue: parseFloat(row.total_revenue || '0'),
+        instantPayout,
+        kreditPayout,
+        totalPayout: instantPayout + kreditPayout,
+        cardropRevenue: parseFloat(row.total_revenue || '0') - (instantPayout + kreditPayout),
+      });
+    } catch (error) {
+      console.error("Error fetching admin booking metrics:", error);
+      res.status(500).json({ message: "Failed to fetch metrics" });
     }
   });
 

@@ -1757,16 +1757,24 @@ export default function Admin() {
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Datum</th>
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Korisnik</th>
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Parking</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Trajanje</th>
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Cena</th>
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Metoda</th>
                                     <th className="text-left p-3 text-xs font-medium text-muted-foreground">Status</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {adminBookings.map(b => (
+                                  {adminBookings.map(b => {
+                                    const ms = new Date(b.end_time).getTime() - new Date(b.start_time).getTime();
+                                    const hours = ms / (1000 * 60 * 60);
+                                    const days = Math.round(hours / 24);
+                                    const trajanje = days >= 1
+                                      ? `${days} ${days === 1 ? 'dan' : days < 5 ? 'dana' : 'dana'}`
+                                      : `${Math.round(hours)}h`;
+                                    return (
                                     <tr key={b.id} className="border-b border-border hover:bg-muted/20">
                                       <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
-                                        {new Date(b.created_at).toLocaleDateString('sr-RS')}
+                                        {new Date(b.start_time).toLocaleDateString('sr-RS')}
                                       </td>
                                       <td className="p-3 text-xs">
                                         <div>{[b.renter_first_name, b.renter_last_name].filter(Boolean).join(' ') || '—'}</div>
@@ -1776,6 +1784,7 @@ export default function Admin() {
                                         <div className="font-medium truncate">{b.spot_title}</div>
                                         <div className="text-muted-foreground truncate">{b.spot_address}</div>
                                       </td>
+                                      <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">{trajanje}</td>
                                       <td className="p-3 text-xs font-semibold whitespace-nowrap">
                                         {parseFloat(b.total_price).toLocaleString('sr-RS')} {b.currency}
                                       </td>
@@ -1790,7 +1799,8 @@ export default function Admin() {
                                         </Badge>
                                       </td>
                                     </tr>
-                                  ))}
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>
