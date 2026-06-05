@@ -17,7 +17,8 @@ import {
   MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone,
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
-  TrendingUp, Activity, ChevronRight, Star, AlertTriangle,
+  TrendingUp, Activity, ChevronRight, Star, AlertTriangle, Wallet, Plus,
+  History, ArrowDownCircle,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -108,6 +109,27 @@ export default function Dashboard() {
   const [payMethodFilter, setPayMethodFilter] = useState<'all' | 'instant' | 'cash'>('all');
   const [showPayoutCard, setShowPayoutCard] = useState(false);
   const [mapNicknameInput, setMapNicknameInput] = useState('');
+  const [creditVerified, setCreditVerified] = useState(false);
+
+  // Auto-verify credit topup session from Stripe redirect
+  useEffect(() => {
+    const creditSessionId = urlParams.get('credit_session');
+    if (!creditSessionId || !isAuthenticated || creditVerified) return;
+    setCreditVerified(true);
+    apiRequest("POST", "/api/credits/verify", { sessionId: creditSessionId })
+      .then((data: any) => {
+        if (data?.success && !data?.alreadyConsumed) {
+          toast({ title: "Kredit dodat!", description: `Dodato ${data.amountRsd?.toLocaleString('sr-RS')} RSD. Novi balans: ${data.balance?.toLocaleString('sr-RS')} RSD` });
+        }
+        refetchWallet();
+        queryClient.invalidateQueries({ queryKey: ["/api/credits/balance"] });
+        // Clean URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('credit_session');
+        window.history.replaceState({}, '', url.toString());
+      })
+      .catch(() => toast({ title: "Greška pri verifikaciji", description: "Kontaktirajte podršku.", variant: "destructive" }));
+  }, [isAuthenticated]);
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
@@ -147,6 +169,17 @@ export default function Dashboard() {
   const { data: ownerReviews = [] } = useQuery<Review[]>({
     queryKey: ["/api/reviews/owner", user?.id],
     enabled: !!user?.id,
+  });
+
+  type WalletData = { balance: number; transactions: { id: string; amount: number; type: string; description: string | null; createdAt: string | null }[] };
+  const { data: walletData, refetch: refetchWallet } = useQuery<WalletData>({
+    queryKey: ["/api/credits/balance"], enabled: isAuthenticated,
+  });
+
+  const creditCheckoutMutation = useMutation({
+    mutationFn: (pkg: string) => apiRequest("POST", "/api/credits/checkout", { package: pkg }),
+    onSuccess: (data: { url?: string }) => { if (data?.url) window.location.href = data.url; },
+    onError: () => toast({ title: "Greška", description: "Nije moguće pokrenuti plaćanje", variant: "destructive" }),
   });
 
   type EnrichedMessage = Message & { senderName?: string; receiverName?: string; spotTitle?: string | null };
@@ -1231,6 +1264,66 @@ export default function Dashboard() {
               {updateMapNicknameMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
             </Button>
           </div>
+        </Card>
+
+        {/* Moj novčanik */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet className="h-5 w-5 text-accent" />
+            <h3 className="text-base font-semibold text-foreground">Moj novčanik</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">Kredit za plaćanje parkinga na Map Hack NS.</p>
+          <div className="flex items-center justify-between p-4 rounded-md mb-4" style={{ background: "rgba(64,145,108,0.12)", border: "1px solid rgba(82,183,136,0.25)" }}>
+            <div>
+              <p className="text-xs text-muted-foreground">Dostupan balans</p>
+              <p className="text-2xl font-bold" style={{ color: "#52B788" }}>{(walletData?.balance ?? 0).toLocaleString('sr-RS')} <span className="text-base font-semibold">RSD</span></p>
+            </div>
+            <Wallet className="h-8 w-8 text-muted-foreground/30" />
+          </div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Dopuni kredit</p>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {[
+              { pkg: '500', label: '500 RSD' },
+              { pkg: '1000', label: '1.000 RSD' },
+              { pkg: '2000', label: '2.000 RSD' },
+              { pkg: '5000', label: '5.000 RSD' },
+            ].map(({ pkg, label }) => (
+              <Button
+                key={pkg}
+                variant="outline"
+                size="sm"
+                onClick={() => creditCheckoutMutation.mutate(pkg)}
+                disabled={creditCheckoutMutation.isPending}
+                data-testid={`button-topup-${pkg}`}
+              >
+                <Plus className="h-3 w-3 mr-1" />{label}
+              </Button>
+            ))}
+          </div>
+          {walletData && walletData.transactions.length > 0 && (
+            <div>
+              <div className="flex items-center gap-1.5 mb-2">
+                <History className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Istorija transakcija</p>
+              </div>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {walletData.transactions.slice(0, 20).map(tx => (
+                  <div key={tx.id} className="flex items-center justify-between p-2 rounded-md bg-muted/40">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {tx.amount > 0
+                        ? <ArrowDownCircle className="h-3.5 w-3.5 text-accent shrink-0" />
+                        : <ArrowUpCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      }
+                      <span className="text-xs text-muted-foreground truncate">{tx.description || (tx.type === 'topup' ? 'Dopuna' : 'Rezervacija')}</span>
+                    </div>
+                    <span className="text-xs font-semibold shrink-0 ml-2" style={{ color: tx.amount > 0 ? "#52B788" : "#f87171" }}>
+                      {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('sr-RS')} RSD
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card className="p-6 border-destructive/40">

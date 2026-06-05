@@ -846,7 +846,7 @@ export default function Admin() {
                           </p>
                           <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                           <p className="text-xs text-muted-foreground">
-                            Trial: {user.hasUsedFreeTrial ? "Iskoriscen" : "Dostupan"}
+                            Trial: {user.hasUsedFreeTrial ? "Iskoriscen" : "Dostupan"} &nbsp;·&nbsp; Kredit: {((user as any).creditBalance ?? 0).toLocaleString('sr-RS')} RSD
                           </p>
                         </div>
                         {user.id !== currentUser.id && (

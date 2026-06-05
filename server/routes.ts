@@ -2286,6 +2286,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Izabrani termin je već rezervisan za to parking mesto." });
       }
 
+      const reqPaymentMethod: string = typeof req.body.paymentMethod === 'string' ? req.body.paymentMethod : '';
+
+      // Credit payment — atomically deduct from wallet and create confirmed booking
+      if (reqPaymentMethod === 'credit') {
+        const amountRsd = Math.round(parseFloat(totalPrice));
+        try {
+          const creditBooking = await storage.createBookingWithCredit({
+            spotId, startTime, endTime, totalPrice, currency: spot.currency,
+            status: 'confirmed', paymentStatus: 'paid', renterId: userId,
+            licensePlate: licensePlateC || undefined, renterPhone: renterPhoneC || undefined,
+            spaceNumber: validSpaceC, pricingType: reqPricingTypeC,
+          }, amountRsd);
+          if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
+          return res.status(201).json(creditBooking);
+        } catch (creditErr: any) {
+          if (creditErr?.code === 'INSUFFICIENT_CREDIT') {
+            return res.status(402).json({ message: `Nedovoljan balans. Imate ${creditErr.balance} RSD kredita, a potrebno je ${amountRsd} RSD.`, code: 'INSUFFICIENT_CREDIT', balance: creditErr.balance });
+          }
+          throw creditErr;
+        }
+      }
+
       const booking = await storage.createBooking({
         spotId,
         startTime,
@@ -3117,6 +3139,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to apply pending changes" });
     }
   });
+
+  // ─── Credit Wallet ───────────────────────────────────────────────────────
+  app.get('/api/credits/balance', isAuthenticated, async (req: any, res) => {
+    try {
+      const balance = await storage.getCreditBalance(req.session.userId);
+      const transactions = await storage.getCreditTransactions(req.session.userId);
+      res.json({ balance, transactions });
+    } catch (e: any) {
+      console.error('[Credits] balance error:', e);
+      res.status(500).json({ message: 'Greška pri dohvatanju balansa' });
+    }
+  });
+
+  // Credit packages in RSD
+  const CREDIT_PACKAGES: Record<string, { amountRsd: number; label: string }> = {
+    '500':  { amountRsd: 500,  label: '500 RSD kredita' },
+    '1000': { amountRsd: 1000, label: '1.000 RSD kredita' },
+    '2000': { amountRsd: 2000, label: '2.000 RSD kredita' },
+    '5000': { amountRsd: 5000, label: '5.000 RSD kredita' },
+  };
+
+  app.post('/api/credits/checkout', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const pkg = CREDIT_PACKAGES[String(req.body.package)];
+      if (!pkg) return res.status(400).json({ message: 'Nevalidan paket' });
+
+      const origin = req.headers.origin || `https://${req.headers.host}`;
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'rsd',
+            product_data: { name: `CarDrop Kredit — ${pkg.label}` },
+            unit_amount: pkg.amountRsd * 100,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${origin}/dashboard?tab=profile&credit_session={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/dashboard?tab=profile`,
+        metadata: { type: 'credit_topup', userId: String(userId), amountRsd: String(pkg.amountRsd) },
+      });
+      res.json({ url: session.url });
+    } catch (e: any) {
+      console.error('[Credits] checkout error:', e);
+      res.status(500).json({ message: 'Greška pri kreiranju naplate' });
+    }
+  });
+
+  app.post('/api/credits/verify', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const userId = req.session.userId;
+      const { sessionId } = req.body;
+      if (!sessionId) return res.status(400).json({ message: 'Nedostaje sessionId' });
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (session.payment_status !== 'paid') return res.status(400).json({ message: 'Plaćanje nije završeno' });
+      if (session.metadata?.userId !== String(userId)) return res.status(403).json({ message: 'Neovlašćen pristup' });
+      if (session.metadata?.type !== 'credit_topup') return res.status(400).json({ message: 'Nevalidna sesija' });
+
+      const already = await storage.isCreditSessionConsumed(sessionId);
+      if (already) {
+        const balance = await storage.getCreditBalance(userId);
+        return res.json({ success: true, alreadyConsumed: true, balance });
+      }
+
+      const amountRsd = parseInt(session.metadata?.amountRsd || '0', 10);
+      if (!amountRsd || amountRsd <= 0) return res.status(400).json({ message: 'Nevalidan iznos' });
+
+      await storage.addCreditTopup(userId, amountRsd, sessionId);
+      const balance = await storage.getCreditBalance(userId);
+      res.json({ success: true, amountRsd, balance });
+    } catch (e: any) {
+      console.error('[Credits] verify error:', e);
+      res.status(500).json({ message: 'Greška pri verifikaciji plaćanja' });
+    }
+  });
+  // ─── End Credit Wallet ───────────────────────────────────────────────────
 
   app.get('/api/admin/parking-spots/:id/bookings', isAuthenticated, isAdmin, async (req, res) => {
     try {

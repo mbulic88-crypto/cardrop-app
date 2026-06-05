@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -481,7 +481,8 @@ export default function MapHackNS() {
   const [parkingStartHour, setParkingStartHour] = useState(8);
   const [parkingEndHour, setParkingEndHour] = useState(9);
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
-  const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash'>('instant');
+  const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
+  const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -1054,6 +1055,45 @@ export default function MapHackNS() {
     },
   });
 
+  const { data: creditData, refetch: refetchCredit } = useQuery<{ balance: number }>({
+    queryKey: ["/api/credits/balance"], enabled: !!user,
+  });
+  const creditBalance = creditData?.balance ?? 0;
+
+  const parkingCreditMutation = useMutation({
+    mutationFn: async () => {
+      const { startTime, endTime } = getParkingBookingTimes();
+      return await apiRequest("POST", "/api/bookings", {
+        spotId: selectedParking!.id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        licensePlate: parkingLicensePlate,
+        renterPhone: parkingPhone,
+        spaceNumber: parkingSelectedSpace,
+        pricingType: selectedParking!.pricingType,
+        paymentMethod: 'credit',
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Plaćeno kreditom!", description: "Rezervacija je potvrđena. Kredit je skinut sa vašeg novčanika." });
+      setShowParkingBookingForm(false);
+      refetchCredit();
+    },
+    onError: (err: any) => {
+      const body = (err as any)?.body || err;
+      if (body?.code === 'INSUFFICIENT_CREDIT' || (err as any)?.status === 402) {
+        toast({ title: "Nedovoljan balans", description: body?.message || "Dopunite kredit u Profil → Moj novčanik.", variant: "destructive" });
+        return;
+      }
+      const msg = body?.message || (err as any)?.message || "";
+      if (msg.includes("već rezervisan") || (err as any)?.status === 409 || (err as any)?.status === 400) {
+        toast({ title: "Termin zauzet", description: msg || "Izabrani termin je već rezervisan.", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Greška", description: "Nije moguće kreirati rezervaciju. Pokušajte ponovo.", variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
     if (user?.savedLicensePlate && !parkingLicensePlate) {
       setParkingLicensePlate(user.savedLicensePlate);
@@ -1072,6 +1112,7 @@ export default function MapHackNS() {
     setSelectedParking(null);
     setDescExpanded(false);
     setShowParkingBookingForm(false);
+    setShowPaymentMethodPicker(false);
     setParkingLicensePlate('');
     setParkingPhone('');
     const today = new Date(); today.setHours(0,0,0,0);
@@ -2317,11 +2358,56 @@ export default function MapHackNS() {
               </button>
             </div>
 
-            {/* Booking button — hidden when form is open */}
-            {!showParkingBookingForm && (
+            {/* Payment method picker — appears before the booking form */}
+            {!showParkingBookingForm && showPaymentMethodPicker && (
+              <div className="flex flex-col gap-2 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <button onClick={() => setShowPaymentMethodPicker(false)} className="flex items-center gap-1 text-xs font-medium" style={{ color: "#9ca3af" }}>
+                    <ChevronLeft size={14} />Nazad
+                  </button>
+                  <span className="text-xs font-semibold flex-1 text-center" style={{ color: "#e5e7eb" }}>Način plaćanja</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { if (selectedParking.stripeLinkActive) { setParkingPaymentMethod('instant'); setShowPaymentMethodPicker(false); setShowParkingBookingForm(true); } }}
+                  disabled={!selectedParking.stripeLinkActive}
+                  className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
+                  style={{
+                    background: !selectedParking.stripeLinkActive ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    opacity: !selectedParking.stripeLinkActive ? 0.4 : 1,
+                    cursor: !selectedParking.stripeLinkActive ? "not-allowed" : "pointer",
+                  }}
+                  data-testid="button-payment-instant-map"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard size={13} style={{ color: "#52B788" }} />
+                    <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Instant</span>
+                  </div>
+                  <span className="text-xs" style={{ color: "#6b7280" }}>{selectedParking.stripeLinkActive ? "Platite karticom odmah" : "Nije dostupno"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setParkingPaymentMethod('credit'); setShowPaymentMethodPicker(false); setShowParkingBookingForm(true); }}
+                  className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }}
+                  data-testid="button-payment-credit-map"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Wallet size={13} style={{ color: "#52B788" }} />
+                    <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Kredit</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.3)" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+                  </div>
+                  <span className="text-xs" style={{ color: "#6b7280" }}>Platite iz vašeg novčanika</span>
+                </button>
+              </div>
+            )}
+
+            {/* Booking button — hidden when form or picker is open */}
+            {!showParkingBookingForm && !showPaymentMethodPicker && (
               <button
                 data-testid="button-rezervisi-parking"
-                onClick={() => setShowParkingBookingForm(true)}
+                onClick={() => setShowPaymentMethodPicker(true)}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
                 style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.6)", color: "#52B788" }}
               >
@@ -2600,44 +2686,13 @@ export default function MapHackNS() {
                     </div>
                   </div>
                 )}
-                {/* Način plaćanja */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { if (selectedParking.stripeLinkActive) setParkingPaymentMethod('instant'); }}
-                    disabled={!selectedParking.stripeLinkActive}
-                    className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
-                    style={{
-                      background: !selectedParking.stripeLinkActive ? "rgba(255,255,255,0.03)" : parkingPaymentMethod === 'instant' ? "rgba(82,183,136,0.15)" : "rgba(255,255,255,0.04)",
-                      border: parkingPaymentMethod === 'instant' && selectedParking.stripeLinkActive ? "1.5px solid rgba(82,183,136,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                      opacity: !selectedParking.stripeLinkActive ? 0.4 : 1,
-                      cursor: !selectedParking.stripeLinkActive ? "not-allowed" : "pointer",
-                    }}
-                    data-testid="button-payment-instant-map"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <CreditCard size={13} style={{ color: parkingPaymentMethod === 'instant' && selectedParking.stripeLinkActive ? "#52B788" : "#6b7280" }} />
-                      <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Instant</span>
-                    </div>
-                    <span className="text-xs" style={{ color: "#6b7280" }}>{selectedParking.stripeLinkActive ? "Platite karticom odmah" : "Nije dostupno"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setParkingPaymentMethod('cash')}
-                    className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
-                    style={{
-                      background: parkingPaymentMethod === 'cash' ? "rgba(82,183,136,0.15)" : "rgba(255,255,255,0.04)",
-                      border: parkingPaymentMethod === 'cash' ? "1.5px solid rgba(82,183,136,0.6)" : "1px solid rgba(255,255,255,0.08)",
-                      cursor: "pointer",
-                    }}
-                    data-testid="button-payment-cash-map"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Car size={13} style={{ color: parkingPaymentMethod === 'cash' ? "#52B788" : "#6b7280" }} />
-                      <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Kredit</span>
-                    </div>
-                    <span className="text-xs" style={{ color: "#6b7280" }}>Uplatom na račun</span>
-                  </button>
+                {/* Izabrani način plaćanja (indicator, menja se pre forme) */}
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl" style={{ background: "rgba(82,183,136,0.08)", border: "1px solid rgba(82,183,136,0.2)" }}>
+                  {parkingPaymentMethod === 'instant' ? <CreditCard size={12} style={{ color: "#52B788" }} /> : <Wallet size={12} style={{ color: "#52B788" }} />}
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>Plaćanje:</span>
+                  <span className="text-xs font-semibold" style={{ color: "#52B788" }}>
+                    {parkingPaymentMethod === 'instant' ? 'Instant (kartica)' : `Kredit (${creditBalance.toLocaleString('sr-RS')} RSD)`}
+                  </span>
                 </div>
 
                 <button
@@ -2646,20 +2701,23 @@ export default function MapHackNS() {
                     if (parkingPaymentMethod === 'instant') {
                       parkingBookingCheckoutMutation.mutate();
                     } else {
-                      parkingCashMutation.mutate();
+                      parkingCreditMutation.mutate();
                     }
                   }}
-                  disabled={(parkingBookingCheckoutMutation.isPending || parkingCashMutation.isPending) || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid}
+                  disabled={(parkingBookingCheckoutMutation.isPending || parkingCreditMutation.isPending) || !parkingLicensePlate.trim() || !parkingPhone.trim() || parkingCalculatedPrice <= 0 || ns9Validation.invalid || (parkingPaymentMethod === 'credit' && creditBalance < parkingCalculatedPrice)}
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: "rgba(64,145,108,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788" }}
                 >
-                  {(parkingBookingCheckoutMutation.isPending || parkingCashMutation.isPending)
+                  {(parkingBookingCheckoutMutation.isPending || parkingCreditMutation.isPending)
                     ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
                     : parkingPaymentMethod === 'instant'
                       ? <><CreditCard size={14} />Plati karticom</>
-                      : <><Car size={14} />Rezerviši (kredit)</>
+                      : <><Wallet size={14} />Plati kreditom</>
                   }
                 </button>
+                {parkingPaymentMethod === 'credit' && creditBalance < parkingCalculatedPrice && parkingCalculatedPrice > 0 && (
+                  <p className="text-xs text-center" style={{ color: "#f87171" }}>Nedovoljan balans. <a href="/dashboard?section=profile" style={{ color: "#52B788", textDecoration: "underline" }}>Dopuni kredit</a></p>
+                )}
                 {parkingPaymentMethod === 'instant' && <p className="text-xs text-center" style={{ color: "#6b7280" }}>Kada jednom uplatite, sledeći put sve ide na samo jedan klik.</p>}
               </div>
             )}

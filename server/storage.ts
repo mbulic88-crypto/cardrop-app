@@ -10,6 +10,7 @@ import {
   mapChatMessages,
   mapSafeZones,
   mapWatchAreas,
+  creditTransactions,
   type User,
   type UpsertUser,
   type ParkingSpot,
@@ -30,6 +31,7 @@ import {
   type MapSafeZone,
   type InsertMapSafeZone,
   type MapWatchArea,
+  type CreditTransaction,
   mapHackConsumedSessions,
 } from "@shared/schema";
 import { db } from "./db";
@@ -105,6 +107,13 @@ export interface IStorage {
     startTime: Date; endTime: Date; totalPrice: string; currency: string;
     status: string; paymentStatus: string; createdAt: Date | null;
   }>>;
+
+  // Credit wallet operations
+  getCreditBalance(userId: string): Promise<number>;
+  getCreditTransactions(userId: string): Promise<CreditTransaction[]>;
+  isCreditSessionConsumed(stripeSessionId: string): Promise<boolean>;
+  addCreditTopup(userId: string, amountRsd: number, stripeSessionId: string): Promise<void>;
+  createBookingWithCredit(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; pricingType?: string }, amountRsd: number): Promise<Booking>;
 
   // Admin operations
   getAllUsers(): Promise<User[]>;
@@ -640,6 +649,51 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSalesListing(id: string): Promise<void> {
     await db.delete(salesListings).where(eq(salesListings.id, id));
+  }
+
+  // Credit wallet operations
+  async getCreditBalance(userId: string): Promise<number> {
+    const [user] = await db.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, userId));
+    return user?.creditBalance ?? 0;
+  }
+
+  async getCreditTransactions(userId: string): Promise<CreditTransaction[]> {
+    return await db.select().from(creditTransactions).where(eq(creditTransactions.userId, userId)).orderBy(desc(creditTransactions.createdAt));
+  }
+
+  async isCreditSessionConsumed(stripeSessionId: string): Promise<boolean> {
+    const [row] = await db.select({ id: creditTransactions.id }).from(creditTransactions)
+      .where(eq(creditTransactions.stripeSessionId, stripeSessionId)).limit(1);
+    return !!row;
+  }
+
+  async addCreditTopup(userId: string, amountRsd: number, stripeSessionId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.insert(creditTransactions).values({
+        userId, amount: amountRsd, type: 'topup',
+        stripeSessionId, description: `Dopuna kredita ${amountRsd} RSD`,
+      });
+      await tx.update(users).set({ creditBalance: sql`${users.creditBalance} + ${amountRsd}`, updatedAt: new Date() }).where(eq(users.id, userId));
+    });
+  }
+
+  async createBookingWithCredit(
+    data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; pricingType?: string },
+    amountRsd: number
+  ): Promise<Booking> {
+    return await db.transaction(async (tx) => {
+      const [user] = await tx.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, data.renterId));
+      if (!user || user.creditBalance < amountRsd) {
+        throw Object.assign(new Error('Nedovoljan balans kredita'), { code: 'INSUFFICIENT_CREDIT', balance: user?.creditBalance ?? 0 });
+      }
+      await tx.update(users).set({ creditBalance: sql`${users.creditBalance} - ${amountRsd}`, updatedAt: new Date() }).where(eq(users.id, data.renterId));
+      const [booking] = await tx.insert(bookings).values({ ...data, paymentMethod: 'credit', status: 'confirmed', paymentStatus: 'paid' }).returning();
+      await tx.insert(creditTransactions).values({
+        userId: data.renterId, amount: -amountRsd, type: 'booking',
+        bookingId: booking.id, description: `Rezervacija #${booking.id.slice(0, 8)} — ${amountRsd} RSD`,
+      });
+      return booking;
+    });
   }
 
   // Admin operations

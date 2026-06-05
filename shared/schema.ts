@@ -49,12 +49,27 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   savedLicensePlate: varchar("saved_license_plate", { length: 30 }),
+  creditBalance: integer("credit_balance").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Credit transactions audit log
+export const creditTransactions = pgTable("credit_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  amount: integer("amount").notNull(), // RSD (positive = topup, negative = spend)
+  type: varchar("type", { length: 30 }).notNull(), // 'topup' | 'booking'
+  bookingId: varchar("booking_id"),
+  stripeSessionId: varchar("stripe_session_id", { length: 255 }).unique(),
+  description: varchar("description", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
 
 // Map Hack consumed Stripe sessions (replay prevention)
 export const mapHackConsumedSessions = pgTable("map_hack_consumed_sessions", {
