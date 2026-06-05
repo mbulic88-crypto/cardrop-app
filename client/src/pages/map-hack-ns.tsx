@@ -1067,7 +1067,7 @@ export default function MapHackNS() {
   const creditBalance = creditData?.balance ?? 0;
 
   const creditTopupMutation = useMutation({
-    mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: number }) => {
+    mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: string }) => {
       return await apiRequest("POST", "/api/credits/checkout", {
         customAmount: amount,
         resumeParkingId,
@@ -2513,7 +2513,7 @@ export default function MapHackNS() {
                         onClick={() => {
                           const amount = parseInt(topupAmount);
                           if (!selectedParking || amount < 1000) return;
-                          creditTopupMutation.mutate({ amount, resumeParkingId: parseInt(selectedParking.id, 10) });
+                          creditTopupMutation.mutate({ amount, resumeParkingId: selectedParking.id });
                         }}
                         className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
                         style={{ background: creditTopupMutation.isPending ? "rgba(82,183,136,0.1)" : "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788", cursor: creditTopupMutation.isPending ? "not-allowed" : "pointer" }}

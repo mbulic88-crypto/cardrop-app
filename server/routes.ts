@@ -3180,10 +3180,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         label = pkg.label;
       }
 
-      // Optional: resume parking after topup (map-hack flow)
-      const resumeParkingId = req.body.resumeParkingId ? parseInt(String(req.body.resumeParkingId), 10) : null;
+      // Optional: resume parking after topup (map-hack flow) — keep as string (UUID)
+      const resumeParkingId: string | null = req.body.resumeParkingId ? String(req.body.resumeParkingId) : null;
       const successUrl = resumeParkingId
-        ? `${origin}/map-hack?credit_session={CHECKOUT_SESSION_ID}&resume_parking=${resumeParkingId}`
+        ? `${origin}/map-hack?credit_session={CHECKOUT_SESSION_ID}&resume_parking=${encodeURIComponent(resumeParkingId)}`
         : `${origin}/dashboard?tab=profile&credit_session={CHECKOUT_SESSION_ID}`;
       const cancelUrl = resumeParkingId
         ? `${origin}/map-hack`
