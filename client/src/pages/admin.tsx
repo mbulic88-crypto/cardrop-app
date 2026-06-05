@@ -474,6 +474,31 @@ export default function Admin() {
   const [adminBookDateFrom, setAdminBookDateFrom] = useState('');
   const [adminBookDateTo, setAdminBookDateTo] = useState('');
 
+  // Global bookings tab state
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const [rezFrom, setRezFrom] = useState(() => thirtyDaysAgo.toISOString().slice(0, 10));
+  const [rezTo, setRezTo] = useState(() => today.toISOString().slice(0, 10));
+
+  type AdminBooking = {
+    id: string; start_time: string; end_time: string; total_price: string; currency: string;
+    status: string; payment_status: string; payment_method: string | null; license_plate: string | null;
+    created_at: string; renter_id: string; renter_first_name: string | null; renter_last_name: string | null;
+    renter_email: string | null; spot_id: string; spot_title: string; spot_address: string;
+    owner_id: string; owner_first_name: string | null; owner_last_name: string | null; owner_email: string | null;
+  };
+
+  const { data: adminBookings = [], isLoading: adminBookingsLoading } = useQuery<AdminBooking[]>({
+    queryKey: ["/api/admin/bookings", rezFrom, rezTo],
+    queryFn: async () => {
+      const params = new URLSearchParams({ from: rezFrom, to: rezTo });
+      const res = await fetch(`/api/admin/bookings?${params}`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!currentUser?.isAdmin,
+  });
+
   const { data: spotBookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
     queryKey: ["/api/admin/parking-spots", bookingsSpotId, "bookings"],
     queryFn: async () => {
@@ -766,22 +791,31 @@ export default function Admin() {
 
       <main className="container mx-auto p-4 max-w-6xl">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="h-4 w-4" />
-              Korisnici ({users?.length || 0})
+              <span className="hidden sm:inline">Korisnici ({users?.length || 0})</span>
+              <span className="sm:hidden">{users?.length || 0}</span>
             </TabsTrigger>
             <TabsTrigger value="spots" className="flex items-center gap-2" data-testid="tab-spots">
               <Car className="h-4 w-4" />
-              Parkinzi ({parkingSpots?.length || 0})
+              <span className="hidden sm:inline">Parkinzi ({parkingSpots?.length || 0})</span>
+              <span className="sm:hidden">{parkingSpots?.length || 0}</span>
             </TabsTrigger>
             <TabsTrigger value="sales" className="flex items-center gap-2" data-testid="tab-sales">
               <ShoppingBag className="h-4 w-4" />
-              Prodaja ({salesListings?.length || 0})
+              <span className="hidden sm:inline">Prodaja ({salesListings?.length || 0})</span>
+              <span className="sm:hidden">{salesListings?.length || 0}</span>
             </TabsTrigger>
             <TabsTrigger value="maphack" className="flex items-center gap-2" data-testid="tab-maphack">
               <MapPin className="h-4 w-4" />
-              Map Hack RS ({mapMarkersList?.length || 0})
+              <span className="hidden sm:inline">Map Hack</span>
+              <span className="sm:hidden"><MapPin className="h-3 w-3" /></span>
+            </TabsTrigger>
+            <TabsTrigger value="rezervacije" className="flex items-center gap-2" data-testid="tab-rezervacije">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">Rezervacije</span>
+              <span className="sm:hidden"><CalendarDays className="h-3 w-3" /></span>
             </TabsTrigger>
           </TabsList>
 
@@ -1620,6 +1654,192 @@ export default function Admin() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* ── REZERVACIJE TAB ─────────────────────────────────────────── */}
+          <TabsContent value="rezervacije">
+            {(() => {
+              const EUR_TO_RSD = 117;
+              const STRIPE_FIXED_RSD = 0.30 * EUR_TO_RSD;
+              const paid = adminBookings.filter(b => b.payment_status === 'paid');
+              const instant = paid.filter(b => b.payment_method === 'instant');
+              const kredit = paid.filter(b => b.payment_method !== 'instant');
+              const totalRevenue = paid.reduce((s, b) => s + parseFloat(b.total_price || '0'), 0);
+              const instantPayout = instant.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.811 - STRIPE_FIXED_RSD), 0);
+              const kreditPayout = kredit.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.835), 0);
+              const totalPayout = instantPayout + kreditPayout;
+
+              const ownerMap: Record<string, { name: string; email: string; instant: number; kredit: number; count: number }> = {};
+              for (const b of paid) {
+                if (!ownerMap[b.owner_id]) {
+                  ownerMap[b.owner_id] = {
+                    name: [b.owner_first_name, b.owner_last_name].filter(Boolean).join(' ') || b.owner_email || b.owner_id,
+                    email: b.owner_email || '',
+                    instant: 0, kredit: 0, count: 0,
+                  };
+                }
+                const price = parseFloat(b.total_price || '0');
+                if (b.payment_method === 'instant') ownerMap[b.owner_id].instant += price * 0.811 - STRIPE_FIXED_RSD;
+                else ownerMap[b.owner_id].kredit += price * 0.835;
+                ownerMap[b.owner_id].count++;
+              }
+              const owners = Object.values(ownerMap).sort((a, b) => (b.instant + b.kredit) - (a.instant + a.kredit));
+
+              return (
+                <div className="space-y-4">
+                  {/* Filter */}
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="flex flex-wrap gap-3 items-end">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Od</label>
+                          <Input type="date" value={rezFrom} onChange={e => setRezFrom(e.target.value)} className="w-40" data-testid="input-rez-from" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Do</label>
+                          <Input type="date" value={rezTo} onChange={e => setRezTo(e.target.value)} className="w-40" data-testid="input-rez-to" />
+                        </div>
+                        <Button variant="outline" size="default" onClick={() => { setRezFrom(thirtyDaysAgo.toISOString().slice(0,10)); setRezTo(today.toISOString().slice(0,10)); }} data-testid="button-rez-reset">Poslejednjih 30 dana</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {adminBookingsLoading ? (
+                    <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                  ) : (
+                    <>
+                      {/* Metrike */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Card>
+                          <CardContent className="pt-4 pb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Ukupan prihod</p>
+                            <p className="text-xl font-bold text-foreground" data-testid="text-total-revenue">{Math.round(totalRevenue).toLocaleString('sr-RS')} RSD</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{paid.length} plaćenih</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4 pb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Rezervacije</p>
+                            <p className="text-xl font-bold text-foreground">{adminBookings.length}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              <span className="text-green-600">{instant.length} Instant</span>
+                              {' · '}
+                              <span className="text-blue-600">{kredit.length} Kredit</span>
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4 pb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Za isplatu vlasnicima</p>
+                            <p className="text-xl font-bold text-accent" data-testid="text-total-payout">{Math.round(totalPayout).toLocaleString('sr-RS')} RSD</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Inst: {Math.round(instantPayout).toLocaleString('sr-RS')} · Kr: {Math.round(kreditPayout).toLocaleString('sr-RS')}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-4 pb-3">
+                            <p className="text-xs text-muted-foreground mb-1">Prihod CarDrop</p>
+                            <p className="text-xl font-bold text-foreground">{Math.round(totalRevenue - totalPayout).toLocaleString('sr-RS')} RSD</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Naknade + Stripe</p>
+                          </CardContent>
+                        </Card>
+                      </div>
+
+                      {/* Tabela rezervacija */}
+                      <Card>
+                        <CardHeader><CardTitle className="text-base">Sve rezervacije ({adminBookings.length})</CardTitle></CardHeader>
+                        <CardContent className="p-0">
+                          {adminBookings.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">Nema rezervacija u izabranom periodu</p>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-border bg-muted/40">
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Datum</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Korisnik</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Parking</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Cena</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Metoda</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {adminBookings.map(b => (
+                                    <tr key={b.id} className="border-b border-border hover:bg-muted/20">
+                                      <td className="p-3 text-xs text-muted-foreground whitespace-nowrap">
+                                        {new Date(b.created_at).toLocaleDateString('sr-RS')}
+                                      </td>
+                                      <td className="p-3 text-xs">
+                                        <div>{[b.renter_first_name, b.renter_last_name].filter(Boolean).join(' ') || '—'}</div>
+                                        <div className="text-muted-foreground">{b.renter_email}</div>
+                                      </td>
+                                      <td className="p-3 text-xs max-w-[160px]">
+                                        <div className="font-medium truncate">{b.spot_title}</div>
+                                        <div className="text-muted-foreground truncate">{b.spot_address}</div>
+                                      </td>
+                                      <td className="p-3 text-xs font-semibold whitespace-nowrap">
+                                        {parseFloat(b.total_price).toLocaleString('sr-RS')} {b.currency}
+                                      </td>
+                                      <td className="p-3">
+                                        <Badge variant="outline" className={`text-xs ${b.payment_method === 'instant' ? 'text-green-600 border-green-400' : 'text-blue-600 border-blue-400'}`}>
+                                          {b.payment_method === 'instant' ? 'Instant' : 'Kredit'}
+                                        </Badge>
+                                      </td>
+                                      <td className="p-3">
+                                        <Badge variant="outline" className={`text-xs ${b.payment_status === 'paid' ? 'text-green-600' : b.status === 'cancelled' ? 'text-red-500' : 'text-yellow-500'}`}>
+                                          {b.payment_status === 'paid' ? 'Plaćeno' : b.status === 'cancelled' ? 'Otkazano' : 'Na čekanju'}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Za isplatu po vlasniku */}
+                      {owners.length > 0 && (
+                        <Card>
+                          <CardHeader><CardTitle className="text-base">Za isplatu po vlasniku</CardTitle></CardHeader>
+                          <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-border bg-muted/40">
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Vlasnik</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Rez.</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Instant isplata</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground">Kredit isplata</th>
+                                    <th className="text-left p-3 text-xs font-medium text-muted-foreground font-bold">Ukupno</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {owners.map((o, i) => (
+                                    <tr key={i} className="border-b border-border hover:bg-muted/20">
+                                      <td className="p-3 text-xs">
+                                        <div className="font-medium">{o.name}</div>
+                                        <div className="text-muted-foreground">{o.email}</div>
+                                      </td>
+                                      <td className="p-3 text-xs text-muted-foreground">{o.count}</td>
+                                      <td className="p-3 text-xs">{o.instant > 0 ? `${Math.round(o.instant).toLocaleString('sr-RS')} RSD` : '—'}</td>
+                                      <td className="p-3 text-xs">{o.kredit > 0 ? `${Math.round(o.kredit).toLocaleString('sr-RS')} RSD` : '—'}</td>
+                                      <td className="p-3 text-xs font-bold text-accent">{Math.round(o.instant + o.kredit).toLocaleString('sr-RS')} RSD</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+          </TabsContent>
+
         </Tabs>
       </main>
 

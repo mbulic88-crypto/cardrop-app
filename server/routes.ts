@@ -3131,6 +3131,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin — sve rezervacije sa filterom po datumu
+  app.get('/api/admin/bookings', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { from, to } = req.query;
+      const fromDate = from ? new Date(from as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const toDate = to ? new Date(to as string) : new Date();
+      toDate.setHours(23, 59, 59, 999);
+
+      const result = await db.execute(sql`
+        SELECT
+          b.id, b.start_time, b.end_time, b.total_price, b.currency,
+          b.status, b.payment_status, b.payment_method, b.license_plate,
+          b.space_number, b.pricing_type, b.created_at,
+          r.id AS renter_id, r.first_name AS renter_first_name, r.last_name AS renter_last_name, r.email AS renter_email,
+          s.id AS spot_id, s.title AS spot_title, s.address AS spot_address,
+          o.id AS owner_id, o.first_name AS owner_first_name, o.last_name AS owner_last_name, o.email AS owner_email
+        FROM bookings b
+        JOIN parking_spots s ON b.spot_id = s.id
+        JOIN users r ON b.renter_id = r.id
+        JOIN users o ON s.owner_id = o.id
+        WHERE b.created_at >= ${fromDate} AND b.created_at <= ${toDate}
+        ORDER BY b.created_at DESC
+      `);
+
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching admin bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
   app.patch('/api/admin/parking-spots/:id/update', isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { isActive, isPremium, subscriptionType, latitude, longitude } = req.body;
