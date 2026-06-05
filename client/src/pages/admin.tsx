@@ -330,7 +330,7 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string, spaceNumber?: num
   // ── LOGO ──
   const logoData = await fetchLogoDataUrl(logoUrl);
   const logoW = 200;
-  const logoH = 175;
+  const logoH = 130;
   const logoX = 5;
   const logoY = 5;
   if (logoData) {
@@ -377,7 +377,7 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string, spaceNumber?: num
 
   // ── QR CODE — bottom center, links to this spot's page ──
   try {
-    const spotUrl = `${window.location.origin}/spot/${spot.id}`;
+    const spotUrl = `${window.location.origin}/map-hack?parking=${spot.id}`;
     const qrDataUrl = await QRCode.toDataURL(spotUrl, {
       width: 200, margin: 1,
       color: { dark: "#1a4d37", light: "#ffffff" }
