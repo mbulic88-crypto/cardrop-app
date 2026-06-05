@@ -2546,7 +2546,7 @@ export default function MapHackNS() {
                             {[
                               "Parkirate često — uplatite jednom, koristite po potrebi",
                               "Hoćete najniže troškove — samo 1.5% pri uplati, bez fiksnih naknada",
-                              "Koristite više parkinga od istog vlasnika",
+                              "Koristite više parkinga sa CarDrop aplikacije",
                             ].map((item, i) => (
                               <div key={i} className="flex items-start gap-1.5">
                                 <Check size={11} style={{ color: "#52B788", flexShrink: 0, marginTop: 1 }} />
@@ -2655,7 +2655,7 @@ export default function MapHackNS() {
                             return (
                               <span className="text-xs" style={{ color: "#9ca3af" }}>
                                 {fee !== null
-                                  ? `Ukupno ~${(parkingCalculatedPrice + fee).toLocaleString('sr-RS')} RSD (naknada ${fee} RSD)`
+                                  ? "cena parkinga + mala Stripe naknada"
                                   : "Uključuje malu procesnu naknadu"}
                               </span>
                             );
