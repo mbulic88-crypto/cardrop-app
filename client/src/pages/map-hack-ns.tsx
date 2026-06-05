@@ -1027,6 +1027,7 @@ export default function MapHackNS() {
         licensePlate: parkingLicensePlate,
         renterPhone: parkingPhone,
         spaceNumber: parkingSelectedSpace,
+        pricingType: parkingRentalType,
       });
     },
     onSuccess: (data: { url?: string }) => {
@@ -1047,7 +1048,7 @@ export default function MapHackNS() {
         licensePlate: parkingLicensePlate,
         renterPhone: parkingPhone,
         spaceNumber: parkingSelectedSpace,
-        pricingType: selectedParking!.pricingType,
+        pricingType: parkingRentalType,
       });
     },
     onSuccess: () => {
@@ -1127,7 +1128,7 @@ export default function MapHackNS() {
         licensePlate: parkingLicensePlate,
         renterPhone: parkingPhone,
         spaceNumber: parkingSelectedSpace,
-        pricingType: selectedParking!.pricingType,
+        pricingType: parkingRentalType,
         paymentMethod: 'credit',
       });
     },
@@ -3150,11 +3151,17 @@ export default function MapHackNS() {
             </div>
 
             {/* Price */}
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1.5 rounded-lg text-sm font-bold" style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa" }}>
-                {parseFloat(selectedParking.pricePerHour).toFixed(0)} RSD
-                {selectedParking.pricingType === "hourly" ? "/h" : selectedParking.pricingType === "daily" ? "/dan" : selectedParking.pricingType === "monthly" ? "/mes" : "/dan"}
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[
+                { val: parseFloat(selectedParking.pricePerHour) || 0, label: "/h" },
+                { val: parseFloat(selectedParking.pricePerDay ?? '') || 0, label: "/dan" },
+                { val: parseFloat(selectedParking.pricePerWeek ?? '') || 0, label: "/ned" },
+                { val: parseFloat(selectedParking.pricePerMonth ?? '') || 0, label: "/mes" },
+              ].filter(p => p.val > 0).map(p => (
+                <div key={p.label} className="px-2.5 py-1 rounded-lg text-xs font-bold" style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa" }}>
+                  {p.val.toLocaleString('sr-RS')} RSD{p.label}
+                </div>
+              ))}
               {selectedParking.spotType && (
                 <span className="text-xs px-2 py-1 rounded-lg" style={{ background: "rgba(255,255,255,0.06)", color: "#9ca3af" }}>
                   {selectedParking.spotType === "covered" ? "Natkriveno" : selectedParking.spotType === "garage" ? "Garaža" : "Otvoreno"}
