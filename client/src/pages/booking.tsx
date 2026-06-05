@@ -452,24 +452,23 @@ export default function Booking() {
         )}
 
         {/* 4. Tip cene + datum i vreme */}
-        {availableTypes.length > 1 && (
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-foreground">Vrsta rezervacije</label>
-            <div className="flex gap-2 flex-wrap">
-              {availableTypes.map(t => (
-                <Button
-                  key={t.type}
-                  variant={selectedPricingType === t.type ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedPricingType(t.type)}
-                  data-testid={`button-pricing-type-${t.type}`}
-                >
-                  {t.price.toLocaleString("sr-RS")} {spot.currency} / {t.label}
-                </Button>
-              ))}
-            </div>
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-foreground">Vrsta rezervacije</label>
+          <div className="flex gap-2 flex-wrap">
+            {availableTypes.map(t => (
+              <Button
+                key={t.type}
+                variant={selectedPricingType === t.type ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedPricingType(t.type)}
+                disabled={availableTypes.length === 1}
+                data-testid={`button-pricing-type-${t.type}`}
+              >
+                {t.price.toLocaleString("sr-RS")} {spot.currency} / {t.label}
+              </Button>
+            ))}
           </div>
-        )}
+        </div>
 
         {selectedPricingType === "monthly" && (
           <div className="space-y-4">
