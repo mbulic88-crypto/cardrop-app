@@ -483,6 +483,10 @@ export default function MapHackNS() {
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
   const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
   const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
+  const [showCreditTopupField, setShowCreditTopupField] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('1000');
+  const [showCreditInfoTooltip, setShowCreditInfoTooltip] = useState(false);
+  const [showInstantInfoTooltip, setShowInstantInfoTooltip] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -1060,6 +1064,22 @@ export default function MapHackNS() {
   });
   const creditBalance = creditData?.balance ?? 0;
 
+  const creditTopupMutation = useMutation({
+    mutationFn: async ({ amount, resumeParkingId }: { amount: number; resumeParkingId: number }) => {
+      return await apiRequest("POST", "/api/credits/checkout", {
+        customAmount: amount,
+        resumeParkingId,
+      }) as { url: string };
+    },
+    onSuccess: (data) => {
+      if (data?.url) window.location.href = data.url;
+    },
+    onError: (err: any) => {
+      const msg = err?.body?.message || err?.message || "Greška pri kreiranju naplate";
+      toast({ title: "Greška", description: msg, variant: "destructive" });
+    },
+  });
+
   const parkingCreditMutation = useMutation({
     mutationFn: async () => {
       const { startTime, endTime } = getParkingBookingTimes();
@@ -1133,11 +1153,18 @@ export default function MapHackNS() {
     if (parkingListings.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const parkingId = params.get("parking");
-    if (!parkingId) return;
-    const found = parkingListings.find(p => p.id === parkingId);
+    // Also check __resumeParkingId set by credit topup flow
+    const resumeId = (window as any).__resumeParkingId as string | undefined;
+    const idToUse = parkingId || resumeId;
+    if (!idToUse) return;
+    const found = parkingListings.find(p => String(p.id) === String(idToUse));
     if (found) {
       setSelectedParking(found);
-      window.history.replaceState({}, "", "/map-hack");
+      setParkingPaymentMethod('credit');
+      setShowPaymentMethodPicker(false);
+      setShowParkingBookingForm(true);
+      if (parkingId) window.history.replaceState({}, "", "/map-hack");
+      if (resumeId) delete (window as any).__resumeParkingId;
     }
   }, [parkingListings]);
 
@@ -1162,6 +1189,39 @@ export default function MapHackNS() {
       .catch(() => {
         window.history.replaceState({}, "", "/map-hack");
       });
+  }, []);
+
+  // Auto-verify credit topup from map-hack Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const creditSession = params.get("credit_session");
+    const resumeParkingIdStr = params.get("resume_parking");
+    if (!creditSession) return;
+    window.history.replaceState({}, "", "/map-hack");
+    fetch("/api/credits/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: creditSession }),
+    })
+      .then(r => r.json())
+      .then((data: { success?: boolean; amountRsd?: number; balance?: number; alreadyConsumed?: boolean }) => {
+        queryClient.invalidateQueries({ queryKey: ["/api/credits/balance"] });
+        if (data.success && !data.alreadyConsumed) {
+          toast({ title: "Kredit uspešno uplaćen! 🎉", description: `Dodato ${data.amountRsd?.toLocaleString('sr-RS')} RSD. Balans: ${data.balance?.toLocaleString('sr-RS')} RSD. Srećno parkiranje!` });
+        }
+        // Auto-resume parking booking if spotId was passed
+        if (resumeParkingIdStr) {
+          const resumeId = resumeParkingIdStr;
+          // Wait for parkingListings to load, then select the parking
+          const trySelect = () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/map-hack"] });
+          };
+          trySelect();
+          // Store for later pickup when listings load
+          (window as any).__resumeParkingId = resumeId;
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function savePlan(planId: PlanId) {
@@ -2361,45 +2421,161 @@ export default function MapHackNS() {
             {/* Payment method picker — appears before the booking form */}
             {!showParkingBookingForm && showPaymentMethodPicker && (
               <div className="flex flex-col gap-2 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {/* Header */}
                 <div className="flex items-center gap-2 mb-1">
-                  <button onClick={() => setShowPaymentMethodPicker(false)} className="flex items-center gap-1 text-xs font-medium" style={{ color: "#9ca3af" }}>
+                  <button onClick={() => { setShowPaymentMethodPicker(false); setShowCreditTopupField(false); setShowCreditInfoTooltip(false); setShowInstantInfoTooltip(false); }} className="flex items-center gap-1 text-xs font-medium" style={{ color: "#9ca3af" }}>
                     <ChevronLeft size={14} />Nazad
                   </button>
                   <span className="text-xs font-semibold flex-1 text-center" style={{ color: "#e5e7eb" }}>Način plaćanja</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { if (selectedParking.stripeLinkActive) { setParkingPaymentMethod('instant'); setShowPaymentMethodPicker(false); setShowParkingBookingForm(true); } }}
-                  disabled={!selectedParking.stripeLinkActive}
-                  className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
-                  style={{
-                    background: !selectedParking.stripeLinkActive ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    opacity: !selectedParking.stripeLinkActive ? 0.4 : 1,
-                    cursor: !selectedParking.stripeLinkActive ? "not-allowed" : "pointer",
-                  }}
-                  data-testid="button-payment-instant-map"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <CreditCard size={13} style={{ color: "#52B788" }} />
-                    <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Instant</span>
+
+                {/* ── KREDIT opcija (prominentna, zeleni border) ── */}
+                <div className="rounded-xl p-2.5 flex flex-col gap-2" style={{ background: "rgba(82,183,136,0.07)", border: "1.5px solid rgba(82,183,136,0.45)" }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5 flex-1">
+                      <Wallet size={14} style={{ color: "#52B788", flexShrink: 0 }} />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold" style={{ color: "#52B788" }}>Uplati kredit</span>
+                        <span className="text-xs" style={{ color: "#6b7280" }}>Uplati kredit i izbegni fiksni Stripe fee</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.3)" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowCreditInfoTooltip(v => !v); setShowInstantInfoTooltip(false); }}
+                        className="flex-shrink-0 rounded-full flex items-center justify-center"
+                        style={{ width: 18, height: 18, background: "rgba(82,183,136,0.15)", border: "1px solid rgba(82,183,136,0.3)" }}
+                        data-testid="button-credit-info"
+                      >
+                        <Info size={10} style={{ color: "#52B788" }} />
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-xs" style={{ color: "#6b7280" }}>{selectedParking.stripeLinkActive ? "Platite karticom odmah" : "Nije dostupno"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setParkingPaymentMethod('credit'); setShowPaymentMethodPicker(false); setShowParkingBookingForm(true); }}
-                  className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }}
-                  data-testid="button-payment-credit-map"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Wallet size={13} style={{ color: "#52B788" }} />
-                    <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>Kredit</span>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.3)" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
-                  </div>
-                  <span className="text-xs" style={{ color: "#6b7280" }}>Platite iz vašeg novčanika</span>
-                </button>
+
+                  {/* Info tooltip za kredit */}
+                  {showCreditInfoTooltip && (
+                    <div className="rounded-lg p-2.5 flex flex-col gap-1" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(82,183,136,0.2)" }}>
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-xs" style={{ color: "#9ca3af" }}>
+                          Instant plaćanje naplaćuje fiksni Stripe fee od <span style={{ color: "#e5e7eb" }}>€0.30 (~35 RSD) + 3.9%</span> po transakciji. Uplatom kredita plaćate samo <span style={{ color: "#52B788" }}>1.5%</span> i nema fiksne naknade.
+                        </p>
+                        <button type="button" onClick={() => setShowCreditInfoTooltip(false)} className="flex-shrink-0 mt-0.5">
+                          <X size={12} style={{ color: "#6b7280" }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Topup polje ili dugme za prikaz */}
+                  {!showCreditTopupField ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCreditTopupField(true)}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
+                      style={{ background: "rgba(82,183,136,0.2)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788", cursor: "pointer" }}
+                      data-testid="button-payment-credit-map"
+                    >
+                      <Wallet size={12} />
+                      Uplati kredit i nastavi
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium" style={{ color: "#9ca3af" }}>Iznos (min 1.000 RSD)</label>
+                        <input
+                          type="number"
+                          min={1000}
+                          step={100}
+                          value={topupAmount}
+                          onChange={e => setTopupAmount(e.target.value)}
+                          className="w-full rounded-lg px-3 py-2 text-sm font-semibold"
+                          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(82,183,136,0.4)", color: "#e5e7eb", outline: "none" }}
+                          data-testid="input-topup-amount"
+                        />
+                        {parseInt(topupAmount) < 1000 && topupAmount !== '' && (
+                          <span className="text-xs" style={{ color: "#f87171" }}>Minimum je 1.000 RSD</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={creditTopupMutation.isPending || !selectedParking || parseInt(topupAmount) < 1000}
+                        onClick={() => {
+                          const amount = parseInt(topupAmount);
+                          if (!selectedParking || amount < 1000) return;
+                          creditTopupMutation.mutate({ amount, resumeParkingId: parseInt(selectedParking.id, 10) });
+                        }}
+                        className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-bold"
+                        style={{ background: creditTopupMutation.isPending ? "rgba(82,183,136,0.1)" : "rgba(82,183,136,0.25)", border: "1px solid rgba(82,183,136,0.5)", color: "#52B788", cursor: creditTopupMutation.isPending ? "not-allowed" : "pointer" }}
+                        data-testid="button-topup-confirm"
+                      >
+                        {creditTopupMutation.isPending ? <><Loader2 size={12} className="animate-spin" />Učitavanje...</> : <><CreditCard size={12} />Uplati {parseInt(topupAmount) >= 1000 ? parseInt(topupAmount).toLocaleString('sr-RS') : ''} RSD →</>}
+                      </button>
+                      <button type="button" onClick={() => setShowCreditTopupField(false)} className="text-xs text-center" style={{ color: "#6b7280" }}>Odustani</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── INSTANT opcija (sekundarna) ── */}
+                <div className="rounded-xl flex flex-col gap-2" style={{ opacity: selectedParking.stripeLinkActive ? 1 : 0.45 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedParking.stripeLinkActive) return;
+                      setParkingPaymentMethod('instant');
+                      setShowPaymentMethodPicker(false);
+                      setShowParkingBookingForm(true);
+                    }}
+                    disabled={!selectedParking.stripeLinkActive}
+                    className="flex flex-col gap-0.5 p-2.5 rounded-xl text-left"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      cursor: selectedParking.stripeLinkActive ? "pointer" : "not-allowed",
+                    }}
+                    data-testid="button-payment-instant-map"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <CreditCard size={13} style={{ color: "#9ca3af" }} />
+                        <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>
+                          {selectedParking.stripeLinkActive ? "Instant plaćanje" : "Instant (nije dostupno)"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setShowInstantInfoTooltip(v => !v); setShowCreditInfoTooltip(false); }}
+                        className="flex-shrink-0 rounded-full flex items-center justify-center"
+                        style={{ width: 18, height: 18, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+                        data-testid="button-instant-info"
+                      >
+                        <Info size={10} style={{ color: "#9ca3af" }} />
+                      </button>
+                    </div>
+                    {selectedParking.stripeLinkActive && (() => {
+                      const basePrice = parseFloat(selectedParking.pricePerHour) || 0;
+                      const stripeFee = Math.round(basePrice * 0.039 + 35);
+                      return (
+                        <span className="text-xs" style={{ color: "#6b7280" }}>
+                          {basePrice > 0 ? `${basePrice.toLocaleString('sr-RS')} RSD + ~${stripeFee} RSD Stripe` : "Cena + Stripe fee"}
+                        </span>
+                      );
+                    })()}
+                  </button>
+                  {/* Info tooltip za instant */}
+                  {showInstantInfoTooltip && (
+                    <div className="rounded-lg p-2.5 flex flex-col gap-1 mx-0" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="text-xs" style={{ color: "#9ca3af" }}>
+                          Instant plaćanje naplaćuje Stripe fee od <span style={{ color: "#e5e7eb" }}>3.9% + €0.30 (~35 RSD)</span> po transakciji, koji se dodaje na cenu parkinga.
+                        </p>
+                        <button type="button" onClick={() => setShowInstantInfoTooltip(false)} className="flex-shrink-0 mt-0.5">
+                          <X size={12} style={{ color: "#6b7280" }} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -3264,6 +3440,14 @@ export default function MapHackNS() {
             </button>
           );
         })()}
+        {/* Credit balance badge — visible only to logged-in users */}
+        {user && creditBalance > 0 && (
+          <div className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full"
+            style={{ background: "rgba(82,183,136,0.12)", border: "1px solid rgba(82,183,136,0.35)" }}>
+            <Wallet size={10} style={{ color: "#52B788" }} />
+            <span className="text-xs font-bold" style={{ color: "#52B788" }}>{creditBalance.toLocaleString('sr-RS')} RSD</span>
+          </div>
+        )}
         {/* Aktivno dropdown */}
         <button
           data-testid="btn-filter-aktivno"

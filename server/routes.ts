@@ -3164,24 +3164,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stripe = await getUncachableStripeClient();
       const userId = req.session.userId;
-      const pkg = CREDIT_PACKAGES[String(req.body.package)];
-      if (!pkg) return res.status(400).json({ message: 'Nevalidan paket' });
-
       const origin = req.headers.origin || `https://${req.headers.host}`;
+
+      // Support custom amount (from map-hack inline topup) OR fixed package (from dashboard)
+      let amountRsd: number;
+      let label: string;
+      if (req.body.customAmount) {
+        amountRsd = parseInt(String(req.body.customAmount), 10);
+        if (!amountRsd || amountRsd < 1000) return res.status(400).json({ message: 'Minimalna uplata je 1.000 RSD' });
+        label = `${amountRsd.toLocaleString('sr-RS')} RSD kredita`;
+      } else {
+        const pkg = CREDIT_PACKAGES[String(req.body.package)];
+        if (!pkg) return res.status(400).json({ message: 'Nevalidan paket' });
+        amountRsd = pkg.amountRsd;
+        label = pkg.label;
+      }
+
+      // Optional: resume parking after topup (map-hack flow)
+      const resumeParkingId = req.body.resumeParkingId ? parseInt(String(req.body.resumeParkingId), 10) : null;
+      const successUrl = resumeParkingId
+        ? `${origin}/map-hack?credit_session={CHECKOUT_SESSION_ID}&resume_parking=${resumeParkingId}`
+        : `${origin}/dashboard?tab=profile&credit_session={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = resumeParkingId
+        ? `${origin}/map-hack`
+        : `${origin}/dashboard?tab=profile`;
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [{
           price_data: {
             currency: 'rsd',
-            product_data: { name: `CarDrop Kredit — ${pkg.label}` },
-            unit_amount: pkg.amountRsd * 100,
+            product_data: { name: `CarDrop Kredit — ${label}` },
+            unit_amount: amountRsd * 100,
           },
           quantity: 1,
         }],
         mode: 'payment',
-        success_url: `${origin}/dashboard?tab=profile&credit_session={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/dashboard?tab=profile`,
-        metadata: { type: 'credit_topup', userId: String(userId), amountRsd: String(pkg.amountRsd) },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: { type: 'credit_topup', userId: String(userId), amountRsd: String(amountRsd) },
       });
       res.json({ url: session.url });
     } catch (e: any) {
