@@ -483,6 +483,7 @@ export default function MapHackNS() {
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
   const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
   const skipPaymentMethodDefaultRef = useRef(false);
+  const [resumeParkingId, setResumeParkingId] = useState<string | null>(null);
   const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
   const [topupAmount, setTopupAmount] = useState('1000');
@@ -1154,25 +1155,32 @@ export default function MapHackNS() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  // Deep-link: ?parking=<id> opens the parking panel (does NOT force credit or booking form)
   useEffect(() => {
     if (parkingListings.length === 0) return;
     const params = new URLSearchParams(window.location.search);
     const parkingId = params.get("parking");
-    // Also check __resumeParkingId set by credit topup flow
-    const resumeId = (window as any).__resumeParkingId as string | undefined;
-    const idToUse = parkingId || resumeId;
-    if (!idToUse) return;
-    const found = parkingListings.find(p => String(p.id) === String(idToUse));
+    if (!parkingId) return;
+    const found = parkingListings.find(p => String(p.id) === String(parkingId));
+    if (found) {
+      setSelectedParking(found);
+      window.history.replaceState({}, "", "/map-hack");
+    }
+  }, [parkingListings]);
+
+  // Credit topup resume: after successful Stripe topup, auto-open booking form with credit method
+  useEffect(() => {
+    if (!resumeParkingId || parkingListings.length === 0) return;
+    const found = parkingListings.find(p => String(p.id) === String(resumeParkingId));
     if (found) {
       skipPaymentMethodDefaultRef.current = true;
       setSelectedParking(found);
       setParkingPaymentMethod('credit');
       setShowPaymentMethodPicker(false);
       setShowParkingBookingForm(true);
-      if (parkingId) window.history.replaceState({}, "", "/map-hack");
-      if (resumeId) delete (window as any).__resumeParkingId;
+      setResumeParkingId(null);
     }
-  }, [parkingListings]);
+  }, [parkingListings, resumeParkingId]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1203,6 +1211,7 @@ export default function MapHackNS() {
     const creditSession = params.get("credit_session");
     const resumeParkingIdStr = params.get("resume_parking");
     if (!creditSession) return;
+    // Clear URL params immediately so back-navigation doesn't re-trigger
     window.history.replaceState({}, "", "/map-hack");
     fetch("/api/credits/verify", {
       method: "POST",
@@ -1213,18 +1222,13 @@ export default function MapHackNS() {
       .then((data: { success?: boolean; amountRsd?: number; balance?: number; alreadyConsumed?: boolean }) => {
         queryClient.invalidateQueries({ queryKey: ["/api/credits/balance"] });
         if (data.success && !data.alreadyConsumed) {
-          toast({ title: "Kredit uspešno uplaćen! 🎉", description: `Dodato ${data.amountRsd?.toLocaleString('sr-RS')} RSD. Balans: ${data.balance?.toLocaleString('sr-RS')} RSD. Srećno parkiranje!` });
+          toast({ title: "Kredit uspešno uplaćen!", description: `Dodato ${data.amountRsd?.toLocaleString('sr-RS')} RSD. Balans: ${data.balance?.toLocaleString('sr-RS')} RSD. Srećno parkiranje!` });
         }
-        // Auto-resume parking booking if spotId was passed
-        if (resumeParkingIdStr) {
-          const resumeId = resumeParkingIdStr;
-          // Wait for parkingListings to load, then select the parking
-          const trySelect = () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/map-hack"] });
-          };
-          trySelect();
-          // Store for later pickup when listings load
-          (window as any).__resumeParkingId = resumeId;
+        // Only auto-resume if verify succeeded
+        if (data.success && resumeParkingIdStr) {
+          // Trigger parking listings refresh and set resume ID in React state
+          queryClient.invalidateQueries({ queryKey: ["/api/map-hack/parking-listings"] });
+          setResumeParkingId(resumeParkingIdStr);
         }
       })
       .catch(() => {});
