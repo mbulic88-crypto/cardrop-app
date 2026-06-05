@@ -971,6 +971,7 @@ export default function Admin() {
                                 if (spaces > 1) {
                                   for (let i = 1; i <= spaces; i++) {
                                     await generatePDF(spot, parkInLogo, i);
+                                    if (i < spaces) await new Promise(r => setTimeout(r, 600));
                                   }
                                 } else {
                                   await generatePDF(spot, parkInLogo);
