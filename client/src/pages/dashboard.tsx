@@ -18,7 +18,7 @@ import {
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
   TrendingUp, Activity, ChevronRight, Star, AlertTriangle, Wallet, Plus,
-  History, ArrowDownCircle,
+  History, ArrowDownCircle, DoorOpen, Loader2,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -163,9 +163,25 @@ export default function Dashboard() {
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated, staleTime: 0, refetchOnMount: "always" });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
-  type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null };
+  type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null; spotHasRamp?: boolean };
   const { data: myBookings = [] } = useQuery<EnrichedBooking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
   const [selectedBooking, setSelectedBooking] = useState<EnrichedBooking | null>(null);
+  const [rampPendingId, setRampPendingId] = useState<string | null>(null);
+
+  const openRamp = async (spotId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRampPendingId(spotId);
+    try {
+      await apiRequest("POST", `/api/parking-spots/${spotId}/open-ramp`, {});
+      toast({ title: "Kapija se otvara", description: "Signal je uspešno poslat." });
+    } catch (err: any) {
+      const msg = err?.message || "Greška pri otvaranju kapije";
+      toast({ title: "Nije moguće otvoriti", description: msg, variant: "destructive" });
+    } finally {
+      setRampPendingId(null);
+    }
+  };
+
   const { data: ownerReviews = [] } = useQuery<Review[]>({
     queryKey: ["/api/reviews/owner", user?.id],
     enabled: !!user?.id,
@@ -871,6 +887,7 @@ export default function Dashboard() {
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
                         <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Kapija</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -894,6 +911,23 @@ export default function Dashboard() {
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
                               {STATUS_LABELS[b.status] || b.status}
                             </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {b.spotHasRamp && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                data-testid={`button-open-ramp-${b.id}`}
+                                disabled={rampPendingId === b.spotId}
+                                onClick={(e) => openRamp(b.spotId, e)}
+                                className="gap-1.5 text-xs"
+                              >
+                                {rampPendingId === b.spotId
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : <DoorOpen className="w-3 h-3" />}
+                                Otvori
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}

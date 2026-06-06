@@ -565,11 +565,11 @@ export default function Landing() {
               size="lg"
               variant="secondary"
               className="w-full text-base py-5"
-              data-testid="button-sell-hero"
-              onClick={handleSellClick}
+              data-testid="button-my-reservations-hero"
+              onClick={() => isAuthenticated ? setLocation("/dashboard?tab=bookings") : setLocation("/auth")}
             >
-              <Tag className="w-5 h-5 mr-2" />
-              {t.sellButton}
+              <CalendarDays className="w-5 h-5 mr-2" />
+              Moje Rezervacije
             </Button>
 
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
@@ -936,11 +936,11 @@ export default function Landing() {
                             : ''
                       }`}
                       variant={isStandard ? 'outline' : 'default'}
-                      onClick={handleSellClick}
-                      data-testid={`button-sell-plan-${plan.id}`}
+                      onClick={() => isAuthenticated ? setLocation("/dashboard?tab=bookings") : setLocation("/auth")}
+                      data-testid={`button-my-reservations-plan-${plan.id}`}
                     >
-                      <Tag className="w-4 h-4 mr-2" />
-                      {t.sellButton}
+                      <CalendarDays className="w-4 h-4 mr-2" />
+                      Moje Rezervacije
                     </Button>
                   </div>
                 </Card>

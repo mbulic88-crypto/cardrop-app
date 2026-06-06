@@ -2185,7 +2185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enriched = await Promise.all(
         bookingList.map(async (b) => {
           const spot = await storage.getParkingSpot(b.spotId);
-          return { ...b, spotTitle: spot?.title ?? null, spotAddress: spot?.address ?? null, spotPhone: spot?.phone ?? null };
+          return { ...b, spotTitle: spot?.title ?? null, spotAddress: spot?.address ?? null, spotPhone: spot?.phone ?? null, spotHasRamp: spot?.hasRamp ?? false };
         })
       );
       res.json(enriched);

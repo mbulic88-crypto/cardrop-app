@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -4599,6 +4599,16 @@ export default function MapHackNS() {
               </button>
             );
           })()}
+
+          {/* Moje rezervacije */}
+          <button
+            data-testid="action-bar-moje-rezervacije"
+            onClick={() => setLocation("/dashboard?tab=bookings")}
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            style={{ width: 58, height: 58, background: "#166534", border: "1.5px solid #22c55e" }}>
+            <CalendarDays size={18} style={{ color: "#86efac" }} />
+            <span className="font-bold text-center" style={{ color: "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Moje rez.</span>
+          </button>
 
           {/* Chat — na kraju action bara */}
           <button
