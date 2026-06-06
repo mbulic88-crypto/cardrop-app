@@ -1228,10 +1228,16 @@ export default function MapHackNS() {
     enabled: !!user,
     staleTime: 30_000,
   });
-  const rampBookings = useMemo<RampBooking[]>(
-    () => allBookings.filter((b: any) => b.spotHasRamp && b.status === "confirmed"),
-    [allBookings]
-  );
+  const rampBookings = useMemo<RampBooking[]>(() => {
+    const now = Date.now();
+    const windowMs = 10 * 60 * 1000;
+    return allBookings.filter((b: any) => {
+      if (!b.spotHasRamp || b.status !== "confirmed") return false;
+      const start = new Date(b.startTime).getTime();
+      const end = new Date(b.endTime).getTime();
+      return start <= now + windowMs && end >= now - windowMs;
+    });
+  }, [allBookings]);
 
   const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
