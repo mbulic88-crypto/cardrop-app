@@ -513,6 +513,18 @@ export default function MapHackNS() {
   const [availCalView, setAvailCalView] = useState<'days' | 'hours'>('days');
   const [availCalDay, setAvailCalDay] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
   const [reservedNotifVisible, setReservedNotifVisible] = useState(false);
+  const [availCalDayDropdown, setAvailCalDayDropdown] = useState(false);
+  const availCalDayDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!availCalDayDropdown) return;
+    const handler = (e: MouseEvent) => {
+      if (availCalDayDropdownRef.current && !availCalDayDropdownRef.current.contains(e.target as Node)) {
+        setAvailCalDayDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [availCalDayDropdown]);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
@@ -3213,8 +3225,43 @@ export default function MapHackNS() {
 
                           {availCalView === 'hours' && (
                             <div className="flex flex-col gap-1.5">
-                              <div className="text-xs text-center font-medium" style={{ color: "#9ca3af" }}>
-                                {availCalDay.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              {/* Clickable day selector */}
+                              <div className="relative" ref={availCalDayDropdownRef}>
+                                <button
+                                  type="button"
+                                  onClick={() => setAvailCalDayDropdown(v => !v)}
+                                  className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold"
+                                  style={{ background: "rgba(82,183,136,0.1)", border: "1px solid rgba(82,183,136,0.3)", color: "#52B788" }}
+                                >
+                                  {availCalDay.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                  <ChevronDown size={12} style={{ transform: availCalDayDropdown ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s", flexShrink: 0 }} />
+                                </button>
+                                {availCalDayDropdown && (
+                                  <div
+                                    className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-y-auto z-10 flex flex-col"
+                                    style={{ background: "#1a1f2b", border: "1px solid rgba(255,255,255,0.12)", maxHeight: 220 }}
+                                  >
+                                    {Array.from({ length: 365 }, (_, i) => {
+                                      const d = new Date(today); d.setDate(today.getDate() + i);
+                                      const isSelected = d.toDateString() === availCalDay.toDateString();
+                                      return (
+                                        <button
+                                          key={i}
+                                          type="button"
+                                          onClick={() => { setAvailCalDay(new Date(d)); setAvailCalDayDropdown(false); }}
+                                          className="text-left px-3 py-2 text-xs font-medium flex-shrink-0"
+                                          style={{
+                                            background: isSelected ? "rgba(82,183,136,0.2)" : "transparent",
+                                            color: isSelected ? "#52B788" : "#d1d5db",
+                                            borderBottom: "1px solid rgba(255,255,255,0.05)",
+                                          }}
+                                        >
+                                          {d.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
                               <div className="grid grid-cols-4 gap-1">
                                 {Array.from({ length: 24 }, (_, h) => {
