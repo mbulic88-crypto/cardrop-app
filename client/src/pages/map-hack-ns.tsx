@@ -1227,17 +1227,22 @@ export default function MapHackNS() {
     queryKey: ["/api/bookings"],
     enabled: !!user,
     staleTime: 30_000,
+    refetchInterval: 60_000,
   });
+  const [rampNow, setRampNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setRampNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
   const rampBookings = useMemo<RampBooking[]>(() => {
-    const now = Date.now();
     const windowMs = 10 * 60 * 1000;
     return allBookings.filter((b: any) => {
       if (!b.spotHasRamp || b.status !== "confirmed") return false;
       const start = new Date(b.startTime).getTime();
       const end = new Date(b.endTime).getTime();
-      return start <= now + windowMs && end >= now - windowMs;
+      return start <= rampNow + windowMs && end >= rampNow - windowMs;
     });
-  }, [allBookings]);
+  }, [allBookings, rampNow]);
 
   const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
