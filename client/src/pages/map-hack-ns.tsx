@@ -506,6 +506,13 @@ export default function MapHackNS() {
   const [rampClickLocked, setRampClickLocked] = useState(false);
   const [showRampExplanation, setShowRampExplanation] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [showAvailCalendar, setShowAvailCalendar] = useState(false);
+  const [availCalView, setAvailCalView] = useState<'days' | 'hours'>('days');
+  const [availCalDay, setAvailCalDay] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
+  const [reservedNotifVisible, setReservedNotifVisible] = useState(false);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
@@ -619,14 +626,19 @@ export default function MapHackNS() {
     refetchInterval: isMapView ? 120000 : false,
   });
 
+  const availSpaceParam = (selectedParking?.totalSpaces ?? 1) > 1 ? parkingSelectedSpace : null;
+
   const { data: parkingAvailability = [] } = useQuery<{ startTime: string; endTime: string }[]>({
-    queryKey: ["/api/spots", selectedParking?.id, "availability"],
+    queryKey: ["/api/spots", selectedParking?.id, "availability", availSpaceParam],
     queryFn: async () => {
-      const res = await fetch(`/api/spots/${selectedParking!.id}/availability`);
+      const url = availSpaceParam
+        ? `/api/spots/${selectedParking!.id}/availability?space=${availSpaceParam}`
+        : `/api/spots/${selectedParking!.id}/availability`;
+      const res = await fetch(url);
       if (!res.ok) return [];
       return res.json();
     },
-    enabled: !!selectedParking?.id && showParkingBookingForm,
+    enabled: !!selectedParking?.id && (showParkingBookingForm || showAvailCalendar),
     staleTime: 30000,
   });
 
@@ -636,6 +648,15 @@ export default function MapHackNS() {
     return parkingAvailability.some(({ startTime, endTime }) => {
       const s = new Date(startTime); const e = new Date(endTime);
       return s < dayEnd && e > dayStart;
+    });
+  };
+
+  const isHourBooked = (date: Date, hour: number): boolean => {
+    const slotStart = new Date(date); slotStart.setHours(hour, 0, 0, 0);
+    const slotEnd = new Date(date); slotEnd.setHours(hour + 1, 0, 0, 0);
+    return parkingAvailability.some(({ startTime, endTime }) => {
+      const s = new Date(startTime); const e = new Date(endTime);
+      return s < slotEnd && e > slotStart;
     });
   };
 
@@ -2776,7 +2797,7 @@ export default function MapHackNS() {
               <div className="flex flex-col gap-2 rounded-xl p-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => { setShowParkingBookingForm(false); setShowPaymentMethodPicker(true); setShowCreditInfoTooltip(false); setShowInstantInfoTooltip(false); }}
+                    onClick={() => { setShowParkingBookingForm(false); setShowPaymentMethodPicker(false); setShowCreditInfoTooltip(false); setShowInstantInfoTooltip(false); setShowAvailCalendar(false); }}
                     className="flex items-center gap-1 text-xs font-medium"
                     style={{ color: "#9ca3af" }}
                     data-testid="button-back-from-booking"
@@ -3093,6 +3114,144 @@ export default function MapHackNS() {
                   );
                 })()}
 
+                {/* ── Availability calendar accordion ── */}
+                {(() => {
+                  const today = new Date(); today.setHours(0,0,0,0);
+                  const calYear = availCalDay.getFullYear();
+                  const calMonth = availCalDay.getMonth();
+                  const firstOfMonth = new Date(calYear, calMonth, 1);
+                  const firstDow = (firstOfMonth.getDay() + 6) % 7;
+                  const daysInMon = getParkingDaysInMonth(calYear, calMonth);
+                  const handleReservedClick = () => {
+                    setReservedNotifVisible(true);
+                    setTimeout(() => setReservedNotifVisible(false), 3000);
+                  };
+                  return (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvailCalendar(v => !v)}
+                        className="w-full flex items-center justify-between py-2 px-3 rounded-xl text-xs font-medium"
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9ca3af" }}
+                        data-testid="button-prikaz-zauzetosti"
+                      >
+                        <span style={{ color: "#e5e7eb" }}>Prikaz zauzetosti mesta</span>
+                        <ChevronDown size={14} style={{ transform: showAvailCalendar ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+                      </button>
+                      {showAvailCalendar && (
+                        <div className="flex flex-col gap-2 rounded-xl p-2.5 mt-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          {reservedNotifVisible && (
+                            <div className="text-xs text-center py-1.5 rounded-lg font-semibold" style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", border: "1px solid rgba(239,68,68,0.3)" }}>
+                              Mesto je rezervisano
+                            </div>
+                          )}
+                          {/* Filter tabs */}
+                          <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                            {(['days', 'hours'] as const).map(v => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => setAvailCalView(v)}
+                                className="flex-1 py-1.5 text-xs font-medium"
+                                style={{
+                                  background: availCalView === v ? "rgba(82,183,136,0.2)" : "transparent",
+                                  color: availCalView === v ? "#52B788" : "#6b7280",
+                                }}
+                              >
+                                {v === 'days' ? 'Dani' : 'Sati'}
+                              </button>
+                            ))}
+                          </div>
+
+                          {availCalView === 'days' && (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center justify-between">
+                                <button type="button" onClick={() => { const d = new Date(availCalDay); d.setMonth(d.getMonth() - 1); d.setDate(1); setAvailCalDay(d); }} className="p-1 rounded" style={{ color: "#9ca3af" }}>
+                                  <ChevronLeft size={14} />
+                                </button>
+                                <span className="text-xs font-semibold" style={{ color: "#e5e7eb" }}>{MONTHS_SR[calMonth]} {calYear}</span>
+                                <button type="button" onClick={() => { const d = new Date(availCalDay); d.setMonth(d.getMonth() + 1); d.setDate(1); setAvailCalDay(d); }} className="p-1 rounded" style={{ color: "#9ca3af" }}>
+                                  <ChevronRight size={14} />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-7 gap-0.5">
+                                {['Po','Ut','Sr','Če','Pe','Su','Ne'].map(d => (
+                                  <div key={d} className="text-center text-[10px] font-semibold py-0.5" style={{ color: "#6b7280" }}>{d}</div>
+                                ))}
+                                {Array.from({ length: firstDow }, (_, i) => <div key={`e${i}`} />)}
+                                {Array.from({ length: daysInMon }, (_, i) => {
+                                  const day = i + 1;
+                                  const date = new Date(calYear, calMonth, day);
+                                  const isPast = date < today;
+                                  const isBooked = !isPast && isParkingDayBooked(date);
+                                  const isToday = date.getTime() === today.getTime();
+                                  return (
+                                    <button
+                                      key={day}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isPast) return;
+                                        if (isBooked) { handleReservedClick(); return; }
+                                        updateParkingDate(calYear, calMonth, day);
+                                        setShowAvailCalendar(false);
+                                      }}
+                                      className="aspect-square flex items-center justify-center text-[11px] font-medium rounded-lg"
+                                      style={{
+                                        background: isBooked ? "rgba(239,68,68,0.18)" : isToday ? "rgba(82,183,136,0.15)" : "transparent",
+                                        color: isPast ? "#374151" : isBooked ? "#f87171" : isToday ? "#52B788" : "#d1d5db",
+                                        cursor: isPast ? "default" : "pointer",
+                                        border: isToday && !isBooked ? "1px solid rgba(82,183,136,0.4)" : "1px solid transparent",
+                                      }}
+                                    >
+                                      {day}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {availCalView === 'hours' && (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="text-xs text-center font-medium" style={{ color: "#9ca3af" }}>
+                                {availCalDay.toLocaleDateString('sr-Latn-RS', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              </div>
+                              <div className="grid grid-cols-4 gap-1">
+                                {Array.from({ length: 24 }, (_, h) => {
+                                  const isBooked = isHourBooked(availCalDay, h);
+                                  return (
+                                    <button
+                                      key={h}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isBooked) { handleReservedClick(); return; }
+                                        updateParkingDate(availCalDay.getFullYear(), availCalDay.getMonth(), availCalDay.getDate());
+                                        setParkingStartHour(h);
+                                        setParkingEndHour(Math.min(h + 1, 23));
+                                        setParkingRentalType('hourly');
+                                        setShowAvailCalendar(false);
+                                      }}
+                                      className="py-1.5 rounded-lg text-[11px] font-medium"
+                                      style={{
+                                        background: isBooked ? "rgba(239,68,68,0.18)" : "rgba(255,255,255,0.04)",
+                                        color: isBooked ? "#f87171" : "#d1d5db",
+                                        border: isBooked ? "1px solid rgba(239,68,68,0.28)" : "1px solid rgba(255,255,255,0.08)",
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {String(h).padStart(2, '0')}:00
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* NS9 validation warning */}
                 {isNs9 && ns9Validation.invalid && (
                   <div className="rounded-lg px-2.5 py-2 text-xs" style={{ background: "rgba(234,179,8,0.12)", border: "1px solid rgba(234,179,8,0.35)", color: "#fde047" }}>
@@ -3203,7 +3362,8 @@ export default function MapHackNS() {
                     src={url}
                     alt={`Parking slika ${i + 1}`}
                     className="rounded-xl flex-shrink-0 object-cover"
-                    style={{ width: 120, height: 80, border: "1px solid rgba(255,255,255,0.10)" }}
+                    style={{ width: 120, height: 80, border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer" }}
+                    onClick={() => { setLightboxImages(selectedParking.imageUrls!); setLightboxIndex(i); setLightboxOpen(true); }}
                   />
                 ))}
               </div>
@@ -3302,6 +3462,55 @@ export default function MapHackNS() {
           </div>
         </div>
       )}
+      {/* ── Lightbox overlay ── */}
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div
+          className="absolute inset-0 z-[300] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.93)" }}
+          onClick={() => setLightboxOpen(false)}
+        >
+          {lightboxImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx => (idx - 1 + lightboxImages.length) % lightboxImages.length); }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
+              style={{ width: 40, height: 40, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)" }}
+            >
+              <ChevronLeft size={20} style={{ color: "#fff" }} />
+            </button>
+          )}
+          <img
+            src={lightboxImages[lightboxIndex]}
+            alt={`Slika ${lightboxIndex + 1}`}
+            style={{ maxWidth: "90vw", maxHeight: "80vh", objectFit: "contain", borderRadius: 12 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          {lightboxImages.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx => (idx + 1) % lightboxImages.length); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
+              style={{ width: 40, height: 40, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)" }}
+            >
+              <ChevronRight size={20} style={{ color: "#fff" }} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 flex items-center justify-center rounded-full"
+            style={{ width: 36, height: 36, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)" }}
+          >
+            <X size={17} style={{ color: "#fff" }} />
+          </button>
+          {lightboxImages.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: "rgba(0,0,0,0.55)", color: "#e5e7eb" }}>
+              {lightboxIndex + 1} / {lightboxImages.length}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Header: logo back + plan badge + search + actions ── */}
       <div className="flex-shrink-0 z-30" style={{ background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between px-3 py-2.5">
