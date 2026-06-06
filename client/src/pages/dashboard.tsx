@@ -89,6 +89,52 @@ const profileSchema = z.object({
   phoneNumber: z.string().optional(),
 });
 
+function RampCell({ spotId, bookingId }: { spotId: string; bookingId: string }) {
+  const { toast } = useToast();
+  const { data: rampStatus, refetch } = useQuery<{
+    canOpen: boolean; reason?: string; cooldownLeft?: number;
+  }>({
+    queryKey: ["/api/parking-spots", spotId, "ramp-status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/parking-spots/${spotId}/ramp-status`, { credentials: "include" });
+      if (!res.ok) return { canOpen: false };
+      return res.json();
+    },
+    refetchInterval: 15_000,
+  });
+
+  const openRampMutation = useMutation({
+    mutationFn: async () => apiRequest("POST", `/api/parking-spots/${spotId}/open-ramp`, {}),
+    onSuccess: () => {
+      toast({ title: "Kapija se otvara!", description: "Signal je poslat." });
+      setTimeout(() => refetch(), 3000);
+    },
+    onError: (error: any) => {
+      const msg = error?.body?.message || error?.message || "Nije moguće otvoriti";
+      toast({ title: "Greška", description: msg, variant: "destructive" });
+    },
+  });
+
+  const canOpen = rampStatus?.canOpen ?? false;
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      data-testid={`button-open-ramp-${bookingId}`}
+      disabled={openRampMutation.isPending || !canOpen}
+      onClick={(e) => { e.stopPropagation(); if (canOpen) openRampMutation.mutate(); }}
+      className={`gap-1.5 text-xs ${canOpen ? "" : "opacity-40"}`}
+      title={canOpen ? "Otvori kapiju" : "Kapija dostupna ±10 min od rezervacije"}
+    >
+      {openRampMutation.isPending
+        ? <Loader2 className="w-3 h-3 animate-spin" />
+        : <DoorOpen className="w-3 h-3" />}
+      Otvori
+    </Button>
+  );
+}
+
 export default function Dashboard() {
   const { isAuthenticated, isLoading, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
@@ -166,22 +212,6 @@ export default function Dashboard() {
   type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null; spotHasRamp?: boolean };
   const { data: myBookings = [] } = useQuery<EnrichedBooking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
   const [selectedBooking, setSelectedBooking] = useState<EnrichedBooking | null>(null);
-  const [rampPendingId, setRampPendingId] = useState<string | null>(null);
-
-  const openRamp = async (spotId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRampPendingId(spotId);
-    try {
-      await apiRequest("POST", `/api/parking-spots/${spotId}/open-ramp`, {});
-      toast({ title: "Kapija se otvara", description: "Signal je uspešno poslat." });
-    } catch (err: any) {
-      const msg = err?.message || "Greška pri otvaranju kapije";
-      toast({ title: "Nije moguće otvoriti", description: msg, variant: "destructive" });
-    } finally {
-      setRampPendingId(null);
-    }
-  };
-
   const { data: ownerReviews = [] } = useQuery<Review[]>({
     queryKey: ["/api/reviews/owner", user?.id],
     enabled: !!user?.id,
@@ -914,19 +944,7 @@ export default function Dashboard() {
                           </td>
                           <td className="px-4 py-3">
                             {b.spotHasRamp && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                data-testid={`button-open-ramp-${b.id}`}
-                                disabled={rampPendingId === b.spotId}
-                                onClick={(e) => openRamp(b.spotId, e)}
-                                className="gap-1.5 text-xs"
-                              >
-                                {rampPendingId === b.spotId
-                                  ? <Loader2 className="w-3 h-3 animate-spin" />
-                                  : <DoorOpen className="w-3 h-3" />}
-                                Otvori
-                              </Button>
+                              <RampCell spotId={b.spotId} bookingId={b.id} />
                             )}
                           </td>
                         </tr>
