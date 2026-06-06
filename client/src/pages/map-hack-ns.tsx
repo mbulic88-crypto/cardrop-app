@@ -669,11 +669,16 @@ export default function MapHackNS() {
   const isParkingDayFullyBooked = (date: Date): boolean => {
     const dayStart = startOfDay(date);
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-    // Fully booked only if a single reservation covers the ENTIRE 24h window:
-    // starts at or before midnight AND ends at or after next midnight
+    // Fully booked = reservation overlaps day AND:
+    //   - starts at/before midnight of this day (not 01:00, 10:00, etc.)
+    //   - ends at/after 23:00 of this day (handles both 23:59:59 and next-midnight)
+    // This correctly handles daily (00:00–23:59:59), monthly, and multi-day reservations.
     return parkingAvailability.some(({ startTime, endTime }) => {
       const s = new Date(startTime); const e = new Date(endTime);
-      return s <= dayStart && e >= dayEnd;
+      if (!(s < dayEnd && e > dayStart)) return false;
+      const startsAtDayStart = s <= dayStart;
+      const endsAtDayEnd = e.getTime() >= dayStart.getTime() + 23 * 60 * 60 * 1000;
+      return startsAtDayStart && endsAtDayEnd;
     });
   };
 
