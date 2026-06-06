@@ -89,7 +89,7 @@ const profileSchema = z.object({
   phoneNumber: z.string().optional(),
 });
 
-function RampCell({ spotId, bookingId }: { spotId: string; bookingId: string }) {
+function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: string; large?: boolean }) {
   const { toast } = useToast();
   const { data: rampStatus, refetch } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number;
@@ -116,6 +116,23 @@ function RampCell({ spotId, bookingId }: { spotId: string; bookingId: string }) 
   });
 
   const canOpen = rampStatus?.canOpen ?? false;
+
+  if (large) {
+    return (
+      <Button
+        className={`w-full gap-2 ${canOpen ? "bg-green-700 hover:bg-green-600 text-white border-green-600" : "opacity-50 bg-green-900 text-green-200 border-green-800"}`}
+        disabled={openRampMutation.isPending || !canOpen}
+        onClick={(e) => { e.stopPropagation(); if (canOpen) openRampMutation.mutate(); }}
+        data-testid={`button-open-ramp-dialog-${bookingId}`}
+        title={canOpen ? "Otvori kapiju" : "Kapija dostupna ±10 min od rezervacije"}
+      >
+        {openRampMutation.isPending
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <DoorOpen className="w-4 h-4" />}
+        {canOpen ? "Otvori rampu" : "Otvori rampu (van prozora)"}
+      </Button>
+    );
+  }
 
   return (
     <Button
@@ -1015,6 +1032,13 @@ export default function Dashboard() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Napomena</p>
                   <p className="text-sm text-foreground">{selectedBooking.notes}</p>
+                </div>
+              )}
+              {selectedBooking.spotHasRamp && (
+                <div className="pt-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Kapija / rampa</p>
+                  <RampCell spotId={selectedBooking.spotId} bookingId={selectedBooking.id} large />
+                  <p className="text-xs text-muted-foreground mt-1.5 text-center">Dostupno ±10 min od vremena rezervacije</p>
                 </div>
               )}
             </div>

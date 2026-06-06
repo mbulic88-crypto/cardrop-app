@@ -501,27 +501,11 @@ export default function MapHackNS() {
       setPermCheckLoading(false);
       return;
     }
-    // Check existing permission states without triggering browser dialog
-    async function checkExisting() {
-      try {
-        const [locPerm, micPerm] = await Promise.all([
-          navigator.permissions.query({ name: "geolocation" }),
-          navigator.permissions.query({ name: "microphone" as PermissionName }),
-        ]);
-        if (locPerm.state === "granted" && micPerm.state === "granted") {
-          localStorage.setItem("cardrop_perms_asked", "1");
-          setPermCheckLoading(false);
-          return;
-        }
-      } catch {
-        // Permissions API not supported — just show the screen
-      }
-      setPermLocStatus("idle");
-      setPermMicStatus("idle");
-      setPermCheckLoading(false);
-      setShowPermissions(true);
-    }
-    checkExisting();
+    // Active-plan user on a new device/browser — skip permissions screen entirely.
+    // Permissions (location, microphone) are optional; they can be granted later
+    // when the user actually tries to use those features.
+    localStorage.setItem("cardrop_perms_asked", "1");
+    setPermCheckLoading(false);
   }, [isLoading, isAuthenticated, user, hasProfile, statusLoading, mapStatus]);
 
   let viewMode: ViewMode = "loading";
@@ -4520,6 +4504,16 @@ export default function MapHackNS() {
             <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
           </button>
 
+          {/* Moje rezervacije — 2. mesto, odmah posle Izdaj parking */}
+          <button
+            data-testid="action-bar-moje-rezervacije"
+            onClick={() => setLocation("/dashboard?tab=bookings")}
+            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+            style={{ width: 58, height: 58, background: "#166534", border: "1.5px solid #22c55e" }}>
+            <CalendarDays size={18} style={{ color: "#86efac" }} />
+            <span className="font-bold text-center" style={{ color: "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Moje rez.</span>
+          </button>
+
           {/* Zlatni Minut */}
           {(() => {
             const count = mapMarkers.filter(m => m.type === "zlatni_minut").length;
@@ -4704,16 +4698,6 @@ export default function MapHackNS() {
               </button>
             );
           })()}
-
-          {/* Moje rezervacije */}
-          <button
-            data-testid="action-bar-moje-rezervacije"
-            onClick={() => setLocation("/dashboard?tab=bookings")}
-            className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
-            style={{ width: 58, height: 58, background: "#166534", border: "1.5px solid #22c55e" }}>
-            <CalendarDays size={18} style={{ color: "#86efac" }} />
-            <span className="font-bold text-center" style={{ color: "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Moje rez.</span>
-          </button>
 
           {/* Chat — na kraju action bara */}
           <button
