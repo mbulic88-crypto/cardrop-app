@@ -612,14 +612,6 @@ export default function MapHackNS() {
 
   const isMapView = viewMode === "map_view";
 
-  const hasAutoOpenedParkingRef = useRef(false);
-  useEffect(() => {
-    if (viewMode === "map_view" && !hasAutoOpenedParkingRef.current) {
-      hasAutoOpenedParkingRef.current = true;
-      setShowParkingSearch(true);
-    }
-  }, [viewMode]);
-
   const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarkerWithNickname[]>({
     queryKey: ["/api/map-hack/markers"],
     enabled: isMapView,

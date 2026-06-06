@@ -200,7 +200,7 @@ export default function CheckoutSuccess() {
 
           <div className="flex flex-col gap-3">
             {resultId && (
-              <Link href={`/spot/${resultId}`}>
+              <Link href={`/map-hack?parking=${resultId}`}>
                 <Button className="w-full" data-testid="button-view-spot">
                   <Eye className="w-4 h-4 mr-2" />
                   Pogledaj parking

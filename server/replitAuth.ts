@@ -28,7 +28,7 @@ const loginSchema = z.object({
 });
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000;
+  const sessionTtl = 30 * 24 * 60 * 60 * 1000;
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
