@@ -480,6 +480,8 @@ export default function MapHackNS() {
   const [parkingBookingEndDate, setParkingBookingEndDate] = useState<Date | undefined>(() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d; });
   const [parkingStartHour, setParkingStartHour] = useState(8);
   const [parkingEndHour, setParkingEndHour] = useState(9);
+  const [parkingStartMinute, setParkingStartMinute] = useState(0);
+  const [parkingEndMinute, setParkingEndMinute] = useState(0);
   const [parkingSelectedSpace, setParkingSelectedSpace] = useState(1);
   const [parkingPaymentMethod, setParkingPaymentMethod] = useState<'instant' | 'cash' | 'credit'>('instant');
   const [parkingRentalType, setParkingRentalType] = useState<'hourly' | 'daily' | 'weekly' | 'monthly'>('daily');
@@ -609,6 +611,14 @@ export default function MapHackNS() {
   const voiceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isMapView = viewMode === "map_view";
+
+  const hasAutoOpenedParkingRef = useRef(false);
+  useEffect(() => {
+    if (viewMode === "map_view" && !hasAutoOpenedParkingRef.current) {
+      hasAutoOpenedParkingRef.current = true;
+      setShowParkingSearch(true);
+    }
+  }, [viewMode]);
 
   const { data: mapMarkers = [], refetch: refetchMarkers } = useQuery<MapMarkerWithNickname[]>({
     queryKey: ["/api/map-hack/markers"],
@@ -1007,7 +1017,7 @@ export default function MapHackNS() {
     if (!selectedParking) return 0;
     if (parkingRentalType === 'hourly') {
       const price = parseFloat(selectedParking.pricePerHour) || 0;
-      const hours = parkingEndHour - parkingStartHour;
+      const hours = ((parkingEndHour * 60 + parkingEndMinute) - (parkingStartHour * 60 + parkingStartMinute)) / 60;
       return hours > 0 && parkingBookingStartDate ? Math.round(hours * price * 100) / 100 : 0;
     } else if (parkingRentalType === 'daily') {
       const price = parseFloat(selectedParking.pricePerDay ?? '') || 0;
@@ -1027,15 +1037,15 @@ export default function MapHackNS() {
       const months = Math.max(1, (parkingBookingEndDate.getFullYear() - parkingBookingStartDate.getFullYear()) * 12 + (parkingBookingEndDate.getMonth() - parkingBookingStartDate.getMonth()) + 1);
       return months * price;
     }
-  }, [selectedParking, isNs9, parkingRentalType, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour, parkingWeeks]);
+  }, [selectedParking, isNs9, parkingRentalType, parkingBookingStartDate, parkingBookingEndDate, parkingStartHour, parkingEndHour, parkingStartMinute, parkingEndMinute, parkingWeeks]);
 
   function getParkingBookingTimes(): { startTime: Date; endTime: Date } {
     const base = parkingBookingStartDate || new Date();
     if (parkingRentalType === 'hourly') {
       const start = new Date(base);
-      start.setHours(parkingStartHour, 0, 0, 0);
+      start.setHours(parkingStartHour, parkingStartMinute, 0, 0);
       const end = new Date(base);
-      end.setHours(parkingEndHour, 0, 0, 0);
+      end.setHours(parkingEndHour, parkingEndMinute, 0, 0);
       return { startTime: start, endTime: end };
     } else if (parkingRentalType === 'daily') {
       const start = new Date(base);
@@ -1244,6 +1254,8 @@ export default function MapHackNS() {
     setParkingBookingEndDate(tomorrow);
     setParkingStartHour(8);
     setParkingEndHour(9);
+    setParkingStartMinute(0);
+    setParkingEndMinute(0);
     setParkingSelectedSpace(1);
     setParkingPaymentMethod('instant');
     setParkingWeeks(1);
@@ -2947,18 +2959,43 @@ export default function MapHackNS() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Od sata</label>
-                            <Select value={String(parkingStartHour)} onValueChange={(v) => { const h = Number(v); setParkingStartHour(h); if (parkingEndHour <= h) setParkingEndHour(h + 1); }}>
-                              <SelectTrigger data-testid="select-start-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                              <SelectContent>{Array.from({ length: 23 }, (_, i) => i).map(h => (<SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}:00</SelectItem>))}</SelectContent>
-                            </Select>
+                            <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Od</label>
+                            <div className="grid grid-cols-2 gap-1">
+                              <Select value={String(parkingStartHour)} onValueChange={(v) => {
+                                const h = Number(v);
+                                setParkingStartHour(h);
+                                if (parkingEndHour <= h) setParkingEndHour(h + 1);
+                              }}>
+                                <SelectTrigger data-testid="select-start-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i).map(h => (<SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}h</SelectItem>))}</SelectContent>
+                              </Select>
+                              <Select value={String(parkingStartMinute)} onValueChange={(v) => {
+                                const m = Number(v);
+                                setParkingStartMinute(m);
+                                setParkingEndMinute(m);
+                                if (parkingEndHour <= parkingStartHour) setParkingEndHour(parkingStartHour + 1);
+                              }}>
+                                <SelectTrigger data-testid="select-start-minute-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {[0, 15, 30, 45].map(m => (<SelectItem key={m} value={String(m)}>{String(m).padStart(2, '0')}min</SelectItem>))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <div>
-                            <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Do sata</label>
-                            <Select value={String(parkingEndHour)} onValueChange={(v) => setParkingEndHour(Number(v))}>
-                              <SelectTrigger data-testid="select-end-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                              <SelectContent>{Array.from({ length: 23 }, (_, i) => i + 1).map(h => (<SelectItem key={h} value={String(h)} disabled={h <= parkingStartHour}>{String(h).padStart(2, '0')}:00</SelectItem>))}</SelectContent>
-                            </Select>
+                            <label className="text-xs font-medium mb-1 block" style={{ color: "#9ca3af" }}>Do</label>
+                            <div className="grid grid-cols-2 gap-1">
+                              <Select value={String(parkingEndHour)} onValueChange={(v) => setParkingEndHour(Number(v))}>
+                                <SelectTrigger data-testid="select-end-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
+                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i + 1).map(h => (<SelectItem key={h} value={String(h)} disabled={h <= parkingStartHour}>{String(h).padStart(2, '0')}h</SelectItem>))}</SelectContent>
+                              </Select>
+                              <div
+                                className="flex items-center justify-center rounded-md text-xs font-medium"
+                                style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)", color: "#6b7280", height: "36px" }}
+                              >
+                                {String(parkingStartMinute).padStart(2, '0')}min
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -3275,6 +3312,8 @@ export default function MapHackNS() {
                                         updateParkingDate(availCalDay.getFullYear(), availCalDay.getMonth(), availCalDay.getDate());
                                         setParkingStartHour(h);
                                         setParkingEndHour(Math.min(h + 1, 23));
+                                        setParkingStartMinute(0);
+                                        setParkingEndMinute(0);
                                         setParkingRentalType('hourly');
                                         setShowAvailCalendar(false);
                                       }}
