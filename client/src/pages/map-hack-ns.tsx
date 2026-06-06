@@ -371,7 +371,7 @@ function QuickRampBtn({ booking }: { booking: RampBooking }) {
   const { toast } = useToast();
   const [locked, setLocked] = useState(false);
 
-  const { data: status, refetch } = useQuery<{ canOpen: boolean; cooldownLeft?: number }>({
+  const { data: status, isLoading: statusLoading, refetch } = useQuery<{ canOpen: boolean; cooldownLeft?: number }>({
     queryKey: ["/api/parking-spots", booking.spotId, "ramp-status"],
     queryFn: async () => {
       const res = await fetch(`/api/parking-spots/${booking.spotId}/ramp-status`, { credentials: "include" });
@@ -394,33 +394,43 @@ function QuickRampBtn({ booking }: { booking: RampBooking }) {
     },
   });
 
-  if (!status?.canOpen) return null;
-
-  const label = booking.spotTitle || booking.spotAddress || "Parking";
+  const canOpen = !!status?.canOpen;
   const busy = locked || openMutation.isPending;
+  const disabled = !canOpen || busy || statusLoading;
+  const label = booking.spotTitle || booking.spotAddress || "Parking";
+
+  let btnText = "Otvori rampu";
+  if (statusLoading) btnText = "Proveravam...";
+  else if (busy) btnText = "Šaljem...";
+  else if (!canOpen && (status?.cooldownLeft ?? 0) > 0) {
+    const secsLeft = Math.ceil((status!.cooldownLeft!) / 1000);
+    btnText = `Sačekaj ${secsLeft}s`;
+  } else if (!canOpen) btnText = "Nije dostupno";
 
   return (
     <button
       data-testid={`btn-quick-ramp-${booking.spotId}`}
-      onClick={() => { if (!busy) openMutation.mutate(); }}
-      disabled={busy}
+      onClick={() => { if (!disabled) openMutation.mutate(); }}
+      disabled={disabled}
       className="kraft-btn pointer-events-auto flex flex-col items-center justify-center rounded-2xl gap-0.5"
       style={{
-        background: "#15803d",
-        border: "1.5px solid #4ade80",
+        background: canOpen ? "#15803d" : "#1a3a22",
+        border: `1.5px solid ${canOpen ? "#4ade80" : "#2d6a3f"}`,
         paddingLeft: 18, paddingRight: 18, paddingTop: 9, paddingBottom: 9,
-        opacity: busy ? 0.65 : 1,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.65), 0 0 14px rgba(74,222,128,0.28)",
-        transition: "opacity 150ms ease",
+        opacity: disabled ? 0.6 : 1,
+        boxShadow: canOpen
+          ? "0 4px 20px rgba(0,0,0,0.65), 0 0 14px rgba(74,222,128,0.28)"
+          : "0 2px 8px rgba(0,0,0,0.5)",
+        transition: "opacity 150ms ease, background 200ms ease",
       }}
     >
       <div className="flex items-center gap-1.5">
-        <DoorOpen size={17} style={{ color: "#bbf7d0" }} />
-        <span style={{ color: "#ffffff", fontSize: 13, fontWeight: 700, letterSpacing: "0.01em" }}>
-          {busy ? "Šaljem..." : "Otvori rampu"}
+        <DoorOpen size={17} style={{ color: canOpen ? "#bbf7d0" : "#4b8060" }} />
+        <span style={{ color: canOpen ? "#ffffff" : "#6aab82", fontSize: 13, fontWeight: 700, letterSpacing: "0.01em" }}>
+          {btnText}
         </span>
       </div>
-      <span style={{ color: "#86efac", fontSize: 9, maxWidth: 140 }} className="truncate text-center block">
+      <span style={{ color: canOpen ? "#86efac" : "#3d6b4d", fontSize: 9, maxWidth: 140 }} className="truncate text-center block">
         {label}
       </span>
     </button>
