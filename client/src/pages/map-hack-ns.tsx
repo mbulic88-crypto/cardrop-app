@@ -365,6 +365,68 @@ function ns9CalcNights(startDate: Date, endDate: Date): { totalUnits: number; we
   return { totalUnits, weeknights, hasWeekend: hasSat || hasSun };
 }
 
+type RampBooking = { id: string; spotId: string; spotTitle?: string | null; spotAddress?: string | null };
+
+function QuickRampBtn({ booking }: { booking: RampBooking }) {
+  const { toast } = useToast();
+  const [locked, setLocked] = useState(false);
+
+  const { data: status, refetch } = useQuery<{ canOpen: boolean; cooldownLeft?: number }>({
+    queryKey: ["/api/parking-spots", booking.spotId, "ramp-status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/parking-spots/${booking.spotId}/ramp-status`, { credentials: "include" });
+      if (!res.ok) return { canOpen: false };
+      return res.json();
+    },
+    refetchInterval: 12_000,
+  });
+
+  const openMutation = useMutation({
+    mutationFn: async () => apiRequest("POST", `/api/parking-spots/${booking.spotId}/open-ramp`, {}),
+    onSuccess: () => {
+      toast({ title: "Rampa se otvara!", description: "Zahtev je poslat. Barijera će se otvoriti za trenutak." });
+      setLocked(true);
+      setTimeout(() => { setLocked(false); refetch(); }, 3000);
+    },
+    onError: (error: any) => {
+      const msg = error?.body?.message || error?.message || "Nije moguće otvoriti rampu";
+      toast({ title: "Greška", description: msg, variant: "destructive" });
+    },
+  });
+
+  if (!status?.canOpen) return null;
+
+  const label = booking.spotTitle || booking.spotAddress || "Parking";
+  const busy = locked || openMutation.isPending;
+
+  return (
+    <button
+      data-testid={`btn-quick-ramp-${booking.spotId}`}
+      onClick={() => { if (!busy) openMutation.mutate(); }}
+      disabled={busy}
+      className="kraft-btn pointer-events-auto flex flex-col items-center justify-center rounded-2xl gap-0.5"
+      style={{
+        background: "#15803d",
+        border: "1.5px solid #4ade80",
+        paddingLeft: 18, paddingRight: 18, paddingTop: 9, paddingBottom: 9,
+        opacity: busy ? 0.65 : 1,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.65), 0 0 14px rgba(74,222,128,0.28)",
+        transition: "opacity 150ms ease",
+      }}
+    >
+      <div className="flex items-center gap-1.5">
+        <DoorOpen size={17} style={{ color: "#bbf7d0" }} />
+        <span style={{ color: "#ffffff", fontSize: 13, fontWeight: 700, letterSpacing: "0.01em" }}>
+          {busy ? "Šaljem..." : "Otvori rampu"}
+        </span>
+      </div>
+      <span style={{ color: "#86efac", fontSize: 9, maxWidth: 140 }} className="truncate text-center block">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
@@ -1150,6 +1212,16 @@ export default function MapHackNS() {
     queryKey: ["/api/credits/balance"], enabled: !!user,
   });
   const creditBalance = creditData?.balance ?? 0;
+
+  const { data: allBookings = [] } = useQuery<any[]>({
+    queryKey: ["/api/bookings"],
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+  const rampBookings = useMemo<RampBooking[]>(
+    () => allBookings.filter((b: any) => b.spotHasRamp && b.status === "confirmed"),
+    [allBookings]
+  );
 
   const { data: rampStatus, refetch: refetchRampStatus } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number; bookingId?: string;
@@ -4397,6 +4469,18 @@ export default function MapHackNS() {
             <button onClick={() => setWatchZonePlaceMode(false)} className="ml-1 opacity-60 hover:opacity-100">
               <X size={11} />
             </button>
+          </div>
+        )}
+
+        {/* Quick ramp overlay — appears at bottom of map when user has active ramp bookings */}
+        {rampBookings.length > 0 && (
+          <div
+            className="absolute left-0 right-0 z-20 flex justify-center gap-2 px-3"
+            style={{ bottom: 10, pointerEvents: "none" }}
+          >
+            {rampBookings.map((b) => (
+              <QuickRampBtn key={b.id} booking={b} />
+            ))}
           </div>
         )}
 

@@ -151,7 +151,7 @@ export default function Dashboard() {
   const [dateTo, setDateTo] = useState('');
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
-  const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('received');
+  const [bookingsTab, setBookingsTab] = useState<'received' | 'mine'>('mine');
   const [payMethodFilter, setPayMethodFilter] = useState<'all' | 'instant' | 'credit'>('all');
   const [showPayoutCard, setShowPayoutCard] = useState(false);
   const [mapNicknameInput, setMapNicknameInput] = useState('');

@@ -377,6 +377,11 @@ body {
     inset: -1px;
   }
 
+/* Mapbox accuracy circle — keep visual but don't block map clicks */
+.mapboxgl-user-location-accuracy-circle {
+  pointer-events: none !important;
+}
+
 /* Geoapify Autocomplete Custom Styling */
 .geoapify-autocomplete-container {
   width: 100%;
