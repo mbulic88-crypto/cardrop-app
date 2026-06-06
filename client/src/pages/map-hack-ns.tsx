@@ -515,6 +515,7 @@ export default function MapHackNS() {
   const [availCalView, setAvailCalView] = useState<'days' | 'hours'>('days');
   const [availCalDay, setAvailCalDay] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
   const [reservedNotifVisible, setReservedNotifVisible] = useState(false);
+  const [partialDayNotif, setPartialDayNotif] = useState<string | null>(null);
   const [availCalDayDropdown, setAvailCalDayDropdown] = useState(false);
   const availCalDayDropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -664,6 +665,29 @@ export default function MapHackNS() {
       return s < dayEnd && e > dayStart;
     });
   };
+
+  const isParkingDayFullyBooked = (date: Date): boolean => {
+    const dayStart = startOfDay(date);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return parkingAvailability.some(({ startTime, endTime }) => {
+      const s = new Date(startTime); const e = new Date(endTime);
+      if (!(s < dayEnd && e > dayStart)) return false;
+      return (e.getTime() - s.getTime()) >= 20 * 60 * 60 * 1000;
+    });
+  };
+
+  const getParkingDayBookingTimes = (date: Date): { s: Date; e: Date }[] => {
+    const dayStart = startOfDay(date);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    return parkingAvailability
+      .filter(({ startTime, endTime }) => {
+        const s = new Date(startTime); const e = new Date(endTime);
+        return s < dayEnd && e > dayStart;
+      })
+      .map(({ startTime, endTime }) => ({ s: new Date(startTime), e: new Date(endTime) }));
+  };
+
+  const fmtT = (d: Date) => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 
   const isHourBooked = (date: Date, hour: number): boolean => {
     const slotStart = new Date(date); slotStart.setHours(hour, 0, 0, 0);
@@ -1098,8 +1122,12 @@ export default function MapHackNS() {
         pricingType: parkingRentalType,
       });
     },
-    onSuccess: () => {
-      toast({ title: "Rezervacija kreirana!", description: "Kontaktirajte vlasnika za dogovor oko uplate i preuzimanja mesta." });
+    onSuccess: (data: any) => {
+      if (data?.autoAssignedSpace) {
+        toast({ title: "Mesto automatski promenjeno", description: `Prostor ${parkingSelectedSpace} je bio zauzet — rezervisali smo vam Prostor ${data.autoAssignedSpace}.` });
+      } else {
+        toast({ title: "Rezervacija kreirana!", description: "Kontaktirajte vlasnika za dogovor oko uplate i preuzimanja mesta." });
+      }
       setShowParkingBookingForm(false);
     },
     onError: (err: any) => {
@@ -1179,8 +1207,12 @@ export default function MapHackNS() {
         paymentMethod: 'credit',
       });
     },
-    onSuccess: () => {
-      toast({ title: "Plaćeno kreditom!", description: "Rezervacija je potvrđena. Kredit je skinut sa vašeg novčanika." });
+    onSuccess: (data: any) => {
+      if (data?.autoAssignedSpace) {
+        toast({ title: "Mesto automatski promenjeno", description: `Prostor ${parkingSelectedSpace} je bio zauzet — rezervisali smo vam Prostor ${data.autoAssignedSpace}.` });
+      } else {
+        toast({ title: "Plaćeno kreditom!", description: "Rezervacija je potvrđena. Kredit je skinut sa vašeg novčanika." });
+      }
       setShowParkingBookingForm(false);
       refetchCredit();
     },
@@ -3186,6 +3218,11 @@ export default function MapHackNS() {
                               Mesto je rezervisano
                             </div>
                           )}
+                          {partialDayNotif && (
+                            <div className="text-xs text-center py-1.5 rounded-lg font-semibold" style={{ background: "rgba(234,179,8,0.12)", color: "#facc15", border: "1px solid rgba(234,179,8,0.3)" }}>
+                              {partialDayNotif}
+                            </div>
+                          )}
                           {/* Filter tabs */}
                           <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                             {(['days', 'hours'] as const).map(v => (
@@ -3224,7 +3261,8 @@ export default function MapHackNS() {
                                   const day = i + 1;
                                   const date = new Date(calYear, calMonth, day);
                                   const isPast = date < today;
-                                  const isBooked = !isPast && isParkingDayBooked(date);
+                                  const isFullyBooked = !isPast && isParkingDayFullyBooked(date);
+                                  const isPartiallyBooked = !isPast && !isFullyBooked && isParkingDayBooked(date);
                                   const isToday = date.getTime() === today.getTime();
                                   return (
                                     <button
@@ -3232,16 +3270,28 @@ export default function MapHackNS() {
                                       type="button"
                                       onClick={() => {
                                         if (isPast) return;
-                                        if (isBooked) { handleReservedClick(); return; }
+                                        if (isFullyBooked) { handleReservedClick(); return; }
+                                        if (isPartiallyBooked) {
+                                          const d = new Date(calYear, calMonth, day); d.setHours(0,0,0,0);
+                                          setAvailCalDay(d);
+                                          setAvailCalView('hours');
+                                          const times = getParkingDayBookingTimes(d);
+                                          if (times.length > 0) {
+                                            const str = times.map(t => `${fmtT(t.s)}–${fmtT(t.e)}`).join(', ');
+                                            setPartialDayNotif(`Rezervisano: ${str}`);
+                                            setTimeout(() => setPartialDayNotif(null), 5000);
+                                          }
+                                          return;
+                                        }
                                         updateParkingDate(calYear, calMonth, day);
                                         setShowAvailCalendar(false);
                                       }}
                                       className="aspect-square flex items-center justify-center text-[11px] font-medium rounded-lg"
                                       style={{
-                                        background: isBooked ? "rgba(239,68,68,0.18)" : isToday ? "rgba(82,183,136,0.15)" : "transparent",
-                                        color: isPast ? "#374151" : isBooked ? "#f87171" : isToday ? "#52B788" : "#d1d5db",
+                                        background: isFullyBooked ? "rgba(239,68,68,0.18)" : isPartiallyBooked ? "rgba(234,179,8,0.15)" : isToday ? "rgba(82,183,136,0.15)" : "transparent",
+                                        color: isPast ? "#374151" : isFullyBooked ? "#f87171" : isPartiallyBooked ? "#facc15" : isToday ? "#52B788" : "#d1d5db",
                                         cursor: isPast ? "default" : "pointer",
-                                        border: isToday && !isBooked ? "1px solid rgba(82,183,136,0.4)" : "1px solid transparent",
+                                        border: isToday && !isFullyBooked && !isPartiallyBooked ? "1px solid rgba(82,183,136,0.4)" : "1px solid transparent",
                                       }}
                                     >
                                       {day}

@@ -2284,11 +2284,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Ukupna cena mora biti veća od 0" });
       }
 
-      // Check for conflicting bookings (per space)
+      // Check for conflicting bookings (per space); if conflict, try next free space
+      let finalSpaceC = validSpaceC;
       const hasConflict = await storage.hasBookingOverlap(spotId, startTime, endTime, undefined, validSpaceC);
 
       if (hasConflict) {
-        return res.status(400).json({ message: "Izabrani termin je već rezervisan za to parking mesto." });
+        const totalSpaces = spot.totalSpaces || 1;
+        if (totalSpaces <= 1) {
+          return res.status(400).json({ message: "Izabrani termin je već rezervisan za to parking mesto." });
+        }
+        let foundSpace: number | null = null;
+        for (let s = 1; s <= totalSpaces; s++) {
+          if (s === validSpaceC) continue;
+          const conflict = await storage.hasBookingOverlap(spotId, startTime, endTime, undefined, s);
+          if (!conflict) { foundSpace = s; break; }
+        }
+        if (foundSpace === null) {
+          return res.status(400).json({ message: "Sva parking mesta su zauzeta za izabrani termin." });
+        }
+        finalSpaceC = foundSpace;
       }
 
       const reqPaymentMethod: string = typeof req.body.paymentMethod === 'string' ? req.body.paymentMethod : '';
@@ -2301,10 +2315,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             spotId, startTime, endTime, totalPrice, currency: spot.currency,
             status: 'confirmed', paymentStatus: 'paid', renterId: userId,
             licensePlate: licensePlateC || undefined, renterPhone: renterPhoneC || undefined,
-            spaceNumber: validSpaceC, pricingType: reqPricingTypeC,
+            spaceNumber: finalSpaceC, pricingType: reqPricingTypeC,
           }, amountRsd);
           if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
-          return res.status(201).json(creditBooking);
+          const creditResponse = finalSpaceC !== validSpaceC ? { ...creditBooking, autoAssignedSpace: finalSpaceC } : creditBooking;
+          return res.status(201).json(creditResponse);
         } catch (creditErr: any) {
           if (creditErr?.code === 'INSUFFICIENT_CREDIT') {
             return res.status(402).json({ message: `Nedovoljan balans. Imate ${creditErr.balance} RSD kredita, a potrebno je ${amountRsd} RSD.`, code: 'INSUFFICIENT_CREDIT', balance: creditErr.balance });
@@ -2324,7 +2339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         renterId: userId,
         licensePlate: licensePlateC || undefined,
         renterPhone: renterPhoneC || undefined,
-        spaceNumber: validSpaceC,
+        spaceNumber: finalSpaceC,
         pricingType: reqPricingTypeC,
       });
 
@@ -2368,7 +2383,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       })();
 
-      res.status(201).json(booking);
+      const cashResponse = finalSpaceC !== validSpaceC ? { ...booking, autoAssignedSpace: finalSpaceC } : booking;
+      res.status(201).json(cashResponse);
     } catch (error: any) {
       console.error("Error creating booking:", error);
       if (error.name === 'ZodError') {
