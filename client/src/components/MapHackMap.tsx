@@ -399,7 +399,7 @@ export function MapHackMap({
           position="bottom-right"
           trackUserLocation={true}
           showUserHeading={true}
-          showAccuracyCircle={true}
+          showAccuracyCircle={false}
         />
 
         {/* Compass / reset button */}

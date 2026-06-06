@@ -462,10 +462,9 @@ export default function MapHackNS() {
   const [permLocStatus, setPermLocStatus] = useState<"idle" | "granted" | "denied">("idle");
   const [permMicStatus, setPermMicStatus] = useState<"idle" | "granted" | "denied">("idle");
   const [permRequesting, setPermRequesting] = useState(false);
-  // Prevents map flash while async permissions check runs for returning users
-  const [permCheckLoading, setPermCheckLoading] = useState<boolean>(
-    () => !localStorage.getItem("cardrop_perms_asked")
-  );
+  // permCheckLoading is no longer used as a gate — showPermissions (starts false)
+  // controls the permissions screen. Keeping state for handleSkipPermissions compat.
+  const [permCheckLoading, setPermCheckLoading] = useState<boolean>(false);
 
   const hasProfile = !!user?.mapNickname;
 
