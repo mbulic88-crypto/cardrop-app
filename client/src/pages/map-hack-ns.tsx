@@ -3080,7 +3080,11 @@ export default function MapHackNS() {
                                 if (parkingEndHour <= h) setParkingEndHour(h + 1);
                               }}>
                                 <SelectTrigger data-testid="select-start-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i).map(h => (<SelectItem key={h} value={String(h)}>{String(h).padStart(2, '0')}h</SelectItem>))}</SelectContent>
+                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i).map(h => {
+                                  const isToday = parkingBookingStartDate ? parkingBookingStartDate.toDateString() === new Date().toDateString() : false;
+                                  const isPastHour = isToday && h < new Date().getHours();
+                                  return <SelectItem key={h} value={String(h)} disabled={isPastHour}>{String(h).padStart(2, '0')}h{isPastHour ? " ✕" : ""}</SelectItem>;
+                                })}</SelectContent>
                               </Select>
                               <Select value={String(parkingStartMinute)} onValueChange={(v) => {
                                 const m = Number(v);
@@ -3274,6 +3278,28 @@ export default function MapHackNS() {
                       </div>
                     </div>
                   );
+                })()}
+
+                {/* Zauzeto upozorenje ispod date/time pickera */}
+                {(() => {
+                  if (!parkingBookingStartDate) return null;
+                  if (parkingRentalType === 'hourly' && isHourBooked(parkingBookingStartDate, parkingStartHour)) {
+                    return (
+                      <div className="text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5" }}>
+                        <span style={{ flexShrink: 0 }}>⚠</span>
+                        Ovo parking mesto je zauzeto u izabranom terminu — izaberite drugi sat.
+                      </div>
+                    );
+                  }
+                  if (parkingRentalType === 'daily' && isParkingDayBooked(parkingBookingStartDate)) {
+                    return (
+                      <div className="text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5" }}>
+                        <span style={{ flexShrink: 0 }}>⚠</span>
+                        Ovo parking mesto je zauzeto na izabrani dan — izaberite drugi datum.
+                      </div>
+                    );
+                  }
+                  return null;
                 })()}
 
                 {/* ── Availability calendar accordion ── */}
@@ -3491,6 +3517,27 @@ export default function MapHackNS() {
                     </div>
                   </div>
                 )}
+                {/* Zauzeto upozorenje iznad dugmadi za rezervaciju */}
+                {(() => {
+                  if (!parkingBookingStartDate) return null;
+                  if (parkingRentalType === 'hourly' && isHourBooked(parkingBookingStartDate, parkingStartHour)) {
+                    return (
+                      <div className="text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5" }}>
+                        <span style={{ flexShrink: 0 }}>⚠</span>
+                        Parking je zauzet u tom terminu — rezervacija nije moguća.
+                      </div>
+                    );
+                  }
+                  if (parkingRentalType === 'daily' && isParkingDayBooked(parkingBookingStartDate)) {
+                    return (
+                      <div className="text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5" }}>
+                        <span style={{ flexShrink: 0 }}>⚠</span>
+                        Parking je zauzet na taj dan — rezervacija nije moguća.
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 {/* Payment button — single action per selected method */}
                 <div className="flex flex-col gap-2">
                   {parkingPaymentMethod === 'credit' && (
@@ -3504,7 +3551,7 @@ export default function MapHackNS() {
                       >
                         {parkingCreditMutation.isPending
                           ? <><Loader2 size={14} className="animate-spin" />Učitavanje...</>
-                          : <><Wallet size={14} />Rezerviši ({creditBalance.toLocaleString('sr-RS')} RSD kredita)</>}
+                          : <span className="flex flex-col items-center leading-tight gap-0.5"><span className="flex items-center gap-1.5"><Wallet size={14} />Rezerviši</span><span style={{ fontSize: 10, color: "#6ee7b7", fontWeight: 400 }}>kredit dostupan: {creditBalance.toLocaleString('sr-RS')} RSD</span></span>}
                       </button>
                       {parkingCalculatedPrice > 0 && creditBalance < parkingCalculatedPrice && (
                         <div className="text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5" }}>
