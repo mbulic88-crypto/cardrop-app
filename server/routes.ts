@@ -2318,6 +2318,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
             spaceNumber: finalSpaceC, pricingType: reqPricingTypeC,
           }, amountRsd);
           if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
+          // Email notifikacije za kreditnu rezervaciju (vlasnik + zakupac)
+          (async () => {
+            try {
+              const [owner, renter] = await Promise.all([
+                storage.getUser(spot.ownerId),
+                storage.getUser(userId),
+              ]);
+              if (owner?.email) {
+                await sendBookingOwnerEmail({
+                  ownerEmail: owner.email,
+                  ownerName: owner.firstName || owner.email,
+                  spotTitle: spot.title,
+                  spotAddress: spot.address,
+                  renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+                  licensePlate: creditBooking.licensePlate || undefined,
+                  renterPhone: creditBooking.renterPhone || undefined,
+                  startTime: new Date(creditBooking.startTime),
+                  endTime: new Date(creditBooking.endTime),
+                  totalPrice: creditBooking.totalPrice,
+                  currency: creditBooking.currency || 'RSD',
+                });
+              }
+              if (renter?.email) {
+                await sendBookingRenterConfirmationEmail({
+                  renterEmail: renter.email,
+                  renterName: renter.firstName || renter.email,
+                  spotTitle: spot.title,
+                  spotAddress: spot.address,
+                  ownerPhone: spot.phone || undefined,
+                  startTime: new Date(creditBooking.startTime),
+                  endTime: new Date(creditBooking.endTime),
+                  totalPrice: creditBooking.totalPrice,
+                  currency: creditBooking.currency || 'RSD',
+                });
+              }
+            } catch (emailErr) {
+              console.error('[EMAIL] Greška pri slanju email notifikacija za kreditnu rezervaciju:', emailErr);
+            }
+          })();
           const creditResponse = finalSpaceC !== validSpaceC ? { ...creditBooking, autoAssignedSpace: finalSpaceC } : creditBooking;
           return res.status(201).json(creditResponse);
         } catch (creditErr: any) {
