@@ -2309,6 +2309,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Credit payment — atomically deduct from wallet and create confirmed booking
       if (reqPaymentMethod === 'credit') {
+        if (!spot.stripeLinkActive) {
+          return res.status(403).json({ message: "Online plaćanje nije aktivno za ovaj parking" });
+        }
         const amountRsd = Math.round(parseFloat(totalPrice));
         try {
           const creditBooking = await storage.createBookingWithCredit({

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen, CalendarDays } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen, CalendarDays, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -544,6 +544,7 @@ export default function MapHackNS() {
   const skipPaymentMethodDefaultRef = useRef(false);
   const [resumeParkingId, setResumeParkingId] = useState<string | null>(null);
   const [showPaymentMethodPicker, setShowPaymentMethodPicker] = useState(false);
+  const [showNoOnlineInfo, setShowNoOnlineInfo] = useState(false);
   const [showCreditInfoTooltip, setShowCreditInfoTooltip] = useState(false);
   const [showInstantInfoTooltip, setShowInstantInfoTooltip] = useState(false);
   const [showCreditTopupField, setShowCreditTopupField] = useState(false);
@@ -1350,6 +1351,7 @@ export default function MapHackNS() {
     setDescExpanded(false);
     setShowParkingBookingForm(false);
     setShowPaymentMethodPicker(false);
+    setShowNoOnlineInfo(false);
     setShowCreditInfoTooltip(false);
     setShowInstantInfoTooltip(false);
     setParkingLicensePlate('');
@@ -2868,10 +2870,14 @@ export default function MapHackNS() {
             )}
 
             {/* Booking button — hidden when form or picker is open */}
-            {!showParkingBookingForm && !showPaymentMethodPicker && (
+            {!showParkingBookingForm && !showPaymentMethodPicker && !showNoOnlineInfo && (
               <button
                 data-testid="button-rezervisi-parking"
                 onClick={() => {
+                  if (!selectedParking.stripeLinkActive) {
+                    setShowNoOnlineInfo(true);
+                    return;
+                  }
                   if (creditBalance > 0) {
                     setParkingPaymentMethod('credit');
                     setShowParkingBookingForm(true);
@@ -2882,9 +2888,40 @@ export default function MapHackNS() {
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
                 style={{ background: "rgba(64,145,108,0.22)", border: "1.5px solid rgba(82,183,136,0.6)", color: "#52B788" }}
               >
-                {creditBalance > 0 ? <Wallet size={15} /> : <CreditCard size={15} />}
-                {creditBalance > 0 ? "Rezerviši parking" : "Plati ili rezerviši parking"}
+                {creditBalance > 0 && selectedParking.stripeLinkActive ? <Wallet size={15} /> : <CreditCard size={15} />}
+                {creditBalance > 0 && selectedParking.stripeLinkActive ? "Rezerviši parking" : "Plati ili rezerviši parking"}
               </button>
+            )}
+
+            {/* Info panel — parking bez aktivnog Stripe linka */}
+            {!showParkingBookingForm && !showPaymentMethodPicker && showNoOnlineInfo && (
+              <div className="flex flex-col gap-2.5 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <button
+                  onClick={() => setShowNoOnlineInfo(false)}
+                  className="flex items-center gap-1 text-xs font-medium self-start"
+                  style={{ color: "#9ca3af" }}
+                >
+                  <ChevronLeft size={14} />Nazad
+                </button>
+                <div className="flex items-start gap-2.5 px-2.5 py-2.5 rounded-xl" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                  <Info size={16} style={{ color: "#fbbf24", flexShrink: 0, marginTop: 1 }} />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-bold" style={{ color: "#fbbf24" }}>Rezervacija putem aplikacije nije dostupna</span>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>Ovaj parking nije aktiviran za online plaćanje. Kontaktirajte vlasnika direktno za rezervaciju.</span>
+                  </div>
+                </div>
+                {selectedParking.phone && (
+                  <a
+                    href={`tel:${selectedParking.phone}`}
+                    data-testid="link-pozovi-vlasnika"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
+                    style={{ background: "rgba(82,183,136,0.15)", border: "1.5px solid rgba(82,183,136,0.5)", color: "#52B788" }}
+                  >
+                    <Phone size={15} />
+                    {selectedParking.phone}
+                  </a>
+                )}
+              </div>
             )}
 
             {/* Ramp button — visible always when parking has ramp */}
