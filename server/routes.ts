@@ -1833,7 +1833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           setup_future_usage: 'off_session',
         },
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&booking=1`,
-        cancel_url: `${baseUrl}/spot/${spotId}`,
+        cancel_url: `${baseUrl}/map-hack`,
         metadata: {
           type: 'booking',
           spotId,

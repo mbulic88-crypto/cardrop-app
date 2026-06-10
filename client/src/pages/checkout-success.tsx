@@ -235,10 +235,10 @@ export default function CheckoutSuccess() {
         </p>
         <div className="flex flex-col gap-3">
           {resultId && (
-            <Link href={isSale ? `/sale/${resultId}` : `/spot/${resultId}`}>
+            <Link href={isSale ? `/sale/${resultId}` : `/map-hack`}>
               <Button className="w-full" data-testid="button-view-listing">
                 <Eye className="w-4 h-4 mr-2" />
-                {isSale ? "Pogledaj oglas" : "Pogledaj parking"}
+                {isSale ? "Pogledaj oglas" : "Pogledaj na mapi"}
               </Button>
             </Link>
           )}
