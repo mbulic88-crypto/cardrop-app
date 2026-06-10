@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu,
@@ -155,6 +156,7 @@ function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: str
 export default function Dashboard() {
   const { isAuthenticated, isLoading, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
+  const { language } = useLanguage();
   const { toast } = useToast();
   const [accountDeletedInfo, setAccountDeletedInfo] = useState<{ hadSubscription: boolean } | null>(null);
   const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
@@ -489,17 +491,25 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const nl = language === 'sr' ? {
+    overview: 'Pregled', spots: 'Parking Mesta', bookings: 'Rezervacije',
+    messages: 'Poruke', sales: 'Prodaja', profile: 'Profil', loading: 'Učitavanje...',
+  } : {
+    overview: 'Overview', spots: 'Parking Spots', bookings: 'Bookings',
+    messages: 'Messages', sales: 'Sales', profile: 'Profile', loading: 'Loading...',
+  };
+
   const navItems = [
-    { id: 'overview' as Section, label: 'Pregled', icon: LayoutDashboard },
-    { id: 'spots' as Section, label: 'Parking Mesta', icon: MapPin },
-    { id: 'bookings' as Section, label: 'Rezervacije', icon: Calendar },
-    { id: 'messages' as Section, label: 'Poruke', icon: MessageSquare, badge: totalUnread },
-    { id: 'sales' as Section, label: 'Prodaja', icon: Tag },
-    { id: 'profile' as Section, label: 'Profil', icon: UserIcon },
+    { id: 'overview' as Section, label: nl.overview, icon: LayoutDashboard },
+    { id: 'spots' as Section, label: nl.spots, icon: MapPin },
+    { id: 'bookings' as Section, label: nl.bookings, icon: Calendar },
+    { id: 'messages' as Section, label: nl.messages, icon: MessageSquare, badge: totalUnread },
+    { id: 'sales' as Section, label: nl.sales, icon: Tag },
+    { id: 'profile' as Section, label: nl.profile, icon: UserIcon },
   ];
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Učitavanje...</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center">{nl.loading}</div>;
   }
   if (!isAuthenticated) return null;
 

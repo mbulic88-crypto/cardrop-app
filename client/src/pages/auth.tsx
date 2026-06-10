@@ -9,8 +9,76 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/hooks/useLanguage";
 
 type AuthMode = "login" | "register";
+
+const authTranslations = {
+  sr: {
+    back: "Nazad",
+    loginSubtitle: "Prijavite se na vaš nalog",
+    registerSubtitle: "Kreirajte novi nalog",
+    firstName: "Ime",
+    lastName: "Prezime",
+    email: "Email",
+    password: "Lozinka",
+    passPlaceholderRegister: "Minimum 6 karaktera",
+    passPlaceholderLogin: "Vaša lozinka",
+    submitLogin: "Prijavite se",
+    submitRegister: "Registrujte se",
+    loading: "Molimo sačekajte...",
+    or: "ili",
+    noAccount: "Nemate nalog?",
+    registerLink: "Registrujte se",
+    hasAccount: "Već imate nalog?",
+    loginLink: "Prijavite se",
+    termsText: "Prijavom prihvatate naše",
+    terms: "Uslove Korišćenja",
+    and: "i",
+    privacy: "Politiku Privatnosti",
+    loginSuccess: "Prijava uspešna!",
+    loginSuccessDesc: "Dobrodošli nazad",
+    registerSuccess: "Registracija uspešna!",
+    registerSuccessDesc: "Dobrodošli na CarDrop",
+    loginError: "Greška pri prijavi",
+    registerError: "Greška pri registraciji",
+    googleError: "Google prijava nije uspela",
+    googleErrorDesc: "Pokušajte ponovo ili koristite email",
+    googleLoading: "Google prijava se učitava...",
+  },
+  en: {
+    back: "Back",
+    loginSubtitle: "Sign in to your account",
+    registerSubtitle: "Create a new account",
+    firstName: "First name",
+    lastName: "Last name",
+    email: "Email",
+    password: "Password",
+    passPlaceholderRegister: "Minimum 6 characters",
+    passPlaceholderLogin: "Your password",
+    submitLogin: "Sign in",
+    submitRegister: "Create account",
+    loading: "Please wait...",
+    or: "or",
+    noAccount: "Don't have an account?",
+    registerLink: "Sign up",
+    hasAccount: "Already have an account?",
+    loginLink: "Sign in",
+    termsText: "By signing in you agree to our",
+    terms: "Terms of Use",
+    and: "and",
+    privacy: "Privacy Policy",
+    loginSuccess: "Login successful!",
+    loginSuccessDesc: "Welcome back",
+    registerSuccess: "Registration successful!",
+    registerSuccessDesc: "Welcome to CarDrop",
+    loginError: "Login error",
+    registerError: "Registration error",
+    googleError: "Google sign-in failed",
+    googleErrorDesc: "Please try again or use email",
+    googleLoading: "Google sign-in loading...",
+  },
+};
 
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -18,6 +86,8 @@ export default function AuthPage() {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { language } = useLanguage();
+  const t = authTranslations[language === "sr" ? "sr" : "en"];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,13 +107,13 @@ export default function AuthPage() {
           firstName,
           lastName,
         });
-        toast({ title: "Registracija uspešna!", description: "Dobrodošli na CarDrop" });
+        toast({ title: t.registerSuccess, description: t.registerSuccessDesc });
       } else {
         userData = await apiRequest("POST", "/api/auth/login", {
           email,
           password,
         });
-        toast({ title: "Prijava uspešna!", description: "Dobrodošli nazad" });
+        toast({ title: t.loginSuccess, description: t.loginSuccessDesc });
       }
 
       queryClient.setQueryData(["/api/auth/user"], userData);
@@ -64,7 +134,7 @@ export default function AuthPage() {
       }
 
       toast({
-        title: mode === "login" ? "Greška pri prijavi" : "Greška pri registraciji",
+        title: mode === "login" ? t.loginError : t.registerError,
         description: parsed,
         variant: "destructive",
       });
@@ -83,14 +153,14 @@ export default function AuthPage() {
       });
 
       queryClient.setQueryData(["/api/auth/user"], userData);
-      toast({ title: "Prijava uspešna!", description: "Dobrodošli na CarDrop" });
+      toast({ title: t.loginSuccess, description: t.registerSuccessDesc });
       const returnTo = localStorage.getItem("cardrop-returnTo");
       localStorage.removeItem("cardrop-returnTo");
       setLocation(returnTo || "/map-hack");
     } catch (error: any) {
       toast({
-        title: "Google prijava nije uspela",
-        description: "Pokušajte ponovo ili koristite email",
+        title: t.googleError,
+        description: t.googleErrorDesc,
         variant: "destructive",
       });
     } finally {
@@ -107,7 +177,7 @@ export default function AuthPage() {
           <Link href="/">
             <Button variant="ghost" size="sm" data-testid="button-back-home">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Nazad
+              {t.back}
             </Button>
           </Link>
         </div>
@@ -117,7 +187,7 @@ export default function AuthPage() {
             <img src={parkInLogo} alt="CarDrop" className="w-16 h-16 rounded-xl mb-3" />
             <h1 className="text-2xl font-bold text-foreground">CarDrop</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {mode === "login" ? "Prijavite se na vaš nalog" : "Kreirajte novi nalog"}
+              {mode === "login" ? t.loginSubtitle : t.registerSubtitle}
             </p>
           </div>
 
@@ -125,12 +195,12 @@ export default function AuthPage() {
             {mode === "register" && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="firstName">Ime</Label>
+                  <Label htmlFor="firstName">{t.firstName}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="firstName"
-                      placeholder="Ime"
+                      placeholder={t.firstName}
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="pl-9"
@@ -140,12 +210,12 @@ export default function AuthPage() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lastName">Prezime</Label>
+                  <Label htmlFor="lastName">{t.lastName}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="lastName"
-                      placeholder="Prezime"
+                      placeholder={t.lastName}
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="pl-9"
@@ -158,7 +228,7 @@ export default function AuthPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.email}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -175,13 +245,13 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Lozinka</Label>
+              <Label htmlFor="password">{t.password}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder={mode === "register" ? "Minimum 6 karaktera" : "Vaša lozinka"}
+                  placeholder={mode === "register" ? t.passPlaceholderRegister : t.passPlaceholderLogin}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9 pr-10"
@@ -207,10 +277,10 @@ export default function AuthPage() {
               data-testid="button-submit-auth"
             >
               {loading
-                ? "Molimo sačekajte..."
+                ? t.loading
                 : mode === "login"
-                ? "Prijavite se"
-                : "Registrujte se"}
+                ? t.submitLogin
+                : t.submitRegister}
             </Button>
           </form>
 
@@ -221,38 +291,37 @@ export default function AuthPage() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">ili</span>
+                  <span className="bg-card px-2 text-muted-foreground">{t.or}</span>
                 </div>
               </div>
 
               <div id="google-signin-container" data-testid="google-signin-container">
-                <GoogleSignInButton onSuccess={handleGoogleLogin} clientId={googleClientId} />
+                <GoogleSignInButton onSuccess={handleGoogleLogin} clientId={googleClientId} loadingText={t.googleLoading} />
               </div>
             </>
           )}
 
-
           <div className="mt-5 text-center text-sm">
             {mode === "login" ? (
               <p className="text-muted-foreground">
-                Nemate nalog?{" "}
+                {t.noAccount}{" "}
                 <button
                   onClick={() => setMode("register")}
                   className="text-accent font-medium hover:underline"
                   data-testid="button-switch-to-register"
                 >
-                  Registrujte se
+                  {t.registerLink}
                 </button>
               </p>
             ) : (
               <p className="text-muted-foreground">
-                Već imate nalog?{" "}
+                {t.hasAccount}{" "}
                 <button
                   onClick={() => setMode("login")}
                   className="text-accent font-medium hover:underline"
                   data-testid="button-switch-to-login"
                 >
-                  Prijavite se
+                  {t.loginLink}
                 </button>
               </p>
             )}
@@ -260,13 +329,13 @@ export default function AuthPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-4">
-          Prijavom prihvatate naše{" "}
+          {t.termsText}{" "}
           <Link href="/terms" className="text-accent hover:underline">
-            Uslove Korišćenja
+            {t.terms}
           </Link>{" "}
-          i{" "}
+          {t.and}{" "}
           <Link href="/privacy-policy" className="text-accent hover:underline">
-            Politiku Privatnosti
+            {t.privacy}
           </Link>
         </p>
       </div>
@@ -278,9 +347,11 @@ export default function AuthPage() {
 function GoogleSignInButton({
   onSuccess,
   clientId,
+  loadingText,
 }: {
   onSuccess: (response: any) => void;
   clientId: string;
+  loadingText: string;
 }) {
   const [loaded, setLoaded] = useState(false);
 
@@ -314,7 +385,7 @@ function GoogleSignInButton({
       <div id="google-btn-render" data-testid="button-google-signin" />
       {!loaded && (
         <Button variant="outline" className="w-full" disabled>
-          Google prijava se učitava...
+          {loadingText}
         </Button>
       )}
     </div>

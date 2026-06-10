@@ -6,6 +6,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
 
 type Language = "sr" | "en" | "de" | "hu" | "sk" | "mk";
 
@@ -141,19 +142,12 @@ const languageOptions = [
 ];
 
 export default function SelectCategory() {
-  const [language, setLanguage] = useState<Language>("sr");
+  const { language, setLanguage } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -175,7 +169,6 @@ export default function SelectCategory() {
 
   const selectLanguage = (code: Language) => {
     setLanguage(code);
-    localStorage.setItem("parkin-language", code);
     setLangMenuOpen(false);
   };
 

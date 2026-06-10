@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon } from "lucide-react";
-import { SiInstagram, SiFacebook } from "react-icons/si";
+import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
+import { useLanguage } from "@/hooks/useLanguage";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
@@ -249,7 +250,7 @@ const translations = {
 };
 
 export default function Landing() {
-  const [language, setLanguage] = useState<"sr" | "en" | "de" | "hu" | "sk" | "mk">("sr");
+  const { language, setLanguage } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -269,12 +270,6 @@ export default function Landing() {
     setIsAndroid(/Android/i.test(ua));
   }, []);
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
-      setLanguage(savedLanguage);
-    }
-  }, []);
 
   useEffect(() => {
     const handleLangClickOutside = (e: MouseEvent) => {
@@ -311,7 +306,6 @@ export default function Landing() {
 
   const selectLanguage = (code: typeof language) => {
     setLanguage(code);
-    localStorage.setItem("parkin-language", code);
     setLangMenuOpen(false);
     setMenuOpen(false);
   };
@@ -980,7 +974,44 @@ export default function Landing() {
             {t.mapHackSubtitle}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+            {/* FREE */}
+            <div
+              className="p-6 flex flex-col rounded-md"
+              data-testid="card-mh-pricing-free"
+              style={{
+                background: "linear-gradient(145deg, #0d1f0d 0%, #132613 60%, #1a3520 100%)",
+                boxShadow: "0 4px 20px rgba(64,145,108,0.15)",
+                border: "1px solid rgba(82,183,136,0.2)",
+              }}
+            >
+              <div className="mb-4">
+                <span className="text-lg font-bold text-green-300">{t.mapHackFreeLabel}</span>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="text-3xl font-extrabold text-white">0</span>
+                  <span className="text-sm text-green-400">RSD</span>
+                </div>
+                <p className="text-xs text-green-500/80 mt-0.5">{language === 'sr' ? 'Zauvek besplatno' : 'Forever free'}</p>
+              </div>
+              <p className="text-xs text-green-500/80 mb-4">{t.mapHackFreeDesc}</p>
+              <ul className="space-y-2 flex-1 mb-5">
+                {t.mapHackFreeFeatures.map((f: string) => (
+                  <li key={f} className="flex items-start gap-1.5 text-xs text-green-200">
+                    <Check className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/map-hack">
+                <button
+                  className="w-full rounded-md py-2 text-sm font-bold"
+                  style={{ background: "rgba(82,183,136,0.15)", color: "#52B788", border: "1px solid rgba(82,183,136,0.35)" }}
+                  data-testid="button-mh-free-cta"
+                >
+                  {t.mapHackCTA}
+                </button>
+              </Link>
+            </div>
             {/* PREMIUM */}
             <div
               className="p-6 flex flex-col relative rounded-md"
@@ -1266,6 +1297,9 @@ export default function Landing() {
               </a>
               <a href="https://www.facebook.com/profile.php?id=61584352366124" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80" data-testid="link-facebook">
                 <SiFacebook className="w-8 h-8 text-[#1877F2]" />
+              </a>
+              <a href="https://www.tiktok.com/@cardrop.app" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80" data-testid="link-tiktok">
+                <SiTiktok className="w-8 h-8 text-foreground" />
               </a>
             </div>
             <div className="flex items-center justify-center gap-2 mt-4 text-primary">
