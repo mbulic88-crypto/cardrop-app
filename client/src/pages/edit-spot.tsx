@@ -19,6 +19,140 @@ import type { ParkingSpot } from "@shared/schema";
 import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { HomeIcon, Info, Clock } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const est = {
+  sr: {
+    pageTitle: "Izmeni Parking Mesto",
+    pageSubtitle: "Ažurirajte informacije o svom parking mestu",
+    systemInfo: "Sistemske informacije (samo za čitanje)",
+    badgeNumber: "Broj",
+    badgeCategory: "Kategorija",
+    badgePlan: "Plan",
+    premium: "Premium",
+    basic: "Osnovno",
+    active: "Aktivno",
+    inactive: "Neaktivno",
+    stripeActive: "Aktivan",
+    stripeInactive: "Neaktivan",
+    pendingTitle: "Izmene čekaju primenu",
+    pendingDesc: "Prethodne izmene biće vidljive korisnicima od",
+    pendingNote: "Nove izmene će zameniti prethodne.",
+    loading: "Učitavanje...",
+    notFound: "Parking mesto nije pronađeno",
+    myAccount: "Moj Nalog",
+    title: "Naslov",
+    titlePlaceholder: "Naslov parking mesta",
+    description: "Opis",
+    descPlaceholder: "Detaljno opišite parking mesto",
+    address: "Adresa",
+    addressPlaceholder: "Unesite adresu",
+    city: "Grad",
+    cityPlaceholder: "Izaberite grad",
+    phone: "Telefon",
+    phonePlaceholder: "Broj telefona",
+    email: "Email",
+    emailPlaceholder: "Email adresa",
+    pricing: "Cene iznajmljivanja",
+    pricingDesc: "Unesite bar jednu cenu. Zakupci biraju koji tip im odgovara.",
+    priceHour: "Cena po satu",
+    priceDay: "Cena po danu",
+    priceWeek: "Cena po nedelji",
+    priceMonth: "Cena po mesecu",
+    spotType: "Tip Parking Mesta",
+    uncovered: "Otvoreno",
+    covered: "Pokriveno",
+    garage: "Garaža",
+    hasEv: "Ima EV punjač",
+    hasCamera: "Ima sigurnosnu kameru",
+    is24h: "Dostupno 24/7",
+    advertiserType: "Tip oglašivača",
+    owner: "Vlasnik",
+    agency: "Agencija",
+    company: "Firma",
+    companyName: "Naziv firme",
+    companyNamePlaceholder: "Unesite naziv firme",
+    pib: "PIB",
+    pibPlaceholder: "Poreski identifikacioni broj",
+    contactPerson: "Kontakt osoba",
+    contactPersonPlaceholder: "Ime kontakt osobe",
+    save: "Sačuvaj Izmene",
+    saving: "Čuvanje...",
+    saveSuccess: "Izmene su sačuvane",
+    saveSuccessDesc: "Izmene će biti primenjene u ponoć",
+    saveSuccessOld: "Stare rezervacije važe po starim uslovima.",
+    saveOk: "Uspešno",
+    saveOkDesc: "Parking mesto je ažurirano",
+    saveError: "Greška",
+    saveErrorDesc: "Nije moguće ažurirati parking mesto",
+    stripe: "Stripe",
+  },
+  en: {
+    pageTitle: "Edit Parking Spot",
+    pageSubtitle: "Update your parking spot information",
+    systemInfo: "System info (read-only)",
+    badgeNumber: "Number",
+    badgeCategory: "Category",
+    badgePlan: "Plan",
+    premium: "Premium",
+    basic: "Basic",
+    active: "Active",
+    inactive: "Inactive",
+    stripeActive: "Active",
+    stripeInactive: "Inactive",
+    pendingTitle: "Changes pending",
+    pendingDesc: "Previous changes will be visible to users from",
+    pendingNote: "New changes will replace the previous ones.",
+    loading: "Loading...",
+    notFound: "Parking spot not found",
+    myAccount: "My Account",
+    title: "Title",
+    titlePlaceholder: "Parking spot title",
+    description: "Description",
+    descPlaceholder: "Describe your parking spot in detail",
+    address: "Address",
+    addressPlaceholder: "Enter address",
+    city: "City",
+    cityPlaceholder: "Select city",
+    phone: "Phone",
+    phonePlaceholder: "Phone number",
+    email: "Email",
+    emailPlaceholder: "Email address",
+    pricing: "Rental prices",
+    pricingDesc: "Enter at least one price. Renters choose what works for them.",
+    priceHour: "Price per hour",
+    priceDay: "Price per day",
+    priceWeek: "Price per week",
+    priceMonth: "Price per month",
+    spotType: "Parking Spot Type",
+    uncovered: "Uncovered",
+    covered: "Covered",
+    garage: "Garage",
+    hasEv: "Has EV charger",
+    hasCamera: "Has security camera",
+    is24h: "Available 24/7",
+    advertiserType: "Advertiser type",
+    owner: "Owner",
+    agency: "Agency",
+    company: "Company",
+    companyName: "Company name",
+    companyNamePlaceholder: "Enter company name",
+    pib: "PIB",
+    pibPlaceholder: "Tax identification number",
+    contactPerson: "Contact person",
+    contactPersonPlaceholder: "Contact person name",
+    save: "Save Changes",
+    saving: "Saving...",
+    saveSuccess: "Changes saved",
+    saveSuccessDesc: "Changes will be applied at midnight",
+    saveSuccessOld: "Existing reservations remain under old terms.",
+    saveOk: "Success",
+    saveOkDesc: "Parking spot updated",
+    saveError: "Error",
+    saveErrorDesc: "Unable to update parking spot",
+    stripe: "Stripe",
+  },
+};
 
 const formSchema = z.object({
   title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
@@ -68,6 +202,8 @@ export default function EditSpot() {
   const [match, params] = useRoute("/edit-spot/:id");
   const spotId = params?.id as string | undefined;
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = est[language === "sr" ? "sr" : "en"];
 
   const { data: spot, isLoading: spotLoading } = useQuery<ParkingSpot & { pendingUntil?: string }>({
     queryKey: ["/api/parking-spots", spotId],
@@ -148,27 +284,27 @@ export default function EditSpot() {
         const date = new Date(pendingUntil);
         const formattedDate = date.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
         toast({
-          title: "Izmene su sačuvane",
-          description: `Izmene će biti primenjene u ponoć — ${formattedDate}. Stare rezervacije važe po starim uslovima.`,
+          title: t.saveSuccess,
+          description: `${t.saveSuccessDesc} — ${formattedDate}. ${t.saveSuccessOld}`,
         });
       } else {
-        toast({ title: "Uspešno", description: "Parking mesto je ažurirano" });
+        toast({ title: t.saveOk, description: t.saveOkDesc });
       }
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/my-spots"] });
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots", spotId] });
       setLocation("/dashboard");
     },
     onError: () => {
-      toast({ title: "Greška", description: "Nije moguće ažurirati parking mesto", variant: "destructive" });
+      toast({ title: t.saveError, description: t.saveErrorDesc, variant: "destructive" });
     },
   });
 
   if (!spotId || spotLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Učitavanje...</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center">{t.loading}</div>;
   }
 
   if (!spot) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Parking mesto nije pronađeno</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center">{t.notFound}</div>;
   }
 
   const hasPending = !!spot.pendingChanges;
@@ -187,7 +323,7 @@ export default function EditSpot() {
             <Link href="/dashboard">
               <Button variant="outline" size="sm" data-testid="button-dashboard">
                 <HomeIcon className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Moj Nalog</span>
+                <span className="hidden sm:inline">{t.myAccount}</span>
               </Button>
             </Link>
           </div>
@@ -195,36 +331,36 @@ export default function EditSpot() {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2 text-foreground">Izmeni Parking Mesto</h1>
-        <p className="text-muted-foreground mb-6">Ažurirajte informacije o svom parking mestu</p>
+        <h1 className="text-3xl font-bold mb-2 text-foreground">{t.pageTitle}</h1>
+        <p className="text-muted-foreground mb-6">{t.pageSubtitle}</p>
 
         {/* Read-only system info */}
         <Card className="p-4 mb-6 bg-muted/30">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Sistemske informacije (samo za čitanje)</span>
+            <span className="text-sm font-medium text-muted-foreground">{t.systemInfo}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {spot.parkingNumber && (
               <Badge variant="outline" className="text-xs">
-                Broj: {spot.parkingNumber}
+                {t.badgeNumber}: {spot.parkingNumber}
               </Badge>
             )}
             <Badge variant="outline" className="text-xs">
-              Kategorija: {CATEGORY_LABELS[spot.category] || spot.category || 'N/A'}
+              {t.badgeCategory}: {CATEGORY_LABELS[spot.category] || spot.category || 'N/A'}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              Plan: {SUB_TYPE_LABELS[spot.subscriptionType] || spot.subscriptionType}
+              {t.badgePlan}: {SUB_TYPE_LABELS[spot.subscriptionType] || spot.subscriptionType}
             </Badge>
             <Badge variant={spot.isPremium ? 'default' : 'outline'} className="text-xs">
-              {spot.isPremium ? 'Premium' : 'Osnovno'}
+              {spot.isPremium ? t.premium : t.basic}
             </Badge>
             <Badge variant={spot.isActive ? 'default' : 'secondary'} className="text-xs">
-              {spot.isActive ? 'Aktivno' : 'Neaktivno'}
+              {spot.isActive ? t.active : t.inactive}
             </Badge>
             {spot.stripeLink && (
               <Badge variant="outline" className="text-xs">
-                Stripe: {spot.stripeLinkActive ? 'Aktivan' : 'Neaktivan'}
+                {t.stripe}: {spot.stripeLinkActive ? t.stripeActive : t.stripeInactive}
               </Badge>
             )}
           </div>
@@ -235,11 +371,11 @@ export default function EditSpot() {
           <div className="flex items-start gap-3 p-4 mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md" data-testid="banner-pending-changes">
             <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Izmene čekaju primenu</p>
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{t.pendingTitle}</p>
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                Prethodne izmene biće vidljive korisnicima od{' '}
+                {t.pendingDesc}{' '}
                 <strong>{pendingFrom.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</strong>.
-                Nove izmene će zameniti prethodne.
+                {' '}{t.pendingNote}
               </p>
             </div>
           </div>
@@ -250,35 +386,35 @@ export default function EditSpot() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Naslov</FormLabel>
-                  <FormControl><Input placeholder="Naslov parking mesta" {...field} data-testid="input-title" /></FormControl>
+                  <FormLabel>{t.title}</FormLabel>
+                  <FormControl><Input placeholder={t.titlePlaceholder} {...field} data-testid="input-title" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Opis</FormLabel>
-                  <FormControl><Textarea placeholder="Detaljno opišite parking mesto" className="min-h-32" {...field} data-testid="input-description" /></FormControl>
+                  <FormLabel>{t.description}</FormLabel>
+                  <FormControl><Textarea placeholder={t.descPlaceholder} className="min-h-32" {...field} data-testid="input-description" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
               <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Adresa</FormLabel>
-                  <FormControl><Input placeholder="Unesite adresu" {...field} data-testid="input-address" /></FormControl>
+                  <FormLabel>{t.address}</FormLabel>
+                  <FormControl><Input placeholder={t.addressPlaceholder} {...field} data-testid="input-address" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
               <FormField control={form.control} name="city" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Grad</FormLabel>
+                  <FormLabel>{t.city}</FormLabel>
                   <Select value={field.value || ""} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger data-testid="select-city">
-                        <SelectValue placeholder="Izaberite grad" />
+                        <SelectValue placeholder={t.cityPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -294,16 +430,16 @@ export default function EditSpot() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Telefon</FormLabel>
-                    <FormControl><Input placeholder="Broj telefona" {...field} data-testid="input-phone" /></FormControl>
+                    <FormLabel>{t.phone}</FormLabel>
+                    <FormControl><Input placeholder={t.phonePlaceholder} {...field} data-testid="input-phone" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="contactEmail" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="Email adresa" {...field} data-testid="input-email" /></FormControl>
+                    <FormLabel>{t.email}</FormLabel>
+                    <FormControl><Input type="email" placeholder={t.emailPlaceholder} {...field} data-testid="input-email" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -312,34 +448,34 @@ export default function EditSpot() {
               {/* Multi-pricing — up to 4 independent optional price types */}
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Cene iznajmljivanja</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Unesite bar jednu cenu. Zakupci biraju koji tip im odgovara.</p>
+                  <p className="text-sm font-medium text-foreground">{t.pricing}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.pricingDesc}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="pricePerHour" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cena po satu</FormLabel>
+                      <FormLabel>{t.priceHour}</FormLabel>
                       <FormControl><Input type="number" step="0.01" min="0" placeholder="200" {...field} data-testid="input-price-hourly" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="pricePerDay" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cena po danu</FormLabel>
+                      <FormLabel>{t.priceDay}</FormLabel>
                       <FormControl><Input type="number" step="0.01" min="0" placeholder="1000" {...field} data-testid="input-price-daily" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="pricePerWeek" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cena po nedelji</FormLabel>
+                      <FormLabel>{t.priceWeek}</FormLabel>
                       <FormControl><Input type="number" step="0.01" min="0" placeholder="3000" {...field} data-testid="input-price-weekly" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="pricePerMonth" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cena po mesecu</FormLabel>
+                      <FormLabel>{t.priceMonth}</FormLabel>
                       <FormControl><Input type="number" step="0.01" min="0" placeholder="5000" {...field} data-testid="input-price-monthly" /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -349,15 +485,15 @@ export default function EditSpot() {
 
               <FormField control={form.control} name="spotType" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tip Parking Mesta</FormLabel>
+                  <FormLabel>{t.spotType}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger data-testid="select-spot-type"><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="uncovered">Otvoreno</SelectItem>
-                      <SelectItem value="covered">Pokriveno</SelectItem>
-                      <SelectItem value="garage">Garaža</SelectItem>
+                      <SelectItem value="uncovered">{t.uncovered}</SelectItem>
+                      <SelectItem value="covered">{t.covered}</SelectItem>
+                      <SelectItem value="garage">{t.garage}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -368,34 +504,34 @@ export default function EditSpot() {
                 <FormField control={form.control} name="hasEvCharging" render={({ field }) => (
                   <FormItem className="flex items-center gap-2">
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-ev" /></FormControl>
-                    <FormLabel className="!mt-0 cursor-pointer">Ima EV punjač</FormLabel>
+                    <FormLabel className="!mt-0 cursor-pointer">{t.hasEv}</FormLabel>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="hasSecurityCamera" render={({ field }) => (
                   <FormItem className="flex items-center gap-2">
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-camera" /></FormControl>
-                    <FormLabel className="!mt-0 cursor-pointer">Ima sigurnosnu kameru</FormLabel>
+                    <FormLabel className="!mt-0 cursor-pointer">{t.hasCamera}</FormLabel>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="is24Hours" render={({ field }) => (
                   <FormItem className="flex items-center gap-2">
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-24h" /></FormControl>
-                    <FormLabel className="!mt-0 cursor-pointer">Dostupno 24/7</FormLabel>
+                    <FormLabel className="!mt-0 cursor-pointer">{t.is24h}</FormLabel>
                   </FormItem>
                 )} />
               </div>
 
               <FormField control={form.control} name="advertiserType" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tip oglašivača</FormLabel>
+                  <FormLabel>{t.advertiserType}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-advertiser-type"><SelectValue /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="owner">Vlasnik</SelectItem>
-                      <SelectItem value="agency">Agencija</SelectItem>
-                      <SelectItem value="company">Firma</SelectItem>
+                      <SelectItem value="owner">{t.owner}</SelectItem>
+                      <SelectItem value="agency">{t.agency}</SelectItem>
+                      <SelectItem value="company">{t.company}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -406,22 +542,22 @@ export default function EditSpot() {
                 <div className="space-y-4">
                   <FormField control={form.control} name="companyName" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Naziv firme</FormLabel>
-                      <FormControl><Input placeholder="Unesite naziv firme" {...field} data-testid="input-company-name" /></FormControl>
+                      <FormLabel>{t.companyName}</FormLabel>
+                      <FormControl><Input placeholder={t.companyNamePlaceholder} {...field} data-testid="input-company-name" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="pib" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>PIB</FormLabel>
-                      <FormControl><Input placeholder="Poreski identifikacioni broj" {...field} data-testid="input-pib" /></FormControl>
+                      <FormLabel>{t.pib}</FormLabel>
+                      <FormControl><Input placeholder={t.pibPlaceholder} {...field} data-testid="input-pib" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="contactPerson" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kontakt osoba</FormLabel>
-                      <FormControl><Input placeholder="Ime kontakt osobe" {...field} data-testid="input-contact-person" /></FormControl>
+                      <FormLabel>{t.contactPerson}</FormLabel>
+                      <FormControl><Input placeholder={t.contactPersonPlaceholder} {...field} data-testid="input-contact-person" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -429,7 +565,7 @@ export default function EditSpot() {
               )}
 
               <Button type="submit" className="w-full" disabled={mutation.isPending} data-testid="button-save">
-                {mutation.isPending ? "Čuvanje..." : "Sačuvaj Izmene"}
+                {mutation.isPending ? t.saving : t.save}
               </Button>
             </form>
           </Form>

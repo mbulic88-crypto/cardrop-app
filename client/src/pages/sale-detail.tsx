@@ -10,6 +10,46 @@ import type { SalesListing, User as UserType } from "@shared/schema";
 import { Link } from "wouter";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { trackViewContent, trackContact } from "@/lib/metaPixel";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const sdt = {
+  sr: {
+    forSale: "Prodaja",
+    topListing: "Top Oglas",
+    featured: "Istaknuto",
+    notFound: "Oglas nije pronađen",
+    notFoundDesc: "Ovaj oglas ne postoji ili je uklonjen.",
+    backToList: "Nazad na listu",
+    area: "Površina",
+    type: "Tip",
+    condition: "Stanje",
+    advertiser: "Oglašivač",
+    parkingSpots: "Broj parking mesta",
+    description: "Opis",
+    features: "Karakteristike",
+    sellerContact: "Kontakt prodavca",
+    showContact: "Prikaži kontakt",
+    hideContact: "Sakrij kontakt",
+  },
+  en: {
+    forSale: "For Sale",
+    topListing: "Top Listing",
+    featured: "Featured",
+    notFound: "Listing not found",
+    notFoundDesc: "This listing does not exist or has been removed.",
+    backToList: "Back to list",
+    area: "Area",
+    type: "Type",
+    condition: "Condition",
+    advertiser: "Advertiser",
+    parkingSpots: "Number of parking spots",
+    description: "Description",
+    features: "Features",
+    sellerContact: "Seller contact",
+    showContact: "Show contact",
+    hideContact: "Hide contact",
+  },
+};
 
 const propertyTypeLabels: Record<string, string> = {
   garage: "Garaža",
@@ -58,6 +98,8 @@ export default function SaleDetail() {
   const listingId = params?.id;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showContact, setShowContact] = useState(false);
+  const { language } = useLanguage();
+  const t = sdt[language === "sr" ? "sr" : "en"];
 
   const { data: listing, isLoading } = useQuery<SalesListing>({
     queryKey: ["/api/sales-listings", listingId],
@@ -96,7 +138,7 @@ export default function SaleDetail() {
         <div className="ml-auto">
           <Badge className="bg-orange-500/90 text-white border-0">
             <Tag className="w-3 h-3 mr-1" />
-            Prodaja
+            {t.forSale}
           </Badge>
         </div>
       </div>
@@ -125,10 +167,10 @@ export default function SaleDetail() {
         <div className="max-w-5xl mx-auto px-4 py-8">
           <Card className="p-12 text-center">
             <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Oglas nije pronađen</h2>
-            <p className="text-muted-foreground mb-6">Ovaj oglas ne postoji ili je uklonjen.</p>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t.notFound}</h2>
+            <p className="text-muted-foreground mb-6">{t.notFoundDesc}</p>
             <Link href="/map-hack">
-              <Button data-testid="button-back-to-list">Nazad na listu</Button>
+              <Button data-testid="button-back-to-list">{t.backToList}</Button>
             </Link>
           </Card>
         </div>
@@ -166,7 +208,7 @@ export default function SaleDetail() {
             <div className="absolute top-3 left-3 z-20">
               <Badge className="bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
-                Top Oglas
+                {t.topListing}
               </Badge>
             </div>
           )}
@@ -174,7 +216,7 @@ export default function SaleDetail() {
             <div className="absolute top-3 left-3 z-20">
               <Badge className="bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0">
                 <Sparkles className="w-3 h-3 mr-1" />
-                Istaknuto
+                {t.featured}
               </Badge>
             </div>
           )}
@@ -240,28 +282,28 @@ export default function SaleDetail() {
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <Maximize2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Površina</p>
+                <p className="text-xs text-muted-foreground">{t.area}</p>
                 <p className="text-sm font-medium text-foreground">{listing.area} m²</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Tip</p>
+                <p className="text-xs text-muted-foreground">{t.type}</p>
                 <p className="text-sm font-medium text-foreground">{propertyTypeLabels[listing.propertyType] || listing.propertyType}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <Wrench className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Stanje</p>
+                <p className="text-xs text-muted-foreground">{t.condition}</p>
                 <p className="text-sm font-medium text-foreground">{conditionLabels[listing.condition] || listing.condition}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Oglašivač</p>
+                <p className="text-xs text-muted-foreground">{t.advertiser}</p>
                 <p className="text-sm font-medium text-foreground">{advertiserTypeLabels[listing.advertiserType] || listing.advertiserType}</p>
               </div>
             </div>
@@ -275,14 +317,14 @@ export default function SaleDetail() {
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm text-foreground">
-                  Broj parking mesta: <span className="font-medium">{listing.numberOfSpots}</span>
+                  {t.parkingSpots}: <span className="font-medium">{listing.numberOfSpots}</span>
                 </span>
               </div>
             )}
 
             {listing.description && (
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-2">Opis</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-2">{t.description}</h3>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed" data-testid="text-sale-description">
                   {listing.description}
                 </p>
@@ -291,7 +333,7 @@ export default function SaleDetail() {
 
             {listing.features && listing.features.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3">Karakteristike</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-3">{t.features}</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {listing.features.map((feature) => {
                     const config = featureConfig[feature];
@@ -311,7 +353,7 @@ export default function SaleDetail() {
 
         {/* 4. CONTACT - Hidden behind click */}
         <Card className="p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Kontakt prodavca</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t.sellerContact}</h3>
 
           {!showContact ? (
             <Button
@@ -323,7 +365,7 @@ export default function SaleDetail() {
               data-testid="button-show-contact"
             >
               <Eye className="w-4 h-4 mr-2" />
-              Prikaži kontakt
+              {t.showContact}
             </Button>
           ) : (
             <div className="space-y-3">
@@ -374,7 +416,7 @@ export default function SaleDetail() {
                 data-testid="button-hide-contact"
               >
                 <EyeOff className="w-4 h-4 mr-2" />
-                Sakrij kontakt
+                {t.hideContact}
               </Button>
             </div>
           )}
@@ -384,7 +426,7 @@ export default function SaleDetail() {
         <Link href="/map-hack">
           <Button variant="outline" className="w-full" data-testid="button-back-to-list">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Nazad na listu
+            {t.backToList}
           </Button>
         </Link>
       </div>

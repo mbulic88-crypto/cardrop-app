@@ -10,6 +10,78 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const mhst = {
+  sr: {
+    choosePlan: "Izaberi plan",
+    activePlan: "Aktivan plan",
+    chooseSuitable: "Odaberi plan koji ti odgovara.",
+    active: "Aktivan",
+    activating: "Aktivacija...",
+    activateFree: "Aktiviraj besplatno",
+    recommended: "Preporučeno",
+    redirecting: "Preusmjeravanje...",
+    choosePremium: "Izaberi Premium",
+    buyDayPass: "Kupi Day Pass",
+    savings: "Ušteda",
+    chooseAnnual: "Izaberi Godišnji",
+    contactUs: "Kontaktiraj nas",
+    byAgreement: "Po dogovoru",
+    legend: "Legenda funkcija mape",
+    legendDesc: "Svaka funkcija na mapi — šta je Free a šta Premium.",
+    freeDesc: "Osnovni pristup parking zajednici Srbije.",
+    premiumDesc: "Potpuna zaštita i najbrži parking u gradu.",
+    dayPassDesc: "Sve iz PREMIUM paketa na 24h.",
+    dayPassNote: "Safe Zone alarm, Štek, Radar — idealno za subotnji izlazak u centar.",
+    annualDesc: "Sve iz PREMIUM paketa na godinu dana.",
+    annualNote: "Ušteda preko 1.000 RSD (2 meseca gratis).",
+    firmDesc: "Rešenja za flote i poslovne korisnike.",
+    paymentNote: "Plaćanje karticom putem Stripe. Pitanja: info@cardrop.app",
+    pushNotifTitle: "Push notifikacije (Premium)",
+    pushNotifDesc: "Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push odmah — ne moraš stalno gledati u mapu.",
+    freePlanToast: "Free plan aktiviran!",
+    freePlanToastDesc: "Dobrodošao u Map Hack RS zajednicu.",
+    errorTitle: "Greška",
+    errorRetry: "Pokušaj ponovo.",
+    errorPayment: "Nije moguće otvoriti stranicu za plaćanje. Pokušaj ponovo.",
+    errorNoConn: "Nema konekcije. Pokušaj ponovo.",
+  },
+  en: {
+    choosePlan: "Choose plan",
+    activePlan: "Active plan",
+    chooseSuitable: "Choose a plan that suits you.",
+    active: "Active",
+    activating: "Activating...",
+    activateFree: "Activate for free",
+    recommended: "Recommended",
+    redirecting: "Redirecting...",
+    choosePremium: "Choose Premium",
+    buyDayPass: "Buy Day Pass",
+    savings: "Savings",
+    chooseAnnual: "Choose Annual",
+    contactUs: "Contact us",
+    byAgreement: "On request",
+    legend: "Map feature legend",
+    legendDesc: "Every map feature — what's Free and what's Premium.",
+    freeDesc: "Basic access to Serbia's parking community.",
+    premiumDesc: "Full protection and fastest parking in the city.",
+    dayPassDesc: "Everything in PREMIUM for 24h.",
+    dayPassNote: "Safe Zone alarm, Štek, Radar — ideal for a Saturday night out.",
+    annualDesc: "Everything in PREMIUM for a full year.",
+    annualNote: "Save over 1,000 RSD (2 months free).",
+    firmDesc: "Solutions for fleets and business users.",
+    paymentNote: "Card payment via Stripe. Questions: info@cardrop.app",
+    pushNotifTitle: "Push notifications (Premium)",
+    pushNotifDesc: "When someone reports a tow truck, Golden Minute, Radar or Štek in your Safe Zone (300m radius), you get a push immediately — no need to keep watching the map.",
+    freePlanToast: "Free plan activated!",
+    freePlanToastDesc: "Welcome to the Map Hack RS community.",
+    errorTitle: "Error",
+    errorRetry: "Please try again.",
+    errorPayment: "Unable to open payment page. Please try again.",
+    errorNoConn: "No connection. Please try again.",
+  },
+};
 
 type MapHackStatus = {
   phase: "trial" | "trial_expired" | "active" | "plan_expired";
@@ -25,6 +97,8 @@ export default function MapHackSubscribe() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [checkoutPending, setCheckoutPending] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const t = mhst[language === "sr" ? "sr" : "en"];
 
   const { data: mapStatus } = useQuery<MapHackStatus>({
     queryKey: ["/api/map-hack/status"],
@@ -43,15 +117,15 @@ export default function MapHackSubscribe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/status"] });
       toast({
-        title: "Free plan aktiviran!",
-        description: "Dobrodošao u Map Hack RS zajednicu.",
+        title: t.freePlanToast,
+        description: t.freePlanToastDesc,
       });
       setLocation("/map-hack");
     },
     onError: () => {
       toast({
-        title: "Greška",
-        description: "Pokušaj ponovo.",
+        title: t.errorTitle,
+        description: t.errorRetry,
         variant: "destructive",
       });
     },
@@ -68,8 +142,8 @@ export default function MapHackSubscribe() {
       const data = await res.json() as { url?: string; message?: string };
       if (!res.ok) {
         toast({
-          title: "Greška",
-          description: data.message || "Pokušaj ponovo.",
+          title: t.errorTitle,
+          description: data.message || t.errorRetry,
           variant: "destructive",
         });
         return;
@@ -78,15 +152,15 @@ export default function MapHackSubscribe() {
         window.location.href = data.url;
       } else {
         toast({
-          title: "Greška",
-          description: "Nije moguće otvoriti stranicu za plaćanje. Pokušaj ponovo.",
+          title: t.errorTitle,
+          description: t.errorPayment,
           variant: "destructive",
         });
       }
     } catch {
       toast({
-        title: "Greška",
-        description: "Nema konekcije. Pokušaj ponovo.",
+        title: t.errorTitle,
+        description: t.errorNoConn,
         variant: "destructive",
       });
     } finally {
@@ -124,17 +198,17 @@ export default function MapHackSubscribe() {
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-md mx-auto w-full flex flex-col gap-4">
         <div className="flex flex-col gap-1 mb-2">
-          <h1 className="text-xl font-bold text-foreground">Izaberi plan</h1>
+          <h1 className="text-xl font-bold text-foreground">{t.choosePlan}</h1>
           <p className="text-sm text-muted-foreground">
             {currentPlan
-              ? `Aktivan plan: ${
+              ? `${t.activePlan}: ${
                   currentPlan === "free" ? "Free" :
                   currentPlan === "premium" ? "Premium" :
                   currentPlan === "day_pass" ? "Day Pass" :
                   currentPlan === "godisnji_premium" ? "Godišnji Premium" :
                   currentPlan
                 }`
-              : "Odaberi plan koji ti odgovara."}
+              : t.chooseSuitable}
           </p>
         </div>
 
@@ -145,7 +219,7 @@ export default function MapHackSubscribe() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold text-foreground">FREE</span>
                 {currentPlan === "free" && (
-                  <Badge variant="secondary" data-testid="badge-current-free">Aktivan</Badge>
+                  <Badge variant="secondary" data-testid="badge-current-free">{t.active}</Badge>
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
@@ -154,9 +228,7 @@ export default function MapHackSubscribe() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Osnovni pristup parking zajednici Srbije.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.freeDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
               {[
                 "Parking mapa Srbije sa zonama i ulicama",
@@ -178,7 +250,7 @@ export default function MapHackSubscribe() {
               disabled={freePlanMutation.isPending || currentPlan === "free"}
               data-testid="button-subscribe-free"
             >
-              {freePlanMutation.isPending ? "Aktivacija..." : currentPlan === "free" ? "Aktivan" : "Aktiviraj besplatno"}
+              {freePlanMutation.isPending ? t.activating : currentPlan === "free" ? t.active : t.activateFree}
             </Button>
           </CardContent>
         </Card>
@@ -189,9 +261,9 @@ export default function MapHackSubscribe() {
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold text-foreground">PREMIUM</span>
-                <Badge variant="secondary" data-testid="badge-recommended">Preporučeno</Badge>
+                <Badge variant="secondary" data-testid="badge-recommended">{t.recommended}</Badge>
                 {currentPlan === "premium" && (
-                  <Badge variant="secondary" data-testid="badge-current-premium">Aktivan</Badge>
+                  <Badge variant="secondary" data-testid="badge-current-premium">{t.active}</Badge>
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
@@ -200,9 +272,7 @@ export default function MapHackSubscribe() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Potpuna zaštita i najbrži parking u gradu.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.premiumDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
               {[
                 "Sve Free funkcije +",
@@ -225,8 +295,8 @@ export default function MapHackSubscribe() {
               data-testid="button-subscribe-premium"
             >
               {checkoutPending === "premium" ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
-              ) : currentPlan === "premium" ? "Aktivan" : "Izaberi Premium"}
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t.redirecting}</span>
+              ) : currentPlan === "premium" ? t.active : t.choosePremium}
             </Button>
           </CardContent>
         </Card>
@@ -238,7 +308,7 @@ export default function MapHackSubscribe() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold text-foreground">DAY PASS</span>
                 {currentPlan === "day_pass" && (
-                  <Badge variant="secondary" data-testid="badge-current-day-pass">Aktivan</Badge>
+                  <Badge variant="secondary" data-testid="badge-current-day-pass">{t.active}</Badge>
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
@@ -247,12 +317,8 @@ export default function MapHackSubscribe() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Sve iz PREMIUM paketa na 24h.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Safe Zone alarm, Štek, Radar — idealno za subotnji izlazak u centar.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.dayPassDesc}</p>
+            <p className="text-xs text-muted-foreground">{t.dayPassNote}</p>
             <Button
               className="w-full"
               variant="outline"
@@ -261,8 +327,8 @@ export default function MapHackSubscribe() {
               data-testid="button-subscribe-day-pass"
             >
               {checkoutPending === "day_pass" ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
-              ) : currentPlan === "day_pass" ? "Aktivan" : "Kupi Day Pass"}
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t.redirecting}</span>
+              ) : currentPlan === "day_pass" ? t.active : t.buyDayPass}
             </Button>
           </CardContent>
         </Card>
@@ -273,9 +339,9 @@ export default function MapHackSubscribe() {
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-base font-bold text-foreground">GODIŠNJI PREMIUM</span>
-                <Badge variant="secondary" data-testid="badge-usteda">Ušteda</Badge>
+                <Badge variant="secondary" data-testid="badge-usteda">{t.savings}</Badge>
                 {currentPlan === "godisnji_premium" && (
-                  <Badge variant="secondary" data-testid="badge-current-godisnji">Aktivan</Badge>
+                  <Badge variant="secondary" data-testid="badge-current-godisnji">{t.active}</Badge>
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
@@ -284,9 +350,7 @@ export default function MapHackSubscribe() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Sve iz PREMIUM paketa na godinu dana.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.annualDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
               {[
                 "Sve Free funkcije +",
@@ -302,9 +366,7 @@ export default function MapHackSubscribe() {
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-muted-foreground">
-              Ušteda preko 1.000 RSD (2 meseca gratis).
-            </p>
+            <p className="text-xs text-muted-foreground">{t.annualNote}</p>
             <Button
               className="w-full"
               variant="outline"
@@ -313,8 +375,8 @@ export default function MapHackSubscribe() {
               data-testid="button-subscribe-godisnji"
             >
               {checkoutPending === "godisnji_premium" ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Preusmjeravanje...</span>
-              ) : currentPlan === "godisnji_premium" ? "Aktivan" : "Izaberi Godišnji"}
+                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t.redirecting}</span>
+              ) : currentPlan === "godisnji_premium" ? t.active : t.chooseAnnual}
             </Button>
           </CardContent>
         </Card>
@@ -324,13 +386,11 @@ export default function MapHackSubscribe() {
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-0.5">
               <span className="text-base font-bold text-foreground">ZA FIRME</span>
-              <span className="text-sm text-muted-foreground font-medium">Po dogovoru</span>
+              <span className="text-sm text-muted-foreground font-medium">{t.byAgreement}</span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
-              Rešenja za flote i poslovne korisnike.
-            </p>
+            <p className="text-sm text-muted-foreground">{t.firmDesc}</p>
             <p className="text-xs text-muted-foreground">
               Kontakt:{" "}
               <a
@@ -347,7 +407,7 @@ export default function MapHackSubscribe() {
               onClick={() => window.location.href = "mailto:info@cardrop.app"}
               data-testid="button-subscribe-firme"
             >
-              Kontaktiraj nas
+              {t.contactUs}
             </Button>
           </CardContent>
         </Card>
@@ -356,7 +416,7 @@ export default function MapHackSubscribe() {
         <LegendSection />
 
         <p className="text-xs text-muted-foreground text-center pb-4" data-testid="text-payment-note">
-          Plaćanje karticom putem Stripe. Pitanja: info@cardrop.app
+          {t.paymentNote}
         </p>
       </div>
     </div>
@@ -395,6 +455,8 @@ function FeatureRow({ icon, color, label, desc, badge }: {
 
 function LegendSection() {
   const [open, setOpen] = useState(false);
+  const { language } = useLanguage();
+  const tl = mhst[language === "sr" ? "sr" : "en"];
 
   const items: Array<{ icon: ReactNode; color: string; label: string; desc: string; badge: "Free" | "Premium" }> = [
     {
@@ -459,7 +521,7 @@ function LegendSection() {
   return (
     <Card data-testid="card-legend">
       <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
-        <span className="text-sm font-bold text-foreground">Legenda funkcija mape</span>
+        <span className="text-sm font-bold text-foreground">{tl.legend}</span>
         <Button
           size="icon"
           variant="ghost"
@@ -471,17 +533,15 @@ function LegendSection() {
       </CardHeader>
       {open && (
         <CardContent className="flex flex-col gap-3">
-          <p className="text-xs text-muted-foreground">Svaka funkcija na mapi — šta je Free a šta Premium.</p>
+          <p className="text-xs text-muted-foreground">{tl.legendDesc}</p>
           <div className="space-y-3">
             {items.map(item => (
               <FeatureRow key={item.label} {...item} />
             ))}
           </div>
           <div className="rounded-md px-3 py-2.5 border border-border bg-muted/40">
-            <p className="text-xs font-semibold text-foreground mb-1">Push notifikacije (Premium)</p>
-            <p className="text-xs text-muted-foreground">
-              Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push odmah — ne moraš stalno gledati u mapu.
-            </p>
+            <p className="text-xs font-semibold text-foreground mb-1">{tl.pushNotifTitle}</p>
+            <p className="text-xs text-muted-foreground">{tl.pushNotifDesc}</p>
           </div>
         </CardContent>
       )}

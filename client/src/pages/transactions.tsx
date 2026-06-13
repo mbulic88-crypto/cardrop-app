@@ -11,8 +11,46 @@ import { sr } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const trs = {
+  sr: {
+    loginRequired: "Za pregled transakcija potrebna je prijava na nalog.",
+    home: "Početna",
+    paid: "Plaćeno",
+    refunded: "Refundirano",
+    transactionDate: "Datum Transakcije",
+    parkingTime: "Parking Vreme",
+    amount: "Iznos",
+    totalPaid: "Ukupno Plaćeno",
+    transactionCount: "Broj Transakcija",
+    refundedTotal: "Refundirano",
+    allTransactions: "Sve Transakcije",
+    loading: "Učitavanje...",
+    noTransactions: "Nema Transakcija",
+    noTransactionsDesc: "Vaše plaćene transakcije će se pojaviti ovde",
+  },
+  en: {
+    loginRequired: "Login is required to view transactions.",
+    home: "Home",
+    paid: "Paid",
+    refunded: "Refunded",
+    transactionDate: "Transaction Date",
+    parkingTime: "Parking Time",
+    amount: "Amount",
+    totalPaid: "Total Paid",
+    transactionCount: "Transactions",
+    refundedTotal: "Refunded",
+    allTransactions: "All Transactions",
+    loading: "Loading...",
+    noTransactions: "No Transactions",
+    noTransactionsDesc: "Your paid transactions will appear here",
+  },
+};
 
 export default function Transactions() {
+  const { language } = useLanguage();
+  const t = trs[language === "sr" ? "sr" : "en"];
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -36,9 +74,9 @@ export default function Transactions() {
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case "paid":
-        return <Badge className="bg-accent">Plaćeno</Badge>;
+        return <Badge className="bg-accent">{t.paid}</Badge>;
       case "refunded":
-        return <Badge variant="secondary">Refundirano</Badge>;
+        return <Badge variant="secondary">{t.refunded}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -80,7 +118,7 @@ export default function Transactions() {
 
         <div className="flex items-center">
           <div>
-            <p className="text-sm text-muted-foreground">Datum Transakcije</p>
+            <p className="text-sm text-muted-foreground">{t.transactionDate}</p>
             <p className="text-sm font-medium text-card-foreground">
               {format(new Date(booking.createdAt || booking.startTime), "dd MMM yyyy", { locale: sr })}
             </p>
@@ -89,7 +127,7 @@ export default function Transactions() {
 
         <div className="flex items-center">
           <div>
-            <p className="text-sm text-muted-foreground">Parking Vreme</p>
+            <p className="text-sm text-muted-foreground">{t.parkingTime}</p>
             <p className="text-sm font-medium text-card-foreground">
               {format(new Date(booking.startTime), "HH:mm")} - {format(new Date(booking.endTime), "HH:mm")}
             </p>
@@ -98,7 +136,7 @@ export default function Transactions() {
 
         <div className="flex items-center">
           <div>
-            <p className="text-sm text-muted-foreground">Iznos</p>
+            <p className="text-sm text-muted-foreground">{t.amount}</p>
             <p className="text-lg font-bold text-accent">
               {booking.totalPrice} {booking.currency}
             </p>
@@ -129,7 +167,7 @@ export default function Transactions() {
           setShowLoginDialog(false);
           setLocation("/");
         }}
-        message="Za pregled transakcija potrebna je prijava na nalog."
+        message={t.loginRequired}
         redirectPath="/transactions"
       />
       
@@ -147,7 +185,7 @@ export default function Transactions() {
               <Link href="/map-hack">
                 <Button variant="outline" size="icon" className="h-8 w-8 xs:h-9 xs:w-9 sm:w-auto sm:px-3" data-testid="button-home">
                   <HomeIcon className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Početna</span>
+                  <span className="hidden sm:inline">{t.home}</span>
                 </Button>
               </Link>
             </div>
@@ -165,7 +203,7 @@ export default function Transactions() {
                 <DollarSign className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Ukupno Plaćeno</p>
+                <p className="text-sm text-muted-foreground">{t.totalPaid}</p>
                 <p className="text-2xl font-bold text-accent" data-testid="total-paid">{totalSpent.toFixed(2)} RSD</p>
               </div>
             </div>
@@ -177,7 +215,7 @@ export default function Transactions() {
                 <CreditCard className="w-6 h-6 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Broj Transakcija</p>
+                <p className="text-sm text-muted-foreground">{t.transactionCount}</p>
                 <p className="text-2xl font-bold text-card-foreground" data-testid="total-count">{paidTransactions.length}</p>
               </div>
             </div>
@@ -189,7 +227,7 @@ export default function Transactions() {
                 <Calendar className="w-6 h-6 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Refundirano</p>
+                <p className="text-sm text-muted-foreground">{t.refundedTotal}</p>
                 <p className="text-2xl font-bold text-muted-foreground" data-testid="total-refunded">{totalRefunded.toFixed(2)} RSD</p>
               </div>
             </div>
@@ -199,21 +237,21 @@ export default function Transactions() {
         {/* Transactions Table */}
         <Card>
           <div className="p-6 border-b border-card-border">
-            <h2 className="text-lg font-semibold text-card-foreground">Sve Transakcije</h2>
+            <h2 className="text-lg font-semibold text-card-foreground">{t.allTransactions}</h2>
           </div>
 
           {isLoading ? (
             <div className="p-12 text-center">
-              <p className="text-muted-foreground">Učitavanje...</p>
+              <p className="text-muted-foreground">{t.loading}</p>
             </div>
           ) : paidTransactions.length === 0 ? (
             <div className="p-12 text-center">
               <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2 text-card-foreground">
-                Nema Transakcija
+                {t.noTransactions}
               </h3>
               <p className="text-muted-foreground">
-                Vaše plaćene transakcije će se pojaviti ovde
+                {t.noTransactionsDesc}
               </p>
             </div>
           ) : (

@@ -35,7 +35,7 @@ const translations = {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
     findSpotButton: "Pronađi parking",
-    findSpotSubtitle: "Direktna rezervacija · Kontakt sa vlasnikom · Štek parkinzi · Pauk radar · Zlatni minut",
+    findSpotSubtitle: "Rezerviši direktno ili kontaktiraj vlasnika · Štek parkinzi i privatni parking za najam · Pauk radar, Zlatni minut i SafeZone alarmi",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "Iznajmite Parking Mesto",
     howItWorks: "Kako Funkcioniše",
@@ -143,7 +143,7 @@ const translations = {
     heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
     findSpotButton: "Find Parking",
-    findSpotSubtitle: "Direct booking · Contact-owner spots · Štek spots · Tow truck radar · Golden Minute",
+    findSpotSubtitle: "Book directly or contact the owner · Hidden Štek spots & private parking · Tow truck radar, Golden Minute & SafeZone alerts",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "List Parking Spot",
     howItWorks: "How It Works",
@@ -251,7 +251,7 @@ const translations = {
     heroTitle: "Parkplatz finden oder vermieten",
     heroSubtitle: "Schnelle, sichere und einfache Parkplatzreservierung. Vermieten Sie Ihren ungenutzten Platz und verdienen Sie.",
     findSpotButton: "Parkplatz finden",
-    findSpotSubtitle: "Direktbuchung · Kontakt mit Eigentümer · Štek-Plätze · Abschleppradar · Goldene Minute",
+    findSpotSubtitle: "Direkt buchen oder Eigentümer kontaktieren · Štek-Plätze & privater Parkplatz · Pauk-Radar, Goldene Minute & SafeZone-Alarme",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "Parkplatz vermieten",
     howItWorks: "Wie es funktioniert",
@@ -465,7 +465,8 @@ export default function Landing() {
       <header className="absolute top-0 left-0 right-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-2">
-            {/* Left: Hamburger Menu */}
+            {/* Left: Hamburger Menu + Flags */}
+            <div className="flex items-center gap-2">
             <div className="relative" ref={menuRef}>
               <Button
                 variant="outline"
@@ -611,14 +612,6 @@ export default function Landing() {
                 </div>
               )}
             </div>
-
-            {/* Center: Logo */}
-            <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-              <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
-              <span className="text-xl font-bold text-white drop-shadow-lg">CarDrop</span>
-            </Link>
-
-            {/* Right: Language flags */}
             <div className="flex items-center gap-1">
               {(["sr", "en", "de"] as const).map((code) => (
                 <button
@@ -631,6 +624,15 @@ export default function Landing() {
                 </button>
               ))}
             </div>
+            </div>
+
+            {/* Center: Logo */}
+            <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
+              <img src={parkInLogo} alt="CarDrop" className="w-10 h-10 rounded-lg" />
+              <span className="text-xl font-bold text-white drop-shadow-lg">CarDrop</span>
+            </Link>
+
+            <div aria-hidden="true" />
           </div>
         </div>
       </header>
