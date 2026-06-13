@@ -109,7 +109,7 @@ export default function Transactions() {
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-semibold text-sm mb-1 text-card-foreground truncate">
-                {spot?.title || "Loading..."}
+                {spot?.title || t.loading}
               </h4>
               <p className="text-xs text-muted-foreground truncate">{spot?.address}</p>
             </div>

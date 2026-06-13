@@ -273,7 +273,7 @@ export default function MapHackSubscribe() {
                   currentPlan === "free" ? "Free" :
                   currentPlan === "premium" ? "Premium" :
                   currentPlan === "day_pass" ? "Day Pass" :
-                  currentPlan === "godisnji_premium" ? "Godišnji Premium" :
+                  currentPlan === "godisnji_premium" ? (language === "sr" ? "Godišnji Premium" : "Annual Premium") :
                   currentPlan
                 }`
               : t.chooseSuitable}

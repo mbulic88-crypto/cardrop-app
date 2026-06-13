@@ -123,8 +123,9 @@ type DashT = {
   colStatus: string; colGate: string; colPrice: string;
   space: (n: number) => string; net: string;
   noMyBookings: string; findSpot: string; bookingDetails: string; bookingInfo: string;
-  labelParking: string; labelStatus: string; labelAddress: string; labelOwnerContact: string; labelPeriod: string;
+  labelParking: string; labelStatus: string; labelAddress: string; labelOwnerContact: string; labelPeriod: string; labelAmount: string;
   gateRamp: string; rampNote: string;
+  browseSpots: string; credit: string; instant: string;
   messages: string; loadingMsg: string; noMessages: string; messagesDesc: string;
   convoNotFound: string; back: string; you: string; replyPlaceholder: string;
   mySales: string; addSale: string; noSales: string; listSale: string;
@@ -193,6 +194,7 @@ const dashT: { sr: DashT; en: DashT } = {
     labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Adresa',
     labelOwnerContact: 'Kontakt vlasnika', labelPeriod: 'Period',
     gateRamp: 'Kapija / rampa', rampNote: 'Dostupno ±10 min od vremena rezervacije',
+    labelAmount: 'Iznos', browseSpots: 'Pregledaj parking mesta', credit: 'Kredit', instant: 'Instant',
     messages: 'Poruke', loadingMsg: 'Učitavanje...', noMessages: 'Nemate poruka',
     messagesDesc: 'Poruke sa vlasnicima parking mesta pojavit će se ovde.',
     convoNotFound: 'Razgovor nije pronađen', back: 'Nazad', you: 'Vi: ', replyPlaceholder: 'Napišite odgovor...',
@@ -276,6 +278,7 @@ const dashT: { sr: DashT; en: DashT } = {
     labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Address',
     labelOwnerContact: 'Owner contact', labelPeriod: 'Period',
     gateRamp: 'Gate / ramp', rampNote: 'Available ±10 min from booking time',
+    labelAmount: 'Amount', browseSpots: 'Browse parking spots', credit: 'Credit', instant: 'Instant',
     messages: 'Messages', loadingMsg: 'Loading...', noMessages: 'No messages',
     messagesDesc: 'Messages from parking spot owners will appear here.',
     convoNotFound: 'Conversation not found', back: 'Back', you: 'You: ', replyPlaceholder: 'Write a reply...',
@@ -847,7 +850,7 @@ export default function Dashboard() {
             <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">{t.noOwnerBookings}</p>
             <Button variant="outline" className="mt-4" onClick={() => setActiveSection('spots')} data-testid="button-go-to-spots">
-              Pregledaj parking mesta
+              {t.browseSpots}
             </Button>
           </Card>
         )}
@@ -1037,7 +1040,7 @@ export default function Dashboard() {
                 const count = m === 'all'
                   ? filteredBookings.length
                   : filteredBookings.filter(b => b.paymentMethod === m).length;
-                const label = m === 'all' ? t.allTime : m === 'instant' ? 'Instant' : 'Kredit';
+                const label = m === 'all' ? t.allTime : m === 'instant' ? t.instant : t.credit;
                 return (
                   <Button key={m} size="sm"
                     variant={payMethodFilter === m ? 'default' : 'outline'}
@@ -1061,14 +1064,14 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {instantCount > 0 && (
                     <div className="rounded-md bg-blue-500/10 border border-blue-500/20 p-3">
-                      <p className="text-xs text-blue-400 font-semibold mb-1">Instant ({instantCount})</p>
+                      <p className="text-xs text-blue-400 font-semibold mb-1">{t.instant} ({instantCount})</p>
                       <p className="text-lg font-bold text-foreground">{Math.round(instantPayout).toLocaleString()} RSD</p>
                       <p className="text-xs text-muted-foreground">{t.afterFees}</p>
                     </div>
                   )}
                   {creditCount > 0 && (
                     <div className="rounded-md bg-purple-500/10 border border-purple-500/20 p-3">
-                      <p className="text-xs text-purple-400 font-semibold mb-1">Kredit ({creditCount})</p>
+                      <p className="text-xs text-purple-400 font-semibold mb-1">{t.credit} ({creditCount})</p>
                       <p className="text-lg font-bold text-foreground">{Math.round(creditPayout).toLocaleString()} RSD</p>
                       <p className="text-xs text-muted-foreground">{t.afterCredit}</p>
                     </div>
@@ -1262,7 +1265,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Iznos</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelAmount}</p>
                 <p className="text-lg font-bold text-foreground">
                   {parseFloat(selectedBooking.totalPrice).toLocaleString()} {selectedBooking.currency}
                 </p>

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, Globe, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon } from "lucide-react";
+import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
 import { useLanguage } from "@/hooks/useLanguage";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
@@ -99,6 +99,7 @@ const translations = {
     menuMyAccount: "Moj Nalog",
     menuMyProfile: "Moj Profil",
     menuReservations: "Rezervacije",
+    myReservations: "Moje Rezervacije",
     menuLogin: "Prijavi Se",
     menuWhoIsThisFor: "Za Koga Je",
     menuHowItWorks: "Kako Funkcioniše",
@@ -208,6 +209,7 @@ const translations = {
     menuMyAccount: "My Account",
     menuMyProfile: "My Profile",
     menuReservations: "Reservations",
+    myReservations: "My Bookings",
     menuLogin: "Log In",
     menuWhoIsThisFor: "Who Is This For",
     menuHowItWorks: "How It Works",
@@ -444,10 +446,6 @@ export default function Landing() {
                       <span className="text-card-foreground font-medium">{t.menuContact}</span>
                     </div>
                     <div className="h-px bg-border mx-4 my-1" />
-                    <div className="px-4 py-2 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">Jezik / Language</span>
-                    </div>
                     {languageOptions.map((lang) => (
                       <div
                         key={lang.code}
@@ -538,12 +536,9 @@ export default function Landing() {
               onClick={() => isAuthenticated ? setLocation("/dashboard?tab=bookings") : setLocation("/auth")}
             >
               <CalendarDays className="w-5 h-5 mr-2" />
-              Moje Rezervacije
+              {t.myReservations}
             </Button>
 
-            <p className="text-xs text-white/80 text-center leading-relaxed mb-3 drop-shadow" data-testid="text-install-explainer">
-              {t.installAppExplainer}
-            </p>
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
               <a
                 href="https://play.google.com/store/apps/details?id=cardrop.app"
@@ -581,6 +576,9 @@ export default function Landing() {
                 </p>
               </button>
             </div>
+            <p className="text-xs text-white/80 text-center leading-relaxed mt-3 drop-shadow" data-testid="text-install-explainer">
+              {t.installAppExplainer}
+            </p>
           </div>
         </div>
 
@@ -912,7 +910,7 @@ export default function Landing() {
                       data-testid={`button-my-reservations-plan-${plan.id}`}
                     >
                       <CalendarDays className="w-4 h-4 mr-2" />
-                      Moje Rezervacije
+                      {t.myReservations}
                     </Button>
                   </div>
                 </Card>
