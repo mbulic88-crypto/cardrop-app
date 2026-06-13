@@ -139,7 +139,7 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "Odgovaramo u roku od 24 sata",
     contactEncouragement: "Pišite nam slobodno za sve što vam pada na pamet - svaka poruka nam pomaže da budemo bolji!",
-    installAppExplainer: "CarDrop je besplatna aplikacija za parking u Srbiji. Pronađi Štek mesta, prati Pauka i Zlatni minut u realnom vremenu, i rezerviši privatni parking direktno od vlasnika.",
+    installAppExplainer: "CarDrop je besplatna aplikacija za parking u Srbiji. Pronađi Štek mesta, prati Pauka i Zlatni minut u realnom vremenu, plaćaj parking SMS-om ili onlajn i rezerviši privatni parking direktno od vlasnika.",
   },
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
@@ -249,7 +249,7 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "We respond within 24 hours",
     contactEncouragement: "Feel free to reach out about anything - every message helps us improve!",
-    installAppExplainer: "CarDrop is a free parking app for Serbia. Find hidden Štek spots, track tow trucks and Golden Minutes in real time, and book private parking directly from owners.",
+    installAppExplainer: "CarDrop is a free parking app for Serbia. Find hidden Štek spots, track tow trucks and Golden Minutes in real time, pay for parking by SMS or online, and book private parking directly from owners.",
   },
 };
 

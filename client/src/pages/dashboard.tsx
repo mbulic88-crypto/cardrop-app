@@ -123,7 +123,7 @@ type DashT = {
   colStatus: string; colGate: string; colPrice: string;
   space: (n: number) => string; net: string;
   noMyBookings: string; findSpot: string; bookingDetails: string; bookingInfo: string;
-  labelParking: string; labelStatus: string; labelAddress: string; labelOwnerContact: string; labelPeriod: string; labelAmount: string;
+  labelParking: string; labelStatus: string; labelAddress: string; labelOwnerContact: string; labelPeriod: string; labelAmount: string; labelNote: string;
   gateRamp: string; rampNote: string;
   browseSpots: string; credit: string; instant: string;
   messages: string; loadingMsg: string; noMessages: string; messagesDesc: string;
@@ -192,7 +192,7 @@ const dashT: { sr: DashT; en: DashT } = {
     noMyBookings: 'Niste još napravili nijednu rezervaciju', findSpot: 'Pronađi parking mesto',
     bookingDetails: 'Detalji Rezervacije', bookingInfo: 'Informacije o vašoj rezervaciji',
     labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Adresa',
-    labelOwnerContact: 'Kontakt vlasnika', labelPeriod: 'Period',
+    labelOwnerContact: 'Kontakt vlasnika', labelPeriod: 'Period', labelNote: 'Napomena',
     gateRamp: 'Kapija / rampa', rampNote: 'Dostupno ±10 min od vremena rezervacije',
     labelAmount: 'Iznos', browseSpots: 'Pregledaj parking mesta', credit: 'Kredit', instant: 'Instant',
     messages: 'Poruke', loadingMsg: 'Učitavanje...', noMessages: 'Nemate poruka',
@@ -276,7 +276,7 @@ const dashT: { sr: DashT; en: DashT } = {
     noMyBookings: 'You have not made any bookings yet', findSpot: 'Find parking spot',
     bookingDetails: 'Booking Details', bookingInfo: 'Information about your booking',
     labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Address',
-    labelOwnerContact: 'Owner contact', labelPeriod: 'Period',
+    labelOwnerContact: 'Owner contact', labelPeriod: 'Period', labelNote: 'Note',
     gateRamp: 'Gate / ramp', rampNote: 'Available ±10 min from booking time',
     labelAmount: 'Amount', browseSpots: 'Browse parking spots', credit: 'Credit', instant: 'Instant',
     messages: 'Messages', loadingMsg: 'Loading...', noMessages: 'No messages',
@@ -458,7 +458,7 @@ export default function Dashboard() {
   const { data: mySpots = [] } = useQuery<ParkingSpot[]>({ queryKey: ["/api/parking-spots/my-spots"], enabled: isAuthenticated, staleTime: 0, refetchOnMount: "always" });
   const { data: mySalesListings = [] } = useQuery<SalesListing[]>({ queryKey: ["/api/sales-listings/my-listings"], enabled: isAuthenticated });
   const { data: ownerBookings = [] } = useQuery<OwnerBooking[]>({ queryKey: ["/api/bookings/owner-received"], enabled: isAuthenticated });
-  type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null; spotHasRamp?: boolean };
+  type EnrichedBooking = Booking & { spotTitle?: string | null; spotAddress?: string | null; spotPhone?: string | null; spotHasRamp?: boolean; notes?: string | null };
   const { data: myBookings = [] } = useQuery<EnrichedBooking[]>({ queryKey: ["/api/bookings"], enabled: isAuthenticated });
   const [selectedBooking, setSelectedBooking] = useState<EnrichedBooking | null>(null);
   const { data: ownerReviews = [] } = useQuery<Review[]>({
@@ -1274,7 +1274,7 @@ export default function Dashboard() {
               </div>
               {selectedBooking.notes && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Napomena</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelNote}</p>
                   <p className="text-sm text-foreground">{selectedBooking.notes}</p>
                 </div>
               )}
