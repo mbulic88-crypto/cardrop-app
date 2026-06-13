@@ -33,7 +33,7 @@ import { PRICING_PLANS } from "@shared/pricing";
 const translations = {
   sr: {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
-    heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
+    heroSubtitle: "Rezerviši privatni parking direktno od vlasnika i plati onlajn — ili otkrij skrivena parking mesta koja znaju samo mestani: slobodna mesta, upozorenja za pauka i tajne lokacije u realnom vremenu.",
     findSpotButton: "Pronađi parking",
     findSpotSubtitle: "Rezerviši direktno ili kontaktiraj vlasnika · Štek parkinzi i privatni parking za najam · Pauk radar, Zlatni minut i SafeZone alarmi",
     findSpotBranding: "Map Hack RS",
@@ -139,11 +139,10 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "Odgovaramo u roku od 24 sata",
     contactEncouragement: "Pišite nam slobodno za sve što vam pada na pamet - svaka poruka nam pomaže da budemo bolji!",
-    installAppExplainer: "CarDrop je besplatna aplikacija za parking u Srbiji. Pronađi Štek mesta, prati Pauka i Zlatni minut u realnom vremenu, plaćaj parking SMS-om ili onlajn i rezerviši privatni parking direktno od vlasnika.",
   },
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
-    heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
+    heroSubtitle: "Reserve private parking directly from owners and pay online — or discover hidden spots only locals know: free spaces, tow truck alerts, and secret locations in real time.",
     findSpotButton: "Find Parking",
     findSpotSubtitle: "Book directly or contact the owner · Hidden Štek spots & private parking · Tow truck radar, Golden Minute & SafeZone alerts",
     findSpotBranding: "Map Hack RS",
@@ -249,7 +248,6 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "We respond within 24 hours",
     contactEncouragement: "Feel free to reach out about anything - every message helps us improve!",
-    installAppExplainer: "CarDrop is a free parking app for Serbia. Find hidden Štek spots, track tow trucks and Golden Minutes in real time, pay for parking by SMS or online, and book private parking directly from owners.",
   },
 };
 
@@ -576,9 +574,6 @@ export default function Landing() {
                 </p>
               </button>
             </div>
-            <p className="text-xs text-white/80 text-center leading-relaxed mt-3 drop-shadow" data-testid="text-install-explainer">
-              {t.installAppExplainer}
-            </p>
           </div>
         </div>
 
