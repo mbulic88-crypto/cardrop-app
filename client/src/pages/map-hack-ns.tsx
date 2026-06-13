@@ -26,14 +26,143 @@ const mhT = {
   sr: {
     heroSubtitle: "NS · Štek parkinzi · Crvene zone · Live chat",
     filterPrivate: "Privatan Parking",
+    freeName: "FREE", freeDesc: "Osnovni pristup parking zajednici Srbije.",
+    premiumName: "PREMIUM", premiumBadge: "Preporučeno", premiumDesc: "Potpuna automatizacija i maksimalna zaštita.",
+    premiumAllFree: "Sve iz Free PLUS:", premiumPrice: "RSD / mes",
+    dayPassName: "DAY PASS", dayPassDesc: "Sve iz PREMIUM paketa na 24 sata.", dayPassPrice: "RSD · jednokratno",
+    godisnjiName: "GODIŠNJI", godisnjiBadge: "2 mes. gratis", godisnjiDesc: "Sve iz PREMIUM paketa na godinu dana.",
+    godisnjiPrice: "RSD / god", godisnjiSavings: "Ušteda od preko 1.000 RSD — praktično 2 meseca besplatno",
+    safeZoneLabel: "Safe zona", chatLabel: "Chat",
+    chatTitle: "Chat", chatClose: "Zatvori fullscreen chat", chatEmpty: "Nema poruka. Budi prvi!",
+    addComment: "Dodaj komentar (opciono)", cancel: "Otkaži", place: "Postavi", placing: "Postavljam...",
+    markerPaukRadar: "Pauk Radar", markerRadar: "Radar", markerCamera: "Saobraćajna Kamera", markerZlatniMinut: "Zlatni Minut",
+    placeholderPauk: "npr. Stoji tu već 30min, kruži po bloku...", placeholderRadar: "npr. Mobilni radar na Bulevaru, pazi na 60...",
+    placeholderKamera: "npr. Nadzorna kamera na raskrižju, radi 24h...", placeholderZlatni: "npr. Slobodnih mesta ima, ali frka na uglu...",
+    removeMarker: "Ukloni marker", removingMarker: "Uklanjam...",
+    safeZoneSet: "Safe Zone postavljena", watchZoneSet: "Zona upozorenja postavljena",
+    watchZoneDesc: "Dobit ćeš push kad Zlatni Minut ili Pauk uđe u tvoju zonu.",
+    legendTitle: "Legenda mape", legendMarkerTypes: "Tipovi markera",
+    legendPush: "Push notifikacije", legendPushTitle: "Automatska upozorenja",
+    legendPushDesc: "Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push obaveštenje odmah. Zahteva: postavljenu Safe Zonu (Premium) i dozvolu u browseru.",
+    legendPushDisable: "Notifikacije možeš isključiti klikom na zvonce u hederu.",
+    legendPlans: "Planovi",
+    legendZlatniDesc: "Slobodno parking mesto ili dojava da neko izlazi — ističe za 45 min",
+    legendPaukDesc: "Pauk primećen u blizini — upozorenje!",
+    legendStekDesc: "Tajno, skriveni ili povoljno parking mesto",
+    legendSafeZoneDesc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)",
+    legendSmsDesc: "Plati javni parking putem SMS-a — 1 klik",
+    legendRadarDesc: "Policijski radar ili patrola na putu",
+    legendPrivatDesc: "Pregled privatnih parkinga za iznajmljivanje u Srbiji",
+    legendFreeItems: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje javnih zona (1 klik)", "Privatni parkinzi za najam", "Live Chat"],
+    legendPremiumItems: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"],
+    legendDayPassItems: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"],
+    freeFeat1: "Parking mapa Srbije sa zonama i ulicama", freeFeat2: "Live Chat (pisanje i čitanje u realnom vremenu)",
+    freeFeat3: "Smart SMS plaćanje javnih zona (1 klik)", freeFeat4: "Pregled privatnih parkinga za najam",
+    freeFeat5: "Vizuelni markeri za Pauka i 'Zlatni minut'", freeFeat6: "Pauk i Zlatni Minut push notifikacije (u Safe Zoni)",
+    freeFeat7: "Safe Zone alarm i Radar notifikacije (samo Premium)", freeFeat8: "Štek lokacije (zaključane)",
+    premFeat1: "Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)",
+    premFeat2: "Push Notifikacije: instant alarm — ne moraš gledati u mapu",
+    premFeat3: "Štek Lokacije: otključana baza skrivenih parkinga",
+    premFeat4: "Radar Markeri: označi policijski radar i patrolu na mapi",
+    premFeat5: "Pauk Heatmap: analitika kretanja pauka po danima i satima",
+    dpFeat1: "Sve Premium funkcije (Štek, Radar, Push, Safe Zone)", dpFeat2: "Važi 24 sata", dpFeat3: "Bez pretplate",
+    dpFeat4: "Idealno za goste NS, turiste, subotnji izlazak u centar",
+    godFeat1: "Sve Premium funkcije (Štek, Radar, Push, Safe Zone)", godFeat2: "365 dana pristupa",
+    godFeat3: "Ušteda od preko 1.000 RSD godišnje", godFeat4: "Praktično 2 meseca besplatno",
   },
   en: {
     heroSubtitle: "RS · Hidden spots · Red zones · Live chat",
     filterPrivate: "Private Parking",
+    freeName: "FREE", freeDesc: "Basic access to the Serbian parking community.",
+    premiumName: "PREMIUM", premiumBadge: "Recommended", premiumDesc: "Full automation and maximum protection.",
+    premiumAllFree: "Everything from Free PLUS:", premiumPrice: "RSD / mo",
+    dayPassName: "DAY PASS", dayPassDesc: "All PREMIUM features for 24 hours.", dayPassPrice: "RSD · one-time",
+    godisnjiName: "ANNUAL", godisnjiBadge: "2 months free", godisnjiDesc: "All PREMIUM features for a full year.",
+    godisnjiPrice: "RSD / yr", godisnjiSavings: "Save over 1,000 RSD — essentially 2 months free",
+    safeZoneLabel: "Safe Zone", chatLabel: "Chat",
+    chatTitle: "Chat", chatClose: "Close fullscreen chat", chatEmpty: "No messages yet. Be the first!",
+    addComment: "Add a comment (optional)", cancel: "Cancel", place: "Submit", placing: "Submitting...",
+    markerPaukRadar: "Tow Truck Radar", markerRadar: "Radar", markerCamera: "Traffic Camera", markerZlatniMinut: "Golden Minute",
+    placeholderPauk: "e.g. Has been here 30 min, circling the block...", placeholderRadar: "e.g. Mobile radar on the avenue, watch 60...",
+    placeholderKamera: "e.g. Traffic camera at junction, active 24h...", placeholderZlatni: "e.g. Some spots available but busy corner...",
+    removeMarker: "Remove marker", removingMarker: "Removing...",
+    safeZoneSet: "Safe Zone set", watchZoneSet: "Watch zone set",
+    watchZoneDesc: "You'll get a push when a Tow Truck or Golden Minute enters your zone.",
+    legendTitle: "Map Legend", legendMarkerTypes: "Marker types",
+    legendPush: "Push notifications", legendPushTitle: "Automatic alerts",
+    legendPushDesc: "When someone reports a Tow Truck, Golden Minute, Radar or Štek in your Safe Zone (300m radius), you get an instant push notification. Requires: Safe Zone set (Premium) and browser permission.",
+    legendPushDisable: "You can disable notifications by clicking the bell in the header.",
+    legendPlans: "Plans",
+    legendZlatniDesc: "Free parking spot or someone about to leave — expires in 45 min",
+    legendPaukDesc: "Tow truck spotted nearby — warning!",
+    legendStekDesc: "Secret, hidden or cheap parking spot",
+    legendSafeZoneDesc: "Get notified of anything that happens in your Safe Zone (tow truck, radar, golden minute, hidden spot)",
+    legendSmsDesc: "Pay public parking via SMS — 1 click",
+    legendRadarDesc: "Police radar or patrol on the road",
+    legendPrivatDesc: "Browse private parking spots for rent in Serbia",
+    legendFreeItems: ["Golden Minute & Tow Truck markers", "Smart SMS public zone payment (1 click)", "Private parking listings", "Live Chat"],
+    legendPremiumItems: ["Everything from Free +", "Safe Zone alarm (300m, all markers)", "Hidden spots (Štek)", "Radar markers", "Push notifications"],
+    legendDayPassItems: ["All Premium features", "Valid 24 hours", "No subscription"],
+    freeFeat1: "Serbia parking map with zones and streets", freeFeat2: "Live Chat (write and read in real time)",
+    freeFeat3: "Smart SMS payment for public zones (1 click)", freeFeat4: "Browse private parking spots for rent",
+    freeFeat5: "Visual markers for Tow Trucks and Golden Minute", freeFeat6: "Tow Truck & Golden Minute push notifications (in Safe Zone)",
+    freeFeat7: "Safe Zone alarm & Radar notifications (Premium only)", freeFeat8: "Hidden spots — Štek (locked)",
+    premFeat1: "Safe Zone Alarm: push for every marker in your 300m zone (tow truck, radar, golden minute, štek)",
+    premFeat2: "Push Notifications: instant alarm — no need to watch the map",
+    premFeat3: "Štek Spots: unlocked database of hidden parking",
+    premFeat4: "Radar Markers: mark police radars and patrols on the map",
+    premFeat5: "Tow Truck Heatmap: analytics of tow truck movement by day and hour",
+    dpFeat1: "All Premium features (Štek, Radar, Push, Safe Zone)", dpFeat2: "Valid 24 hours", dpFeat3: "No subscription",
+    dpFeat4: "Perfect for NS visitors, tourists, Saturday night out",
+    godFeat1: "All Premium features (Štek, Radar, Push, Safe Zone)", godFeat2: "365 days access",
+    godFeat3: "Save over 1,000 RSD annually", godFeat4: "Essentially 2 months for free",
   },
   de: {
     heroSubtitle: "RS · Štek-Plätze · Rote Zonen · Live-Chat",
     filterPrivate: "Privatparkplatz",
+    freeName: "FREE", freeDesc: "Basis-Zugang zur serbischen Parkgemeinschaft.",
+    premiumName: "PREMIUM", premiumBadge: "Empfohlen", premiumDesc: "Vollständige Automatisierung und maximaler Schutz.",
+    premiumAllFree: "Alles aus Free PLUS:", premiumPrice: "RSD / Mo.",
+    dayPassName: "TAGESPASS", dayPassDesc: "Alle PREMIUM-Funktionen für 24 Stunden.", dayPassPrice: "RSD · einmalig",
+    godisnjiName: "JAHRESABO", godisnjiBadge: "2 Monate gratis", godisnjiDesc: "Alle PREMIUM-Funktionen für ein ganzes Jahr.",
+    godisnjiPrice: "RSD / Jahr", godisnjiSavings: "Ersparnis von über 1.000 RSD — praktisch 2 Monate gratis",
+    safeZoneLabel: "Safe Zone", chatLabel: "Chat",
+    chatTitle: "Chat", chatClose: "Vollbild-Chat schließen", chatEmpty: "Keine Nachrichten. Sei der Erste!",
+    addComment: "Kommentar hinzufügen (optional)", cancel: "Abbrechen", place: "Bestätigen", placing: "Wird gesetzt...",
+    markerPaukRadar: "Abschleppradar", markerRadar: "Radar", markerCamera: "Verkehrskamera", markerZlatniMinut: "Goldene Minute",
+    placeholderPauk: "z.B. Steht hier seit 30 Min., fährt ums Quartier...", placeholderRadar: "z.B. Mobiler Radar auf dem Boulevard, Acht auf 60...",
+    placeholderKamera: "z.B. Überwachungskamera an der Kreuzung, 24h aktiv...", placeholderZlatni: "z.B. Einige Plätze frei, aber viel Trubel...",
+    removeMarker: "Marker entfernen", removingMarker: "Wird entfernt...",
+    safeZoneSet: "Safe Zone gesetzt", watchZoneSet: "Überwachungszone gesetzt",
+    watchZoneDesc: "Du bekommst einen Push, wenn ein Abschleppwagen oder die Goldene Minute deine Zone betritt.",
+    legendTitle: "Kartenlegende", legendMarkerTypes: "Markertypen",
+    legendPush: "Push-Benachrichtigungen", legendPushTitle: "Automatische Warnungen",
+    legendPushDesc: "Wenn jemand einen Abschleppwagen, Goldene Minute, Radar oder Štek in deiner Safe Zone (300m-Kreis) meldet, bekommst du sofort eine Push-Benachrichtigung. Erforderlich: Safe Zone gesetzt (Premium) und Browser-Erlaubnis.",
+    legendPushDisable: "Benachrichtigungen kannst du durch Klick auf die Glocke im Header deaktivieren.",
+    legendPlans: "Tarife",
+    legendZlatniDesc: "Freier Parkplatz oder jemand fährt gleich weg — läuft in 45 Min. ab",
+    legendPaukDesc: "Abschleppwagen in der Nähe gesichtet — Warnung!",
+    legendStekDesc: "Geheimer, versteckter oder günstiger Parkplatz",
+    legendSafeZoneDesc: "Benachrichtigung über alles in deiner Safe Zone (Abschleppwagen, Radar, Goldene Minute, Štek)",
+    legendSmsDesc: "Öffentliches Parken per SMS bezahlen — 1 Klick",
+    legendRadarDesc: "Polizei-Radar oder Patrouille auf der Straße",
+    legendPrivatDesc: "Private Parkplätze zur Miete in Serbien durchsuchen",
+    legendFreeItems: ["Goldene Minute & Abschleppradar-Marker", "Intelligente SMS-Zahlung öffentlicher Zonen (1 Klick)", "Private Parkplatzinserate", "Live-Chat"],
+    legendPremiumItems: ["Alles aus Free +", "Safe Zone Alarm (300m, alle Marker)", "Štek-Plätze (versteckt)", "Radar-Marker", "Push-Benachrichtigungen"],
+    legendDayPassItems: ["Alle Premium-Funktionen", "Gilt 24 Stunden", "Kein Abonnement"],
+    freeFeat1: "Serbische Parkkarte mit Zonen und Straßen", freeFeat2: "Live-Chat (Schreiben und Lesen in Echtzeit)",
+    freeFeat3: "Intelligente SMS-Zahlung öffentlicher Zonen (1 Klick)", freeFeat4: "Private Parkplätze zur Miete ansehen",
+    freeFeat5: "Visuelle Marker für Abschleppwagen und Goldene Minute", freeFeat6: "Abschleppwagen & Goldene-Minute-Push-Benachrichtigungen (in Safe Zone)",
+    freeFeat7: "Safe Zone Alarm & Radar-Benachrichtigungen (nur Premium)", freeFeat8: "Štek-Plätze — versteckt (gesperrt)",
+    premFeat1: "Safe Zone Alarm: Push für jeden Marker in deiner 300m-Zone (Abschleppwagen, Radar, Goldene Minute, Štek)",
+    premFeat2: "Push-Benachrichtigungen: Sofortalarm — du musst nicht auf die Karte schauen",
+    premFeat3: "Štek-Plätze: entsperrte Datenbank versteckter Parkplätze",
+    premFeat4: "Radar-Marker: Polizeiradare und Patrouillen auf der Karte markieren",
+    premFeat5: "Abschleppwagen-Heatmap: Analyse der Abschleppbewegungen nach Tag und Stunde",
+    dpFeat1: "Alle Premium-Funktionen (Štek, Radar, Push, Safe Zone)", dpFeat2: "Gilt 24 Stunden", dpFeat3: "Kein Abonnement",
+    dpFeat4: "Ideal für NS-Besucher, Touristen, Samstagabend im Zentrum",
+    godFeat1: "Alle Premium-Funktionen (Štek, Radar, Push, Safe Zone)", godFeat2: "365 Tage Zugang",
+    godFeat3: "Ersparnis von über 1.000 RSD jährlich", godFeat4: "Praktisch 2 Monate gratis",
   },
 };
 
@@ -134,6 +263,8 @@ function Radio({ selected, light = true }: { selected: boolean; light?: boolean 
 }
 
 function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void }) {
+  const { language } = useLanguage();
+  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
   return (
     <div className="flex flex-col gap-3">
       {/* 1. FREE — bijela kartica */}
@@ -149,8 +280,8 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
       >
         <div className="flex items-start justify-between mb-2">
           <div>
-            <span className="text-slate-800 dark:text-slate-100 font-extrabold text-base tracking-wide">FREE</span>
-            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Osnovni pristup parking zajednici Srbije.</p>
+            <span className="text-slate-800 dark:text-slate-100 font-extrabold text-base tracking-wide">{mh.freeName}</span>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{mh.freeDesc}</p>
           </div>
           <div className="flex flex-col items-end gap-1">
             <span className="text-slate-800 dark:text-slate-100 text-2xl font-extrabold leading-none">0</span>
@@ -159,14 +290,14 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           </div>
         </div>
         <div className="flex flex-col gap-1.5 mt-3">
-          <FreeRow ok text="Parking mapa Srbije sa zonama i ulicama" />
-          <FreeRow ok text="Live Chat (pisanje i čitanje u realnom vremenu)" />
-          <FreeRow ok text="Smart SMS plaćanje javnih zona (1 klik)" />
-          <FreeRow ok text="Pregled privatnih parkinga za najam" />
-          <FreeRow ok text="Vizuelni markeri za Pauka i 'Zlatni minut'" />
-          <FreeRow ok text="Pauk i Zlatni Minut push notifikacije (u Safe Zoni)" />
-          <FreeRow ok={false} text="Safe Zone alarm i Radar notifikacije (samo Premium)" />
-          <FreeRow ok={false} text="Štek lokacije (zaključane)" />
+          <FreeRow ok text={mh.freeFeat1} />
+          <FreeRow ok text={mh.freeFeat2} />
+          <FreeRow ok text={mh.freeFeat3} />
+          <FreeRow ok text={mh.freeFeat4} />
+          <FreeRow ok text={mh.freeFeat5} />
+          <FreeRow ok text={mh.freeFeat6} />
+          <FreeRow ok={false} text={mh.freeFeat7} />
+          <FreeRow ok={false} text={mh.freeFeat8} />
         </div>
       </button>
       {/* 2. PREMIUM — zlatni gradijent */}
@@ -188,26 +319,26 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         <div className="flex items-start justify-between mb-2">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-yellow-950 font-extrabold text-base tracking-wide">PREMIUM</span>
+              <span className="text-yellow-950 font-extrabold text-base tracking-wide">{mh.premiumName}</span>
               <span className="bg-yellow-950/15 text-yellow-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                Preporučeno
+                {mh.premiumBadge}
               </span>
             </div>
-            <p className="text-yellow-900/70 text-xs mt-0.5">Potpuna automatizacija i maksimalna zaštita.</p>
+            <p className="text-yellow-900/70 text-xs mt-0.5">{mh.premiumDesc}</p>
           </div>
           <Radio selected={selectedPlan === "premium"} light={false} />
         </div>
         <div className="mb-3">
           <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
-          <span className="text-yellow-800 text-sm ml-1 font-medium">RSD / mes</span>
+          <span className="text-yellow-800 text-sm ml-1 font-medium">{mh.premiumPrice}</span>
         </div>
-        <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">Sve iz Free PLUS:</p>
+        <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">{mh.premiumAllFree}</p>
         <div className="flex flex-col gap-1.5">
-          <GoldRow ok text="Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)" />
-          <GoldRow ok text="Push Notifikacije: instant alarm — ne moraš gledati u mapu" />
-          <GoldRow ok text="Štek Lokacije: otključana baza skrivenih parkinga" />
-          <GoldRow ok text="Radar Markeri: označi policijski radar i patrolu na mapi" />
-          <GoldRow ok text="Pauk Heatmap: analitika kretanja pauka po danima i satima" />
+          <GoldRow ok text={mh.premFeat1} />
+          <GoldRow ok text={mh.premFeat2} />
+          <GoldRow ok text={mh.premFeat3} />
+          <GoldRow ok text={mh.premFeat4} />
+          <GoldRow ok text={mh.premFeat5} />
         </div>
       </button>
       {/* 3. DAY PASS — crvena */}
@@ -228,20 +359,20 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
       >
         <div className="flex items-start justify-between mb-2">
           <div>
-            <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
-            <p className="text-red-200 text-xs mt-0.5">Sve iz PREMIUM paketa na 24 sata.</p>
+            <span className="text-white font-extrabold text-base tracking-wide">{mh.dayPassName}</span>
+            <p className="text-red-200 text-xs mt-0.5">{mh.dayPassDesc}</p>
           </div>
           <Radio selected={selectedPlan === "day_pass"} light />
         </div>
         <div className="mb-3">
           <span className="text-white text-3xl font-extrabold leading-none">120</span>
-          <span className="text-red-200 text-sm ml-1 font-medium">RSD · jednokratno</span>
+          <span className="text-red-200 text-sm ml-1 font-medium">{mh.dayPassPrice}</span>
         </div>
         <div className="flex flex-col gap-1.5">
-          <LightRow ok text="Sve Premium funkcije (Štek, Radar, Push, Safe Zone)" />
-          <LightRow ok text="Važi 24 sata" />
-          <LightRow ok text="Bez pretplate" />
-          <LightRow ok text="Idealno za goste NS, turiste, subotnji izlazak u centar" />
+          <LightRow ok text={mh.dpFeat1} />
+          <LightRow ok text={mh.dpFeat2} />
+          <LightRow ok text={mh.dpFeat3} />
+          <LightRow ok text={mh.dpFeat4} />
         </div>
       </button>
       {/* 4. GODIŠNJI PREMIUM — tamnoplava */}
@@ -263,27 +394,27 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
         <div className="flex items-start justify-between mb-2">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-white font-extrabold text-base tracking-wide">GODIŠNJI</span>
+              <span className="text-white font-extrabold text-base tracking-wide">{mh.godisnjiName}</span>
               <span className="bg-green-400 text-green-950 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                2 mes. gratis
+                {mh.godisnjiBadge}
               </span>
             </div>
-            <p className="text-indigo-300 text-xs mt-0.5">Sve iz PREMIUM paketa na godinu dana.</p>
+            <p className="text-indigo-300 text-xs mt-0.5">{mh.godisnjiDesc}</p>
           </div>
           <Radio selected={selectedPlan === "godisnji_premium"} light />
         </div>
         <div className="flex items-baseline gap-2 mb-2">
           <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
-          <span className="text-indigo-300 text-sm font-medium">RSD / god</span>
+          <span className="text-indigo-300 text-sm font-medium">{mh.godisnjiPrice}</span>
         </div>
         <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
-          <p className="text-indigo-200 text-xs font-semibold">Ušteda od preko 1.000 RSD — praktično 2 meseca besplatno</p>
+          <p className="text-indigo-200 text-xs font-semibold">{mh.godisnjiSavings}</p>
         </div>
         <div className="flex flex-col gap-1.5">
-          <LightRow ok text="Sve Premium funkcije (Štek, Radar, Push, Safe Zone)" />
-          <LightRow ok text="365 dana pristupa" />
-          <LightRow ok text="Ušteda od preko 1.000 RSD godišnje" />
-          <LightRow ok text="Praktično 2 meseca besplatno" />
+          <LightRow ok text={mh.godFeat1} />
+          <LightRow ok text={mh.godFeat2} />
+          <LightRow ok text={mh.godFeat3} />
+          <LightRow ok text={mh.godFeat4} />
         </div>
       </button>
       {/* 5. ZA FIRME — teal puna kartica, non-selectable */}
@@ -1015,7 +1146,7 @@ export default function MapHackNS() {
       apiRequest("PUT", "/api/map-hack/safe-zone", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/safe-zone"] });
-      toast({ title: "Safe Zone postavljena" });
+      toast({ title: mh.safeZoneSet });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -1029,7 +1160,7 @@ export default function MapHackNS() {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/watch-area"] });
       setWatchZoneOpen(false);
       setWatchZonePlaceMode(false);
-      toast({ title: "Zona upozorenja postavljena", description: "Dobit ćeš push kad Zlatni Minut ili Pauk uđe u tvoju zonu." });
+      toast({ title: mh.watchZoneSet, description: mh.watchZoneDesc });
     },
     onError: (err: any) => {
       setWatchZonePlaceMode(false);
@@ -2633,7 +2764,7 @@ export default function MapHackNS() {
                 className="w-full py-2 rounded-xl text-xs font-medium"
                 style={{ color: "#ef4444", border: "1px solid rgba(239,68,68,0.20)" }}
               >
-                {expireMarkerMutation.isPending ? "Uklanjam..." : "Ukloni marker"}
+                {expireMarkerMutation.isPending ? mh.removingMarker : mh.removeMarker}
               </button>
             )}
           </div>
@@ -4840,7 +4971,7 @@ export default function MapHackNS() {
                   {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
                 </div>
                 <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : (hasZone || isPlacing) ? "#fde68a" : "#fbbf24", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  Safe zona
+                  {mh.safeZoneLabel}
                 </span>
               </button>
             );
@@ -4861,7 +4992,7 @@ export default function MapHackNS() {
                 </span>
               )}
             </div>
-            <span className="font-bold text-center" style={{ color: "#bfdbfe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Chat</span>
+            <span className="font-bold text-center" style={{ color: "#bfdbfe", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>{mh.chatLabel}</span>
           </button>
         </div>
       </div>
@@ -4871,20 +5002,20 @@ export default function MapHackNS() {
         {chatFullscreen && (
           <div className="flex items-center justify-between px-3 py-2 flex-shrink-0"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            <span className="text-sm font-semibold" style={{ color: "#e5e7eb" }}>Chat</span>
+            <span className="text-sm font-semibold" style={{ color: "#e5e7eb" }}>{mh.chatTitle}</span>
             <button
               data-testid="btn-chat-fullscreen-close"
               onClick={() => setChatFullscreen(false)}
               className="kraft-btn flex items-center justify-center"
               style={{ width: 32, height: 32, borderRadius: "50%", background: "#374151", border: "none" }}
-              title="Zatvori fullscreen chat">
+              title={mh.chatClose}>
               <X size={16} style={{ color: "#fff" }} />
             </button>
           </div>
         )}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
           {chatMessages.length === 0 && (
-            <p className="text-xs text-center py-6" style={{ color: "#4b5563" }}>Nema poruka. Budi prvi!</p>
+            <p className="text-xs text-center py-6" style={{ color: "#4b5563" }}>{mh.chatEmpty}</p>
           )}
           {chatMessages.map(msg => {
             if (msg.isSystem) {
@@ -5116,14 +5247,14 @@ export default function MapHackNS() {
                 <div>
                   <p className="font-bold text-white text-sm">
                     {pendingPlacement.type === "pauk"
-                      ? "Pauk Radar"
+                      ? mh.markerPaukRadar
                       : pendingPlacement.type === "radar"
-                      ? "Radar"
+                      ? mh.markerRadar
                       : pendingPlacement.type === "kamera"
-                      ? "Saobraćajna Kamera"
-                      : "Zlatni Minut"}
+                      ? mh.markerCamera
+                      : mh.markerZlatniMinut}
                   </p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>Dodaj komentar (opciono)</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>{mh.addComment}</p>
                 </div>
               </div>
               <button onClick={() => { setPendingPlacement(null); setPendingComment(""); }}
@@ -5140,12 +5271,12 @@ export default function MapHackNS() {
                 onChange={e => setPendingComment(e.target.value.slice(0, 100))}
                 placeholder={
                   pendingPlacement.type === "pauk"
-                    ? "npr. Stoji tu već 30min, kruži po bloku..."
+                    ? mh.placeholderPauk
                     : pendingPlacement.type === "radar"
-                    ? "npr. Mobilni radar na Bulevaru, pazi na 60..."
+                    ? mh.placeholderRadar
                     : pendingPlacement.type === "kamera"
-                    ? "npr. Nadzorna kamera na raskrižju, radi 24h..."
-                    : "npr. Slobodnih mesta ima, ali frka na uglu..."
+                    ? mh.placeholderKamera
+                    : mh.placeholderZlatni
                 }
                 rows={3}
                 className="w-full rounded-xl px-3 py-2.5 text-sm resize-none"
@@ -5167,7 +5298,7 @@ export default function MapHackNS() {
                   onClick={() => { setPendingPlacement(null); setPendingComment(""); }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
                   style={{ background: "rgba(255,255,255,0.07)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  Otkaži
+                  {mh.cancel}
                 </button>
                 <button
                   data-testid="btn-confirm-placement"
@@ -5201,7 +5332,7 @@ export default function MapHackNS() {
                     color: "#fff",
                     opacity: addMarkerMutation.isPending ? 0.6 : 1,
                   }}>
-                  {addMarkerMutation.isPending ? "Postavljam..." : "Postavi"}
+                  {addMarkerMutation.isPending ? mh.placing : mh.place}
                 </button>
               </div>
             </div>
@@ -5505,7 +5636,7 @@ export default function MapHackNS() {
             <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
               <div className="flex items-center gap-2">
                 <Info size={16} style={{ color: "#6b7280" }} />
-                <span className="font-bold text-white text-sm">Legenda mape</span>
+                <span className="font-bold text-white text-sm">{mh.legendTitle}</span>
               </div>
               <button onClick={() => setLegendOpen(false)} className="flex items-center justify-center" style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }}>
                 <X size={14} style={{ color: "#9ca3af" }} />
@@ -5515,10 +5646,10 @@ export default function MapHackNS() {
             <div className="px-4 py-3 space-y-5">
               {/* Marker types */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>Tipovi markera</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: "#6b7280" }}>{mh.legendMarkerTypes}</p>
                 <div className="space-y-2.5">
                   {[
-                    { icon: <Clock size={14} />, color: "#f97316", label: "Zlatni Minut", desc: "Slobodno parking mesto ili dojava da neko izlazi — ističe za 45 min", badge: "Free" },
+                    { icon: <Clock size={14} />, color: "#f97316", label: mh.markerZlatniMinut, desc: mh.legendZlatniDesc, badge: "Free" },
                     { icon: (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="12" cy="10" r="3"/><circle cx="12" cy="16" r="4"/>
@@ -5527,12 +5658,12 @@ export default function MapHackNS() {
                           <line x1="8" y1="14" x2="3" y2="13"/><line x1="16" y1="14" x2="21" y2="13"/>
                           <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
                         </svg>
-                      ), color: "#ef4444", label: "Pauk Radar", desc: "Pauk primećen u blizini — upozorenje!", badge: "Free" },
-                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: "Tajno, skriveni ili povoljno parking mesto", badge: "Premium" },
-                    { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)", badge: "Premium" },
-                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS Plaćanje javnih", desc: "Plati javni parking putem SMS-a — 1 klik", badge: "Free" },
-                    { icon: <RadioTower size={14} />, color: "#8b5cf6", label: "Radar", desc: "Policijski radar ili patrola na putu", badge: "Premium" },
-                    { icon: <Car size={14} />, color: "#14b8a6", label: "Privatni Parkinzi", desc: "Pregled privatnih parkinga za iznajmljivanje u Srbiji", badge: "Free" },
+                      ), color: "#ef4444", label: mh.markerPaukRadar, desc: mh.legendPaukDesc, badge: "Free" },
+                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: mh.legendStekDesc, badge: "Premium" },
+                    { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: mh.legendSafeZoneDesc, badge: "Premium" },
+                    { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS", desc: mh.legendSmsDesc, badge: "Free" },
+                    { icon: <RadioTower size={14} />, color: "#8b5cf6", label: mh.markerRadar, desc: mh.legendRadarDesc, badge: "Premium" },
+                    { icon: <Car size={14} />, color: "#14b8a6", label: mh.filterPrivate, desc: mh.legendPrivatDesc, badge: "Free" },
                   ].map(item => (
                     <div key={item.label} className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: item.color + "22", border: `1px solid ${item.color}44` }}>
@@ -5552,22 +5683,22 @@ export default function MapHackNS() {
 
               {/* Push notifikacije */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16 }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Push notifikacije</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>{mh.legendPush}</p>
                 <div className="rounded-xl px-3 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <p className="text-sm text-white mb-1 font-medium">Automatska upozorenja</p>
-                  <p className="text-xs" style={{ color: "#9ca3af" }}>Kada neko prijavi Pauka, Zlatni Minut, Radar ili Štek u tvojoj Safe Zoni (300m krug) dobijaš push obaveštenje odmah. Zahteva: postavljenu Safe Zonu (Premium) i dozvolu u browseru.</p>
-                  <p className="text-xs mt-2" style={{ color: "#6b7280" }}>Notifikacije možeš isključiti klikom na zvonce u hederu.</p>
+                  <p className="text-sm text-white mb-1 font-medium">{mh.legendPushTitle}</p>
+                  <p className="text-xs" style={{ color: "#9ca3af" }}>{mh.legendPushDesc}</p>
+                  <p className="text-xs mt-2" style={{ color: "#6b7280" }}>{mh.legendPushDisable}</p>
                 </div>
               </div>
 
               {/* Plan info */}
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16 }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>Planovi</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#6b7280" }}>{mh.legendPlans}</p>
                 <div className="space-y-2">
                   {[
-                    { plan: "Free — 0 RSD", items: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje javnih zona (1 klik)", "Privatni parkinzi za najam", "Live Chat"] },
-                    { plan: "Premium — 390 RSD/mes", items: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"] },
-                    { plan: "Day Pass — 120 RSD", items: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"] },
+                    { plan: "Free — 0 RSD", items: mh.legendFreeItems },
+                    { plan: "Premium — 390 RSD/mes", items: mh.legendPremiumItems },
+                    { plan: `${mh.dayPassName} — 120 RSD`, items: mh.legendDayPassItems },
                   ].map(p => (
                     <div key={p.plan} className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
                       <p className="text-xs font-bold text-white mb-1.5">{p.plan}</p>
