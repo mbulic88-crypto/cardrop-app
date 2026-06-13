@@ -35,7 +35,7 @@ const translations = {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Brza, sigurna i jednostavna rezervacija parking mesta. Iznajmite neiskorišćeno mesto i zaradite.",
     findSpotButton: "Pronađi parking",
-    findSpotSubtitle: "Privatni parkinzi · Javni skriveni parkinzi · Live chat · Štek i zlatni minut",
+    findSpotSubtitle: "Direktna rezervacija · Kontakt sa vlasnikom · Štek parkinzi · Pauk radar · Zlatni minut",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "Iznajmite Parking Mesto",
     howItWorks: "Kako Funkcioniše",
@@ -143,7 +143,7 @@ const translations = {
     heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Fast, secure, and simple parking reservations. Rent out your unused spot and earn.",
     findSpotButton: "Find Parking",
-    findSpotSubtitle: "Private parking · Hidden public spots · Live chat · Štek & Golden Minute",
+    findSpotSubtitle: "Direct booking · Contact-owner spots · Štek spots · Tow truck radar · Golden Minute",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "List Parking Spot",
     howItWorks: "How It Works",
@@ -246,6 +246,114 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "We respond within 24 hours",
     contactEncouragement: "Feel free to reach out about anything - every message helps us improve!",
+  },
+  de: {
+    heroTitle: "Parkplatz finden oder vermieten",
+    heroSubtitle: "Schnelle, sichere und einfache Parkplatzreservierung. Vermieten Sie Ihren ungenutzten Platz und verdienen Sie.",
+    findSpotButton: "Parkplatz finden",
+    findSpotSubtitle: "Direktbuchung · Kontakt mit Eigentümer · Štek-Plätze · Abschleppradar · Goldene Minute",
+    findSpotBranding: "Map Hack RS",
+    listSpotButton: "Parkplatz vermieten",
+    howItWorks: "Wie es funktioniert",
+    rentOutTitle: "So vermieten Sie",
+    rentOutStep1: "Klicken Sie auf \"Parkplatz vermieten\"",
+    rentOutStep2: "Wählen Sie eine Kategorie",
+    rentOutStep3: "Füllen Sie die Informationen aus",
+    reserveTitle: "So reservieren Sie",
+    reserveStep1: "Klicken Sie auf \"Parkplatz finden\"",
+    reserveStep2: "Finden Sie einen geeigneten Parkplatz",
+    reserveStep3: "Kontaktieren Sie den Eigentümer",
+    popularLocations: "Beliebte Reiseziele",
+    parkingSpots: "Parkplätze",
+    users: "Nutzer",
+    successfulBookings: "Erfolgreiche Buchungen",
+    ctaTitle: "Haben Sie einen ungenutzten Parkplatz?",
+    ctaSubtitle: "Verdienen Sie, indem Sie Ihren Parkplatz teilen. Einfach, sicher, profitabel.",
+    termsButton: "Nutzungsbedingungen",
+    privacyButton: "Datenschutzrichtlinie",
+    footerText: "\u00a9 2025 CarDrop owned by Ai Me IT LLC, United States",
+    langButton: "DEU",
+    installApp: "App installieren",
+    installAndroid: "Android",
+    installAndroidDesc: "Laden Sie von Google Play herunter oder klicken Sie die Schaltfläche oben für eine Direktinstallation.",
+    installIphone: "iPhone",
+    installIphoneDesc: "Im Safari öffnen, Teilen-Button tippen und \"Zum Home-Bildschirm\" wählen.",
+    googlePlayBadge: "Bei Google Play",
+    sellButton: "Zum Verkauf anbieten",
+    whoIsThisFor: "Für wen ist das",
+    whoCanRent: "Wer kann vermieten",
+    whoCanReserve: "Wer kann reservieren",
+    everyoneWhoNeeds: "Alle, die einen Parkplatz brauchen",
+    reserveDescription: "Egal ob Sie für eine Stunde, einen Tag oder einen Monat parken müssen — CarDrop bietet flexible Reservierungen nach Ihren Bedürfnissen.",
+    shortTerm: "Kurzzeitparken",
+    shortTermDesc: "Ideal wenn Sie für ein paar Stunden oder einen Tag parken.",
+    shortTermExamples: [
+      "Mittagessen im Stadtzentrum",
+      "Einkaufen im Einkaufszentrum",
+      "Arzt- oder Zahnarzttermin",
+      "Geschäftstreffen oder Vorstellungsgespräch",
+      "Konzert, Spiel oder Ausgang",
+    ],
+    longTerm: "Langzeitparken",
+    longTermDesc: "Mieten Sie einen Platz für längere Zeit zu besseren Preisen.",
+    longTermExamples: [
+      "Monatliches Parken in der Nähe der Arbeit",
+      "Studentenparkplatz während des Semesters",
+      "Saisonale Miete für Sommer oder Winter",
+      "Parken für Bewohner ohne eigene Garage",
+      "Fahrzeugaufbewahrung während der Reise",
+    ],
+    categoryPrivate: "Private Parkplätze & Garagen",
+    categoryCompany: "Unternehmen & Agenturen",
+    categorySale: "Parkplatz kaufen",
+    categoryTruck: "LKW-Halteplätze",
+    categoryResidential: "Wohngemeinschaften",
+    categoryCarLot: "Autostellplätze",
+    menuFindParking: "Parkplatz finden",
+    menuListParking: "Parkplatz vermieten",
+    menuSellListing: "Zum Verkauf anbieten",
+    menuMyAccount: "Mein Konto",
+    menuMyProfile: "Mein Profil",
+    menuReservations: "Reservierungen",
+    menuLogin: "Anmelden",
+    menuWhoIsThisFor: "Für wen",
+    menuHowItWorks: "Wie es funktioniert",
+    menuPricing: "Preise",
+    menuContact: "Kontakt",
+    menuLanguage: "Srpski",
+    menuDarkMode: "Dunkelmodus",
+    menuLightMode: "Hellmodus",
+    pricingTitle: "Preise",
+    pricingSubtitle: "Wählen Sie den Plan, der am besten zu Ihnen passt. Alle Pläne gelten für alle Parkkategorien.",
+    pricingPerListing: "pro Inserat",
+    pricingFree: "Kostenlos",
+    pricingChoosePlan: "Plan wählen",
+    pricingMostPopular: "Am beliebtesten",
+    pricingBestValue: "Bestes Preis-Leistungs-Verhältnis",
+    mapHackTitle: "Map Hack RS",
+    mapHackSubtitle: "Echtzeit-Parkkarte Serbiens. Versteckte Plätze, Radarwarnungen, Safe-Zone-Alarme — alles in einer App.",
+    mapHackBadge: "Verfügbar in ganz Serbien",
+    mapHackFreeLabel: "KOSTENLOS",
+    mapHackFreeDesc: "Basiskarte mit Goldener Minute und Radar",
+    mapHackFreeFeatures: ["Interaktive Parkkarte RS", "Goldene-Minute-Marker", "Abschleppwarnungen", "SMS-Zahlung öffentlicher Zonen (1 Klick)", "Live-Community-Chat"],
+    mapHackPremiumLabel: "PREMIUM",
+    mapHackPremiumBadge: "Empfohlen",
+    mapHackPremiumDesc: "Voller Schutz — schnellstes Parken in der Stadt",
+    mapHackPremiumFeatures: ["Alle Free-Funktionen +", "Versteckte Parkplätze (Štek-Datenbank)", "Polizei-Radar-Marker", "Safe-Zone-Alarm — Push im 300m-Radius", "Push-Benachrichtigungen ohne Karte"],
+    mapHackDayPassLabel: "TAGESPASS",
+    mapHackDayPassDesc: "Alle Premium-Funktionen für 24 Stunden",
+    mapHackAnnualLabel: "JAHRESABO",
+    mapHackAnnualBadge: "2 Monate gratis",
+    mapHackAnnualDesc: "Alle Premium-Funktionen — 365 Tage",
+    mapHackPerMonth: "/ Mon",
+    mapHackPerDay: "24h",
+    mapHackPerYear: "/ Jahr",
+    mapHackCTA: "Map Hack RS öffnen",
+    contactTitle: "Kontaktieren Sie uns",
+    contactSubtitle: "Ihre Meinung ist uns wichtig! Schreiben Sie uns für jede Frage, jeden Vorschlag oder jede Idee.",
+    contactEmail: "E-Mail",
+    contactResponseTime: "Wir antworten innerhalb von 24 Stunden",
+    contactEncouragement: "Schreiben Sie uns gerne über alles — jede Nachricht hilft uns besser zu werden!",
   }
 };
 
@@ -349,7 +457,7 @@ export default function Landing() {
     }
   };
 
-  const t = translations[language === "sr" ? "sr" : "en"];
+  const t = language === "sr" ? translations.sr : language === "de" ? translations.de : translations.en;
 
   return (
     <div className="min-h-screen bg-background">
@@ -510,8 +618,19 @@ export default function Landing() {
               <span className="text-xl font-bold text-white drop-shadow-lg">CarDrop</span>
             </Link>
 
-            {/* Right: empty spacer for balance */}
-            <div className="w-9" />
+            {/* Right: Language flags */}
+            <div className="flex items-center gap-1">
+              {(["sr", "en", "de"] as const).map((code) => (
+                <button
+                  key={code}
+                  onClick={() => selectLanguage(code)}
+                  data-testid={`flag-${code}`}
+                  className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
+                >
+                  {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </header>

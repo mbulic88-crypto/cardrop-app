@@ -22,6 +22,7 @@ import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { insertSalesListingSchema } from "@shared/schema";
 import { PRICING_PLANS, getPlanById, getMaxPhotos, type SubscriptionType } from "@shared/pricing";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const SERBIAN_CITIES = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
@@ -397,7 +398,7 @@ export default function AddSale() {
   const [listingId, setListingId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [language, setLanguage] = useState<"sr" | "en" | "de" | "hu" | "sk" | "mk">("sr");
+  const { language, setLanguage } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
@@ -432,16 +433,8 @@ export default function AddSale() {
     return null;
   })();
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
-      setLanguage(savedLanguage);
-    }
-  }, []);
-
   const selectLanguage = (code: typeof language) => {
     setLanguage(code);
-    localStorage.setItem("parkin-language", code);
     setLangMenuOpen(false);
   };
 

@@ -3,18 +3,119 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Shield, AlertTriangle, FileText, ArrowLeft } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const termsT = {
+  sr: {
+    pageTitle: "Uslovi Korišćenja",
+    lastUpdated: "Poslednje ažurirano: Februar 2026",
+    backButton: "Nazad na Početnu",
+    sections: [
+      "1. Prihvatanje Uslova",
+      "2. Definicija Platforme",
+      "3. ODRICANJE ODGOVORNOSTI – VAŽNO OBAVEŠTENJE",
+      "4. Registracija i Korisničke Obaveze",
+      "5. Obaveze Vlasnika Parking Mesta",
+      "6. Obaveze Zakupaca",
+      "7. Pretplate i Plaćanja",
+      "8. Sadržaj Korisnika",
+      "9. Sistem Ocenjivanja",
+      "10. Intelektualna Svojina",
+      "11. Zabranjena Ponašanja",
+      "12. Raskid Naloga",
+      "13. Ograničenje Odgovornosti",
+      "14. Obeštećenje",
+      "15. Primenljivo Pravo",
+      "16. Rešavanje Sporova",
+      "17. Kontakt sa Trećim Stranama",
+      "18. Izmene Uslova",
+      "19. Završne Odredbe",
+      "20. Kontakt Informacije",
+    ],
+  },
+  en: {
+    pageTitle: "Terms of Use",
+    lastUpdated: "Last updated: February 2026",
+    backButton: "Back to Home",
+    sections: [
+      "1. Acceptance of Terms",
+      "2. Definition of the Platform",
+      "3. DISCLAIMER OF LIABILITY – IMPORTANT NOTICE",
+      "4. Registration and User Obligations",
+      "5. Obligations of Parking Space Owners",
+      "6. Obligations of Tenants",
+      "7. Subscriptions and Payments",
+      "8. User Content",
+      "9. Review System",
+      "10. Intellectual Property",
+      "11. Prohibited Behaviors",
+      "12. Account Termination",
+      "13. Limitation of Liability",
+      "14. Indemnification",
+      "15. Applicable Law",
+      "16. Dispute Resolution",
+      "17. Third-Party Services",
+      "18. Amendments to Terms",
+      "19. Final Provisions",
+      "20. Contact Information",
+    ],
+  },
+  de: {
+    pageTitle: "Nutzungsbedingungen",
+    lastUpdated: "Zuletzt aktualisiert: Februar 2026",
+    backButton: "Zurück zur Startseite",
+    sections: [
+      "1. Annahme der Bedingungen",
+      "2. Definition der Plattform",
+      "3. HAFTUNGSAUSSCHLUSS – WICHTIGER HINWEIS",
+      "4. Registrierung und Nutzerpflichten",
+      "5. Pflichten der Parkplatzeigentümer",
+      "6. Pflichten der Mieter",
+      "7. Abonnements und Zahlungen",
+      "8. Nutzerinhalt",
+      "9. Bewertungssystem",
+      "10. Geistiges Eigentum",
+      "11. Verbotenes Verhalten",
+      "12. Kontokündigung",
+      "13. Haftungsbeschränkung",
+      "14. Schadensersatz",
+      "15. Anwendbares Recht",
+      "16. Streitbeilegung",
+      "17. Drittanbieter",
+      "18. Änderungen der Bedingungen",
+      "19. Schlussbestimmungen",
+      "20. Kontaktinformationen",
+    ],
+  },
+};
 
 export default function Terms() {
+  const { language, setLanguage } = useLanguage();
+  const t = language === "sr" ? termsT.sr : language === "de" ? termsT.de : termsT.en;
+  const s = t.sections;
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-2">
+      <header className="border-b bg-card sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer" data-testid="link-home">
               <img src={parkInLogo} alt="CarDrop" className="w-8 h-8 rounded-lg" />
-              <span className="text-2xl font-bold">CarDrop</span>
+              <span className="text-xl font-bold">CarDrop</span>
             </div>
           </Link>
+          <div className="flex items-center gap-1">
+            {(["sr", "en", "de"] as const).map((code) => (
+              <button
+                key={code}
+                onClick={() => setLanguage(code)}
+                data-testid={`flag-${code}`}
+                className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
+              >
+                {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -23,17 +124,15 @@ export default function Terms() {
           <CardHeader>
             <div className="flex items-center gap-3 mb-2 flex-wrap">
               <FileText className="w-8 h-8 text-primary" />
-              <CardTitle className="text-3xl">Uslovi Korišćenja</CardTitle>
+              <CardTitle className="text-3xl">{t.pageTitle}</CardTitle>
             </div>
-            <p className="text-muted-foreground">
-              Poslednje ažurirano: Februar 2026
-            </p>
+            <p className="text-muted-foreground">{t.lastUpdated}</p>
           </CardHeader>
 
           <CardContent className="space-y-8">
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">1. Prihvatanje Uslova</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[0]}</h3>
               <p className="text-muted-foreground mb-3">
                 This service is provided by Ai Me IT LLC, a company registered in the United States, operating globally.
               </p>
@@ -43,7 +142,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">2. Definicija Platforme</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[1]}</h3>
               <p className="text-muted-foreground mb-3">
                 CarDrop je oglasna tabla (platforma za oglašavanje) koja omogućava vlasnicima parking mesta da oglase svoja parking mesta, a zainteresovanim korisnicima da pronađu i kontaktiraju vlasnike tih parking mesta. CarDrop funkcioniše isključivo kao posrednik u informisanju – tehnološka platforma koja povezuje korisnike.
               </p>
@@ -68,9 +167,7 @@ export default function Terms() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-7 h-7 text-destructive mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-xl font-bold text-destructive mb-3">
-                      3. ODRICANJE ODGOVORNOSTI – VAŽNO OBAVEŠTENJE
-                    </h3>
+                    <h3 className="text-xl font-bold text-destructive mb-3">{s[2]}</h3>
                     <p className="text-sm font-semibold text-destructive mb-3">
                       PAŽLJIVO PROČITAJTE OVAJ ODELJAK. KORIŠĆENJEM PLATFORME PRIHVATATE SVE NAVEDENE USLOVE.
                     </p>
@@ -99,7 +196,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">4. Registracija i Korisničke Obaveze</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[3]}</h3>
               <p className="text-muted-foreground mb-3">
                 Da biste koristili određene funkcije Platforme, potrebno je da kreirate korisnički nalog. Registracijom na Platformu, vi:
               </p>
@@ -115,7 +212,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">5. Obaveze Vlasnika Parking Mesta</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[4]}</h3>
               <p className="text-muted-foreground mb-3">
                 Korisnici koji oglašavaju parking mesta na Platformi (u daljem tekstu: „Vlasnici") su u potpunosti odgovorni za:
               </p>
@@ -132,7 +229,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">6. Obaveze Zakupaca</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[5]}</h3>
               <p className="text-muted-foreground mb-3">
                 Korisnici koji koriste Platformu za pronalaženje parking mesta (u daljem tekstu: „Zakupci") su odgovorni za:
               </p>
@@ -147,7 +244,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">7. Pretplate i Plaćanja</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[6]}</h3>
               <p className="text-muted-foreground mb-3">
                 CarDrop nudi sledeće pakete pretplate za korisnike koji žele da oglašavaju parking mesta:
               </p>
@@ -168,7 +265,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">8. Sadržaj Korisnika</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[7]}</h3>
               <p className="text-muted-foreground mb-3">
                 Korisnici mogu kreirati i objavljivati sadržaj na Platformi, uključujući oglase za parking mesta, recenzije, fotografije, komentare i poruke (u daljem tekstu: „Korisnički Sadržaj"). Objavljivanjem Korisničkog Sadržaja na Platformi, vi:
               </p>
@@ -184,7 +281,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">9. Sistem Ocenjivanja</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[8]}</h3>
               <p className="text-muted-foreground mb-3">
                 Platforma omogućava korisnicima da ostavljaju ocene i recenzije nakon interakcije sa drugim korisnicima. U vezi sa sistemom ocenjivanja:
               </p>
@@ -198,7 +295,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">10. Intelektualna Svojina</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[9]}</h3>
               <p className="text-muted-foreground mb-3">
                 Sav sadržaj Platforme, uključujući ali ne ograničavajući se na naziv „CarDrop", logotip, dizajn, tekstove, grafiku, softver, kôd i ostale materijale, vlasništvo je kompanije Ai Me IT LLC ili njenih davatelja licence, i zaštićen je zakonima o intelektualnoj svojini.
               </p>
@@ -211,7 +308,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">11. Zabranjena Ponašanja</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[10]}</h3>
               <p className="text-muted-foreground mb-3">
                 Korišćenjem Platforme, obavezujete se da nećete:
               </p>
@@ -230,7 +327,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">12. Raskid Naloga</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[11]}</h3>
               <p className="text-muted-foreground mb-3">
                 CarDrop zadržava pravo da, po sopstvenom nahođenju i bez prethodnog obaveštenja:
               </p>
@@ -253,7 +350,7 @@ export default function Terms() {
                 <div className="flex items-start gap-3">
                   <Shield className="w-6 h-6 text-destructive mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="text-xl font-semibold text-destructive mb-3">13. Ograničenje Odgovornosti</h3>
+                    <h3 className="text-xl font-semibold text-destructive mb-3">{s[12]}</h3>
                     <p className="text-sm text-foreground/80 mb-3">
                       PLATFORMA SE PRUŽA „KAKVA JESTE" (AS IS) I „KAKO JE DOSTUPNA" (AS AVAILABLE), BEZ BILO KAKVIH GARANCIJA, IZRIČITIH ILI PODRAZUMEVANIH, UKLJUČUJUĆI ALI NE OGRANIČAVAJUĆI SE NA GARANCIJE TRŽIŠNE VREDNOSTI, POGODNOSTI ZA ODREĐENU SVRHU ILI NEKRŠENJA PRAVA TREĆIH LICA.
                     </p>
@@ -276,14 +373,14 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">14. Obeštećenje</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[13]}</h3>
               <p className="text-muted-foreground">
                 Korišćenjem Platforme, prihvatate da ćete obeštetiti, braniti i zaštititi kompaniju Ai Me IT LLC, njene vlasnike, direktore, zaposlene, agente, partnere i povezana lica od svih potraživanja, tužbi, zahteva, gubitaka, šteta, troškova i izdataka (uključujući razumne advokatske troškove) koji proizlaze iz ili su u vezi sa: (a) vašim korišćenjem Platforme, (b) vašim Korisničkim Sadržajem, (c) vašim kršenjem ovih Uslova, (d) vašim kršenjem prava trećih lica, ili (e) bilo kakvim sporom između vas i drugih korisnika Platforme. Ova obaveza obeštećenja ostaje na snazi i nakon prestanka korišćenja Platforme.
               </p>
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">15. Primenljivo Pravo</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[14]}</h3>
               <p className="text-muted-foreground mb-3">
                 Ovi Uslovi su regulisani i tumače se u skladu sa zakonima države Novi Meksiko (State of New Mexico), Sjedinjene Američke Države, bez obzira na odredbe o sukobu zakona.
               </p>
@@ -293,7 +390,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">16. Rešavanje Sporova</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[15]}</h3>
               <p className="text-muted-foreground mb-3">
                 U slučaju bilo kakvog spora koji proizlazi iz ovih Uslova ili korišćenja Platforme, strane se obavezuju da će najpre pokušati da reše spor mirnim putem – direktnim pregovorima.
               </p>
@@ -309,7 +406,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">17. Kontakt sa Trećim Stranama</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[16]}</h3>
               <p className="text-muted-foreground mb-3">
                 Platforma koristi usluge trećih strana za svoje funkcionisanje. CarDrop nije odgovoran za usluge, politike privatnosti ili prakse ovih trećih strana:
               </p>
@@ -324,7 +421,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">18. Izmene Uslova</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[17]}</h3>
               <p className="text-muted-foreground mb-3">
                 CarDrop zadržava pravo da izmeni, dopuni ili zameni ove Uslove u bilo kom trenutku. Izmenjeni Uslovi stupaju na snagu danom objavljivanja na Platformi.
               </p>
@@ -342,7 +439,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">19. Završne Odredbe</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[18]}</h3>
               <p className="text-muted-foreground mb-3">
                 <strong>Odvojivost:</strong> Ako se bilo koja odredba ovih Uslova proglasi nevažećom ili neprimenljivom, ostale odredbe ostaju na snazi u punom obimu.
               </p>
@@ -361,7 +458,7 @@ export default function Terms() {
             </section>
 
             <section>
-              <h3 className="text-xl font-semibold mb-3">20. Kontakt Informacije</h3>
+              <h3 className="text-xl font-semibold mb-3">{s[19]}</h3>
               <p className="text-muted-foreground mb-3">
                 Za sva pitanja u vezi sa ovim Uslovima Korišćenja, možete nas kontaktirati:
               </p>
@@ -376,7 +473,7 @@ export default function Terms() {
               <Link href="/">
                 <Button variant="outline" data-testid="button-back">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Nazad na Početnu
+                  {t.backButton}
                 </Button>
               </Link>
             </div>

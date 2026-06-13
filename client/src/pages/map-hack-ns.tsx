@@ -20,6 +20,22 @@ import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shar
 import type { MarkerType } from "@/components/MapHackMap";
 import { SiViber, SiWhatsapp, SiStripe } from "react-icons/si";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const mhT = {
+  sr: {
+    heroSubtitle: "NS · Štek parkinzi · Crvene zone · Live chat",
+    filterPrivate: "Privatan Parking",
+  },
+  en: {
+    heroSubtitle: "RS · Hidden spots · Red zones · Live chat",
+    filterPrivate: "Private Parking",
+  },
+  de: {
+    heroSubtitle: "RS · Štek-Plätze · Rote Zonen · Live-Chat",
+    filterPrivate: "Privatparkplatz",
+  },
+};
 
 type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
 
@@ -302,6 +318,8 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
 }
 
 function CompactHero({ title = "Map Hack RS" }: { title?: string }) {
+  const { language } = useLanguage();
+  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
   return (
     <div
       className="flex-shrink-0"
@@ -328,7 +346,7 @@ function CompactHero({ title = "Map Hack RS" }: { title?: string }) {
         </div>
       </div>
       <p className="text-center text-green-200 text-xs pb-3 tracking-wide">
-        NS · Štek parkinzi · Crvene zone · Live chat
+        {mh.heroSubtitle}
       </p>
     </div>
   );
@@ -441,6 +459,8 @@ export default function MapHackNS() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
 
   const [nickname, setNickname] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -4098,7 +4118,7 @@ export default function MapHackNS() {
           { key: "zlatni_minut", label: "Zlatni Minut",     icon: "⏱" },
           { key: "pauk",         label: "Pauk",             icon: "🚛" },
           { key: "stek",         label: "Štek",             icon: "🏠" },
-          { key: "parking",      label: "Privatan Parking", icon: "🅿" },
+          { key: "parking",      label: mh.filterPrivate,   icon: "🅿" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
           const isLocked = f.key === "stek" && !isPremium;

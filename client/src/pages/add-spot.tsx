@@ -25,6 +25,7 @@ import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
 import { PRICING_PLANS, getPlanById, getMaxPhotos, type SubscriptionType, type CategoryType } from "@shared/pricing";
 import type { User } from "@shared/schema";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const SERBIAN_CITIES = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica", "Zrenjanin",
@@ -711,7 +712,7 @@ export default function AddSpot() {
   const [spotId, setSpotId] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [language, setLanguage] = useState<"sr" | "en" | "de" | "hu" | "sk" | "mk">("sr");
+  const { language, setLanguage } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
@@ -770,16 +771,8 @@ export default function AddSpot() {
   const maxImages = getMaxImages();
   const canUploadMore = uploadedImages.length < maxImages;
 
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("parkin-language");
-    if (savedLanguage === "en" || savedLanguage === "sr" || savedLanguage === "de" || savedLanguage === "hu" || savedLanguage === "sk" || savedLanguage === "mk") {
-      setLanguage(savedLanguage);
-    }
-  }, []);
-
   const selectLanguage = (code: typeof language) => {
     setLanguage(code);
-    localStorage.setItem("parkin-language", code);
     setLangMenuOpen(false);
   };
 

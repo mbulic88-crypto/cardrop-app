@@ -1,21 +1,101 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Shield, Lock, Eye, Globe, Users, Server, Mail, CreditCard, FileText, ArrowLeft, AlertTriangle, MapPin } from "lucide-react";
+import { Shield, Lock, Eye, Globe, Users, Server, Mail, CreditCard, FileText, AlertTriangle, MapPin } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const privacyT = {
+  sr: {
+    pageTitle: "Politika Privatnosti",
+    lastUpdated: "Poslednje ažurirano: Maj 2026 · CarDrop LLC",
+    warningText: "Važno: Sve parkirne, radar i saobraćajne informacije prikazane u aplikaciji su isključivo korisničke (crowdsourced). CarDrop nije odgovoran za tačnost, ažurnost ni potpunost tih podataka. Korisnici snose punu odgovornost za sopstvene odluke.",
+    termsLink: "Uslovi korišćenja",
+    sections: [
+      "1. Ko smo mi",
+      "2. Šta je Map Hack RS",
+      "3. Odricanje od odgovornosti",
+      "4. Koje podatke prikupljamo",
+      "5. Plaćanje i pretplata",
+      "6. Platforma za posredovanje i procesuiranje plaćanja",
+      "7. Vaša prava (GDPR)",
+      "8. Kolačići (Cookies)",
+      "9. Deljenje podataka sa trećim stranama",
+      "10. Međunarodni prenos podataka",
+      "11. Čuvanje i brisanje podataka",
+      "12. Primenljivo pravo i nadležnost",
+      "13. Kontakt i DPO",
+    ],
+  },
+  en: {
+    pageTitle: "Privacy Policy",
+    lastUpdated: "Last updated: May 2026 · CarDrop LLC",
+    warningText: "Important: All parking, radar and traffic information shown in the app is exclusively user-generated (crowdsourced). CarDrop is not responsible for the accuracy, timeliness or completeness of that data. Users bear full responsibility for their own decisions.",
+    termsLink: "Terms of Use",
+    sections: [
+      "1. Who we are",
+      "2. What is Map Hack RS",
+      "3. Disclaimer of liability",
+      "4. What data we collect",
+      "5. Payment and subscription",
+      "6. Intermediary platform and payment processing",
+      "7. Your rights (GDPR)",
+      "8. Cookies",
+      "9. Data sharing with third parties",
+      "10. International data transfer",
+      "11. Data retention and deletion",
+      "12. Applicable law and jurisdiction",
+      "13. Contact and DPO",
+    ],
+  },
+  de: {
+    pageTitle: "Datenschutzrichtlinie",
+    lastUpdated: "Zuletzt aktualisiert: Mai 2026 · CarDrop LLC",
+    warningText: "Wichtig: Alle in der App angezeigten Park-, Radar- und Verkehrsinformationen sind ausschließlich nutzergeneriert (Crowdsourcing). CarDrop ist nicht verantwortlich für die Richtigkeit, Aktualität oder Vollständigkeit dieser Daten. Nutzer tragen die volle Verantwortung für ihre eigenen Entscheidungen.",
+    termsLink: "Nutzungsbedingungen",
+    sections: [
+      "1. Wer wir sind",
+      "2. Was ist Map Hack RS",
+      "3. Haftungsausschluss",
+      "4. Welche Daten wir erheben",
+      "5. Zahlung und Abonnement",
+      "6. Vermittlungsplattform und Zahlungsabwicklung",
+      "7. Ihre Rechte (DSGVO)",
+      "8. Cookies",
+      "9. Datenweitergabe an Dritte",
+      "10. Internationaler Datentransfer",
+      "11. Datenspeicherung und -löschung",
+      "12. Anwendbares Recht und Zuständigkeit",
+      "13. Kontakt und Datenschutzbeauftragter",
+    ],
+  },
+};
 
 export default function PrivacyPolicy() {
+  const { language, setLanguage } = useLanguage();
+  const t = language === "sr" ? privacyT.sr : language === "de" ? privacyT.de : privacyT.en;
+  const s = t.sections;
+
   return (
     <div className="min-h-screen bg-background" data-testid="page-privacy-policy">
       <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <Link href="/">
-            <Button variant="ghost" size="icon" data-testid="link-back">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2 cursor-pointer" data-testid="link-back">
+              <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-lg" />
+              <span className="text-lg font-bold">CarDrop</span>
+            </div>
           </Link>
-          <div className="flex items-center gap-2">
-            <img src={parkInLogo} alt="CarDrop" className="w-7 h-7 rounded-lg" />
-            <span className="text-lg font-bold">CarDrop</span>
+          <div className="flex items-center gap-1">
+            {(["sr", "en", "de"] as const).map((code) => (
+              <button
+                key={code}
+                onClick={() => setLanguage(code)}
+                data-testid={`flag-${code}`}
+                className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
+              >
+                {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
+              </button>
+            ))}
           </div>
         </div>
       </header>
@@ -24,29 +104,31 @@ export default function PrivacyPolicy() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold">Politika Privatnosti</h1>
+            <h1 className="text-3xl font-bold">{t.pageTitle}</h1>
           </div>
-          <p className="text-muted-foreground text-sm">
-            Poslednje ažurirano: Maj 2026 &nbsp;·&nbsp; CarDrop LLC
-          </p>
+          <p className="text-muted-foreground text-sm">{t.lastUpdated}</p>
         </div>
 
         <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-4 mb-8">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Važno:</strong> Sve parkirne, radar i saobraćajne informacije prikazane u aplikaciji su isključivo korisničke (crowdsourced). CarDrop nije odgovoran za tačnost, ažurnost ni potpunost tih podataka. Korisnici snose punu odgovornost za sopstvene odluke.
+              <strong>{language === "sr" ? "Važno" : language === "de" ? "Wichtig" : "Important"}:</strong>{" "}
+              {language === "sr"
+                ? "Sve parkirne, radar i saobraćajne informacije prikazane u aplikaciji su isključivo korisničke (crowdsourced). CarDrop nije odgovoran za tačnost, ažurnost ni potpunost tih podataka. Korisnici snose punu odgovornost za sopstvene odluke."
+                : language === "de"
+                ? "Alle in der App angezeigten Park-, Radar- und Verkehrsinformationen sind ausschließlich nutzergeneriert (Crowdsourcing). CarDrop ist nicht verantwortlich für die Richtigkeit, Aktualität oder Vollständigkeit dieser Daten."
+                : "All parking, radar and traffic information shown in the app is exclusively user-generated (crowdsourced). CarDrop is not responsible for the accuracy, timeliness or completeness of that data."}
             </p>
           </div>
         </div>
 
         <div className="space-y-10">
 
-          {/* 1. Ko smo */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Globe className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">1. Ko smo mi</h2>
+              <h2 className="text-xl font-semibold">{s[0]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -64,11 +146,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 2. Šta je CarDrop Map Hack */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">2. Šta je Map Hack RS</h2>
+              <h2 className="text-xl font-semibold">{s[1]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -80,11 +161,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 3. Odricanje od odgovornosti */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
-              <h2 className="text-xl font-semibold">3. Odricanje od odgovornosti</h2>
+              <h2 className="text-xl font-semibold">{s[2]}</h2>
             </div>
             <div className="space-y-4 text-muted-foreground text-sm leading-relaxed">
               <div className="bg-muted/60 rounded-md p-4 space-y-3">
@@ -104,11 +184,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 4. Prikupljeni podaci */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Eye className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">4. Koje podatke prikupljamo</h2>
+              <h2 className="text-xl font-semibold">{s[3]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>Prikupljamo samo podatke neophodne za funkcionisanje platforme:</p>
@@ -127,11 +206,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 5. Plaćanje i pretplata */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">5. Plaćanje i pretplata</h2>
+              <h2 className="text-xl font-semibold">{s[4]}</h2>
             </div>
             <div className="space-y-4 text-muted-foreground text-sm leading-relaxed">
               <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-md p-4">
@@ -201,11 +279,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 6. Platforma za posredovanje */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">6. Platforma za posredovanje i procesuiranje plaćanja</h2>
+              <h2 className="text-xl font-semibold">{s[5]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -228,11 +305,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 7. GDPR prava */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">7. Vaša prava (GDPR)</h2>
+              <h2 className="text-xl font-semibold">{s[6]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>Korisnicima u EU garantujemo sledeća prava u pogledu ličnih podataka:</p>
@@ -250,11 +326,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 8. Kolačići */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">8. Kolačići (Cookies)</h2>
+              <h2 className="text-xl font-semibold">{s[7]}</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -263,11 +338,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 9. Deljenje podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Users className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">9. Deljenje podataka sa trećim stranama</h2>
+              <h2 className="text-xl font-semibold">{s[8]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>Vaše podatke <strong className="text-foreground">ne prodajemo</strong> trećim stranama. Delimo ih samo sa:</p>
@@ -279,11 +353,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 10. Prenos podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Server className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">10. Međunarodni prenos podataka</h2>
+              <h2 className="text-xl font-semibold">{s[9]}</h2>
             </div>
             <div className="space-y-3 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -292,11 +365,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 11. Čuvanje podataka */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Lock className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">11. Čuvanje i brisanje podataka</h2>
+              <h2 className="text-xl font-semibold">{s[10]}</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <ul className="space-y-2 list-disc list-inside">
@@ -307,11 +379,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 12. Primenljivo pravo */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">12. Primenljivo pravo i nadležnost</h2>
+              <h2 className="text-xl font-semibold">{s[11]}</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>
@@ -320,11 +391,10 @@ export default function PrivacyPolicy() {
             </div>
           </section>
 
-          {/* 13. Kontakt */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <Mail className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="text-xl font-semibold">13. Kontakt i DPO</h2>
+              <h2 className="text-xl font-semibold">{s[12]}</h2>
             </div>
             <div className="space-y-2 text-muted-foreground text-sm leading-relaxed">
               <p>Za sva pitanja u vezi sa privatnošću, zahteve za pristup ili brisanje podataka, kontaktirajte nas:</p>
@@ -343,7 +413,7 @@ export default function PrivacyPolicy() {
         <div className="mt-12 pt-6 border-t text-center">
           <p className="text-xs text-muted-foreground">
             &copy; 2026 CarDrop LLC &nbsp;·&nbsp;
-            <Link href="/terms" className="underline hover:text-foreground" data-testid="link-terms">Uslovi korišćenja</Link>
+            <Link href="/terms" className="underline hover:text-foreground" data-testid="link-terms">{t.termsLink}</Link>
             &nbsp;·&nbsp;
             <a href="mailto:info@cardrop.app" className="underline hover:text-foreground">info@cardrop.app</a>
           </p>

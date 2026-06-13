@@ -3,13 +3,27 @@ import { useState, useEffect } from "react";
 export type AppLanguage = "sr" | "en" | "de" | "hu" | "sk" | "mk";
 
 export function useLanguage() {
-  const [language, setLanguageState] = useState<AppLanguage>("sr");
+  const [language, setLanguageState] = useState<AppLanguage>(() => {
+    try {
+      const saved = localStorage.getItem("parkin-language");
+      if (saved === "sr" || saved === "en" || saved === "de" || saved === "hu" || saved === "sk" || saved === "mk") {
+        return saved as AppLanguage;
+      }
+    } catch {}
+    return "sr";
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem("parkin-language");
-    if (saved === "sr" || saved === "en" || saved === "de" || saved === "hu" || saved === "sk" || saved === "mk") {
-      setLanguageState(saved as AppLanguage);
-    }
+    const handler = (e: StorageEvent) => {
+      if (e.key === "parkin-language" && e.newValue) {
+        const val = e.newValue;
+        if (val === "sr" || val === "en" || val === "de" || val === "hu" || val === "sk" || val === "mk") {
+          setLanguageState(val as AppLanguage);
+        }
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
   }, []);
 
   const setLanguage = (lang: AppLanguage) => {
