@@ -138,6 +138,7 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "Odgovaramo u roku od 24 sata",
     contactEncouragement: "Pišite nam slobodno za sve što vam pada na pamet - svaka poruka nam pomaže da budemo bolji!",
+    installAppExplainer: "CarDrop je besplatna aplikacija za parking u Srbiji. Pronađi Štek mesta, prati Pauka i Zlatni minut u realnom vremenu, i rezerviši privatni parking direktno od vlasnika.",
   },
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
@@ -246,7 +247,11 @@ const translations = {
     contactEmail: "Email",
     contactResponseTime: "We respond within 24 hours",
     contactEncouragement: "Feel free to reach out about anything - every message helps us improve!",
+    installAppExplainer: "CarDrop is a free parking app for Serbia. Find hidden Štek spots, track tow trucks and Golden Minutes in real time, and book private parking directly from owners.",
   },
+};
+
+const _unused = {
   de: {
     heroTitle: "Parkplatz finden oder vermieten",
     heroSubtitle: "Schnelle, sichere und einfache Parkplatzreservierung. Vermieten Sie Ihren ungenutzten Platz und verdienen Sie.",
@@ -355,12 +360,10 @@ const translations = {
     contactResponseTime: "Wir antworten innerhalb von 24 Stunden",
     contactEncouragement: "Schreiben Sie uns gerne über alles — jede Nachricht hilft uns besser zu werden!",
   }
-};
+}; // end _unused
 
 export default function Landing() {
   const { language, setLanguage } = useLanguage();
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const langMenuRef = useRef<HTMLDivElement>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showIosModal, setShowIosModal] = useState(false);
@@ -379,17 +382,6 @@ export default function Landing() {
   }, []);
 
 
-  useEffect(() => {
-    const handleLangClickOutside = (e: MouseEvent) => {
-      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
-        setLangMenuOpen(false);
-      }
-    };
-    if (langMenuOpen) {
-      document.addEventListener("mousedown", handleLangClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleLangClickOutside);
-  }, [langMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -406,19 +398,12 @@ export default function Landing() {
   const languageOptions = [
     { code: "sr" as const, label: "Srpski", flag: "🇷🇸" },
     { code: "en" as const, label: "English", flag: "🇬🇧" },
-    { code: "de" as const, label: "Deutsch", flag: "🇩🇪" },
-    { code: "hu" as const, label: "Magyar", flag: "🇭🇺" },
-    { code: "sk" as const, label: "Slovenský", flag: "🇸🇰" },
-    { code: "mk" as const, label: "Македонски", flag: "🇲🇰" },
   ];
 
-  const selectLanguage = (code: typeof language) => {
+  const selectLanguage = (code: "sr" | "en") => {
     setLanguage(code);
-    setLangMenuOpen(false);
     setMenuOpen(false);
   };
-
-  const currentLangLabel = languageOptions.find(l => l.code === language)?.label || "Srpski";
 
   const [loginRedirectPath, setLoginRedirectPath] = useState("/select-category");
 
@@ -457,7 +442,7 @@ export default function Landing() {
     }
   };
 
-  const t = language === "sr" ? translations.sr : language === "de" ? translations.de : translations.en;
+  const t = language === "sr" ? translations.sr : translations.en;
 
   return (
     <div className="min-h-screen bg-background">
@@ -569,31 +554,22 @@ export default function Landing() {
                       <span className="text-card-foreground font-medium">{t.menuContact}</span>
                     </div>
                     <div className="h-px bg-border mx-4 my-1" />
-                    <div className="relative" ref={langMenuRef}>
-                      <div
-                        onClick={() => setLangMenuOpen(!langMenuOpen)}
-                        className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
-                        data-testid="menu-language"
-                      >
-                        <Globe className="w-5 h-5 text-accent" />
-                        <span className="text-card-foreground font-medium">{currentLangLabel}</span>
-                      </div>
-                      {langMenuOpen && (
-                        <div className="bg-card border border-border rounded-md shadow-lg ml-4 mr-4 mb-1">
-                          {languageOptions.map((lang) => (
-                            <div
-                              key={lang.code}
-                              onClick={() => selectLanguage(lang.code)}
-                              className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover-elevate ${language === lang.code ? 'bg-accent/10' : ''}`}
-                              data-testid={`lang-${lang.code}`}
-                            >
-                              <span className="text-base">{lang.flag}</span>
-                              <span className="text-card-foreground text-sm font-medium">{lang.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    <div className="px-4 py-2 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">Jezik / Language</span>
                     </div>
+                    {languageOptions.map((lang) => (
+                      <div
+                        key={lang.code}
+                        onClick={() => selectLanguage(lang.code)}
+                        className={`flex items-center gap-3 px-6 py-2.5 cursor-pointer hover-elevate ${language === lang.code ? "bg-accent/10" : ""}`}
+                        data-testid={`lang-${lang.code}`}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        <span className="text-card-foreground text-sm font-medium flex-1">{lang.label}</span>
+                        {language === lang.code && <Check className="w-4 h-4 text-accent" />}
+                      </div>
+                    ))}
                     <div
                       onClick={() => { setTheme(theme === "dark" ? "light" : "dark"); setMenuOpen(false); }}
                       className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
@@ -611,18 +587,6 @@ export default function Landing() {
                   </nav>
                 </div>
               )}
-            </div>
-            <div className="flex items-center gap-1">
-              {(["sr", "en", "de"] as const).map((code) => (
-                <button
-                  key={code}
-                  onClick={() => selectLanguage(code)}
-                  data-testid={`flag-${code}`}
-                  className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
-                >
-                  {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
-                </button>
-              ))}
             </div>
             </div>
 
@@ -687,6 +651,9 @@ export default function Landing() {
               Moje Rezervacije
             </Button>
 
+            <p className="text-xs text-white/80 text-center leading-relaxed mb-3 drop-shadow" data-testid="text-install-explainer">
+              {t.installAppExplainer}
+            </p>
             <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
               <a
                 href="https://play.google.com/store/apps/details?id=cardrop.app"

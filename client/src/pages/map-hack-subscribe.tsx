@@ -46,6 +46,40 @@ const mhst = {
     errorRetry: "Pokušaj ponovo.",
     errorPayment: "Nije moguće otvoriti stranicu za plaćanje. Pokušaj ponovo.",
     errorNoConn: "Nema konekcije. Pokušaj ponovo.",
+    forCompanies: "ZA FIRME",
+    contact: "Kontakt",
+    freePlanFeatures: [
+      "Parking mapa Srbije sa zonama i ulicama",
+      "Zlatni Minut i Pauk markeri",
+      "Smart SMS plaćanje javnih zona (1 klik)",
+      "Privatni parkinzi za najam",
+      "Live Chat sa zajednicom",
+    ],
+    premiumFeatures: [
+      "Sve Free funkcije +",
+      "Safe Zone alarm — push za svaki marker u 300m krugu",
+      "Štek parking lokacije (skrivena baza)",
+      "Radar markeri (policija i patrola)",
+      "Push notifikacije — ne moraš gledati u mapu",
+      "Pauk heatmap analitika",
+    ],
+    annualFeatures: [
+      "Sve Free funkcije +",
+      "Safe Zone alarm — push za svaki marker u 300m krugu",
+      "Štek parking lokacije (skrivena baza)",
+      "Radar markeri (policija i patrola)",
+      "Push notifikacije — ne moraš gledati u mapu",
+      "365 dana · ušteda preko 1.000 RSD",
+    ],
+    annualPlanLabel: "GODIŠNJI PREMIUM",
+    legendZlatniMinutLabel: "Zlatni Minut",
+    legendZlatniMinutDesc: "Slobodno mesto — 10 minuta gratis. Požuri!",
+    legendPaukLabel: "Pauk Radar",
+    legendPaukDesc: "Pauk primećen u blizini — upozorenje!",
+    legendStekLabel: "Štek Parking",
+    legendStekDesc: "Skriveno ali trajno slobodno mesto. Samo za Premium.",
+    legendSafeZoneLabel: "Safe Zone",
+    legendSafeZoneDesc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)",
   },
   en: {
     choosePlan: "Choose plan",
@@ -80,6 +114,40 @@ const mhst = {
     errorRetry: "Please try again.",
     errorPayment: "Unable to open payment page. Please try again.",
     errorNoConn: "No connection. Please try again.",
+    forCompanies: "FOR COMPANIES",
+    contact: "Contact",
+    freePlanFeatures: [
+      "Serbia parking map with zones & streets",
+      "Golden Minute & Tow Truck markers",
+      "Smart SMS payment for public zones (1 tap)",
+      "Private parking spots for rent",
+      "Live community chat",
+    ],
+    premiumFeatures: [
+      "All Free features +",
+      "Safe Zone alarm — push for every marker in 300m radius",
+      "Štek hidden parking spots database",
+      "Radar markers (police & patrol)",
+      "Push notifications — no need to watch the map",
+      "Tow truck heatmap analytics",
+    ],
+    annualFeatures: [
+      "All Free features +",
+      "Safe Zone alarm — push for every marker in 300m radius",
+      "Štek hidden parking spots database",
+      "Radar markers (police & patrol)",
+      "Push notifications — no need to watch the map",
+      "365 days · save over 1,000 RSD",
+    ],
+    annualPlanLabel: "ANNUAL PREMIUM",
+    legendZlatniMinutLabel: "Golden Minute",
+    legendZlatniMinutDesc: "Free spot — 10 minutes free. Hurry!",
+    legendPaukLabel: "Tow Truck Radar",
+    legendPaukDesc: "Tow truck spotted nearby — warning!",
+    legendStekLabel: "Štek Parking",
+    legendStekDesc: "Hidden but permanently free spot. Premium only.",
+    legendSafeZoneLabel: "Safe Zone",
+    legendSafeZoneDesc: "Get notified about anything that happens in your Safe Zone (tow truck, radar, golden minute, štek)",
   },
 };
 
@@ -230,13 +298,7 @@ export default function MapHackSubscribe() {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t.freeDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
-              {[
-                "Parking mapa Srbije sa zonama i ulicama",
-                "Zlatni Minut i Pauk markeri",
-                "Smart SMS plaćanje javnih zona (1 klik)",
-                "Privatni parkinzi za najam",
-                "Live Chat sa zajednicom",
-              ].map(f => (
+              {t.freePlanFeatures.map((f: string) => (
                 <li key={f} className="flex items-center gap-1.5">
                   <Check className="w-3 h-3 text-green-500 flex-shrink-0" />
                   {f}
@@ -274,14 +336,7 @@ export default function MapHackSubscribe() {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t.premiumDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
-              {[
-                "Sve Free funkcije +",
-                "Safe Zone alarm — push za svaki marker u 300m krugu",
-                "Štek parking lokacije (skrivena baza)",
-                "Radar markeri (policija i patrola)",
-                "Push notifikacije — ne moraš gledati u mapu",
-                "Pauk heatmap analitika",
-              ].map(f => (
+              {t.premiumFeatures.map((f: string) => (
                 <li key={f} className="flex items-center gap-1.5">
                   <Check className="w-3 h-3 text-yellow-500 flex-shrink-0" />
                   {f}
@@ -338,7 +393,7 @@ export default function MapHackSubscribe() {
           <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-base font-bold text-foreground">GODIŠNJI PREMIUM</span>
+                <span className="text-base font-bold text-foreground">{t.annualPlanLabel}</span>
                 <Badge variant="secondary" data-testid="badge-usteda">{t.savings}</Badge>
                 {currentPlan === "godisnji_premium" && (
                   <Badge variant="secondary" data-testid="badge-current-godisnji">{t.active}</Badge>
@@ -352,14 +407,7 @@ export default function MapHackSubscribe() {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t.annualDesc}</p>
             <ul className="text-xs text-muted-foreground space-y-1">
-              {[
-                "Sve Free funkcije +",
-                "Safe Zone alarm — push za svaki marker u 300m krugu",
-                "Štek parking lokacije (skrivena baza)",
-                "Radar markeri (policija i patrola)",
-                "Push notifikacije — ne moraš gledati u mapu",
-                "365 dana · ušteda preko 1.000 RSD",
-              ].map(f => (
+              {t.annualFeatures.map((f: string) => (
                 <li key={f} className="flex items-center gap-1.5">
                   <Check className="w-3 h-3 text-indigo-400 flex-shrink-0" />
                   {f}
@@ -385,14 +433,14 @@ export default function MapHackSubscribe() {
         <Card data-testid="card-plan-firme">
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-0.5">
-              <span className="text-base font-bold text-foreground">ZA FIRME</span>
+              <span className="text-base font-bold text-foreground">{t.forCompanies}</span>
               <span className="text-sm text-muted-foreground font-medium">{t.byAgreement}</span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t.firmDesc}</p>
             <p className="text-xs text-muted-foreground">
-              Kontakt:{" "}
+              {t.contact}:{" "}
               <a
                 href="mailto:info@cardrop.app"
                 className="underline underline-offset-2"
@@ -458,12 +506,19 @@ function LegendSection() {
   const { language } = useLanguage();
   const tl = mhst[language === "sr" ? "sr" : "en"];
 
+  const smsPay = tl === mhst.sr ? "SMS Plaćanje javnih" : "SMS Public Parking";
+  const smsDesc = tl === mhst.sr ? "Plati javni parking putem SMS-a — 1 klik" : "Pay public parking via SMS — 1 tap";
+  const radarLabel = tl === mhst.sr ? "Radar" : "Radar";
+  const radarDesc = tl === mhst.sr ? "Policijski radar ili patrola na putu" : "Police radar or patrol on the road";
+  const privateLabel = tl === mhst.sr ? "Privatni Parkinzi" : "Private Parking";
+  const privateDesc = tl === mhst.sr ? "Pregled privatnih parkinga za iznajmljivanje" : "Browse private parking spots for rent";
+
   const items: Array<{ icon: ReactNode; color: string; label: string; desc: string; badge: "Free" | "Premium" }> = [
     {
       icon: <Clock size={14} />,
       color: "#f97316",
-      label: "Zlatni Minut",
-      desc: "Slobodno parking mesto ili dojava da neko izlazi — ističe za 45 min",
+      label: tl.legendZlatniMinutLabel,
+      desc: tl.legendZlatniMinutDesc,
       badge: "Free",
     },
     {
@@ -477,43 +532,43 @@ function LegendSection() {
         </svg>
       ),
       color: "#ef4444",
-      label: "Pauk Radar",
-      desc: "Pauk primećen u blizini — upozorenje!",
+      label: tl.legendPaukLabel,
+      desc: tl.legendPaukDesc,
       badge: "Free",
     },
     {
       icon: <Home size={14} />,
       color: "#22c55e",
-      label: "Štek Parking",
-      desc: "Tajno, skriveni ili povoljno parking mesto",
+      label: tl.legendStekLabel,
+      desc: tl.legendStekDesc,
       badge: "Premium",
     },
     {
       icon: <Shield size={14} />,
       color: "#3b82f6",
-      label: "Safe Zone",
-      desc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)",
+      label: tl.legendSafeZoneLabel,
+      desc: tl.legendSafeZoneDesc,
       badge: "Premium",
     },
     {
       icon: <Smartphone size={14} />,
       color: "#6366f1",
-      label: "SMS Plaćanje javnih",
-      desc: "Plati javni parking putem SMS-a — 1 klik",
+      label: smsPay,
+      desc: smsDesc,
       badge: "Free",
     },
     {
       icon: <RadioTower size={14} />,
       color: "#8b5cf6",
-      label: "Radar",
-      desc: "Policijski radar ili patrola na putu",
+      label: radarLabel,
+      desc: radarDesc,
       badge: "Premium",
     },
     {
       icon: <Car size={14} />,
       color: "#14b8a6",
-      label: "Privatni Parkinzi",
-      desc: "Pregled privatnih parkinga za iznajmljivanje",
+      label: privateLabel,
+      desc: privateDesc,
       badge: "Free",
     },
   ];
