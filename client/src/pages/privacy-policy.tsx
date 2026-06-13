@@ -47,32 +47,11 @@ const privacyT = {
       "13. Contact and DPO",
     ],
   },
-  de: {
-    pageTitle: "Datenschutzrichtlinie",
-    lastUpdated: "Zuletzt aktualisiert: Mai 2026 · CarDrop LLC",
-    warningText: "Wichtig: Alle in der App angezeigten Park-, Radar- und Verkehrsinformationen sind ausschließlich nutzergeneriert (Crowdsourcing). CarDrop ist nicht verantwortlich für die Richtigkeit, Aktualität oder Vollständigkeit dieser Daten. Nutzer tragen die volle Verantwortung für ihre eigenen Entscheidungen.",
-    termsLink: "Nutzungsbedingungen",
-    sections: [
-      "1. Wer wir sind",
-      "2. Was ist Map Hack RS",
-      "3. Haftungsausschluss",
-      "4. Welche Daten wir erheben",
-      "5. Zahlung und Abonnement",
-      "6. Vermittlungsplattform und Zahlungsabwicklung",
-      "7. Ihre Rechte (DSGVO)",
-      "8. Cookies",
-      "9. Datenweitergabe an Dritte",
-      "10. Internationaler Datentransfer",
-      "11. Datenspeicherung und -löschung",
-      "12. Anwendbares Recht und Zuständigkeit",
-      "13. Kontakt und Datenschutzbeauftragter",
-    ],
-  },
 };
 
 export default function PrivacyPolicy() {
   const { language, setLanguage } = useLanguage();
-  const t = language === "sr" ? privacyT.sr : language === "de" ? privacyT.de : privacyT.en;
+  const t = language === "sr" ? privacyT.sr : privacyT.en;
   const s = t.sections;
 
   return (
@@ -86,14 +65,14 @@ export default function PrivacyPolicy() {
             </div>
           </Link>
           <div className="flex items-center gap-1">
-            {(["sr", "en", "de"] as const).map((code) => (
+            {(["sr", "en"] as const).map((code) => (
               <button
                 key={code}
                 onClick={() => setLanguage(code)}
                 data-testid={`flag-${code}`}
                 className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
               >
-                {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
+                {code === "sr" ? "🇷🇸" : "🇬🇧"}
               </button>
             ))}
           </div>
@@ -113,11 +92,9 @@ export default function PrivacyPolicy() {
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>{language === "sr" ? "Važno" : language === "de" ? "Wichtig" : "Important"}:</strong>{" "}
+              <strong>{language === "sr" ? "Važno" : "Important"}:</strong>{" "}
               {language === "sr"
                 ? "Sve parkirne, radar i saobraćajne informacije prikazane u aplikaciji su isključivo korisničke (crowdsourced). CarDrop nije odgovoran za tačnost, ažurnost ni potpunost tih podataka. Korisnici snose punu odgovornost za sopstvene odluke."
-                : language === "de"
-                ? "Alle in der App angezeigten Park-, Radar- und Verkehrsinformationen sind ausschließlich nutzergeneriert (Crowdsourcing). CarDrop ist nicht verantwortlich für die Richtigkeit, Aktualität oder Vollständigkeit dieser Daten."
                 : "All parking, radar and traffic information shown in the app is exclusively user-generated (crowdsourced). CarDrop is not responsible for the accuracy, timeliness or completeness of that data."}
             </p>
           </div>

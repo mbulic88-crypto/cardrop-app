@@ -117,53 +117,6 @@ const mhT = {
     godFeat1: "All Premium features (Štek, Radar, Push, Safe Zone)", godFeat2: "365 days access",
     godFeat3: "Save over 1,000 RSD annually", godFeat4: "Essentially 2 months for free",
   },
-  de: {
-    heroSubtitle: "RS · Štek-Plätze · Rote Zonen · Live-Chat",
-    filterPrivate: "Privatparkplatz",
-    freeName: "FREE", freeDesc: "Basis-Zugang zur serbischen Parkgemeinschaft.",
-    premiumName: "PREMIUM", premiumBadge: "Empfohlen", premiumDesc: "Vollständige Automatisierung und maximaler Schutz.",
-    premiumAllFree: "Alles aus Free PLUS:", premiumPrice: "RSD / Mo.",
-    dayPassName: "TAGESPASS", dayPassDesc: "Alle PREMIUM-Funktionen für 24 Stunden.", dayPassPrice: "RSD · einmalig",
-    godisnjiName: "JAHRESABO", godisnjiBadge: "2 Monate gratis", godisnjiDesc: "Alle PREMIUM-Funktionen für ein ganzes Jahr.",
-    godisnjiPrice: "RSD / Jahr", godisnjiSavings: "Ersparnis von über 1.000 RSD — praktisch 2 Monate gratis",
-    safeZoneLabel: "Safe Zone", chatLabel: "Chat",
-    chatTitle: "Chat", chatClose: "Vollbild-Chat schließen", chatEmpty: "Keine Nachrichten. Sei der Erste!",
-    addComment: "Kommentar hinzufügen (optional)", cancel: "Abbrechen", place: "Bestätigen", placing: "Wird gesetzt...",
-    markerPaukRadar: "Abschleppradar", markerRadar: "Radar", markerCamera: "Verkehrskamera", markerZlatniMinut: "Goldene Minute",
-    placeholderPauk: "z.B. Steht hier seit 30 Min., fährt ums Quartier...", placeholderRadar: "z.B. Mobiler Radar auf dem Boulevard, Acht auf 60...",
-    placeholderKamera: "z.B. Überwachungskamera an der Kreuzung, 24h aktiv...", placeholderZlatni: "z.B. Einige Plätze frei, aber viel Trubel...",
-    removeMarker: "Marker entfernen", removingMarker: "Wird entfernt...",
-    safeZoneSet: "Safe Zone gesetzt", watchZoneSet: "Überwachungszone gesetzt",
-    watchZoneDesc: "Du bekommst einen Push, wenn ein Abschleppwagen oder die Goldene Minute deine Zone betritt.",
-    legendTitle: "Kartenlegende", legendMarkerTypes: "Markertypen",
-    legendPush: "Push-Benachrichtigungen", legendPushTitle: "Automatische Warnungen",
-    legendPushDesc: "Wenn jemand einen Abschleppwagen, Goldene Minute, Radar oder Štek in deiner Safe Zone (300m-Kreis) meldet, bekommst du sofort eine Push-Benachrichtigung. Erforderlich: Safe Zone gesetzt (Premium) und Browser-Erlaubnis.",
-    legendPushDisable: "Benachrichtigungen kannst du durch Klick auf die Glocke im Header deaktivieren.",
-    legendPlans: "Tarife",
-    legendZlatniDesc: "Freier Parkplatz oder jemand fährt gleich weg — läuft in 45 Min. ab",
-    legendPaukDesc: "Abschleppwagen in der Nähe gesichtet — Warnung!",
-    legendStekDesc: "Geheimer, versteckter oder günstiger Parkplatz",
-    legendSafeZoneDesc: "Benachrichtigung über alles in deiner Safe Zone (Abschleppwagen, Radar, Goldene Minute, Štek)",
-    legendSmsDesc: "Öffentliches Parken per SMS bezahlen — 1 Klick",
-    legendRadarDesc: "Polizei-Radar oder Patrouille auf der Straße",
-    legendPrivatDesc: "Private Parkplätze zur Miete in Serbien durchsuchen",
-    legendFreeItems: ["Goldene Minute & Abschleppradar-Marker", "Intelligente SMS-Zahlung öffentlicher Zonen (1 Klick)", "Private Parkplatzinserate", "Live-Chat"],
-    legendPremiumItems: ["Alles aus Free +", "Safe Zone Alarm (300m, alle Marker)", "Štek-Plätze (versteckt)", "Radar-Marker", "Push-Benachrichtigungen"],
-    legendDayPassItems: ["Alle Premium-Funktionen", "Gilt 24 Stunden", "Kein Abonnement"],
-    freeFeat1: "Serbische Parkkarte mit Zonen und Straßen", freeFeat2: "Live-Chat (Schreiben und Lesen in Echtzeit)",
-    freeFeat3: "Intelligente SMS-Zahlung öffentlicher Zonen (1 Klick)", freeFeat4: "Private Parkplätze zur Miete ansehen",
-    freeFeat5: "Visuelle Marker für Abschleppwagen und Goldene Minute", freeFeat6: "Abschleppwagen & Goldene-Minute-Push-Benachrichtigungen (in Safe Zone)",
-    freeFeat7: "Safe Zone Alarm & Radar-Benachrichtigungen (nur Premium)", freeFeat8: "Štek-Plätze — versteckt (gesperrt)",
-    premFeat1: "Safe Zone Alarm: Push für jeden Marker in deiner 300m-Zone (Abschleppwagen, Radar, Goldene Minute, Štek)",
-    premFeat2: "Push-Benachrichtigungen: Sofortalarm — du musst nicht auf die Karte schauen",
-    premFeat3: "Štek-Plätze: entsperrte Datenbank versteckter Parkplätze",
-    premFeat4: "Radar-Marker: Polizeiradare und Patrouillen auf der Karte markieren",
-    premFeat5: "Abschleppwagen-Heatmap: Analyse der Abschleppbewegungen nach Tag und Stunde",
-    dpFeat1: "Alle Premium-Funktionen (Štek, Radar, Push, Safe Zone)", dpFeat2: "Gilt 24 Stunden", dpFeat3: "Kein Abonnement",
-    dpFeat4: "Ideal für NS-Besucher, Touristen, Samstagabend im Zentrum",
-    godFeat1: "Alle Premium-Funktionen (Štek, Radar, Push, Safe Zone)", godFeat2: "365 Tage Zugang",
-    godFeat3: "Ersparnis von über 1.000 RSD jährlich", godFeat4: "Praktisch 2 Monate gratis",
-  },
 };
 
 type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
@@ -264,7 +217,7 @@ function Radio({ selected, light = true }: { selected: boolean; light?: boolean 
 
 function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void }) {
   const { language } = useLanguage();
-  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
+  const mh = language === "sr" ? mhT.sr : mhT.en;
   return (
     <div className="flex flex-col gap-3">
       {/* 1. FREE — bijela kartica */}
@@ -450,7 +403,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
 
 function CompactHero({ title = "Map Hack RS" }: { title?: string }) {
   const { language } = useLanguage();
-  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
+  const mh = language === "sr" ? mhT.sr : mhT.en;
   return (
     <div
       className="flex-shrink-0"
@@ -591,7 +544,7 @@ export default function MapHackNS() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { language } = useLanguage();
-  const mh = language === "sr" ? mhT.sr : language === "de" ? mhT.de : mhT.en;
+  const mh = language === "sr" ? mhT.sr : mhT.en;
 
   const [nickname, setNickname] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);

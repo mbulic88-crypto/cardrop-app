@@ -60,38 +60,11 @@ const termsT = {
       "20. Contact Information",
     ],
   },
-  de: {
-    pageTitle: "Nutzungsbedingungen",
-    lastUpdated: "Zuletzt aktualisiert: Februar 2026",
-    backButton: "Zurück zur Startseite",
-    sections: [
-      "1. Annahme der Bedingungen",
-      "2. Definition der Plattform",
-      "3. HAFTUNGSAUSSCHLUSS – WICHTIGER HINWEIS",
-      "4. Registrierung und Nutzerpflichten",
-      "5. Pflichten der Parkplatzeigentümer",
-      "6. Pflichten der Mieter",
-      "7. Abonnements und Zahlungen",
-      "8. Nutzerinhalt",
-      "9. Bewertungssystem",
-      "10. Geistiges Eigentum",
-      "11. Verbotenes Verhalten",
-      "12. Kontokündigung",
-      "13. Haftungsbeschränkung",
-      "14. Schadensersatz",
-      "15. Anwendbares Recht",
-      "16. Streitbeilegung",
-      "17. Drittanbieter",
-      "18. Änderungen der Bedingungen",
-      "19. Schlussbestimmungen",
-      "20. Kontaktinformationen",
-    ],
-  },
 };
 
 export default function Terms() {
   const { language, setLanguage } = useLanguage();
-  const t = language === "sr" ? termsT.sr : language === "de" ? termsT.de : termsT.en;
+  const t = language === "sr" ? termsT.sr : termsT.en;
   const s = t.sections;
 
   return (
@@ -105,14 +78,14 @@ export default function Terms() {
             </div>
           </Link>
           <div className="flex items-center gap-1">
-            {(["sr", "en", "de"] as const).map((code) => (
+            {(["sr", "en"] as const).map((code) => (
               <button
                 key={code}
                 onClick={() => setLanguage(code)}
                 data-testid={`flag-${code}`}
                 className={`text-xl leading-none transition-opacity ${language === code ? "opacity-100" : "opacity-40 hover:opacity-75"}`}
               >
-                {code === "sr" ? "🇷🇸" : code === "en" ? "🇬🇧" : "🇩🇪"}
+                {code === "sr" ? "🇷🇸" : "🇬🇧"}
               </button>
             ))}
           </div>

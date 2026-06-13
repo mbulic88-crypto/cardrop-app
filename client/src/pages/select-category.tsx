@@ -8,7 +8,7 @@ import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { useLanguage } from "@/hooks/useLanguage";
 
-type Language = "sr" | "en" | "de" | "hu" | "sk" | "mk";
+type Language = "sr" | "en";
 
 const translations: Record<Language, {
   pageTitle: string;
@@ -58,70 +58,6 @@ const translations: Record<Language, {
     descCarLot: "If you have an empty spot, turn it into cash - advertise on our platform!",
     loginRequired: "Login is required to add a parking spot.",
   },
-  de: {
-    pageTitle: "Kategorie auswählen",
-    pageSubtitle: "Wählen Sie die Art des Parkplatzes, den Sie vermieten möchten",
-    homeButton: "Startseite",
-    categoryPrivate: "Private Parkplätze & Garagen",
-    categoryCompany: "Firmen & Agenturen",
-    categoryTruck: "LKW-Haltestellen",
-    categoryResidential: "Wohngemeinschaften",
-    categoryCarLot: "Autoparkplätze",
-    descPrivate: "Wenn Sie einen privaten Parkplatz, eine Garage oder einen Stellplatz besitzen, ist dies für Sie!",
-    descCompany: "Für Unternehmen, Hotels, Restaurants und Geschäftsobjekte mit überschüssigen Parkplätzen - zusätzliches Einkommen!",
-    descTruck: "Werben Sie für Ihren Halteplatz und füllen Sie leere Plätze!",
-    descResidential: "Große Parkplätze und Garagen von Wohngemeinschaften - nutzen Sie Ihre Möglichkeiten maximal!",
-    descCarLot: "Wenn sich ein leerer Platz findet, verwandeln Sie ihn in Geld - werben Sie auf unserer Plattform!",
-    loginRequired: "Zum Hinzufügen eines Parkplatzes ist eine Anmeldung erforderlich.",
-  },
-  hu: {
-    pageTitle: "Kategória kiválasztása",
-    pageSubtitle: "Válassza ki a bérbeadni kívánt parkolóhely típusát",
-    homeButton: "Főoldal",
-    categoryPrivate: "Magán parkolók és garázsok",
-    categoryCompany: "Cégek és ügynökségek",
-    categoryTruck: "Kamion megállók",
-    categoryResidential: "Lakóközösségek",
-    categoryCarLot: "Autó parkolók",
-    descPrivate: "Ha Ön magán parkolóhely, garázs vagy parkolóhely tulajdonosa, ez Önnek szól!",
-    descCompany: "Cégeknek, szállodáknak, éttermeknek és üzleti létesítményeknek, amelyeknek felesleges parkolóhelyük van - extra jövedelem!",
-    descTruck: "Hirdesse meg kamionmegállóját és töltse ki az üres helyeket!",
-    descResidential: "Lakóközösségek nagy parkolói és garázsai - használja ki maximálisan lehetőségeit!",
-    descCarLot: "Ha van üres hely, változtassa pénzzé - hirdessen platformunkon!",
-    loginRequired: "A parkolóhely hozzáadásához bejelentkezés szükséges.",
-  },
-  sk: {
-    pageTitle: "Vyberte kategóriu",
-    pageSubtitle: "Vyberte typ parkovacieho miesta, ktoré chcete prenajať",
-    homeButton: "Domov",
-    categoryPrivate: "Súkromné parkoviská a garáže",
-    categoryCompany: "Firmy a agentúry",
-    categoryTruck: "Zastávky pre kamióny",
-    categoryResidential: "Bytové spoločenstvá",
-    categoryCarLot: "Autoparkoviská",
-    descPrivate: "Ak vlastníte súkromné parkovacie miesto, garáž alebo parkovacie miesto, toto je pre vás!",
-    descCompany: "Pre firmy, hotely, reštaurácie a obchodné objekty s nadbytočnými parkovacími miestami - extra príjem!",
-    descTruck: "Inzerujte svoju zastávku a zaplňte prázdne miesta!",
-    descResidential: "Veľké parkoviská a garáže bytových spoločenstiev - využite svoje možnosti naplno!",
-    descCarLot: "Ak sa nájde prázdne miesto, premeňte ho na peniaze - inzerujte na našej platforme!",
-    loginRequired: "Na pridanie parkovacieho miesta je potrebné prihlásenie.",
-  },
-  mk: {
-    pageTitle: "Изберете категорија",
-    pageSubtitle: "Одберете го типот на паркинг место кое сакате да го изнајмите",
-    homeButton: "Почетна",
-    categoryPrivate: "Приватни паркинзи и гаражи",
-    categoryCompany: "Фирми и агенции",
-    categoryTruck: "Стојалишта за камиони",
-    categoryResidential: "Станбени заедници",
-    categoryCarLot: "Авто паркинзи",
-    descPrivate: "Ако сте сопственик на приватно паркинг место, гаража или место за паркирање, ова е за вас!",
-    descCompany: "За компании, хотели, ресторани и деловни објекти кои имаат вишок паркинг места - дополнителна заработка!",
-    descTruck: "Огласете го вашето стојалиште и пополнете ги празните места!",
-    descResidential: "Големи паркинзи и гаражи на станбени заедници - искористете ги вашите можности максимално!",
-    descCarLot: "Ако се најде некое празно место, претворете го во пари - огласете се на нашата платформа!",
-    loginRequired: "За додавање паркинг место потребна е најава на сметка.",
-  },
 };
 
 const categories = [
@@ -135,10 +71,6 @@ const categories = [
 const languageOptions = [
   { code: "sr" as const, label: "Srpski", flag: "\u{1F1F7}\u{1F1F8}" },
   { code: "en" as const, label: "English", flag: "\u{1F1EC}\u{1F1E7}" },
-  { code: "de" as const, label: "Deutsch", flag: "\u{1F1E9}\u{1F1EA}" },
-  { code: "hu" as const, label: "Magyar", flag: "\u{1F1ED}\u{1F1FA}" },
-  { code: "sk" as const, label: "Slovenský", flag: "\u{1F1F8}\u{1F1F0}" },
-  { code: "mk" as const, label: "Македонски", flag: "\u{1F1F2}\u{1F1F0}" },
 ];
 
 export default function SelectCategory() {
@@ -167,7 +99,7 @@ export default function SelectCategory() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [langMenuOpen]);
 
-  const selectLanguage = (code: Language) => {
+  const selectLanguage = (code: "sr" | "en") => {
     setLanguage(code);
     setLangMenuOpen(false);
   };
