@@ -72,8 +72,11 @@ const TAB_MAP: Record<string, Section> = {
   sales: 'sales', profile: 'profile',
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS_SR: Record<string, string> = {
   pending: 'Na čekanju', confirmed: 'Potvrđena', completed: 'Završena', cancelled: 'Otkazana',
+};
+const STATUS_LABELS_EN: Record<string, string> = {
+  pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled',
 };
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -90,7 +93,229 @@ const profileSchema = z.object({
   phoneNumber: z.string().optional(),
 });
 
-function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: string; large?: boolean }) {
+
+type DashT = {
+  myAccount: string; loading: string; logout: string;
+  gateOpening: string; signalSent: string; cannotOpen: string; error: string;
+  openGateTitle: string; gateWindow: string; openRamp: string; openRampOut: string; open: string;
+  creditAdded: string; creditAddedDesc: (a: string, b: string) => string;
+  verifyError: string; contactSupport: string;
+  pushOff: string; pushOffDesc: string; pushOn: string; pushOnDesc: string; pushError: string;
+  paymentError: string; messageSent: string; messageError: string;
+  profileSaved: string; profileError: string; deleteAccountError: string;
+  nicknameSaved: string; cooldownActive: string; nicknameError: string;
+  spotDeleted: string; spotDeleteError: string; saleDeleted: string; saleDeleteError: string; upgradeError: string;
+  statusPending: string; statusConfirmed: string; statusCompleted: string; statusCancelled: string;
+  welcome: string; accountOverview: string; totalEarnings: string; rsdAllTime: string;
+  monthEarnings: string; rsdConfirmed: string; activeBookings: string; currentlyConfirmed: string;
+  avgRating: string; noRatings: string; ratingsCount: (n: number) => string;
+  recentBookings: string; seeAll: string; noOwnerBookings: string;
+  mySpots: string; addNewSpot: string; noSpots: string; addSpot: string;
+  topSpot: string; featured: string; active: string; inactive: string;
+  bookingsTotal: (n: number) => string; spaces: (n: number) => string;
+  edit: string; deleteSpot: string; irreversible: string; cancel: string; delete: string;
+  bookingsTitle: string; receivedTab: string; myBookingsTab: string;
+  thisWeek: string; thisMonth: string; lastMonth: string; allTime: string;
+  from: string; to: string; clearFilter: string; exportCsv: string; forPayout: string;
+  payoutTitle: (n: number) => string; afterFees: string; afterCredit: string;
+  totalPayout: string; fromTotal: (n: string) => string; noBookingsPeriod: string;
+  colParking: string; colTenant: string; colPeriod: string; colPriceNet: string;
+  colStatus: string; colGate: string; colPrice: string;
+  space: (n: number) => string; net: string;
+  noMyBookings: string; findSpot: string; bookingDetails: string; bookingInfo: string;
+  labelParking: string; labelStatus: string; labelAddress: string; labelOwnerContact: string; labelPeriod: string;
+  gateRamp: string; rampNote: string;
+  messages: string; loadingMsg: string; noMessages: string; messagesDesc: string;
+  convoNotFound: string; back: string; you: string; replyPlaceholder: string;
+  mySales: string; addSale: string; noSales: string; listSale: string;
+  salePropGarage: string; salePropOpen: string; salePropClosed: string; salePropTruck: string;
+  salePropBuilding: string; salePropWarehouse: string; salePropOther: string;
+  profile: string; backToMap: string; myData: string;
+  firstName: string; firstNamePh: string; lastName: string; lastNamePh: string;
+  phone: string; phonePh: string; trialLabel: string; trialUsed: string; trialAvail: string;
+  pushBlocked: string; pushBlockedDesc: string; pushNotifications: string; pushActive: string; pushOff2: string;
+  saving: string; saveChanges: string; mapNickname: string; mapNicknameDesc: string;
+  cooldownMsg: (days: number, date: string) => string; nicknamePh: string;
+  savingNick: string; saveNick: string; wallet: string; walletDesc: string;
+  availBalance: string; topup: string; txHistory: string; txTopup: string; txBooking: string;
+  dangerZone: string; dangerDesc: string; deleteAccount: string;
+  deleteConfirmTitle: string; deleteConfirmDesc: string; deleteConfirmBold: string; deleteConfirmDesc2: string;
+  deletingAccount: string; confirmDelete: string;
+  accountDeletedTitle: string; accountDeletedSub: string; accountDeletedNoSub: string; ok: string;
+};
+
+const dashT: { sr: DashT; en: DashT } = {
+  sr: {
+    myAccount: 'Moj Nalog', loading: 'Učitavanje...', logout: 'Odjava',
+    gateOpening: 'Kapija se otvara!', signalSent: 'Signal je poslat.',
+    cannotOpen: 'Nije moguće otvoriti', error: 'Greška',
+    openGateTitle: 'Otvori kapiju', gateWindow: 'Kapija dostupna ±10 min od rezervacije',
+    openRamp: 'Otvori rampu', openRampOut: 'Otvori rampu (van prozora)', open: 'Otvori',
+    creditAdded: 'Kredit dodat!', creditAddedDesc: (a, b) => `Dodato ${a} RSD. Novi balans: ${b} RSD`,
+    verifyError: 'Greška pri verifikaciji', contactSupport: 'Kontaktirajte podršku.',
+    pushOff: 'Obaveštenja isključena', pushOffDesc: 'Nećete više primati push obaveštenja',
+    pushOn: 'Obaveštenja uključena', pushOnDesc: 'Primaćete obaveštenja o novim porukama i rezervacijama',
+    pushError: 'Nije moguće uključiti obaveštenja. Proverite dozvole u pretraživaču.',
+    paymentError: 'Nije moguće pokrenuti plaćanje',
+    messageSent: 'Poruka poslata', messageError: 'Nije moguće poslati poruku',
+    profileSaved: 'Profil je ažuriran', profileError: 'Nije moguće ažurirati profil',
+    deleteAccountError: 'Greška pri brisanju naloga',
+    nicknameSaved: 'Nadimak na mapi je promenjen',
+    cooldownActive: 'Cooldown aktivan', nicknameError: 'Nije moguće promeniti nadimak',
+    spotDeleted: 'Parking mesto je izbrisano', spotDeleteError: 'Nije moguće obrisati parking mesto',
+    saleDeleted: 'Oglas prodaje je izbrisan', saleDeleteError: 'Nije moguće obrisati oglas',
+    upgradeError: 'Nije moguće pokrenuti nadogradnju',
+    statusPending: 'Na čekanju', statusConfirmed: 'Potvrđena', statusCompleted: 'Završena', statusCancelled: 'Otkazana',
+    welcome: 'Dobrodošli', accountOverview: 'Pregled vašeg naloga',
+    totalEarnings: 'Ukupna zarada', rsdAllTime: 'RSD (svo vreme)',
+    monthEarnings: 'Zarada ovog meseca', rsdConfirmed: 'RSD (potvrđene)',
+    activeBookings: 'Aktivne rezervacije', currentlyConfirmed: 'Trenutno potvrđene',
+    avgRating: 'Prosečna ocena', noRatings: 'Nema ocena', ratingsCount: (n) => `${n} ocena`,
+    recentBookings: 'Poslednje rezervacije', seeAll: 'Sve', noOwnerBookings: 'Još nema rezervacija na vašim parking mestima.',
+    mySpots: 'Moja Parking Mesta', addNewSpot: 'Dodaj Novo Mesto', noSpots: 'Nemate aktivnih parking mesta',
+    addSpot: 'Dodaj Parking Mesto', topSpot: 'Top lokacija', featured: 'Istaknuto',
+    active: 'Aktivno', inactive: 'Neaktivno',
+    bookingsTotal: (n) => `${n} rezervacija ukupno`, spaces: (n) => `${n} mesta`,
+    edit: 'Izmeni', deleteSpot: 'Obriši parking mesto?', irreversible: 'Ova akcija je nepovratna.',
+    cancel: 'Otkaži', delete: 'Obriši',
+    bookingsTitle: 'Rezervacije i Zarada', receivedTab: 'Primljene rezervacije', myBookingsTab: 'Moje rezervacije',
+    thisWeek: 'Ova nedelja', thisMonth: 'Ovaj mesec', lastMonth: 'Prošli mesec', allTime: 'Sve',
+    from: 'Od', to: 'Do', clearFilter: 'Obriši filter', exportCsv: 'Izvezi CSV', forPayout: 'Za isplatu',
+    payoutTitle: (n) => `Obračun isplate — ${n} rezervacija`,
+    afterFees: 'posle 15% app + 3.9% + 35 RSD Stripe', afterCredit: 'posle 15% app + 1.5% Stripe',
+    totalPayout: 'Ukupno za isplatu', fromTotal: (n) => `od ${n} RSD ukupno`,
+    noBookingsPeriod: 'Nema rezervacija u izabranom periodu',
+    colParking: 'Parking', colTenant: 'Stanar', colPeriod: 'Period',
+    colPriceNet: 'Cena / Neto', colStatus: 'Status', colGate: 'Kapija', colPrice: 'Cena',
+    space: (n) => `Mesto ${n}`, net: 'neto',
+    noMyBookings: 'Niste još napravili nijednu rezervaciju', findSpot: 'Pronađi parking mesto',
+    bookingDetails: 'Detalji Rezervacije', bookingInfo: 'Informacije o vašoj rezervaciji',
+    labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Adresa',
+    labelOwnerContact: 'Kontakt vlasnika', labelPeriod: 'Period',
+    gateRamp: 'Kapija / rampa', rampNote: 'Dostupno ±10 min od vremena rezervacije',
+    messages: 'Poruke', loadingMsg: 'Učitavanje...', noMessages: 'Nemate poruka',
+    messagesDesc: 'Poruke sa vlasnicima parking mesta pojavit će se ovde.',
+    convoNotFound: 'Razgovor nije pronađen', back: 'Nazad', you: 'Vi: ', replyPlaceholder: 'Napišite odgovor...',
+    mySales: 'Moji Oglasi Prodaje', addSale: 'Dodaj Novi Oglas',
+    noSales: 'Nemate aktivnih oglasa prodaje', listSale: 'Oglasi Prodaju',
+    salePropGarage: 'Garaža', salePropOpen: 'Otvoreno PM', salePropClosed: 'Zatvoreno PM',
+    salePropTruck: 'Parking za kamione', salePropBuilding: 'Garažno mesto',
+    salePropWarehouse: 'Magacinski prostor', salePropOther: 'Ostalo',
+    profile: 'Profil', backToMap: 'Nazad na mapu', myData: 'Moji Podaci',
+    firstName: 'Ime', firstNamePh: 'Vaše ime', lastName: 'Prezime', lastNamePh: 'Vaše prezime',
+    phone: 'Telefon', phonePh: 'Vaš telefon',
+    trialLabel: 'Probni Period', trialUsed: 'Već iskorišćen', trialAvail: 'Dostupan',
+    pushBlocked: 'Push Obaveštenja su blokirana',
+    pushBlockedDesc: 'Idite na Podešavanja → Aplikacije → Chrome → Obaveštenja i dozvolite notifikacije.',
+    pushNotifications: 'Push Obaveštenja', pushActive: 'Aktivna', pushOff2: 'Isključena',
+    saving: 'Čuvanje...', saveChanges: 'Sačuvaj Izmene',
+    mapNickname: 'Nadimak na Mapi',
+    mapNicknameDesc: 'Tvoje ime koje se prikazuje u Map Hack NS. Može se menjati jednom u 30 dana.',
+    cooldownMsg: (days, date) => `Možeš da menjaš nadimak za ${days} ${days === 1 ? 'dan' : 'dana'} (${date})`,
+    nicknamePh: 'Nadimak (3–20 znakova, a-z 0-9 _ -)',
+    savingNick: 'Čuvanje...', saveNick: 'Sačuvaj',
+    wallet: 'Moj novčanik', walletDesc: 'Kredit za plaćanje parkinga na Map Hack NS.',
+    availBalance: 'Dostupan balans', topup: 'Dopuni kredit',
+    txHistory: 'Istorija transakcija', txTopup: 'Dopuna', txBooking: 'Rezervacija',
+    dangerZone: 'Opasna zona', dangerDesc: 'Trajno brišeš svoj nalog i sve podatke. Ova akcija je nepovratna.',
+    deleteAccount: 'Obriši nalog',
+    deleteConfirmTitle: 'Sigurno želiš da obrišeš nalog?',
+    deleteConfirmDesc: 'Ova akcija je ', deleteConfirmBold: 'nepovratna',
+    deleteConfirmDesc2: '. Svi tvoji podaci biće trajno obrisani.',
+    deletingAccount: 'Brisanje...', confirmDelete: 'Da, obriši nalog',
+    accountDeletedTitle: 'Nalog je obrisan',
+    accountDeletedSub: 'Vaš nalog je uspješno obrisan. Vaša pretplata je automatski prekinuta.',
+    accountDeletedNoSub: 'Vaš nalog je uspješno obrisan. Svi vaši podaci su trajno uklonjeni.',
+    ok: 'U redu',
+  },
+  en: {
+    myAccount: 'My Account', loading: 'Loading...', logout: 'Log out',
+    gateOpening: 'Gate is opening!', signalSent: 'Signal sent.',
+    cannotOpen: 'Cannot open gate', error: 'Error',
+    openGateTitle: 'Open gate', gateWindow: 'Gate available ±10 min from booking',
+    openRamp: 'Open ramp', openRampOut: 'Open ramp (outside window)', open: 'Open',
+    creditAdded: 'Credit added!', creditAddedDesc: (a, b) => `Added ${a} RSD. New balance: ${b} RSD`,
+    verifyError: 'Verification error', contactSupport: 'Please contact support.',
+    pushOff: 'Notifications disabled', pushOffDesc: 'You will no longer receive push notifications',
+    pushOn: 'Notifications enabled', pushOnDesc: 'You will receive notifications for new messages and bookings',
+    pushError: 'Cannot enable notifications. Check browser permissions.',
+    paymentError: 'Cannot start payment',
+    messageSent: 'Message sent', messageError: 'Cannot send message',
+    profileSaved: 'Profile updated', profileError: 'Cannot update profile',
+    deleteAccountError: 'Error deleting account',
+    nicknameSaved: 'Map nickname changed',
+    cooldownActive: 'Cooldown active', nicknameError: 'Cannot change nickname',
+    spotDeleted: 'Parking spot deleted', spotDeleteError: 'Cannot delete parking spot',
+    saleDeleted: 'Sale listing deleted', saleDeleteError: 'Cannot delete listing',
+    upgradeError: 'Cannot start upgrade',
+    statusPending: 'Pending', statusConfirmed: 'Confirmed', statusCompleted: 'Completed', statusCancelled: 'Cancelled',
+    welcome: 'Welcome', accountOverview: 'Your account overview',
+    totalEarnings: 'Total earnings', rsdAllTime: 'RSD (all time)',
+    monthEarnings: 'This month earnings', rsdConfirmed: 'RSD (confirmed)',
+    activeBookings: 'Active bookings', currentlyConfirmed: 'Currently confirmed',
+    avgRating: 'Average rating', noRatings: 'No ratings', ratingsCount: (n) => `${n} rating${n === 1 ? '' : 's'}`,
+    recentBookings: 'Recent bookings', seeAll: 'All', noOwnerBookings: 'No bookings on your spots yet.',
+    mySpots: 'My Parking Spots', addNewSpot: 'Add New Spot', noSpots: 'You have no active parking spots',
+    addSpot: 'Add Parking Spot', topSpot: 'Top spot', featured: 'Featured',
+    active: 'Active', inactive: 'Inactive',
+    bookingsTotal: (n) => `${n} booking${n === 1 ? '' : 's'} total`, spaces: (n) => `${n} space${n === 1 ? '' : 's'}`,
+    edit: 'Edit', deleteSpot: 'Delete parking spot?', irreversible: 'This action is irreversible.',
+    cancel: 'Cancel', delete: 'Delete',
+    bookingsTitle: 'Bookings & Earnings', receivedTab: 'Received bookings', myBookingsTab: 'My bookings',
+    thisWeek: 'This week', thisMonth: 'This month', lastMonth: 'Last month', allTime: 'All',
+    from: 'From', to: 'To', clearFilter: 'Clear filter', exportCsv: 'Export CSV', forPayout: 'For payout',
+    payoutTitle: (n) => `Payout summary — ${n} bookings`,
+    afterFees: 'after 15% app + 3.9% + 35 RSD Stripe', afterCredit: 'after 15% app + 1.5% Stripe',
+    totalPayout: 'Total payout', fromTotal: (n) => `from ${n} RSD total`,
+    noBookingsPeriod: 'No bookings in the selected period',
+    colParking: 'Parking', colTenant: 'Renter', colPeriod: 'Period',
+    colPriceNet: 'Price / Net', colStatus: 'Status', colGate: 'Gate', colPrice: 'Price',
+    space: (n) => `Space ${n}`, net: 'net',
+    noMyBookings: 'You have not made any bookings yet', findSpot: 'Find parking spot',
+    bookingDetails: 'Booking Details', bookingInfo: 'Information about your booking',
+    labelParking: 'Parking', labelStatus: 'Status', labelAddress: 'Address',
+    labelOwnerContact: 'Owner contact', labelPeriod: 'Period',
+    gateRamp: 'Gate / ramp', rampNote: 'Available ±10 min from booking time',
+    messages: 'Messages', loadingMsg: 'Loading...', noMessages: 'No messages',
+    messagesDesc: 'Messages from parking spot owners will appear here.',
+    convoNotFound: 'Conversation not found', back: 'Back', you: 'You: ', replyPlaceholder: 'Write a reply...',
+    mySales: 'My Sale Listings', addSale: 'Add New Listing',
+    noSales: 'You have no active sale listings', listSale: 'List for Sale',
+    salePropGarage: 'Garage', salePropOpen: 'Open PM', salePropClosed: 'Closed PM',
+    salePropTruck: 'Truck parking', salePropBuilding: 'Building garage',
+    salePropWarehouse: 'Warehouse space', salePropOther: 'Other',
+    profile: 'Profile', backToMap: 'Back to map', myData: 'My Information',
+    firstName: 'First name', firstNamePh: 'Your first name', lastName: 'Last name', lastNamePh: 'Your last name',
+    phone: 'Phone', phonePh: 'Your phone',
+    trialLabel: 'Trial Period', trialUsed: 'Already used', trialAvail: 'Available',
+    pushBlocked: 'Push Notifications are blocked',
+    pushBlockedDesc: 'Go to Settings → Apps → Chrome → Notifications and allow notifications.',
+    pushNotifications: 'Push Notifications', pushActive: 'Active', pushOff2: 'Disabled',
+    saving: 'Saving...', saveChanges: 'Save Changes',
+    mapNickname: 'Map Nickname',
+    mapNicknameDesc: 'Your display name in Map Hack NS. Can be changed once every 30 days.',
+    cooldownMsg: (days, date) => `You can change nickname in ${days} day${days === 1 ? '' : 's'} (${date})`,
+    nicknamePh: 'Nickname (3–20 chars, a-z 0-9 _ -)',
+    savingNick: 'Saving...', saveNick: 'Save',
+    wallet: 'My Wallet', walletDesc: 'Credit for parking payments on Map Hack NS.',
+    availBalance: 'Available balance', topup: 'Top up credit',
+    txHistory: 'Transaction history', txTopup: 'Top-up', txBooking: 'Booking',
+    dangerZone: 'Danger zone', dangerDesc: 'Permanently delete your account and all data. This action is irreversible.',
+    deleteAccount: 'Delete account',
+    deleteConfirmTitle: 'Are you sure you want to delete your account?',
+    deleteConfirmDesc: 'This action is ', deleteConfirmBold: 'irreversible',
+    deleteConfirmDesc2: '. All your data will be permanently deleted.',
+    deletingAccount: 'Deleting...', confirmDelete: 'Yes, delete account',
+    accountDeletedTitle: 'Account deleted',
+    accountDeletedSub: 'Your account has been deleted. Your subscription was automatically cancelled.',
+    accountDeletedNoSub: 'Your account has been deleted. All your data has been permanently removed.',
+    ok: 'OK',
+  },
+};
+
+function RampCell({ spotId, bookingId, large, language }: { spotId: string; bookingId: string; large?: boolean; language: string }) {
+  const t = dashT[language === "sr" ? "sr" : "en"];
+  const STATUS_LABELS = language === "sr" ? STATUS_LABELS_SR : STATUS_LABELS_EN;
   const { toast } = useToast();
   const { data: rampStatus, refetch } = useQuery<{
     canOpen: boolean; reason?: string; cooldownLeft?: number;
@@ -107,12 +332,12 @@ function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: str
   const openRampMutation = useMutation({
     mutationFn: async () => apiRequest("POST", `/api/parking-spots/${spotId}/open-ramp`, {}),
     onSuccess: () => {
-      toast({ title: "Kapija se otvara!", description: "Signal je poslat." });
+      toast({ title: t.gateOpening, description: t.signalSent });
       setTimeout(() => refetch(), 3000);
     },
     onError: (error: any) => {
-      const msg = error?.body?.message || error?.message || "Nije moguće otvoriti";
-      toast({ title: "Greška", description: msg, variant: "destructive" });
+      const msg = error?.body?.message || error?.message || t.cannotOpen;
+      toast({ title: t.error, description: msg, variant: "destructive" });
     },
   });
 
@@ -125,12 +350,12 @@ function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: str
         disabled={openRampMutation.isPending || !canOpen}
         onClick={(e) => { e.stopPropagation(); if (canOpen) openRampMutation.mutate(); }}
         data-testid={`button-open-ramp-dialog-${bookingId}`}
-        title={canOpen ? "Otvori kapiju" : "Kapija dostupna ±10 min od rezervacije"}
+        title={canOpen ? t.openGateTitle : t.gateWindow}
       >
         {openRampMutation.isPending
           ? <Loader2 className="w-4 h-4 animate-spin" />
           : <DoorOpen className="w-4 h-4" />}
-        {canOpen ? "Otvori rampu" : "Otvori rampu (van prozora)"}
+        {canOpen ? t.openRamp : t.openRampOut}
       </Button>
     );
   }
@@ -143,12 +368,12 @@ function RampCell({ spotId, bookingId, large }: { spotId: string; bookingId: str
       disabled={openRampMutation.isPending || !canOpen}
       onClick={(e) => { e.stopPropagation(); if (canOpen) openRampMutation.mutate(); }}
       className={`gap-1.5 text-xs ${canOpen ? "" : "opacity-40"}`}
-      title={canOpen ? "Otvori kapiju" : "Kapija dostupna ±10 min od rezervacije"}
+      title={canOpen ? t.openGateTitle : t.gateWindow}
     >
       {openRampMutation.isPending
         ? <Loader2 className="w-3 h-3 animate-spin" />
         : <DoorOpen className="w-3 h-3" />}
-      Otvori
+      {t.open}
     </Button>
   );
 }
@@ -157,6 +382,8 @@ export default function Dashboard() {
   const { isAuthenticated, isLoading, user: authUser } = useAuth();
   const [, setLocation] = useLocation();
   const { language } = useLanguage();
+  const t = dashT[language === "sr" ? "sr" : "en"];
+  const STATUS_LABELS = language === "sr" ? STATUS_LABELS_SR : STATUS_LABELS_EN;
   const { toast } = useToast();
   const [accountDeletedInfo, setAccountDeletedInfo] = useState<{ hadSubscription: boolean } | null>(null);
   const { isSupported: pushSupported, isSubscribed, subscribe, unsubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
@@ -184,7 +411,7 @@ export default function Dashboard() {
     apiRequest("POST", "/api/credits/verify", { sessionId: creditSessionId })
       .then((data: any) => {
         if (data?.success && !data?.alreadyConsumed) {
-          toast({ title: "Kredit dodat!", description: `Dodato ${data.amountRsd?.toLocaleString('sr-RS')} RSD. Novi balans: ${data.balance?.toLocaleString('sr-RS')} RSD` });
+          toast({ title: t.creditAdded, description: t.creditAddedDesc(data.amountRsd?.toLocaleString() ?? '0', data.balance?.toLocaleString() ?? '0') });
         }
         refetchWallet();
         queryClient.invalidateQueries({ queryKey: ["/api/credits/balance"] });
@@ -193,19 +420,19 @@ export default function Dashboard() {
         url.searchParams.delete('credit_session');
         window.history.replaceState({}, '', url.toString());
       })
-      .catch(() => toast({ title: "Greška pri verifikaciji", description: "Kontaktirajte podršku.", variant: "destructive" }));
+      .catch(() => toast({ title: t.verifyError, description: t.contactSupport, variant: "destructive" }));
   }, [isAuthenticated]);
 
   const handlePushToggle = async () => {
     if (isSubscribed) {
       const success = await unsubscribe();
-      if (success) toast({ title: "Obaveštenja isključena", description: "Nećete više primati push obaveštenja" });
+      if (success) toast({ title: t.pushOff, description: t.pushOffDesc });
     } else {
       const success = await subscribe();
       if (success) {
-        toast({ title: "Obaveštenja uključena", description: "Primaćete obaveštenja o novim porukama i rezervacijama" });
+        toast({ title: t.pushOn, description: t.pushOnDesc });
       } else {
-        toast({ title: "Greška", description: "Nije moguće uključiti obaveštenja. Proverite dozvole u pretraživaču.", variant: "destructive" });
+        toast({ title: t.error, description: t.pushError, variant: "destructive" });
       }
     }
   };
@@ -244,7 +471,7 @@ export default function Dashboard() {
   const creditCheckoutMutation = useMutation({
     mutationFn: (pkg: string) => apiRequest("POST", "/api/credits/checkout", { package: pkg }),
     onSuccess: (data: { url?: string }) => { if (data?.url) window.location.href = data.url; },
-    onError: () => toast({ title: "Greška", description: "Nije moguće pokrenuti plaćanje", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.paymentError, variant: "destructive" }),
   });
 
   type EnrichedMessage = Message & { senderName?: string; receiverName?: string; spotTitle?: string | null };
@@ -258,9 +485,9 @@ export default function Dashboard() {
     onSuccess: () => {
       setReplyContent("");
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      toast({ title: "Poruka poslata" });
+      toast({ title: t.messageSent });
     },
-    onError: () => toast({ title: "Greška", description: "Nije moguće poslati poruku", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.messageError, variant: "destructive" }),
   });
 
   const markReadMutation = useMutation({
@@ -320,16 +547,16 @@ export default function Dashboard() {
   const updateProfileMutation = useMutation({
     mutationFn: (data: z.infer<typeof profileSchema>) => apiRequest("PUT", "/api/users/profile", data),
     onSuccess: () => {
-      toast({ title: "Uspešno", description: "Profil je ažuriran" });
+      toast({ title: t.profileSaved });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
-    onError: () => toast({ title: "Greška", description: "Nije moguće ažurirati profil", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.profileError, variant: "destructive" }),
   });
 
   const deleteAccountMutation = useMutation({
     mutationFn: () => apiRequest("DELETE", "/api/users/me"),
     onSuccess: () => setAccountDeletedInfo({ hadSubscription: !!(authUser?.stripeSubscriptionId) }),
-    onError: () => toast({ title: "Greška pri brisanju naloga", variant: "destructive" }),
+    onError: () => toast({ title: t.deleteAccountError, variant: "destructive" }),
   });
 
   const updateMapNicknameMutation = useMutation({
@@ -339,7 +566,7 @@ export default function Dashboard() {
         mapAvatarId: user?.mapAvatarId || 1,
       }),
     onSuccess: () => {
-      toast({ title: "Uspešno", description: "Nadimak na mapi je promenjen" });
+      toast({ title: t.nicknameSaved });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error: any) => {
@@ -348,12 +575,12 @@ export default function Dashboard() {
         const next = new Date(body.nextAllowed);
         const daysLeft = Math.ceil((next.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
         toast({
-          title: "Cooldown aktivan",
-          description: `Možeš da menjaš nadimak za ${daysLeft} ${daysLeft === 1 ? 'dan' : 'dana'} (${next.toLocaleDateString('sr-RS')})`,
+          title: t.cooldownActive,
+          description: t.cooldownMsg(daysLeft, next.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB')),
           variant: "destructive",
         });
       } else {
-        toast({ title: "Greška", description: body?.message || "Nije moguće promeniti nadimak", variant: "destructive" });
+        toast({ title: t.error, description: body?.message || t.nicknameError, variant: "destructive" });
       }
     },
   });
@@ -361,28 +588,28 @@ export default function Dashboard() {
   const deleteSpotMutation = useMutation({
     mutationFn: (spotId: string) => apiRequest("DELETE", `/api/parking-spots/${spotId}`, {}),
     onSuccess: () => {
-      toast({ title: "Uspešno", description: "Parking mesto je izbrisano" });
+      toast({ title: t.spotDeleted });
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots/my-spots"] });
       queryClient.invalidateQueries({ queryKey: ["/api/parking-spots"] });
     },
-    onError: () => toast({ title: "Greška", description: "Nije moguće obrisati parking mesto", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.spotDeleteError, variant: "destructive" }),
   });
 
   const upgradeMutation = useMutation({
     mutationFn: ({ spotId, tier }: { spotId: string; tier: 'silver' | 'gold' }) =>
       apiRequest("POST", "/api/stripe/create-checkout-existing", { spotId, tier }),
     onSuccess: (data: { url?: string }) => { if (data.url) window.location.href = data.url; },
-    onError: () => toast({ title: "Greška", description: "Nije moguće pokrenuti nadogradnju", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.upgradeError, variant: "destructive" }),
   });
 
   const deleteSaleListingMutation = useMutation({
     mutationFn: (listingId: string) => apiRequest("DELETE", `/api/sales-listings/${listingId}`, {}),
     onSuccess: () => {
-      toast({ title: "Uspešno", description: "Oglas prodaje je izbrisan" });
+      toast({ title: t.saleDeleted });
       queryClient.invalidateQueries({ queryKey: ["/api/sales-listings/my-listings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sales-listings"] });
     },
-    onError: () => toast({ title: "Greška", description: "Nije moguće obrisati oglas", variant: "destructive" }),
+    onError: () => toast({ title: t.error, description: t.saleDeleteError, variant: "destructive" }),
   });
 
   // Per-spot booking count (all statuses)
@@ -475,8 +702,8 @@ export default function Dashboard() {
       b.id,
       b.spotTitle,
       `${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A',
-      b.startTime ? new Date(b.startTime).toLocaleDateString('sr-RS') : '',
-      b.endTime ? new Date(b.endTime).toLocaleDateString('sr-RS') : '',
+      b.startTime ? new Date(b.startTime).toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB') : '',
+      b.endTime ? new Date(b.endTime).toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB') : '',
       b.totalPrice,
       b.currency,
       STATUS_LABELS[b.status] || b.status,
@@ -491,12 +718,14 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const nl = language === 'sr' ? {
-    overview: 'Pregled', spots: 'Parking Mesta', bookings: 'Rezervacije',
-    messages: 'Poruke', sales: 'Prodaja', profile: 'Profil', loading: 'Učitavanje...',
-  } : {
-    overview: 'Overview', spots: 'Parking Spots', bookings: 'Bookings',
-    messages: 'Messages', sales: 'Sales', profile: 'Profile', loading: 'Loading...',
+  const nl = {
+    overview: language === 'sr' ? 'Pregled' : 'Overview',
+    spots: language === 'sr' ? 'Parking Mesta' : 'Parking Spots',
+    bookings: language === 'sr' ? 'Rezervacije' : 'Bookings',
+    messages: language === 'sr' ? 'Poruke' : 'Messages',
+    sales: language === 'sr' ? 'Prodaja' : 'Sales',
+    profile: language === 'sr' ? 'Profil' : 'Profile',
+    loading: t.loading,
   };
 
   const navItems = [
@@ -509,7 +738,7 @@ export default function Dashboard() {
   ];
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">{nl.loading}</div>;
+    return <div className="min-h-screen bg-background flex items-center justify-center">{t.loading}</div>;
   }
   if (!isAuthenticated) return null;
 
@@ -522,52 +751,52 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            Dobrodošli{user?.firstName ? `, ${user.firstName}` : ''}
+            {t.welcome}{user?.firstName ? `, ${user.firstName}` : ''}
           </h2>
-          <p className="text-muted-foreground text-sm mt-1">Pregled vašeg naloga</p>
+          <p className="text-muted-foreground text-sm mt-1">{t.accountOverview}</p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ukupna zarada</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t.totalEarnings}</CardTitle>
               <TrendingUp className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-accent" data-testid="kpi-total-earnings">
-                {totalEarnings.toLocaleString('sr-RS')}
+                {totalEarnings.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">RSD (svo vreme)</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.rsdAllTime}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Zarada ovog meseca</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t.monthEarnings}</CardTitle>
               <Activity className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-accent" data-testid="kpi-earnings-month">
-                {earningsThisMonth.toLocaleString('sr-RS')}
+                {earningsThisMonth.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">RSD (potvrđene)</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.rsdConfirmed}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Aktivne rezervacije</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t.activeBookings}</CardTitle>
               <Calendar className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-foreground" data-testid="kpi-active-bookings">{activeBookingsCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Trenutno potvrđene</p>
+              <p className="text-xs text-muted-foreground mt-1">{t.currentlyConfirmed}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Prosečna ocena</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">{t.avgRating}</CardTitle>
               <Star className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -575,7 +804,7 @@ export default function Dashboard() {
                 {avgRating !== null ? avgRating.toFixed(1) : '—'}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {ownerReviews.length > 0 ? `${ownerReviews.length} ocen${ownerReviews.length === 1 ? 'a' : 'a'}` : 'Nema ocena'}
+                {ownerReviews.length > 0 ? t.ratingsCount(ownerReviews.length) : t.noRatings}
               </p>
             </CardContent>
           </Card>
@@ -584,9 +813,9 @@ export default function Dashboard() {
         {recentBookings.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-              <CardTitle className="text-base font-semibold">Poslednje rezervacije</CardTitle>
+              <CardTitle className="text-base font-semibold">{t.recentBookings}</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setActiveSection('bookings')} data-testid="button-view-all-bookings">
-                Sve <ChevronRight className="w-4 h-4 ml-1" />
+                {t.seeAll} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -597,11 +826,11 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-foreground truncate">{b.spotTitle}</p>
                       <p className="text-xs text-muted-foreground">
                         {`${b.renterFirstName || ''} ${b.renterLastName || ''}`.trim() || 'N/A'}
-                        {b.createdAt && ` · ${new Date(b.createdAt).toLocaleDateString('sr-RS')}`}
+                        {b.createdAt && ` · ${new Date(b.createdAt).toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB')}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold text-foreground">{parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}</span>
+                      <span className="text-sm font-semibold text-foreground">{parseFloat(b.totalPrice).toLocaleString()} {b.currency}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
                         {STATUS_LABELS[b.status] || b.status}
                       </span>
@@ -616,7 +845,7 @@ export default function Dashboard() {
         {recentBookings.length === 0 && (
           <Card className="p-8 text-center">
             <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Još nema rezervacija na vašim parking mestima.</p>
+            <p className="text-muted-foreground">{t.noOwnerBookings}</p>
             <Button variant="outline" className="mt-4" onClick={() => setActiveSection('spots')} data-testid="button-go-to-spots">
               Pregledaj parking mesta
             </Button>
@@ -630,17 +859,17 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">Moja Parking Mesta</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t.mySpots}</h2>
           <Link href="/select-category">
-            <Button data-testid="button-add-spot">Dodaj Novo Mesto</Button>
+            <Button data-testid="button-add-spot">{t.addNewSpot}</Button>
           </Link>
         </div>
 
         {mySpots.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">Nemate aktivnih parking mesta</p>
+            <p className="text-muted-foreground mb-4">{t.noSpots}</p>
             <Link href="/select-category">
-              <Button data-testid="button-add-first-spot">Dodaj Parking Mesto</Button>
+              <Button data-testid="button-add-first-spot">{t.addSpot}</Button>
             </Link>
           </Card>
         ) : (
@@ -656,12 +885,12 @@ export default function Dashboard() {
               >
                 {spot.subscriptionType === 'gold' && (
                   <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-700 text-white border-0">
-                    <Sparkles className="w-3 h-3 mr-1" />Top lokacija
+                    <Sparkles className="w-3 h-3 mr-1" />{t.topSpot}
                   </Badge>
                 )}
                 {spot.subscriptionType === 'silver' && (
                   <Badge className="absolute top-3 right-3 z-10 bg-gradient-to-r from-zinc-300 via-zinc-100 to-zinc-400 text-zinc-800 border-0">
-                    <Sparkles className="w-3 h-3 mr-1" />Istaknuto
+                    <Sparkles className="w-3 h-3 mr-1" />{t.featured}
                   </Badge>
                 )}
                 {spot.imageUrls?.[0] && (
@@ -678,19 +907,19 @@ export default function Dashboard() {
                       {spot.pricePerHour} {spot.currency}/{spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${spot.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}>
-                      {spot.isActive ? 'Aktivno' : 'Neaktivno'}
+                      {spot.isActive ? t.active : t.inactive}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {bookingsPerSpot[spot.id] ?? 0} rezervacija ukupno
+                        {t.bookingsTotal(bookingsPerSpot[spot.id] ?? 0)}
                       </span>
                     </div>
                     {(spot.totalSpaces ?? 1) > 1 && (
                       <span className="text-xs text-accent font-medium">
-                        {spot.totalSpaces} mesta
+                        {t.spaces(spot.totalSpaces ?? 1)}
                       </span>
                     )}
                   </div>
@@ -715,7 +944,7 @@ export default function Dashboard() {
                   <div className="flex gap-2">
                     <Link href={`/edit-spot/${spot.id}`} className="flex-1">
                       <Button variant="outline" size="sm" className="w-full" data-testid={`button-edit-${spot.id}`}>
-                        <Edit2 className="w-3.5 h-3.5 mr-1.5" />Izmeni
+                        <Edit2 className="w-3.5 h-3.5 mr-1.5" />{t.edit}
                       </Button>
                     </Link>
                     <AlertDialog>
@@ -726,13 +955,13 @@ export default function Dashboard() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Obriši parking mesto?</AlertDialogTitle>
-                          <AlertDialogDescription>Ova akcija je nepovratna.</AlertDialogDescription>
+                          <AlertDialogTitle>{t.deleteSpot}</AlertDialogTitle>
+                          <AlertDialogDescription>{t.irreversible}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Otkaži</AlertDialogCancel>
+                          <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
                           <AlertDialogAction onClick={() => deleteSpotMutation.mutate(spot.id)}
-                            className="bg-destructive text-destructive-foreground">Obriši</AlertDialogAction>
+                            className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -751,18 +980,18 @@ export default function Dashboard() {
       <>
       <div className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">Rezervacije i Zarada</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t.bookingsTitle}</h2>
         </div>
 
         {/* Tab switcher */}
         <div className="flex gap-2 border-b border-border pb-2">
           <Button size="sm" variant={bookingsTab === 'received' ? 'default' : 'outline'}
             onClick={() => setBookingsTab('received')} data-testid="tab-received-bookings">
-            Primljene rezervacije
+            {t.receivedTab}
           </Button>
           <Button size="sm" variant={bookingsTab === 'mine' ? 'default' : 'outline'}
             onClick={() => setBookingsTab('mine')} data-testid="tab-my-bookings">
-            Moje rezervacije
+            {t.myBookingsTab}
           </Button>
         </div>
 
@@ -775,29 +1004,29 @@ export default function Dashboard() {
                   <Button key={f} size="sm" variant={quickFilter === f && !dateFrom && !dateTo ? 'default' : 'outline'}
                     onClick={() => { setQuickFilter(f); setDateFrom(''); setDateTo(''); }}
                     data-testid={`filter-${f}`}>
-                    {{ week: 'Ova nedelja', month: 'Ovaj mesec', lastmonth: 'Prošli mesec', all: 'Sve' }[f]}
+                    {{ week: t.thisWeek, month: t.thisMonth, lastmonth: t.lastMonth, all: t.allTime }[f]}
                   </Button>
                 ))}
               </div>
               <div className="flex flex-wrap gap-3 items-end justify-between">
                 <div className="flex flex-wrap gap-3 items-end">
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-medium">Od</label>
+                    <label className="text-xs text-muted-foreground font-medium">{t.from}</label>
                     <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                       className="w-40" data-testid="input-date-from" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground font-medium">Do</label>
+                    <label className="text-xs text-muted-foreground font-medium">{t.to}</label>
                     <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
                       className="w-40" data-testid="input-date-to" />
                   </div>
                   {(dateFrom || dateTo) && (
-                    <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>Obriši filter</Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); }}>{t.clearFilter}</Button>
                   )}
                 </div>
                 <Button variant="outline" size="sm" onClick={handleCsvExport} disabled={filteredBookings.length === 0}
                   data-testid="button-export-csv">
-                  <Download className="w-4 h-4 mr-2" />Izvezi CSV
+                  <Download className="w-4 h-4 mr-2" />{t.exportCsv}
                 </Button>
               </div>
             </Card>
@@ -808,7 +1037,7 @@ export default function Dashboard() {
                 const count = m === 'all'
                   ? filteredBookings.length
                   : filteredBookings.filter(b => b.paymentMethod === m).length;
-                const label = m === 'all' ? 'Sve' : m === 'instant' ? 'Instant' : 'Kredit';
+                const label = m === 'all' ? t.allTime : m === 'instant' ? 'Instant' : 'Kredit';
                 return (
                   <Button key={m} size="sm"
                     variant={payMethodFilter === m ? 'default' : 'outline'}
@@ -821,33 +1050,33 @@ export default function Dashboard() {
               <Button size="sm" variant={showPayoutCard ? 'default' : 'outline'}
                 onClick={() => setShowPayoutCard(v => !v)}
                 data-testid="button-toggle-payout">
-                <TrendingUp className="w-4 h-4 mr-1" />Za isplatu
+                <TrendingUp className="w-4 h-4 mr-1" />{t.forPayout}
               </Button>
             </div>
 
             {/* Payout summary card */}
             {showPayoutCard && (
               <Card className="p-4 border-green-500/30 bg-green-500/5">
-                <p className="text-sm font-semibold text-foreground mb-3">Obračun isplate — {filteredBookings.length} rezervacija</p>
+                <p className="text-sm font-semibold text-foreground mb-3">{t.payoutTitle(filteredBookings.length)}</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {instantCount > 0 && (
                     <div className="rounded-md bg-blue-500/10 border border-blue-500/20 p-3">
                       <p className="text-xs text-blue-400 font-semibold mb-1">Instant ({instantCount})</p>
-                      <p className="text-lg font-bold text-foreground">{Math.round(instantPayout).toLocaleString('sr-RS')} RSD</p>
-                      <p className="text-xs text-muted-foreground">posle 15% app + 3.9% + 35 RSD Stripe</p>
+                      <p className="text-lg font-bold text-foreground">{Math.round(instantPayout).toLocaleString()} RSD</p>
+                      <p className="text-xs text-muted-foreground">{t.afterFees}</p>
                     </div>
                   )}
                   {creditCount > 0 && (
                     <div className="rounded-md bg-purple-500/10 border border-purple-500/20 p-3">
                       <p className="text-xs text-purple-400 font-semibold mb-1">Kredit ({creditCount})</p>
-                      <p className="text-lg font-bold text-foreground">{Math.round(creditPayout).toLocaleString('sr-RS')} RSD</p>
-                      <p className="text-xs text-muted-foreground">posle 15% app + 1.5% Stripe</p>
+                      <p className="text-lg font-bold text-foreground">{Math.round(creditPayout).toLocaleString()} RSD</p>
+                      <p className="text-xs text-muted-foreground">{t.afterCredit}</p>
                     </div>
                   )}
                   <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
-                    <p className="text-xs text-green-400 font-semibold mb-1">Ukupno za isplatu</p>
-                    <p className="text-lg font-bold text-green-400">{Math.round(totalPayout).toLocaleString('sr-RS')} RSD</p>
-                    <p className="text-xs text-muted-foreground">od {filteredEarnings.toLocaleString('sr-RS')} RSD ukupno</p>
+                    <p className="text-xs text-green-400 font-semibold mb-1">{t.totalPayout}</p>
+                    <p className="text-lg font-bold text-green-400">{Math.round(totalPayout).toLocaleString()} RSD</p>
+                    <p className="text-xs text-muted-foreground">{t.fromTotal(filteredEarnings.toLocaleString())}</p>
                   </div>
                 </div>
               </Card>
@@ -856,7 +1085,7 @@ export default function Dashboard() {
             {payMethodFiltered.length === 0 ? (
               <Card className="p-8 text-center">
                 <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Nema rezervacija u izabranom periodu</p>
+                <p className="text-muted-foreground">{t.noBookingsPeriod}</p>
               </Card>
             ) : (
               <div className="rounded-md border border-border overflow-hidden">
@@ -864,11 +1093,11 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Stanar</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
-                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena / Neto</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colParking}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colTenant}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colPeriod}</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.colPriceNet}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colStatus}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -889,19 +1118,19 @@ export default function Dashboard() {
                                     <Phone className="w-3 h-3 shrink-0" />{b.renterPhone}
                                   </span>
                                 )}
-                                {b.spaceNumber > 1 && <span className="text-xs text-accent font-medium">Mesto {b.spaceNumber}</span>}
+                                {b.spaceNumber > 1 && <span className="text-xs text-accent font-medium">{t.space(b.spaceNumber)}</span>}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-muted-foreground text-xs">
-                              {new Date(b.startTime).toLocaleDateString('sr-RS')}
+                              {new Date(b.startTime).toLocaleDateString(language === "sr" ? "sr-RS" : "en-GB")}
                               {' — '}
-                              {new Date(b.endTime).toLocaleDateString('sr-RS')}
+                              {new Date(b.endTime).toLocaleDateString(language === "sr" ? "sr-RS" : "en-GB")}
                             </td>
                             <td className="px-4 py-3 text-right whitespace-nowrap">
                               <div className="flex flex-col gap-0.5 items-end">
-                                <span className="font-semibold text-foreground">{Math.round(price).toLocaleString('sr-RS')} RSD</span>
+                                <span className="font-semibold text-foreground">{Math.round(price).toLocaleString()} RSD</span>
                                 <span className="text-xs text-muted-foreground">
-                                  neto: {Math.round(neto).toLocaleString('sr-RS')} + {Math.round(stripeFee).toLocaleString('sr-RS')} RSD Stripe
+                                  {t.net}: {Math.round(neto).toLocaleString()} + {Math.round(stripeFee).toLocaleString()} RSD Stripe
                                 </span>
                               </div>
                             </td>
@@ -929,9 +1158,9 @@ export default function Dashboard() {
             {myBookings.length === 0 ? (
               <Card className="p-8 text-center">
                 <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Niste još napravili nijednu rezervaciju</p>
+                <p className="text-muted-foreground">{t.noMyBookings}</p>
                 <Button variant="outline" className="mt-4" onClick={() => setLocation('/parking-spots')} data-testid="button-find-spots">
-                  Pronađi parking mesto
+                  {t.findSpot}
                 </Button>
               </Card>
             ) : (
@@ -940,11 +1169,11 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b border-border">
                       <tr>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Parking</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Period</th>
-                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Cena</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Kapija</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colParking}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colPeriod}</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.colPrice}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colStatus}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.colGate}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -957,12 +1186,12 @@ export default function Dashboard() {
                         >
                           <td className="px-4 py-3 text-foreground font-medium max-w-[180px] truncate">{b.spotTitle ?? `#${b.spotId.slice(0, 8)}`}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">
-                            {new Date(b.startTime).toLocaleDateString('sr-RS')}
+                            {new Date(b.startTime).toLocaleDateString(language === "sr" ? "sr-RS" : "en-GB")}
                             {' — '}
-                            {new Date(b.endTime).toLocaleDateString('sr-RS')}
+                            {new Date(b.endTime).toLocaleDateString(language === "sr" ? "sr-RS" : "en-GB")}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-foreground whitespace-nowrap">
-                            {parseFloat(b.totalPrice).toLocaleString('sr-RS')} {b.currency}
+                            {parseFloat(b.totalPrice).toLocaleString()} {b.currency}
                           </td>
                           <td className="px-4 py-3">
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[b.status] || ''}`}>
@@ -971,7 +1200,7 @@ export default function Dashboard() {
                           </td>
                           <td className="px-4 py-3">
                             {b.spotHasRamp && (
-                              <RampCell spotId={b.spotId} bookingId={b.id} />
+                              <RampCell spotId={b.spotId} bookingId={b.id} language={language} />
                             )}
                           </td>
                         </tr>
@@ -989,18 +1218,18 @@ export default function Dashboard() {
       <Dialog open={!!selectedBooking} onOpenChange={(open) => { if (!open) setSelectedBooking(null); }}>
         <DialogContent data-testid="dialog-booking-detail">
           <DialogHeader>
-            <DialogTitle>Detalji Rezervacije</DialogTitle>
-            <DialogDescription>Informacije o vašoj rezervaciji</DialogDescription>
+            <DialogTitle>{t.bookingDetails}</DialogTitle>
+            <DialogDescription>{t.bookingInfo}</DialogDescription>
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-4 pt-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Parking</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelParking}</p>
                   <p className="text-sm text-foreground font-medium">{selectedBooking.spotTitle ?? `ID: ${selectedBooking.spotId.slice(0, 8)}`}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Status</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelStatus}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[selectedBooking.status] || ''}`}>
                     {STATUS_LABELS[selectedBooking.status] || selectedBooking.status}
                   </span>
@@ -1008,7 +1237,7 @@ export default function Dashboard() {
               </div>
               {selectedBooking.spotAddress && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Adresa</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelAddress}</p>
                   <p className="text-sm text-foreground flex items-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
                     {selectedBooking.spotAddress}
@@ -1017,7 +1246,7 @@ export default function Dashboard() {
               )}
               {selectedBooking.spotPhone && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Kontakt vlasnika</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelOwnerContact}</p>
                   <p className="text-sm text-foreground flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-accent shrink-0" />
                     {selectedBooking.spotPhone}
@@ -1025,17 +1254,17 @@ export default function Dashboard() {
                 </div>
               )}
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Period</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t.labelPeriod}</p>
                 <p className="text-sm text-foreground">
-                  {new Date(selectedBooking.startTime).toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(selectedBooking.startTime).toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                   {' — '}
-                  {new Date(selectedBooking.endTime).toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(selectedBooking.endTime).toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Iznos</p>
                 <p className="text-lg font-bold text-foreground">
-                  {parseFloat(selectedBooking.totalPrice).toLocaleString('sr-RS')} {selectedBooking.currency}
+                  {parseFloat(selectedBooking.totalPrice).toLocaleString()} {selectedBooking.currency}
                 </p>
               </div>
               {selectedBooking.notes && (
@@ -1046,9 +1275,9 @@ export default function Dashboard() {
               )}
               {selectedBooking.spotHasRamp && (
                 <div className="pt-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Kapija / rampa</p>
-                  <RampCell spotId={selectedBooking.spotId} bookingId={selectedBooking.id} large />
-                  <p className="text-xs text-muted-foreground mt-1.5 text-center">Dostupno ±10 min od vremena rezervacije</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t.gateRamp}</p>
+                  <RampCell spotId={selectedBooking.spotId} bookingId={selectedBooking.id} large language={language} />
+                  <p className="text-xs text-muted-foreground mt-1.5 text-center">{t.rampNote}</p>
                 </div>
               )}
             </div>
@@ -1064,14 +1293,14 @@ export default function Dashboard() {
       <div className="space-y-4">
         {!selectedConversation ? (
           <>
-            <h2 className="text-2xl font-bold text-foreground">Poruke</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t.messages}</h2>
             {messagesLoading ? (
-              <Card className="p-8 text-center"><p className="text-muted-foreground">Učitavanje...</p></Card>
+              <Card className="p-8 text-center"><p className="text-muted-foreground">{t.loadingMsg}</p></Card>
             ) : conversations.length === 0 ? (
               <Card className="p-8 text-center">
                 <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Nemate poruka</p>
-                <p className="text-sm text-muted-foreground mt-2">Poruke sa vlasnicima parking mesta pojavit će se ovde.</p>
+                <p className="text-muted-foreground">{t.noMessages}</p>
+                <p className="text-sm text-muted-foreground mt-2">{t.messagesDesc}</p>
               </Card>
             ) : (
               <div className="space-y-2">
@@ -1092,11 +1321,11 @@ export default function Dashboard() {
                           </p>
                         )}
                         <p className={`text-sm mt-1 truncate ${conv.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                          {conv.lastMessage.senderId === user?.id ? 'Vi: ' : ''}{conv.lastMessage.content}
+                          {conv.lastMessage.senderId === user?.id ? t.you : ''}{conv.lastMessage.content}
                         </p>
                       </div>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {conv.lastMessage.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleDateString('sr-RS', { day: 'numeric', month: 'short' }) : ''}
+                        {conv.lastMessage.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleDateString(language === "sr" ? "sr-RS" : "en-GB", { day: 'numeric', month: 'short' }) : ''}
                       </span>
                     </div>
                   </Card>
@@ -1128,7 +1357,7 @@ export default function Dashboard() {
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : ''}`}>
                         <span className="text-[10px] opacity-70">
-                          {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString(language === "sr" ? "sr-RS" : "en-GB", { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                         {isMine && (msg.isRead ? <CheckCheck className="w-3 h-3 opacity-70" /> : <Check className="w-3 h-3 opacity-50" />)}
                       </div>
@@ -1139,7 +1368,7 @@ export default function Dashboard() {
             </Card>
             <div className="flex gap-2 mt-3">
               <Textarea value={replyContent} onChange={e => setReplyContent(e.target.value)}
-                placeholder="Napišite odgovor..." className="resize-none flex-1" rows={2}
+                placeholder={t.replyPlaceholder} className="resize-none flex-1" rows={2}
                 data-testid="input-reply-message"
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -1166,8 +1395,8 @@ export default function Dashboard() {
           </div>
         ) : (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">Razgovor nije pronađen</p>
-            <Button variant="outline" className="mt-4" onClick={() => setSelectedConversation(null)}>Nazad</Button>
+            <p className="text-muted-foreground">{t.convoNotFound}</p>
+            <Button variant="outline" className="mt-4" onClick={() => setSelectedConversation(null)}>{t.back}</Button>
           </Card>
         )}
       </div>
@@ -1178,17 +1407,17 @@ export default function Dashboard() {
     return (
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">Moji Oglasi Prodaje</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t.mySales}</h2>
           <Link href="/add-sale">
-            <Button data-testid="button-add-sale">Dodaj Novi Oglas</Button>
+            <Button data-testid="button-add-sale">{t.addSale}</Button>
           </Link>
         </div>
 
         {mySalesListings.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">Nemate aktivnih oglasa prodaje</p>
+            <p className="text-muted-foreground mb-4">{t.noSales}</p>
             <Link href="/add-sale">
-              <Button data-testid="button-add-first-sale">Oglasi Prodaju</Button>
+              <Button data-testid="button-add-first-sale">{t.listSale}</Button>
             </Link>
           </Card>
         ) : (
@@ -1197,10 +1426,10 @@ export default function Dashboard() {
               const priceNum = parseFloat(listing.price);
               const areaNum = parseFloat(listing.area);
               const pricePerSqm = areaNum > 0 ? Math.round(priceNum / areaNum) : 0;
-              const propertyTypeLabels: Record<string, string> = {
-                garage: "Garaža", open_parking: "Otvoreno PM", closed_parking: "Zatvoreno PM",
-                truck_parking: "Parking za kamione", building_garage: "Garažno mesto",
-                warehouse_parking: "Magacinski prostor", other: "Ostalo",
+              const salePropLabels: Record<string, string> = {
+                garage: t.salePropGarage, open_parking: t.salePropOpen, closed_parking: t.salePropClosed,
+                truck_parking: t.salePropTruck, building_garage: t.salePropBuilding,
+                warehouse_parking: t.salePropWarehouse, other: t.salePropOther,
               };
               return (
                 <Card key={listing.id} className="p-4" data-testid={`sale-card-${listing.id}`}>
@@ -1209,17 +1438,17 @@ export default function Dashboard() {
                   )}
                   <div className="flex items-center gap-2 mb-2">
                     <Tag className="w-4 h-4 text-accent" />
-                    <Badge variant="secondary">{propertyTypeLabels[listing.propertyType] || listing.propertyType}</Badge>
+                    <Badge variant="secondary">{salePropLabels[listing.propertyType] || listing.propertyType}</Badge>
                   </div>
                   <h3 className="font-semibold text-base mb-1 text-card-foreground">{listing.title}</h3>
                   <div className="flex items-start gap-2 mb-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
                     <span className="truncate">{listing.address}</span>
                   </div>
-                  <p className="text-foreground font-semibold text-lg mb-1">{priceNum.toLocaleString('sr-RS')} RSD</p>
+                  <p className="text-foreground font-semibold text-lg mb-1">{priceNum.toLocaleString()} RSD</p>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground mb-3">
                     <span className="flex items-center gap-1"><Ruler className="w-3 h-3" />{areaNum} m²</span>
-                    <span>{pricePerSqm.toLocaleString('sr-RS')} RSD/m²</span>
+                    <span>{pricePerSqm.toLocaleString()} RSD/m²</span>
                   </div>
                   {listing.phone && (
                     <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
@@ -1229,7 +1458,7 @@ export default function Dashboard() {
                   <Button variant="destructive" size="sm" className="w-full"
                     onClick={() => deleteSaleListingMutation.mutate(listing.id)}
                     data-testid={`button-delete-sale-${listing.id}`}>
-                    <Trash2 className="w-4 h-4 mr-2" />Obriši
+                    <Trash2 className="w-4 h-4 mr-2" />{t.delete}
                   </Button>
                 </Card>
               );
@@ -1256,50 +1485,50 @@ export default function Dashboard() {
     return (
       <div className="max-w-2xl space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-2xl font-bold text-foreground">Profil</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t.profile}</h2>
           <Link href="/map-hack">
             <Button variant="outline" size="sm" data-testid="button-go-to-map-hack">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Nazad na mapu
+              {t.backToMap}
             </Button>
           </Link>
         </div>
         <Card className="p-6">
-          <h3 className="text-base font-semibold mb-4 text-foreground">Moji Podaci</h3>
+          <h3 className="text-base font-semibold mb-4 text-foreground">{t.myData}</h3>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(data => updateProfileMutation.mutate(data))} className="space-y-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ime</FormLabel>
-                  <FormControl><Input placeholder="Vaše ime" {...field} data-testid="input-first-name" /></FormControl>
+                  <FormLabel>{t.firstName}</FormLabel>
+                  <FormControl><Input placeholder={t.firstNamePh} {...field} data-testid="input-first-name" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="lastName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prezime</FormLabel>
-                  <FormControl><Input placeholder="Vaše prezime" {...field} data-testid="input-last-name" /></FormControl>
+                  <FormLabel>{t.lastName}</FormLabel>
+                  <FormControl><Input placeholder={t.lastNamePh} {...field} data-testid="input-last-name" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="phoneNumber" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefon</FormLabel>
-                  <FormControl><Input placeholder="Vaš telefon" {...field} data-testid="input-phone" /></FormControl>
+                  <FormLabel>{t.phone}</FormLabel>
+                  <FormControl><Input placeholder={t.phonePh} {...field} data-testid="input-phone" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <div className="bg-muted/50 p-4 rounded-md space-y-1">
                 <p className="text-sm text-muted-foreground"><strong>Email:</strong> {user?.email}</p>
-                <p className="text-sm text-muted-foreground"><strong>Probni Period:</strong> {user?.hasUsedFreeTrial ? "Već iskorišćen" : "Dostupan"}</p>
+                <p className="text-sm text-muted-foreground"><strong>{t.trialLabel}:</strong> {user?.hasUsedFreeTrial ? t.trialUsed : t.trialAvail}</p>
               </div>
 
               {pushSupported && pushPermission === 'denied' && (
                 <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-md">
                   <BellOff className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium text-foreground">Push Obaveštenja su blokirana</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">Idite na Podešavanja → Aplikacije → Chrome → Obaveštenja i dozvolite notifikacije.</p>
+                    <p className="font-medium text-foreground">{t.pushBlocked}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{t.pushBlockedDesc}</p>
                   </div>
                 </div>
               )}
@@ -1308,8 +1537,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     {isSubscribed ? <Bell className="w-5 h-5 text-accent" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
                     <div>
-                      <p className="font-medium text-foreground">Push Obaveštenja</p>
-                      <p className="text-sm text-muted-foreground">{isSubscribed ? "Aktivna" : "Isključena"}</p>
+                      <p className="font-medium text-foreground">{t.pushNotifications}</p>
+                      <p className="text-sm text-muted-foreground">{isSubscribed ? t.pushActive : t.pushOff2}</p>
                     </div>
                   </div>
                   <Switch checked={isSubscribed} onCheckedChange={handlePushToggle} disabled={pushLoading} data-testid="switch-push-notifications" />
@@ -1317,20 +1546,20 @@ export default function Dashboard() {
               )}
 
               <Button type="submit" className="w-full" disabled={updateProfileMutation.isPending} data-testid="button-save-profile">
-                {updateProfileMutation.isPending ? "Čuvanje..." : "Sačuvaj Izmene"}
+                {updateProfileMutation.isPending ? t.saving : t.saveChanges}
               </Button>
             </form>
           </Form>
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-base font-semibold mb-1 text-foreground">Nadimak na Mapi</h3>
-          <p className="text-sm text-muted-foreground mb-4">Tvoje ime koje se prikazuje u Map Hack NS. Može se menjati jednom u 30 dana.</p>
+          <h3 className="text-base font-semibold mb-1 text-foreground">{t.mapNickname}</h3>
+          <p className="text-sm text-muted-foreground mb-4">{t.mapNicknameDesc}</p>
           {mapCooldownInfo && (
             <div className="flex items-start gap-2 p-3 bg-destructive/10 rounded-md mb-4">
               <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
               <p className="text-sm text-destructive">
-                Možeš da menjaš nadimak za <strong>{mapCooldownInfo.daysLeft} {mapCooldownInfo.daysLeft === 1 ? 'dan' : 'dana'}</strong> ({mapCooldownInfo.nextAllowed.toLocaleDateString('sr-RS')})
+                {t.cooldownMsg(mapCooldownInfo.daysLeft, mapCooldownInfo.nextAllowed.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB'))}
               </p>
             </div>
           )}
@@ -1338,7 +1567,7 @@ export default function Dashboard() {
             <Input
               value={mapNicknameInput}
               onChange={e => setMapNicknameInput(e.target.value)}
-              placeholder="Nadimak (3–20 znakova, a-z 0-9 _ -)"
+              placeholder={t.nicknamePh}
               maxLength={20}
               disabled={!!mapCooldownInfo}
               data-testid="input-map-nickname"
@@ -1348,7 +1577,7 @@ export default function Dashboard() {
               disabled={updateMapNicknameMutation.isPending || !!mapCooldownInfo || mapNicknameInput.trim().length < 3}
               data-testid="button-save-map-nickname"
             >
-              {updateMapNicknameMutation.isPending ? "Čuvanje..." : "Sačuvaj"}
+              {updateMapNicknameMutation.isPending ? t.savingNick : t.saveNick}
             </Button>
           </div>
         </Card>
@@ -1357,17 +1586,17 @@ export default function Dashboard() {
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-1">
             <Wallet className="h-5 w-5 text-accent" />
-            <h3 className="text-base font-semibold text-foreground">Moj novčanik</h3>
+            <h3 className="text-base font-semibold text-foreground">{t.wallet}</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">Kredit za plaćanje parkinga na Map Hack NS.</p>
+          <p className="text-sm text-muted-foreground mb-4">{t.walletDesc}</p>
           <div className="flex items-center justify-between p-4 rounded-md mb-4" style={{ background: "rgba(64,145,108,0.12)", border: "1px solid rgba(82,183,136,0.25)" }}>
             <div>
-              <p className="text-xs text-muted-foreground">Dostupan balans</p>
-              <p className="text-2xl font-bold" style={{ color: "#52B788" }}>{(walletData?.balance ?? 0).toLocaleString('sr-RS')} <span className="text-base font-semibold">RSD</span></p>
+              <p className="text-xs text-muted-foreground">{t.availBalance}</p>
+              <p className="text-2xl font-bold" style={{ color: "#52B788" }}>{(walletData?.balance ?? 0).toLocaleString()} <span className="text-base font-semibold">RSD</span></p>
             </div>
             <Wallet className="h-8 w-8 text-muted-foreground/30" />
           </div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Dopuni kredit</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">{t.topup}</p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             {[
               { pkg: '500', label: '500 RSD' },
@@ -1391,7 +1620,7 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-1.5 mb-2">
                 <History className="h-3.5 w-3.5 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Istorija transakcija</p>
+                <p className="text-xs font-semibold text-muted-foreground">{t.txHistory}</p>
               </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {walletData.transactions.slice(0, 20).map(tx => (
@@ -1401,10 +1630,10 @@ export default function Dashboard() {
                         ? <ArrowDownCircle className="h-3.5 w-3.5 text-accent shrink-0" />
                         : <ArrowUpCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
                       }
-                      <span className="text-xs text-muted-foreground truncate">{tx.description || (tx.type === 'topup' ? 'Dopuna' : 'Rezervacija')}</span>
+                      <span className="text-xs text-muted-foreground truncate">{tx.description || (tx.type === 'topup' ? t.txTopup : t.txBooking)}</span>
                     </div>
                     <span className="text-xs font-semibold shrink-0 ml-2" style={{ color: tx.amount > 0 ? "#52B788" : "#f87171" }}>
-                      {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('sr-RS')} RSD
+                      {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()} RSD
                     </span>
                   </div>
                 ))}
@@ -1416,25 +1645,25 @@ export default function Dashboard() {
         <Card className="p-6 border-destructive/40">
           <div className="flex items-center gap-2 mb-2">
             <TriangleAlert className="h-5 w-5 text-destructive" />
-            <h3 className="text-base font-semibold text-destructive">Opasna zona</h3>
+            <h3 className="text-base font-semibold text-destructive">{t.dangerZone}</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">Trajno brišeš svoj nalog i sve podatke. Ova akcija je nepovratna.</p>
+          <p className="text-sm text-muted-foreground mb-4">{t.dangerDesc}</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="w-full" data-testid="button-delete-account">
-                <Trash2 className="h-4 w-4 mr-2" />Obriši nalog
+                <Trash2 className="h-4 w-4 mr-2" />{t.deleteAccount}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Sigurno želiš da obrišeš nalog?</AlertDialogTitle>
-                <AlertDialogDescription>Ova akcija je <strong>nepovratna</strong>. Svi tvoji podaci biće trajno obrisani.</AlertDialogDescription>
+                <AlertDialogTitle>{t.deleteConfirmTitle}</AlertDialogTitle>
+                <AlertDialogDescription>{t.deleteConfirmDesc}<strong>{t.deleteConfirmBold}</strong>{t.deleteConfirmDesc2}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-delete-account-cancel">Otkaži</AlertDialogCancel>
+                <AlertDialogCancel data-testid="button-delete-account-cancel">{t.cancel}</AlertDialogCancel>
                 <AlertDialogAction onClick={() => deleteAccountMutation.mutate()} disabled={deleteAccountMutation.isPending}
                   className="bg-destructive text-destructive-foreground" data-testid="button-delete-account-confirm">
-                  {deleteAccountMutation.isPending ? "Brisanje..." : "Da, obriši nalog"}
+                  {deleteAccountMutation.isPending ? t.deletingAccount : t.confirmDelete}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1507,7 +1736,7 @@ export default function Dashboard() {
                 window.location.href = "/";
               }}>
               <LogOut className="w-4 h-4 mr-2 shrink-0" />
-              <span className="group-data-[collapsible=icon]:hidden">Odjava</span>
+              <span className="group-data-[collapsible=icon]:hidden">{t.logout}</span>
             </Button>
           </SidebarFooter>
         </Sidebar>
@@ -1516,7 +1745,7 @@ export default function Dashboard() {
           <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center px-4 h-14 gap-3">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <h1 className="text-base font-semibold text-foreground">
-              {navItems.find(n => n.id === activeSection)?.label || 'Moj Nalog'}
+              {navItems.find(n => n.id === activeSection)?.label || t.myAccount}
             </h1>
           </header>
 
@@ -1556,17 +1785,17 @@ export default function Dashboard() {
       <AlertDialog open={accountDeletedInfo !== null}>
         <AlertDialogContent data-testid="dialog-account-deleted">
           <AlertDialogHeader>
-            <AlertDialogTitle>Nalog je obrisan</AlertDialogTitle>
+            <AlertDialogTitle>{t.accountDeletedTitle}</AlertDialogTitle>
             <AlertDialogDescription>
               {accountDeletedInfo?.hadSubscription
-                ? "Vaš nalog je uspješno obrisan. Vaša pretplata je automatski prekinuta."
-                : "Vaš nalog je uspješno obrisan. Svi vaši podaci su trajno uklonjeni."}
+                ? t.accountDeletedSub
+                : t.accountDeletedNoSub}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction data-testid="button-account-deleted-ok"
               onClick={() => { setAccountDeletedInfo(null); queryClient.clear(); setLocation("/"); }}>
-              U redu
+              {t.ok}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

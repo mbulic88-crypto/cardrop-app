@@ -234,7 +234,7 @@ export default function AuthPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="vas@email.com"
+                  placeholder={language === "sr" ? "vas@email.com" : "your@email.com"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
@@ -353,6 +353,7 @@ function GoogleSignInButton({
   clientId: string;
   loadingText: string;
 }) {
+  const { language } = useLanguage();
   const [loaded, setLoaded] = useState(false);
 
   useState(() => {
@@ -372,7 +373,7 @@ function GoogleSignInButton({
           size: "large",
           width: "100%",
           text: "signin_with",
-          locale: "sr",
+          locale: language === "sr" ? "sr" : "en",
         }
       );
       setLoaded(true);
