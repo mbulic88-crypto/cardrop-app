@@ -700,7 +700,9 @@ export default function Dashboard() {
 
   // CSV export
   const handleCsvExport = () => {
-    const headers = ['ID', 'Parking', 'Stanar', 'Početak', 'Kraj', 'Cena', 'Valuta', 'Status'];
+    const headers = language === 'sr'
+      ? ['ID', 'Parking', 'Stanar', 'Početak', 'Kraj', 'Cena', 'Valuta', 'Status']
+      : ['ID', 'Parking', 'Renter', 'Start', 'End', 'Price', 'Currency', 'Status'];
     const rows = filteredBookings.map(b => [
       b.id,
       b.spotTitle,
@@ -907,7 +909,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-foreground">
-                      {spot.pricePerHour} {spot.currency}/{spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? 'mes' : 'dan'}
+                      {spot.pricePerHour} {spot.currency}/{spot.pricingType === 'hourly' ? 'h' : spot.pricingType === 'monthly' ? (language === 'sr' ? 'mes' : 'mo') : (language === 'sr' ? 'dan' : 'd')}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${spot.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}>
                       {spot.isActive ? t.active : t.inactive}

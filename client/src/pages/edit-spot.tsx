@@ -76,6 +76,14 @@ const est = {
     pibPlaceholder: "Poreski identifikacioni broj",
     contactPerson: "Kontakt osoba",
     contactPersonPlaceholder: "Ime kontakt osobe",
+    validTitle: "Naslov mora imati najmanje 5 karaktera",
+    validDesc: "Opis je obavezan",
+    validAddress: "Adresa mora biti uneta",
+    validPhone: "Telefon mora imati najmanje 5 karaktera",
+    validEmail: "Unesite validnu email adresu",
+    validLat: "Geografska širina je obavezna",
+    validLng: "Geografska dužina je obavezna",
+    validType: "Tip mesta je obavezan",
     save: "Sačuvaj Izmene",
     saving: "Čuvanje...",
     saveSuccess: "Izmene su sačuvane",
@@ -141,6 +149,14 @@ const est = {
     pibPlaceholder: "Tax identification number",
     contactPerson: "Contact person",
     contactPersonPlaceholder: "Contact person name",
+    validTitle: "Title must be at least 5 characters",
+    validDesc: "Description is required",
+    validAddress: "Address is required",
+    validPhone: "Phone must be at least 5 characters",
+    validEmail: "Enter a valid email address",
+    validLat: "Latitude is required",
+    validLng: "Longitude is required",
+    validType: "Spot type is required",
     save: "Save Changes",
     saving: "Saving...",
     saveSuccess: "Changes saved",
@@ -154,21 +170,21 @@ const est = {
   },
 };
 
-const formSchema = z.object({
-  title: z.string().min(5, "Naslov mora imati najmanje 5 karaktera"),
-  description: z.string().min(1, "Opis je obavezan"),
-  address: z.string().min(5, "Adresa mora biti uneta"),
+const makeFormSchema = (v: Pick<typeof est.sr, 'validTitle' | 'validDesc' | 'validAddress' | 'validPhone' | 'validEmail' | 'validLat' | 'validLng' | 'validType'>) => z.object({
+  title: z.string().min(5, v.validTitle),
+  description: z.string().min(1, v.validDesc),
+  address: z.string().min(5, v.validAddress),
   city: z.preprocess((val) => val === "" ? undefined : val, z.string().optional()),
-  phone: z.string().min(5, "Telefon mora imati najmanje 5 karaktera"),
-  contactEmail: z.string().email("Unesite validnu email adresu"),
-  latitude: z.string().min(1, "Geografska širina je obavezna"),
-  longitude: z.string().min(1, "Geografska dužina je obavezna"),
+  phone: z.string().min(5, v.validPhone),
+  contactEmail: z.string().email(v.validEmail),
+  latitude: z.string().min(1, v.validLat),
+  longitude: z.string().min(1, v.validLng),
   pricePerHour: z.string().optional(),
   pricePerDay: z.string().optional(),
   pricePerWeek: z.string().optional(),
   pricePerMonth: z.string().optional(),
   currency: z.string().default("RSD"),
-  spotType: z.string().min(1, "Tip mesta je obavezan"),
+  spotType: z.string().min(1, v.validType),
   hasEvCharging: z.boolean().default(false),
   hasSecurityCamera: z.boolean().default(false),
   is24Hours: z.boolean().default(true),
@@ -177,6 +193,7 @@ const formSchema = z.object({
   pib: z.string().optional(),
   contactPerson: z.string().optional(),
 });
+type FormValues = z.infer<ReturnType<typeof makeFormSchema>>;
 
 const serbianCities = [
   "Beograd", "Novi Sad", "Niš", "Kragujevac", "Subotica",
@@ -184,16 +201,19 @@ const serbianCities = [
   "Leskovac", "Užice", "Valjevo", "Šabac", "Sombor",
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-  private: "Privatni parking/garaža",
-  company: "Firma",
-  truck: "Truck stop",
-  residential: "Stambena zajednica",
-  carlot: "Auto-plac",
+const CATEGORY_LABELS_SR: Record<string, string> = {
+  private: "Privatni parking/garaža", company: "Firma", truck: "Truck stop",
+  residential: "Stambena zajednica", carlot: "Auto-plac",
 };
-
-const SUB_TYPE_LABELS: Record<string, string> = {
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  private: "Private parking/garage", company: "Company", truck: "Truck stop",
+  residential: "Residential community", carlot: "Car lot",
+};
+const SUB_TYPE_LABELS_SR: Record<string, string> = {
   standard: "Besplatni", silver: "Silver Premium", gold: "Gold Premium",
+};
+const SUB_TYPE_LABELS_EN: Record<string, string> = {
+  standard: "Free", silver: "Silver Premium", gold: "Gold Premium",
 };
 
 export default function EditSpot() {
@@ -204,6 +224,9 @@ export default function EditSpot() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const t = est[language === "sr" ? "sr" : "en"];
+  const formSchema = makeFormSchema(t);
+  const CATEGORY_LABELS = language === "sr" ? CATEGORY_LABELS_SR : CATEGORY_LABELS_EN;
+  const SUB_TYPE_LABELS = language === "sr" ? SUB_TYPE_LABELS_SR : SUB_TYPE_LABELS_EN;
 
   const { data: spot, isLoading: spotLoading } = useQuery<ParkingSpot & { pendingUntil?: string }>({
     queryKey: ["/api/parking-spots", spotId],
@@ -212,7 +235,7 @@ export default function EditSpot() {
     refetchOnMount: "always",
   });
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "", description: "", address: "", city: "", phone: "", contactEmail: "",
@@ -226,7 +249,7 @@ export default function EditSpot() {
 
   const watchedAdvertiserType = form.watch("advertiserType");
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: FormValues) => {
     const hasPrice = [values.pricePerHour, values.pricePerDay, values.pricePerWeek, values.pricePerMonth]
       .some(p => p && parseFloat(p) > 0);
     if (!hasPrice) {
@@ -276,13 +299,13 @@ export default function EditSpot() {
   }, [spot, form]);
 
   const mutation = useMutation({
-    mutationFn: (data: z.infer<typeof formSchema>) =>
+    mutationFn: (data: FormValues) =>
       apiRequest("PUT", `/api/parking-spots/${spotId}`, data),
     onSuccess: (response: { pendingUntil?: string }) => {
       const pendingUntil = response?.pendingUntil;
       if (pendingUntil) {
         const date = new Date(pendingUntil);
-        const formattedDate = date.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+        const formattedDate = date.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
         toast({
           title: t.saveSuccess,
           description: `${t.saveSuccessDesc} — ${formattedDate}. ${t.saveSuccessOld}`,
@@ -374,7 +397,7 @@ export default function EditSpot() {
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{t.pendingTitle}</p>
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
                 {t.pendingDesc}{' '}
-                <strong>{pendingFrom.toLocaleDateString('sr-RS', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</strong>.
+                <strong>{pendingFrom.toLocaleDateString(language === 'sr' ? 'sr-RS' : 'en-GB', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</strong>.
                 {' '}{t.pendingNote}
               </p>
             </div>
