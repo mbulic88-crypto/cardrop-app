@@ -329,7 +329,7 @@ export default function MapHackSubscribe() {
                 )}
               </div>
               <span className="text-2xl font-extrabold text-foreground">
-                390 <span className="text-base font-semibold text-muted-foreground">RSD / mes</span>
+                390 <span className="text-base font-semibold text-muted-foreground">RSD / {language === "sr" ? "mes" : "mo"}</span>
               </span>
             </div>
           </CardHeader>

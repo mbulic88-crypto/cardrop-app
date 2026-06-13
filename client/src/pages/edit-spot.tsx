@@ -84,6 +84,7 @@ const est = {
     validLat: "Geografska širina je obavezna",
     validLng: "Geografska dužina je obavezna",
     validType: "Tip mesta je obavezan",
+    validPrice: "Unesite bar jednu cenu",
     save: "Sačuvaj Izmene",
     saving: "Čuvanje...",
     saveSuccess: "Izmene su sačuvane",
@@ -157,6 +158,7 @@ const est = {
     validLat: "Latitude is required",
     validLng: "Longitude is required",
     validType: "Spot type is required",
+    validPrice: "Enter at least one price",
     save: "Save Changes",
     saving: "Saving...",
     saveSuccess: "Changes saved",
@@ -253,7 +255,7 @@ export default function EditSpot() {
     const hasPrice = [values.pricePerHour, values.pricePerDay, values.pricePerWeek, values.pricePerMonth]
       .some(p => p && parseFloat(p) > 0);
     if (!hasPrice) {
-      form.setError('pricePerHour', { message: 'Unesite bar jednu cenu' });
+      form.setError('pricePerHour', { message: t.validPrice });
       return;
     }
     const nullPrice = (v?: string) => (v && parseFloat(v) > 0 ? v : null);
