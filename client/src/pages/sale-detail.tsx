@@ -51,35 +51,35 @@ const sdt = {
   },
 };
 
-const propertyTypeLabels: Record<string, string> = {
-  garage: "Garaža",
-  open_parking: "Otvoreni Parking",
-  closed_parking: "Zatvoreni Parking",
-  truck_parking: "Kamionski Parking",
-  building_garage: "Zgradna Garaža",
-  warehouse_parking: "Magacinski Parking",
-  other: "Ostalo",
+const propertyTypeLabels: Record<string, { sr: string; en: string }> = {
+  garage: { sr: "Garaža", en: "Garage" },
+  open_parking: { sr: "Otvoreni Parking", en: "Open Parking" },
+  closed_parking: { sr: "Zatvoreni Parking", en: "Closed Parking" },
+  truck_parking: { sr: "Kamionski Parking", en: "Truck Parking" },
+  building_garage: { sr: "Zgradna Garaža", en: "Building Garage" },
+  warehouse_parking: { sr: "Magacinski Parking", en: "Warehouse Parking" },
+  other: { sr: "Ostalo", en: "Other" },
 };
 
-const conditionLabels: Record<string, string> = {
-  new: "Novo",
-  used: "Korišćeno",
-  renovated: "Renovirano",
+const conditionLabels: Record<string, { sr: string; en: string }> = {
+  new: { sr: "Novo", en: "New" },
+  used: { sr: "Korišćeno", en: "Used" },
+  renovated: { sr: "Renovirano", en: "Renovated" },
 };
 
-const advertiserTypeLabels: Record<string, string> = {
-  owner: "Vlasnik",
-  agency: "Agencija",
-  company: "Kompanija",
+const advertiserTypeLabels: Record<string, { sr: string; en: string }> = {
+  owner: { sr: "Vlasnik", en: "Owner" },
+  agency: { sr: "Agencija", en: "Agency" },
+  company: { sr: "Kompanija", en: "Company" },
 };
 
-const featureConfig: Record<string, { label: string; icon: typeof Zap }> = {
-  electricity: { label: "Struja", icon: Zap },
-  water: { label: "Voda", icon: Droplets },
-  heating: { label: "Grejanje", icon: Thermometer },
-  camera: { label: "Kamera", icon: Camera },
-  ramp: { label: "Rampa", icon: DoorOpen },
-  remote_control: { label: "Daljinski", icon: Radio },
+const featureConfig: Record<string, { sr: string; en: string; icon: typeof Zap }> = {
+  electricity: { sr: "Struja", en: "Electricity", icon: Zap },
+  water: { sr: "Voda", en: "Water", icon: Droplets },
+  heating: { sr: "Grejanje", en: "Heating", icon: Thermometer },
+  camera: { sr: "Kamera", en: "Camera", icon: Camera },
+  ramp: { sr: "Rampa", en: "Ramp", icon: DoorOpen },
+  remote_control: { sr: "Daljinski", en: "Remote", icon: Radio },
 };
 
 function formatPhoneForMessaging(phone: string): string {
@@ -290,21 +290,21 @@ export default function SaleDetail() {
               <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">{t.type}</p>
-                <p className="text-sm font-medium text-foreground">{propertyTypeLabels[listing.propertyType] || listing.propertyType}</p>
+                <p className="text-sm font-medium text-foreground">{propertyTypeLabels[listing.propertyType]?.[language === "sr" ? "sr" : "en"] || listing.propertyType}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <Wrench className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">{t.condition}</p>
-                <p className="text-sm font-medium text-foreground">{conditionLabels[listing.condition] || listing.condition}</p>
+                <p className="text-sm font-medium text-foreground">{conditionLabels[listing.condition]?.[language === "sr" ? "sr" : "en"] || listing.condition}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
               <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">{t.advertiser}</p>
-                <p className="text-sm font-medium text-foreground">{advertiserTypeLabels[listing.advertiserType] || listing.advertiserType}</p>
+                <p className="text-sm font-medium text-foreground">{advertiserTypeLabels[listing.advertiserType]?.[language === "sr" ? "sr" : "en"] || listing.advertiserType}</p>
               </div>
             </div>
           </div>
@@ -341,7 +341,7 @@ export default function SaleDetail() {
                     return (
                       <div key={feature} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
                         <IconComp className="w-4 h-4 text-accent flex-shrink-0" />
-                        <span className="text-sm text-foreground">{config?.label || feature}</span>
+                        <span className="text-sm text-foreground">{config?.[language === "sr" ? "sr" : "en"] || feature}</span>
                       </div>
                     );
                   })}

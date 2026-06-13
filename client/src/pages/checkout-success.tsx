@@ -204,7 +204,7 @@ export default function CheckoutSuccess() {
     const { spot, booking } = bookingResult;
     const startTime = booking?.startTime ? new Date(booking.startTime) : null;
     const endTime = booking?.endTime ? new Date(booking.endTime) : null;
-    const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const fmt = (d: Date) => d.toLocaleDateString(language === 'sr' ? 'sr-Latn-RS' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -233,7 +233,7 @@ export default function CheckoutSuccess() {
               )}
               {booking?.totalPrice && (
                 <p className="text-sm font-semibold text-accent pl-6">
-                  {Number(booking.totalPrice).toLocaleString('sr-RS')} {booking.currency}
+                  {Number(booking.totalPrice).toLocaleString(language === 'sr' ? 'sr-RS' : 'en-US')} {booking.currency}
                 </p>
               )}
               {booking?.licensePlate && (

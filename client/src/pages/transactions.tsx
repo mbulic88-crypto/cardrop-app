@@ -7,7 +7,7 @@ import { ArrowLeft, DollarSign, Calendar, MapPin, Download, CreditCard, Home as 
 import type { Booking, ParkingSpot } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { sr, enUS } from "date-fns/locale";
 import { useAuth } from "@/hooks/useAuth";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
@@ -120,7 +120,7 @@ export default function Transactions() {
           <div>
             <p className="text-sm text-muted-foreground">{t.transactionDate}</p>
             <p className="text-sm font-medium text-card-foreground">
-              {format(new Date(booking.createdAt || booking.startTime), "dd MMM yyyy", { locale: sr })}
+              {format(new Date(booking.createdAt || booking.startTime), "dd MMM yyyy", { locale: language === "sr" ? sr : enUS })}
             </p>
           </div>
         </div>
