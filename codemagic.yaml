@@ -182,7 +182,7 @@ print('Splash generated with PIL')
     publishing:
       email:
         recipients:
-          - TVOJ_EMAIL@gmail.com   # ← Promeni ovo na svoju email adresu!
+          - m.bulic88@gmail.com
         notify:
           success: true
           failure: true
