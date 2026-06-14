@@ -6,7 +6,7 @@ workflows:
 
     environment:
       # Ove varijable dodajes u Codemagic Settings → Teams → Global variables
-      # Pogledaj IOS_SETUP_GUIDE.md za detaljna uputstva
+      # Pogledaj IOS_SETUP_GUIDE.md za detaljna uputstva (Korak D3)
       groups:
         - apple_credentials
       vars:
@@ -23,21 +23,49 @@ workflows:
         - ~/.cocoapods
 
     scripts:
-      - name: 1. Instaliraj npm pakete
+      # ─────────────────────────────────────────────
+      # FAZA 1: Code signing setup (mora pre builda!)
+      # Codemagic automatski preuzima Distribution Certificate i
+      # Provisioning Profile direktno iz Apple-a koristeci API key.
+      # Ne moras rucno da skidas nikakve certifikate.
+      # ─────────────────────────────────────────────
+
+      - name: 1. Otkljucaj macOS keychain (privremeni)
+        script: keychain initialize
+
+      - name: 2. Preuzmi Distribution Certificate i Provisioning Profile
+        script: |
+          # Codemagic automatski kreira certifikat i profil ako ne postoje
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: 3. Dodaj certifikate u keychain
+        script: keychain add-certificates
+
+      # ─────────────────────────────────────────────
+      # FAZA 2: Priprema projekta
+      # ─────────────────────────────────────────────
+
+      - name: 4. Instaliraj npm pakete
         script: npm ci
 
-      - name: 2. Build web app (potreban za Capacitor sync)
+      - name: 5. Build web app (potreban za Capacitor sync)
         script: npm run build
 
-      - name: 3. Inicijalizuj Capacitor iOS projekat
+      - name: 6. Inicijalizuj Capacitor iOS projekat
         script: |
-          # Generise ios/ folder sa Xcode projektom (samo ako ne postoji)
-          npx cap add ios || echo "iOS platform already exists, skipping"
+          # Generise ios/ folder sa Xcode projektom
+          npx cap add ios || echo "iOS platform already exists"
 
-      - name: 4. Sinhronizuj web sadrzaj i konfiguraciju
+      - name: 7. Sinhronizuj web sadrzaj i konfiguraciju
         script: npx cap sync ios
 
-      - name: 5. Generisi splash screen sliku
+      # ─────────────────────────────────────────────
+      # FAZA 3: iOS resursi (ikone, splash, manifest)
+      # ─────────────────────────────────────────────
+
+      - name: 8. Generisi splash screen sliku
         script: |
           # Kreira tamni splash ekran (#1e1e1e) 2732x2732px za iOS
           convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png \
@@ -49,17 +77,17 @@ img.save('assets/splash.png')
 print('Splash generated with PIL')
 " || echo "Warning: splash generation skipped"
 
-      - name: 6. Generisi iOS ikone u svim velicinama
+      - name: 9. Generisi iOS ikone u svim velicinama
         script: |
-          # Kopira assets/icon.png i assets/splash.png u sve potrebne iOS format/velicine
+          # Generise ikone iz assets/icon.png u sve Apple-ove velicine
           npx @capacitor/assets generate --ios \
             --iconSource assets/icon.png \
             --splashSource assets/splash.png \
             || npx @capacitor/assets generate --ios
 
-      - name: 7. Dodaj Privacy Manifest i integriraj u Xcode projekat
+      - name: 10. Dodaj Privacy Manifest i integriraj u Xcode projekat
         script: |
-          # Kreiraj PrivacyInfo.xcprivacy fajl (obavezan od 2024)
+          # Kreiraj PrivacyInfo.xcprivacy (obavezan od 2024, Apple review requirement)
           cat > ios/App/App/PrivacyInfo.xcprivacy << 'PRIVACY_EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -100,7 +128,7 @@ print('Splash generated with PIL')
           PRIVACY_EOF
 
           # Registruj PrivacyInfo.xcprivacy u Xcode projektu (xcodeproj gem)
-          # xcodeproj je pre-instaliran na Codemagic Mac masinama
+          # xcodeproj je pre-instaliran na svim Codemagic Mac masinama
           ruby - << 'RUBY_EOF'
           require 'xcodeproj'
           project_path = Dir.glob('ios/App/*.xcodeproj').first
@@ -118,24 +146,29 @@ print('Splash generated with PIL')
           project.save
           RUBY_EOF
 
-      - name: 8. Instaliraj CocoaPods (iOS biblioteke)
+      - name: 11. Instaliraj CocoaPods (iOS biblioteke)
         script: |
           cd ios/App
           pod install
 
-      - name: 9. Postavi build number
+      # ─────────────────────────────────────────────
+      # FAZA 4: Build i potpisivanje
+      # ─────────────────────────────────────────────
+
+      - name: 12. Postavi code signing u Xcode projektu
+        script: xcode-project use-profiles
+
+      - name: 13. Postavi build number (automatski uvecava)
         script: |
           cd ios/App
           LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "0")
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 1.0.$BUILD_NUMBER
-          echo "Build number: $BUILD_NUMBER"
+          echo "Build number set to: $BUILD_NUMBER"
 
-      - name: 10. Code signing i build IPA
+      - name: 14. Kompajliraj i potpisi IPA
         script: |
-          # Automatski preuzima certifikate iz App Store Connect API
-          xcode-project use-profiles
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
