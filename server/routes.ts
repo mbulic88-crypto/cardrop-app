@@ -3661,12 +3661,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ─── Partner Accommodations ────────────────────────────────────────────────
 
-  app.get('/api/accommodations', async (req, res) => {
+  app.get('/api/accommodations', async (req: any, res) => {
     try {
       const { db } = await import('./db');
       const { partnerAccommodations } = await import('@shared/schema');
       const { eq } = await import('drizzle-orm');
-      const rows = await db.select().from(partnerAccommodations).orderBy(partnerAccommodations.createdAt);
+      const isAdmin = req.session?.userId
+        ? ((await db.query.users.findFirst({ where: (u: any, { eq: eqFn }: any) => eqFn(u.id, req.session.userId) })) as any)?.isAdmin
+        : false;
+      const rows = isAdmin
+        ? await db.select().from(partnerAccommodations).orderBy(partnerAccommodations.createdAt)
+        : await db.select().from(partnerAccommodations).where(eq(partnerAccommodations.isActive, true)).orderBy(partnerAccommodations.createdAt);
       res.json(rows);
     } catch (error) {
       console.error("Error fetching accommodations:", error);

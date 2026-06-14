@@ -50,6 +50,13 @@
       "when": 1780560000000,
       "tag": "0006_multi_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781659200000,
+      "tag": "0007_partner_accommodations",
+      "breakpoints": true
     }
   ]
 }
