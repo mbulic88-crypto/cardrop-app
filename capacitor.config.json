@@ -1,0 +1,16 @@
+{
+  "appId": "rs.cardrop.app",
+  "appName": "Cardrop",
+  "webDir": "dist/public",
+  "server": {
+    "url": "https://cardrop.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#1e1e1e",
+    "scrollEnabled": true,
+    "limitsNavigationsToAppBoundDomains": true
+  }
+}
