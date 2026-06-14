@@ -52,11 +52,11 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          npm install -g npm@10.9.2
-          npm install --legacy-peer-deps
+          # yarn je stabilniji od npm na Codemagic Mac masinama
+          yarn install --ignore-engines --network-timeout 300000
 
       - name: 5. Build web app (potreban za Capacitor sync)
-        script: npm run build
+        script: yarn build
 
       - name: 6. Inicijalizuj Capacitor iOS projekat
         script: |
