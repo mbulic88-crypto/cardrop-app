@@ -68,14 +68,9 @@ workflows:
       - name: 8. Generisi splash screen sliku
         script: |
           # Kreira tamni splash ekran (#1e1e1e) 2732x2732px za iOS
-          convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png \
-            && echo "Splash generated with ImageMagick" \
-            || python3 -c "
-from PIL import Image
-img = Image.new('RGB', (2732, 2732), color=(30, 30, 30))
-img.save('assets/splash.png')
-print('Splash generated with PIL')
-" || echo "Warning: splash generation skipped"
+          # ImageMagick je uvek dostupan na Codemagic Mac masinama
+          convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png
+          echo "Splash screen generated (2732x2732, dark)"
 
       - name: 9. Generisi iOS ikone u svim velicinama
         script: |
