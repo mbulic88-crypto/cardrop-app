@@ -50,12 +50,14 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # Koristimo yarn v1 classic — stabilan na Node 22, nema workspace bug
+          # yarn v1 classic + --no-lockfile jer je yarn.lock u v4 formatu
           npm install -g yarn@1
-          yarn install --network-timeout 300000
+          yarn install --no-lockfile --network-timeout 300000
           npm install -g @capacitor/cli@8
           echo "--- Provera @capacitor/ios ---"
           ls node_modules/@capacitor/ios/package.json && echo "OK" || echo "NIJE INSTALIRAN"
+          echo "--- Provera typescript ---"
+          ls node_modules/typescript/package.json && echo "OK" || echo "NIJE INSTALIRAN"
 
       - name: 5. Pripremi dist/public placeholder za Capacitor sync
         script: |
