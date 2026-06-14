@@ -64,8 +64,9 @@ workflows:
 
       - name: 6. Inicijalizuj Capacitor iOS projekat
         script: |
-          # Generise ios/ folder sa Xcode projektom
-          npx cap add ios || echo "iOS platform already exists"
+          # Generise ios/ folder sa Xcode projektom (uvek iznova, cist build)
+          rm -rf ios
+          npx cap add ios
 
       - name: 7. Sinhronizuj web sadrzaj i konfiguraciju
         script: npx cap sync ios
@@ -152,8 +153,17 @@ workflows:
 
       - name: 11. Instaliraj CocoaPods (iOS biblioteke)
         script: |
-          cd ios/App
-          pod install
+          # Pronadji Podfile i instaliraj iz tog direktorijuma
+          PODFILE=$(find ios -name "Podfile" | head -1)
+          if [ -z "$PODFILE" ]; then
+            echo "ERROR: Podfile not found! Listing ios/ structure:"
+            ls -la ios/ && ls -la ios/App/ || true
+            exit 1
+          fi
+          PODFILE_DIR=$(dirname "$PODFILE")
+          echo "Running pod install in: $PODFILE_DIR"
+          cd "$PODFILE_DIR"
+          pod install --repo-update
 
       # ─────────────────────────────────────────────
       # FAZA 4: Build i potpisivanje
