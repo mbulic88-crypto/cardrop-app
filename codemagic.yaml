@@ -51,7 +51,9 @@ workflows:
       # ─────────────────────────────────────────────
 
       - name: 4. Instaliraj npm pakete
-        script: npm install --legacy-peer-deps
+        script: |
+          npm install -g npm@10.9.2
+          npm install --legacy-peer-deps
 
       - name: 5. Build web app (potreban za Capacitor sync)
         script: npm run build
