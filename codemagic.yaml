@@ -51,6 +51,7 @@ workflows:
       - name: 4. Instaliraj npm pakete
         script: |
           npm install --legacy-peer-deps
+          npm install -g @capacitor/cli
 
       - name: 5. Pripremi dist/public placeholder za Capacitor sync
         script: |
@@ -63,7 +64,7 @@ workflows:
         script: |
           # Generise ios/ folder sa Xcode projektom (uvek iznova, cist build)
           rm -rf ios
-          ./node_modules/.bin/cap add ios
+          cap add ios
 
       - name: 7. Zakrpi AppDelegate.swift (Capacitor v8 bug)
         script: |
@@ -80,7 +81,7 @@ workflows:
           cat "$APPDELEGATE"
 
       - name: 8. Sinhronizuj web sadrzaj i konfiguraciju
-        script: ./node_modules/.bin/cap sync ios
+        script: cap sync ios
 
       # ─────────────────────────────────────────────
       # FAZA 3: iOS resursi (ikone, splash, manifest)
