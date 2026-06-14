@@ -1,0 +1,51 @@
+Show command
+Showing the last 50 lines. Click this button to load the full log
+	cd /Users/builder/clone/ios/App
+	/Applications/Xcode-26.4.app/Contents/Developer/usr/bin/ibtool --errors --warnings --notices --module App --output-partial-info-plist /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/App.build/Release-iphoneos/App.build/Base.lproj/LaunchScreen-SBPartialInfo.plist --auto-activate-custom-fonts --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --output-format human-readable-text /Users/builder/clone/ios/App/App/Base.lproj/LaunchScreen.storyboard --compilation-directory /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/App.build/Release-iphoneos/App.build/Base.lproj
+	warning: no rule to process file '/Users/builder/clone/ios/App/App/PrivacyInfo.xcprivacy' of type 'text.xml' for architecture 'arm64' (in target 'App' from project 'App')
+
+
+Build failed :|
+Step 13 script `14. Kompajliraj i potpisi IPA` exited with status code 65
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/capacitor.config.json
+
+❌  error: The file “capacitor.config.json” couldn’t be opened because there is no such file. (in target 'App' from project 'App')
+
+
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/config.xml
+
+❌  error: The file “config.xml” couldn’t be opened because there is no such file. (in target 'App' from project 'App')
+
+
+▸ Copying /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/public
+
+❌  error: The file “public” couldn’t be opened because there is no such file. (in target 'App' from project 'App')
+
+
+▸ Compiling Main.storyboard
+▸ Compiling LaunchScreen.storyboard
+    no rule to process file '/Users/builder/clone/ios/App/App/PrivacyInfo.xcprivacy' of type 'text.xml' for architecture 'arm64' (in target 'App' from project 'App')
+Failed to archive ios/App/App.xcodeproj. The following build commands failed:
+
+CpResource /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/capacitor.config.json /Users/builder/clone/ios/App/App/capacitor.config.json (in target 'App' from project 'App')
+	cd /Users/builder/clone/ios/App
+	builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/builder/clone/ios/App/App/capacitor.config.json /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app
+	error: The file “capacitor.config.json” couldn’t be opened because there is no such file. (in target 'App' from project 'App')
+
+CpResource /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/config.xml /Users/builder/clone/ios/App/App/config.xml (in target 'App' from project 'App')
+	cd /Users/builder/clone/ios/App
+	builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/builder/clone/ios/App/App/config.xml /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app
+	error: The file “config.xml” couldn’t be opened because there is no such file. (in target 'App' from project 'App')
+
+CpResource /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/public /Users/builder/clone/ios/App/App/public (in target 'App' from project 'App')
+	...
+	builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -bitcode-strip all -bitcode-strip-tool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip -resolve-src-symlinks -remove-static-executable /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework/ios-arm64/Capacitor.framework /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/Frameworks
+	/Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/SourcePackages/artifacts/capacitor-swift-pm/Capacitor/Capacitor.xcframework/ios-arm64/Capacitor.framework/Capacitor -r -o /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/InstallationBuildProductsLocation/Applications/App.app/Frameworks/Capacitor.framework/Capacitor
+	CompileStoryboard /Users/builder/clone/ios/App/App/Base.lproj/LaunchScreen.storyboard (in target 'App' from project 'App')
+	cd /Users/builder/clone/ios/App
+	/Applications/Xcode-26.4.app/Contents/Developer/usr/bin/ibtool --errors --warnings --notices --module App --output-partial-info-plist /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/App.build/Release-iphoneos/App.build/Base.lproj/LaunchScreen-SBPartialInfo.plist --auto-activate-custom-fonts --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --output-format human-readable-text /Users/builder/clone/ios/App/App/Base.lproj/LaunchScreen.storyboard --compilation-directory /Users/builder/Library/Developer/Xcode/DerivedData/App-dauaqfqrctuewxfmikobeghbofmz/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/App.build/Release-iphoneos/App.build/Base.lproj
+	warning: no rule to process file '/Users/builder/clone/ios/App/App/PrivacyInfo.xcprivacy' of type 'text.xml' for architecture 'arm64' (in target 'App' from project 'App')
+
+
+Build failed :|
+Step 13 script `14. Kompajliraj i potpisi IPA` exited with status code 65

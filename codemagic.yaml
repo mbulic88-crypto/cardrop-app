@@ -59,6 +59,29 @@ workflows:
           mkdir -p dist/public
           echo '<!DOCTYPE html><html><head><title>Cardrop</title></head><body></body></html>' > dist/public/index.html
 
+      - name: 6. Kreiraj fajlove koje Xcode ocekuje (zamena za cap sync)
+        script: |
+          # Xcode projekat ocekuje ove fajlove u ios/App/App/
+          # Normalno ih kreira cap sync, ali mi to radimo manuelno
+
+          # 1. capacitor.config.json
+          cp capacitor.config.json ios/App/App/capacitor.config.json
+
+          # 2. config.xml (Cordova kompatibilnost — mora postojati)
+          cat > ios/App/App/config.xml << 'XML_EOF'
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+            <name>Cardrop</name>
+          </widget>
+          XML_EOF
+
+          # 3. public/ folder (web assets)
+          mkdir -p ios/App/App/public
+          cp dist/public/index.html ios/App/App/public/index.html
+
+          echo "Fajlovi kreirani:"
+          ls -la ios/App/App/capacitor.config.json ios/App/App/config.xml ios/App/App/public/
+
       # ─────────────────────────────────────────────
       # FAZA 3: iOS resursi (ikone, splash, manifest)
       # ─────────────────────────────────────────────
