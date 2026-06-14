@@ -50,14 +50,17 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # yarn v1 classic + --no-lockfile jer je yarn.lock u v4 formatu
-          npm install -g yarn@1
-          yarn install --no-lockfile --network-timeout 300000
+          # npm ci — determinsticno, koristi package-lock.json
+          npm ci --legacy-peer-deps --no-fund --no-audit || \
+            npm install --legacy-peer-deps --no-fund --no-audit
+          # Failsafe: eksplicitno instaliraj kljucne Capacitor pakete ako nedostaju
+          if [ ! -d "node_modules/@capacitor/ios" ]; then
+            echo "FAILSAFE: instalacija @capacitor/ios"
+            npm install @capacitor/ios@8 @capacitor/core@8 --no-fund --no-audit
+          fi
+          # Globalni cap CLI
           npm install -g @capacitor/cli@8
-          echo "--- Provera @capacitor/ios ---"
-          ls node_modules/@capacitor/ios/package.json && echo "OK" || echo "NIJE INSTALIRAN"
-          echo "--- Provera typescript ---"
-          ls node_modules/typescript/package.json && echo "OK" || echo "NIJE INSTALIRAN"
+          echo "--- @capacitor/ios: $(ls node_modules/@capacitor/ios/package.json 2>/dev/null && echo OK || echo GRESKA) ---"
 
       - name: 5. Pripremi dist/public placeholder za Capacitor sync
         script: |
