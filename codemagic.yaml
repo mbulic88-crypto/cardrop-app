@@ -50,46 +50,18 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # npm ci — determinsticno, koristi package-lock.json
-          npm ci --legacy-peer-deps --no-fund --no-audit || \
-            npm install --legacy-peer-deps --no-fund --no-audit
-          # Failsafe: eksplicitno instaliraj kljucne Capacitor pakete ako nedostaju
-          if [ ! -d "node_modules/@capacitor/ios" ]; then
-            echo "FAILSAFE: instalacija @capacitor/ios"
-            npm install @capacitor/ios@8 @capacitor/core@8 --no-fund --no-audit
-          fi
-          # Globalni cap CLI
+          # ios/ folder je vec u git repo — samo trebamo cap sync
+          # Koristimo yarn v1 (stabilan na Node 22, nema v4 workspace bug)
+          npm install -g yarn@1
+          yarn install --no-lockfile --network-timeout 300000
           npm install -g @capacitor/cli@8
-          echo "--- @capacitor/ios: $(ls node_modules/@capacitor/ios/package.json 2>/dev/null && echo OK || echo GRESKA) ---"
 
       - name: 5. Pripremi dist/public placeholder za Capacitor sync
         script: |
-          # App ucitava produkciju (server.url=https://cardrop.app) pa ne treba
-          # kompletan Vite build — samo dist/public mora da postoji za cap sync
           mkdir -p dist/public
-          echo '<!DOCTYPE html><html><head><title>CarDrop</title></head><body></body></html>' > dist/public/index.html
+          echo '<!DOCTYPE html><html><head><title>Cardrop</title></head><body></body></html>' > dist/public/index.html
 
-      - name: 6. Inicijalizuj Capacitor iOS projekat
-        script: |
-          # Generise ios/ folder sa Xcode projektom (uvek iznova, cist build)
-          rm -rf ios
-          cap add ios
-
-      - name: 7. Zakrpi AppDelegate.swift (Capacitor v8 bug)
-        script: |
-          APPDELEGATE="ios/App/App/AppDelegate.swift"
-          echo "=== AppDelegate.swift pre-patcha ==="
-          cat "$APPDELEGATE"
-          # Capacitor v8 generise pogresan poziv za Universal Links
-          # ApplicationDelegateProxy nema overload sa 'continue:restorationHandler:'
-          # Zameni celu liniju sa 'return false' jer koristimo server.url (nema Universal Links)
-          sed -i '' \
-            's/return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)/return false/' \
-            "$APPDELEGATE"
-          echo "=== AppDelegate.swift posle patcha ==="
-          cat "$APPDELEGATE"
-
-      - name: 8. Sinhronizuj web sadrzaj i konfiguraciju
+      - name: 6. Sinhronizuj Capacitor konfiguraciju
         script: cap sync ios
 
       # ─────────────────────────────────────────────
