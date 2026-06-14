@@ -119,6 +119,17 @@ export class ObjectStorageService {
     }
   }
 
+  async uploadPublicBuffer(subpath: string, buffer: Buffer, contentType: string): Promise<string> {
+    const privateObjectDir = this.getPrivateObjectDir();
+    const fullPath = `${privateObjectDir}/${subpath}`;
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+    await file.save(buffer, { contentType, resumable: false });
+    await setObjectAclPolicy(file, { owner: "system", visibility: "public" });
+    return `/objects/${subpath}`;
+  }
+
   async uploadVoiceBuffer(
     audioBuffer: Buffer,
     contentType: string

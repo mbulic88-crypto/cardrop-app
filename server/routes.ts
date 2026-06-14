@@ -3764,8 +3764,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const buffer = Buffer.concat(chunks);
           const contentType = req.headers['content-type'] || 'image/jpeg';
           const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
-          const key = `accommodations/${userId}/${Date.now()}.${ext}`;
-          const url = await objectStorage.uploadFile(key, buffer, contentType);
+          const subpath = `accommodations/${userId}/${Date.now()}.${ext}`;
+          const url = await objectStorage.uploadPublicBuffer(subpath, buffer, contentType);
           res.json({ url });
         } catch (err) {
           console.error("Error uploading accommodation image:", err);
