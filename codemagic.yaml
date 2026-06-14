@@ -9,11 +9,6 @@ workflows:
       # Pogledaj IOS_SETUP_GUIDE.md za detaljna uputstva (Korak D3)
       groups:
         - apple_credentials
-      # Ovaj blok kaze Codemagic CLI-u kako da koristi API key za certifikate
-      app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
       vars:
         BUNDLE_ID: rs.cardrop.app
         XCODE_WORKSPACE: ios/App/App.xcworkspace
