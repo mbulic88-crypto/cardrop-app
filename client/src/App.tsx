@@ -22,6 +22,7 @@ import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AuthPage from "@/pages/auth";
+import Accommodations from "@/pages/accommodations";
 
 // Heavy map pages loaded lazily to keep initial bundle small
 const MapHackNS = lazy(() => import("@/pages/map-hack-ns"));
@@ -54,6 +55,8 @@ function Router() {
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route path="/admin" component={Admin} />
+      <Route path="/smestaji/:city" component={Accommodations} />
+      <Route path="/smestaji" component={Accommodations} />
       <Route path="/map-hack">
         <Suspense fallback={null}>
           <MapHackNS />

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon } from "lucide-react";
+import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
 import { useLanguage } from "@/hooks/useLanguage";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
@@ -103,11 +103,18 @@ const translations = {
     menuLogin: "Prijavi Se",
     menuWhoIsThisFor: "Za Koga Je",
     menuHowItWorks: "Kako Funkcioniše",
+    menuAccommodations: "Smeštaji",
     menuPricing: "Cenovnik",
     menuContact: "Kontakt",
     menuLanguage: "English",
     menuDarkMode: "Tamni Režim",
     menuLightMode: "Svetli Režim",
+    accommodationsTitle: "Preporučeni Smeštaji",
+    accommodationsSubtitle: "Naši partneri — provjereni smeštaji koje preporučujemo CarDrop korisnicima.",
+    accommodationsNoviSad: "Novi Sad",
+    accommodationsBeograd: "Beograd",
+    accommodationsNis: "Niš",
+    accommodationsExplore: "Pogledaj smeštaje",
     pricingTitle: "Cenovnik",
     pricingSubtitle: "Izaberite plan koji vam najviše odgovara. Svi planovi važe za sve kategorije parkinga i prodajne oglase.",
     pricingPerListing: "po oglasu",
@@ -212,11 +219,18 @@ const translations = {
     menuLogin: "Log In",
     menuWhoIsThisFor: "Who Is This For",
     menuHowItWorks: "How It Works",
+    menuAccommodations: "Stays",
     menuPricing: "Pricing",
     menuContact: "Contact",
     menuLanguage: "Srpski",
     menuDarkMode: "Dark Mode",
     menuLightMode: "Light Mode",
+    accommodationsTitle: "Recommended Stays",
+    accommodationsSubtitle: "Our partners — trusted accommodations we recommend to CarDrop users.",
+    accommodationsNoviSad: "Novi Sad",
+    accommodationsBeograd: "Belgrade",
+    accommodationsNis: "Niš",
+    accommodationsExplore: "Browse stays",
     pricingTitle: "Pricing",
     pricingSubtitle: "Choose the plan that suits you best. All plans apply to every parking category and sales listings.",
     pricingPerListing: "per listing",
@@ -427,6 +441,12 @@ export default function Landing() {
                       <Zap className="w-5 h-5 text-accent" />
                       <span className="text-card-foreground font-medium">{t.menuHowItWorks}</span>
                     </div>
+                    <Link href="/smestaji" onClick={() => setMenuOpen(false)}>
+                      <div className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer" data-testid="menu-accommodations">
+                        <Hotel className="w-5 h-5 text-accent" />
+                        <span className="text-card-foreground font-medium">{t.menuAccommodations}</span>
+                      </div>
+                    </Link>
                     <div
                       onClick={() => scrollToSection('cenovnik')}
                       className="flex items-center gap-3 px-4 py-3 hover-elevate cursor-pointer"
@@ -772,6 +792,41 @@ export default function Landing() {
           </Link>
         </div>
       </div>
+      {/* Recommended Accommodations Section */}
+      <div id="smestaji" className="py-20 md:py-24 px-6 max-w-7xl mx-auto scroll-mt-16">
+        <h2 className="text-2xl md:text-4xl font-bold text-center mb-3 text-foreground">
+          {t.accommodationsTitle}
+        </h2>
+        <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+          {t.accommodationsSubtitle}
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
+          {[
+            { city: 'novi-sad', label: t.accommodationsNoviSad, img: cityNoviSadImg },
+            { city: 'beograd',  label: t.accommodationsBeograd, img: cityBeogradImg },
+            { city: 'nis',      label: t.accommodationsNis,     img: cityNisImg },
+          ].map(({ city, label, img }) => (
+            <Link key={city} href={`/smestaji/${city}`}>
+              <div
+                className="relative rounded-md overflow-hidden cursor-pointer group h-44"
+                data-testid={`card-city-${city}`}
+              >
+                <img
+                  src={img}
+                  alt={label}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
+                  <span className="text-white font-bold text-lg leading-tight">{label}</span>
+                  <span className="text-white/80 text-xs">{t.accommodationsExplore} →</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Pricing Section */}
       <div id="cenovnik" className="py-20 md:py-24 px-6 bg-gradient-to-b from-card/30 to-background scroll-mt-16">
         <div className="max-w-5xl mx-auto">

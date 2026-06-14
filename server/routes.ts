@@ -3659,6 +3659,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── Partner Accommodations ────────────────────────────────────────────────
+
+  app.get('/api/accommodations', async (req, res) => {
+    try {
+      const { db } = await import('./db');
+      const { partnerAccommodations } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const rows = await db.select().from(partnerAccommodations).orderBy(partnerAccommodations.createdAt);
+      res.json(rows);
+    } catch (error) {
+      console.error("Error fetching accommodations:", error);
+      res.status(500).json({ message: "Failed to fetch accommodations" });
+    }
+  });
+
+  app.get('/api/accommodations/:city', async (req, res) => {
+    try {
+      const { db } = await import('./db');
+      const { partnerAccommodations } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const validCities = ['novi_sad', 'beograd', 'nis'];
+      if (!validCities.includes(req.params.city)) {
+        return res.status(400).json({ message: "Invalid city" });
+      }
+      const rows = await db.select().from(partnerAccommodations)
+        .where(and(eq(partnerAccommodations.city, req.params.city), eq(partnerAccommodations.isActive, true)))
+        .orderBy(partnerAccommodations.createdAt);
+      res.json(rows);
+    } catch (error) {
+      console.error("Error fetching accommodations by city:", error);
+      res.status(500).json({ message: "Failed to fetch accommodations" });
+    }
+  });
+
+  app.post('/api/accommodations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Admin only" });
+      const { db } = await import('./db');
+      const { partnerAccommodations, insertPartnerAccommodationSchema } = await import('@shared/schema');
+      const parsed = insertPartnerAccommodationSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Validation error", errors: parsed.error.issues });
+      const [row] = await db.insert(partnerAccommodations).values(parsed.data).returning();
+      res.json(row);
+    } catch (error) {
+      console.error("Error creating accommodation:", error);
+      res.status(500).json({ message: "Failed to create accommodation" });
+    }
+  });
+
+  app.put('/api/accommodations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Admin only" });
+      const { db } = await import('./db');
+      const { partnerAccommodations, insertPartnerAccommodationSchema } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      const parsed = insertPartnerAccommodationSchema.partial().safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Validation error", errors: parsed.error.issues });
+      const [row] = await db.update(partnerAccommodations).set(parsed.data).where(eq(partnerAccommodations.id, req.params.id)).returning();
+      if (!row) return res.status(404).json({ message: "Not found" });
+      res.json(row);
+    } catch (error) {
+      console.error("Error updating accommodation:", error);
+      res.status(500).json({ message: "Failed to update accommodation" });
+    }
+  });
+
+  app.delete('/api/accommodations/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Admin only" });
+      const { db } = await import('./db');
+      const { partnerAccommodations } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+      await db.delete(partnerAccommodations).where(eq(partnerAccommodations.id, req.params.id));
+      res.json({ message: "Deleted" });
+    } catch (error) {
+      console.error("Error deleting accommodation:", error);
+      res.status(500).json({ message: "Failed to delete accommodation" });
+    }
+  });
+
+  // Image upload for accommodations (admin only, same pattern as parking spots)
+  app.post('/api/accommodations/upload-image', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user?.isAdmin) return res.status(403).json({ message: "Admin only" });
+      const objectStorage = new ObjectStorageService();
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', async () => {
+        try {
+          const buffer = Buffer.concat(chunks);
+          const contentType = req.headers['content-type'] || 'image/jpeg';
+          const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+          const key = `accommodations/${userId}/${Date.now()}.${ext}`;
+          const url = await objectStorage.uploadFile(key, buffer, contentType);
+          res.json({ url });
+        } catch (err) {
+          console.error("Error uploading accommodation image:", err);
+          res.status(500).json({ message: "Upload failed" });
+        }
+      });
+    } catch (error) {
+      console.error("Error in accommodation image upload:", error);
+      res.status(500).json({ message: "Upload failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

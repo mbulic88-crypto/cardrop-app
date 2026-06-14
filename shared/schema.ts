@@ -560,3 +560,29 @@ export const insertMapWatchAreaSchema = createInsertSchema(mapWatchAreas).omit({
 });
 export type InsertMapWatchArea = z.infer<typeof insertMapWatchAreaSchema>;
 export type MapWatchArea = typeof mapWatchAreas.$inferSelect;
+
+// ─── Partner Accommodations ────────────────────────────────────────────────
+
+export const partnerAccommodations = pgTable("partner_accommodations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name", { length: 255 }).notNull(),
+  city: varchar("city", { length: 50 }).notNull(), // 'novi_sad' | 'beograd' | 'nis'
+  instagramUrl: varchar("instagram_url", { length: 500 }),
+  images: text("images").array().notNull().default(sql`ARRAY[]::text[]`),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPartnerAccommodationSchema = createInsertSchema(partnerAccommodations).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  name: z.string().min(2, "Naziv mora imati najmanje 2 karaktera").max(255),
+  city: z.enum(['novi_sad', 'beograd', 'nis']),
+  instagramUrl: z.string().url("Unesite validan URL").optional().nullable(),
+  images: z.array(z.string()).default([]),
+  isActive: z.boolean().default(true),
+});
+
+export type InsertPartnerAccommodation = z.infer<typeof insertPartnerAccommodationSchema>;
+export type PartnerAccommodation = typeof partnerAccommodations.$inferSelect;
