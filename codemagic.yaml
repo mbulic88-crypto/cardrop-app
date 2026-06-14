@@ -13,7 +13,7 @@ workflows:
         BUNDLE_ID: rs.cardrop.app
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
-      node: 22.13.0
+      node: 20
       xcode: latest
 
     cache:
