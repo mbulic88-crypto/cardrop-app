@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp, DoorOpen } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp, DoorOpen, Hotel, Edit2 } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import Map, { Marker as MapMarkerPin, NavigationControl } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { User, ParkingSpot, SalesListing, MapMarker, Booking } from "@shared/schema";
+import type { User, ParkingSpot, SalesListing, MapMarker, Booking, PartnerAccommodation } from "@shared/schema";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -418,6 +418,185 @@ async function generatePDF(spot: ParkingSpot, logoUrl: string, spaceNumber?: num
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
 }
 
+// ─── Accommodations Admin Panel ──────────────────────────────────────────────
+
+function AccommodationsAdminPanel() {
+  const { toast } = useToast();
+  const { data: items = [] } = useQuery<PartnerAccommodation[]>({ queryKey: ['/api/accommodations'] });
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<PartnerAccommodation | null>(null);
+  const [name, setName] = useState('');
+  const [city, setCity] = useState<'novi_sad' | 'beograd' | 'nis'>('novi_sad');
+  const [instagram, setInstagram] = useState('');
+  const [isActive, setIsActive] = useState(true);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  function openNew() {
+    setEditing(null);
+    setName(''); setCity('novi_sad'); setInstagram(''); setIsActive(true); setImages([]);
+    setShowForm(true);
+  }
+
+  function openEdit(item: PartnerAccommodation) {
+    setEditing(item);
+    setName(item.name); setCity(item.city as 'novi_sad' | 'beograd' | 'nis');
+    setInstagram(item.instagramUrl || ''); setIsActive(item.isActive); setImages(item.images);
+    setShowForm(true);
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || images.length >= 5) return;
+    setUploading(true);
+    try {
+      const resp = await fetch('/api/accommodations/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+        credentials: 'include',
+      });
+      const data = await resp.json();
+      if (data.url) setImages(prev => [...prev, data.url]);
+    } catch {
+      toast({ title: 'Upload failed', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const body = { name, city, instagramUrl: instagram || null, isActive, images };
+      if (editing) {
+        await apiRequest('PUT', `/api/accommodations/${editing.id}`, body);
+      } else {
+        await apiRequest('POST', '/api/accommodations', body);
+      }
+      toast({ title: 'Sačuvano' });
+      setShowForm(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/accommodations'] });
+    } catch {
+      toast({ title: 'Greška', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Obrisati ovaj smeštaj?')) return;
+    await apiRequest('DELETE', `/api/accommodations/${id}`, {});
+    toast({ title: 'Obrisano' });
+    queryClient.invalidateQueries({ queryKey: ['/api/accommodations'] });
+  }
+
+  const cityLabel = (c: string) => c === 'novi_sad' ? 'Novi Sad' : c === 'beograd' ? 'Beograd' : 'Niš';
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between gap-4 flex-wrap">
+          <span>Smeštaji partnera</span>
+          <Button onClick={openNew} data-testid="button-add-accommodation">
+            <Plus className="w-4 h-4 mr-2" />Dodaj smeštaj
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {showForm && (
+          <Card className="p-5 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Naziv</label>
+                <Input value={name} onChange={e => setName(e.target.value)} data-testid="input-acc-name" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Grad</label>
+                <select
+                  className="w-full h-9 px-3 rounded-md border border-border bg-background text-foreground text-sm"
+                  value={city}
+                  onChange={e => setCity(e.target.value as 'novi_sad' | 'beograd' | 'nis')}
+                  data-testid="select-acc-city"
+                >
+                  <option value="novi_sad">Novi Sad</option>
+                  <option value="beograd">Beograd</option>
+                  <option value="nis">Niš</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Instagram URL</label>
+                <Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="https://instagram.com/..." data-testid="input-acc-instagram" />
+              </div>
+              <div className="flex items-center gap-3 pt-6">
+                <Switch checked={isActive} onCheckedChange={setIsActive} data-testid="switch-acc-active" />
+                <span className="text-sm text-foreground">Aktivan</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Slike (maks 5)</label>
+              <div className="flex flex-wrap gap-2">
+                {images.map((url, i) => (
+                  <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
+                      className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 text-white"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {images.length < 5 && (
+                  <label className="w-20 h-20 rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover-elevate">
+                    {uploading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Upload className="w-4 h-4 text-muted-foreground" />}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                  </label>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleSave} disabled={saving || !name} data-testid="button-save-accommodation">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}Sačuvaj
+              </Button>
+              <Button variant="outline" onClick={() => setShowForm(false)} data-testid="button-cancel-accommodation">Otkaži</Button>
+            </div>
+          </Card>
+        )}
+
+        {items.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Nema smeštaja. Dodaj prvi.</p>
+        ) : (
+          <div className="space-y-3">
+            {items.map(item => (
+              <div key={item.id} className="flex items-center gap-4 flex-wrap p-4 border border-border rounded-md" data-testid={`card-acc-${item.id}`}>
+                {item.images[0] && (
+                  <img src={item.images[0]} alt={item.name} className="w-14 h-14 rounded-md object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm">{item.name}</p>
+                  <p className="text-xs text-muted-foreground">{cityLabel(item.city)} · {item.images.length} slika</p>
+                  {!item.isActive && <Badge variant="outline" className="mt-1 text-[10px]">Neaktivan</Badge>}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(item)} data-testid={`button-edit-acc-${item.id}`}>
+                    <Edit2 className="w-3.5 h-3.5 mr-1" />Izmeni
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleDelete(item.id)} data-testid={`button-delete-acc-${item.id}`}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />Obriši
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -791,7 +970,7 @@ export default function Admin() {
 
       <main className="container mx-auto p-4 max-w-6xl">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Korisnici ({users?.length || 0})</span>
@@ -816,6 +995,11 @@ export default function Admin() {
               <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline">Rezervacije</span>
               <span className="sm:hidden"><CalendarDays className="h-3 w-3" /></span>
+            </TabsTrigger>
+            <TabsTrigger value="smestaji" className="flex items-center gap-2" data-testid="tab-smestaji">
+              <Hotel className="h-4 w-4" />
+              <span className="hidden sm:inline">Smeštaji</span>
+              <span className="sm:hidden"><Hotel className="h-3 w-3" /></span>
             </TabsTrigger>
           </TabsList>
 
@@ -1849,6 +2033,10 @@ export default function Admin() {
                 </div>
               );
             })()}
+          </TabsContent>
+
+          <TabsContent value="smestaji">
+            <AccommodationsAdminPanel />
           </TabsContent>
 
         </Tabs>

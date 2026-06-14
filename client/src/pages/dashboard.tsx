@@ -12,13 +12,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { User, ParkingSpot, SalesListing, Message, Booking, Review, PartnerAccommodation } from "@shared/schema";
+import type { User, ParkingSpot, SalesListing, Message, Booking, Review } from "@shared/schema";
 import {
   MapPin, Edit2, Trash2, LogOut, Bell, BellOff, Sparkles, Tag, Ruler, Phone,
   ArrowUpCircle, MessageSquare, Send, ArrowLeft, Check, CheckCheck, Shield,
   TriangleAlert, LayoutDashboard, Calendar, User as UserIcon, Download,
   TrendingUp, Activity, ChevronRight, Star, AlertTriangle, Wallet, Plus,
-  History, ArrowDownCircle, DoorOpen, Loader2, Hotel, Upload, X,
+  History, ArrowDownCircle, DoorOpen, Loader2,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -37,7 +37,7 @@ import {
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-type Section = 'overview' | 'spots' | 'bookings' | 'messages' | 'sales' | 'profile' | 'accommodations';
+type Section = 'overview' | 'spots' | 'bookings' | 'messages' | 'sales' | 'profile';
 
 type OwnerBooking = {
   id: string; spotId: string; spotTitle: string;
@@ -69,7 +69,7 @@ function calcPayout(price: number, method: string | null): { neto: number; strip
 
 const TAB_MAP: Record<string, Section> = {
   spots: 'spots', bookings: 'bookings', messages: 'messages',
-  sales: 'sales', profile: 'profile', accommodations: 'accommodations',
+  sales: 'sales', profile: 'profile',
 };
 
 const STATUS_LABELS_SR: Record<string, string> = {
@@ -378,205 +378,6 @@ function RampCell({ spotId, bookingId, large, language }: { spotId: string; book
         : <DoorOpen className="w-3 h-3" />}
       {t.open}
     </Button>
-  );
-}
-
-// ─── AccommodationsAdmin component ──────────────────────────────────────────
-
-function AccommodationsAdmin({ language, toast }: { language: string; toast: ReturnType<typeof useToast>['toast'] }) {
-  const tl = {
-    title:        language === 'sr' ? 'Smeštaji partnera' : 'Partner Stays',
-    add:          language === 'sr' ? 'Dodaj smeštaj' : 'Add Stay',
-    name:         language === 'sr' ? 'Naziv' : 'Name',
-    city:         language === 'sr' ? 'Grad' : 'City',
-    instagram:    language === 'sr' ? 'Instagram URL' : 'Instagram URL',
-    active:       language === 'sr' ? 'Aktivan' : 'Active',
-    images:       language === 'sr' ? 'Slike (maks 5)' : 'Images (max 5)',
-    save:         language === 'sr' ? 'Sačuvaj' : 'Save',
-    cancel:       language === 'sr' ? 'Otkaži' : 'Cancel',
-    delete:       language === 'sr' ? 'Obriši' : 'Delete',
-    edit:         language === 'sr' ? 'Izmeni' : 'Edit',
-    uploading:    language === 'sr' ? 'Učitavanje...' : 'Uploading...',
-    saved:        language === 'sr' ? 'Sačuvano' : 'Saved',
-    deleted:      language === 'sr' ? 'Obrisano' : 'Deleted',
-    noItems:      language === 'sr' ? 'Nema smeštaja. Dodaj prvi.' : 'No stays yet. Add the first one.',
-    confirmDel:   language === 'sr' ? 'Obrisati ovaj smeštaj?' : 'Delete this stay?',
-    noviSad:      'Novi Sad',
-    beograd:      language === 'sr' ? 'Beograd' : 'Belgrade',
-    nis:          'Niš',
-  };
-
-  const { data: items = [] } = useQuery<PartnerAccommodation[]>({ queryKey: ['/api/accommodations'] });
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<PartnerAccommodation | null>(null);
-  const [name, setName] = useState('');
-  const [city, setCity] = useState<'novi_sad' | 'beograd' | 'nis'>('novi_sad');
-  const [instagram, setInstagram] = useState('');
-  const [isActive, setIsActive] = useState(true);
-  const [images, setImages] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  function openNew() {
-    setEditing(null);
-    setName(''); setCity('novi_sad'); setInstagram(''); setIsActive(true); setImages([]);
-    setShowForm(true);
-  }
-
-  function openEdit(item: PartnerAccommodation) {
-    setEditing(item);
-    setName(item.name); setCity(item.city as 'novi_sad' | 'beograd' | 'nis');
-    setInstagram(item.instagramUrl || ''); setIsActive(item.isActive); setImages(item.images);
-    setShowForm(true);
-  }
-
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || images.length >= 5) return;
-    setUploading(true);
-    try {
-      const resp = await fetch('/api/accommodations/upload-image', {
-        method: 'POST',
-        headers: { 'Content-Type': file.type },
-        body: file,
-        credentials: 'include',
-      });
-      const data = await resp.json();
-      if (data.url) setImages(prev => [...prev, data.url]);
-    } catch {
-      toast({ title: 'Upload failed', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const body = { name, city, instagramUrl: instagram || null, isActive, images };
-      if (editing) {
-        await apiRequest('PUT', `/api/accommodations/${editing.id}`, body);
-      } else {
-        await apiRequest('POST', '/api/accommodations', body);
-      }
-      toast({ title: tl.saved });
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/accommodations'] });
-    } catch {
-      toast({ title: 'Error', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm(tl.confirmDel)) return;
-    await apiRequest('DELETE', `/api/accommodations/${id}`, {});
-    toast({ title: tl.deleted });
-    queryClient.invalidateQueries({ queryKey: ['/api/accommodations'] });
-  }
-
-  const cityLabel = (c: string) => c === 'novi_sad' ? tl.noviSad : c === 'beograd' ? tl.beograd : tl.nis;
-
-  return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-2xl font-bold text-foreground">{tl.title}</h2>
-        <Button onClick={openNew} data-testid="button-add-accommodation">
-          <Plus className="w-4 h-4 mr-2" />{tl.add}
-        </Button>
-      </div>
-
-      {showForm && (
-        <Card className="p-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">{tl.name}</label>
-              <Input value={name} onChange={e => setName(e.target.value)} data-testid="input-acc-name" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">{tl.city}</label>
-              <select
-                className="w-full h-9 px-3 rounded-md border border-border bg-background text-foreground text-sm"
-                value={city}
-                onChange={e => setCity(e.target.value as 'novi_sad' | 'beograd' | 'nis')}
-                data-testid="select-acc-city"
-              >
-                <option value="novi_sad">{tl.noviSad}</option>
-                <option value="beograd">{tl.beograd}</option>
-                <option value="nis">{tl.nis}</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">{tl.instagram}</label>
-              <Input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="https://instagram.com/..." data-testid="input-acc-instagram" />
-            </div>
-            <div className="flex items-center gap-3 pt-6">
-              <Switch checked={isActive} onCheckedChange={setIsActive} data-testid="switch-acc-active" />
-              <span className="text-sm text-foreground">{tl.active}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">{tl.images}</label>
-            <div className="flex flex-wrap gap-2">
-              {images.map((url, i) => (
-                <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
-                    className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5 text-white"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {images.length < 5 && (
-                <label className="w-20 h-20 rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover-elevate">
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Upload className="w-4 h-4 text-muted-foreground" />}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button onClick={handleSave} disabled={saving || !name} data-testid="button-save-accommodation">
-              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}{tl.save}
-            </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)} data-testid="button-cancel-accommodation">{tl.cancel}</Button>
-          </div>
-        </Card>
-      )}
-
-      {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{tl.noItems}</p>
-      ) : (
-        <div className="space-y-3">
-          {items.map(item => (
-            <Card key={item.id} className="p-4 flex items-center gap-4 flex-wrap" data-testid={`card-acc-${item.id}`}>
-              {item.images[0] && (
-                <img src={item.images[0]} alt={item.name} className="w-14 h-14 rounded-md object-cover shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm">{item.name}</p>
-                <p className="text-xs text-muted-foreground">{cityLabel(item.city)} · {item.images.length} {language === 'sr' ? 'slika' : 'images'}</p>
-                {!item.isActive && <Badge variant="outline" className="mt-1 text-[10px]">{language === 'sr' ? 'Neaktivan' : 'Inactive'}</Badge>}
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Button size="sm" variant="outline" onClick={() => openEdit(item)} data-testid={`button-edit-acc-${item.id}`}>
-                  <Edit2 className="w-3.5 h-3.5 mr-1" />{tl.edit}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleDelete(item.id)} data-testid={`button-delete-acc-${item.id}`}>
-                  <Trash2 className="w-3.5 h-3.5 mr-1" />{tl.delete}
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -939,7 +740,6 @@ export default function Dashboard() {
     { id: 'messages' as Section, label: nl.messages, icon: MessageSquare, badge: totalUnread },
     { id: 'sales' as Section, label: nl.sales, icon: Tag },
     { id: 'profile' as Section, label: nl.profile, icon: UserIcon },
-    ...(user?.isAdmin ? [{ id: 'accommodations' as Section, label: language === 'sr' ? 'Smeštaji' : 'Stays', icon: Hotel }] : []),
   ];
 
   if (isLoading) {
@@ -1878,10 +1678,6 @@ export default function Dashboard() {
     );
   }
 
-  function renderAccommodations() {
-    return <AccommodationsAdmin language={language} toast={toast} />;
-  }
-
   function renderSection() {
     switch (activeSection) {
       case 'overview': return renderOverview();
@@ -1890,7 +1686,6 @@ export default function Dashboard() {
       case 'messages': return renderMessages();
       case 'sales': return renderSales();
       case 'profile': return renderProfile();
-      case 'accommodations': return renderAccommodations();
     }
   }
 
