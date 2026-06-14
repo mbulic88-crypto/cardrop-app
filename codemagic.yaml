@@ -50,9 +50,9 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # NODE_OPTIONS fix za "Exit handler never called!" bug na Node 22
-          export NODE_OPTIONS=--max-old-space-size=4096
-          npm install --legacy-peer-deps --no-fund --no-audit
+          # Koristimo yarn v1 classic — stabilan na Node 22, nema workspace bug
+          npm install -g yarn@1
+          yarn install --network-timeout 300000
           npm install -g @capacitor/cli@8
           echo "--- Provera @capacitor/ios ---"
           ls node_modules/@capacitor/ios/package.json && echo "OK" || echo "NIJE INSTALIRAN"
