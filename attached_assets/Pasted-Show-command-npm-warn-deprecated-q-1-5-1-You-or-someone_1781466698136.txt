@@ -1,0 +1,29 @@
+Show command
+npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
+npm warn deprecated
+npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm warn deprecated q@1.5.1: You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
+npm warn deprecated
+npm warn deprecated (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm error Exit handler never called!
+npm error This is an error with npm itself. Please report this error at:
+npm error   <https://github.com/npm/cli/issues>
+npm error A complete log of this run can be found in: /Users/builder/.npm/_logs/2026-06-14T19_48_58_368Z-debug-0.log
+
+
+Build failed :|
+Step 6 script `4. Instaliraj npm pakete` exited with status code 1
+npm error Exit handler never called!
+npm error This is an error with npm itself. Please report this error at:
+npm error   <https://github.com/npm/cli/issues>
+npm error A complete log of this run can be found in: /Users/builder/.npm/_logs/2026-06-14T19_48_58_368Z-debug-0.log
+
+
+Build failed :|
+Step 6 script `4. Instaliraj npm pakete` exited with status code 1
