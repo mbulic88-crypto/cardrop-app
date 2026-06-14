@@ -50,8 +50,7 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # yarn je stabilniji od npm na Codemagic Mac masinama
-          yarn install --network-timeout 300000
+          npm install --legacy-peer-deps
 
       - name: 5. Pripremi dist/public placeholder za Capacitor sync
         script: |
