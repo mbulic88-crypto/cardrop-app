@@ -63,7 +63,7 @@ workflows:
         script: |
           # Generise ios/ folder sa Xcode projektom (uvek iznova, cist build)
           rm -rf ios
-          npx cap add ios
+          ./node_modules/.bin/cap add ios
 
       - name: 7. Zakrpi AppDelegate.swift (Capacitor v8 bug)
         script: |
@@ -80,7 +80,7 @@ workflows:
           cat "$APPDELEGATE"
 
       - name: 8. Sinhronizuj web sadrzaj i konfiguraciju
-        script: npx cap sync ios
+        script: ./node_modules/.bin/cap sync ios
 
       # ─────────────────────────────────────────────
       # FAZA 3: iOS resursi (ikone, splash, manifest)
@@ -96,10 +96,10 @@ workflows:
       - name: 9. Generisi iOS ikone u svim velicinama
         script: |
           # Generise ikone iz assets/icon.png u sve Apple-ove velicine
-          npx @capacitor/assets generate --ios \
+          ./node_modules/.bin/capacitor-assets generate --ios \
             --iconSource assets/icon.png \
             --splashSource assets/splash.png \
-            || npx @capacitor/assets generate --ios
+            || ./node_modules/.bin/capacitor-assets generate --ios
 
       - name: 10. Dodaj Privacy Manifest i integriraj u Xcode projekat
         script: |
