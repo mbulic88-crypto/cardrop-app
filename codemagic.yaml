@@ -15,12 +15,10 @@ workflows:
         XCODE_SCHEME: App
       node: 22.13.0
       xcode: 16.1
-      cocoapods: default
 
     cache:
       cache_paths:
         - ~/.npm
-        - ~/.cocoapods
 
     scripts:
       # ─────────────────────────────────────────────
@@ -151,22 +149,10 @@ workflows:
           project.save
           RUBY_EOF
 
-      - name: 11. Instaliraj CocoaPods (iOS biblioteke)
-        script: |
-          # Pronadji Podfile i instaliraj iz tog direktorijuma
-          PODFILE=$(find ios -name "Podfile" | head -1)
-          if [ -z "$PODFILE" ]; then
-            echo "ERROR: Podfile not found! Listing ios/ structure:"
-            ls -la ios/ && ls -la ios/App/ || true
-            exit 1
-          fi
-          PODFILE_DIR=$(dirname "$PODFILE")
-          echo "Running pod install in: $PODFILE_DIR"
-          cd "$PODFILE_DIR"
-          pod install --repo-update
-
       # ─────────────────────────────────────────────
       # FAZA 4: Build i potpisivanje
+      # Capacitor v8 koristi Swift Package Manager (SPM) umesto CocoaPods
+      # Xcode automatski razresava SPM zavisnosti tokom builda
       # ─────────────────────────────────────────────
 
       - name: 12. Postavi code signing u Xcode projektu
@@ -183,8 +169,9 @@ workflows:
 
       - name: 14. Kompajliraj i potpisi IPA
         script: |
+          # Capacitor v8 koristi SPM — gradimo iz .xcodeproj direktno
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project ios/App/App.xcodeproj \
             --scheme "$XCODE_SCHEME" \
             --config "Release"
 
