@@ -11,6 +11,12 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.6.6",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@geoapify/geocoder-autocomplete": "^3.0.1",
     "@google-cloud/storage": "^7.17.2",
     "@hookform/resolvers": "^3.10.0",

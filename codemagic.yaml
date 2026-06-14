@@ -1,0 +1,135 @@
+workflows:
+  ios-release:
+    name: CarDrop iOS — App Store Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      # Ove varijable dodaješ u Codemagic Settings → Environment variables
+      # Pogledaj IOS_SETUP_GUIDE.md za detaljna uputstva
+      groups:
+        - apple_credentials
+      vars:
+        BUNDLE_ID: rs.cardrop.app
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_SCHEME: App
+      node: 20.17.0
+      xcode: 16.1
+      cocoapods: default
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - ~/.cocoapods
+
+    scripts:
+      - name: 1. Instaliraj npm pakete
+        script: npm ci
+
+      - name: 2. Inicijalizuj Capacitor iOS projekat
+        script: |
+          # Dodaje ios/ folder sa Xcode projektom
+          npx cap add ios || echo "iOS platform already exists, skipping"
+
+      - name: 3. Sinhronizuj web sadrzaj
+        script: npx cap sync ios
+
+      - name: 4. Generisi splash screen sliku
+        script: |
+          # Pravi tamni splash ekran 2732x2732 sa CarDrop bojama
+          convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png || \
+          python3 -c "
+from PIL import Image
+img = Image.new('RGB', (2732, 2732), color=(30, 30, 30))
+img.save('assets/splash.png')
+" || echo "Splash generation skipped - will use default"
+
+      - name: 5. Generisi ikone u svim velicinama
+        script: |
+          # Kopira ikone iz assets/ foldera u sve potrebne iOS velicine
+          npx @capacitor/assets generate --ios --iconSource assets/icon.png
+
+      - name: 6. Kreiraj Apple Privacy Manifest (obavezan od 2024)
+        script: |
+          mkdir -p ios/App/App
+          cat > ios/App/App/PrivacyInfo.xcprivacy << 'PRIVACY_EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>NSPrivacyTracking</key>
+            <false/>
+            <key>NSPrivacyTrackingDomains</key>
+            <array/>
+            <key>NSPrivacyCollectedDataTypes</key>
+            <array>
+              <dict>
+                <key>NSPrivacyCollectedDataType</key>
+                <string>NSPrivacyCollectedDataTypeLocation</string>
+                <key>NSPrivacyCollectedDataTypeLinked</key>
+                <false/>
+                <key>NSPrivacyCollectedDataTypeTracking</key>
+                <false/>
+                <key>NSPrivacyCollectedDataTypePurposes</key>
+                <array>
+                  <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+                </array>
+              </dict>
+            </array>
+            <key>NSPrivacyAccessedAPITypes</key>
+            <array>
+              <dict>
+                <key>NSPrivacyAccessedAPIType</key>
+                <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+                <key>NSPrivacyAccessedAPITypeReasons</key>
+                <array>
+                  <string>CA92.1</string>
+                </array>
+              </dict>
+            </array>
+          </dict>
+          </plist>
+          PRIVACY_EOF
+
+      - name: 7. Instaliraj CocoaPods (iOS biblioteke)
+        script: |
+          cd ios/App
+          pod install
+
+      - name: 8. Postavi version number
+        script: |
+          cd ios/App
+          LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "0")
+          BUILD_NUMBER=$((LATEST_BUILD + 1))
+          agvtool new-version -all $BUILD_NUMBER
+          agvtool new-marketing-version 1.0.$BUILD_NUMBER
+
+      - name: 7. Postavi code signing i build
+        script: |
+          # Automatski preuzima certifikate i provisioning profile iz App Store Connect
+          xcode-project use-profiles
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --config "Release"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      email:
+        recipients:
+          - TVOJ_EMAIL@gmail.com   # ← Promeni ovo na svoju email adresu!
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        # Automatski salje .ipa fajl na App Store Connect
+        # API key se dodaje u Codemagic environment variables
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true   # Prvo u TestFlight za testiranje
+        submit_to_app_store: false   # Posle testiranja, rucno submitujes na App Store
