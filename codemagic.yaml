@@ -55,8 +55,12 @@ workflows:
           # yarn je stabilniji od npm na Codemagic Mac masinama
           yarn install --ignore-engines --network-timeout 300000
 
-      - name: 5. Build web app (potreban za Capacitor sync)
-        script: yarn build
+      - name: 5. Pripremi dist/public placeholder za Capacitor sync
+        script: |
+          # App ucitava produkciju (server.url=https://cardrop.app) pa ne treba
+          # kompletan Vite build — samo dist/public mora da postoji za cap sync
+          mkdir -p dist/public
+          echo '<!DOCTYPE html><html><head><title>CarDrop</title></head><body></body></html>' > dist/public/index.html
 
       - name: 6. Inicijalizuj Capacitor iOS projekat
         script: |

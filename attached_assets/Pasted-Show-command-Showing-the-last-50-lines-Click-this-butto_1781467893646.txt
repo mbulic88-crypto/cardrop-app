@@ -1,0 +1,46 @@
+Show command
+Showing the last 50 lines. Click this button to load the full log
+            ^
+5: import "@uppy/core/css/style.min.css";
+6: import "@uppy/dashboard/css/style.min.css";
+    at getRollupError (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/parseAst.js:317:41)
+    at error (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/parseAst.js:313:42)
+    at Module.error (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:17391:16)
+    at Module.traceVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:17824:29)
+    at ModuleScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:15414:39)
+    at FunctionScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5682:38)
+    at FunctionBodyScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5682:38)
+    at Identifier.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5449:40)
+    at CallExpression.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:2827:28)
+    at CallExpression.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:12523:15)
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+
+Build failed :|
+Step 7 script `5. Build web app (potreban za Capacitor sync)` exited with status code 1
+✓ 3281 modules transformed.
+x Build failed in 3.35s
+error during build:
+client/src/components/ObjectUploader.tsx (4:9): "DashboardModal" is not exported by "node_modules/@uppy/react/lib/index.js", imported by "client/src/components/ObjectUploader.tsx".
+file: /Users/builder/clone/client/src/components/ObjectUploader.tsx:4:9
+2: import type { ReactNode } from "react";
+3: import Uppy from "@uppy/core";
+4: import { DashboardModal } from "@uppy/react";
+            ^
+5: import "@uppy/core/css/style.min.css";
+6: import "@uppy/dashboard/css/style.min.css";
+    at getRollupError (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/parseAst.js:317:41)
+    at error (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/parseAst.js:313:42)
+    at Module.error (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:17391:16)
+    at Module.traceVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:17824:29)
+    at ModuleScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:15414:39)
+    at FunctionScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5682:38)
+    at FunctionBodyScope.findVariable (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5682:38)
+    at Identifier.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:5449:40)
+    at CallExpression.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:2827:28)
+    at CallExpression.bind (file:///Users/builder/clone/node_modules/rollup/dist/es/shared/node-entry.js:12523:15)
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+
+Build failed :|
+Step 7 script `5. Build web app (potreban za Capacitor sync)` exited with status code 1
