@@ -1,0 +1,48 @@
+
+== Gathering artifacts ==
+
+== Publishing artifacts ==
+
+Publishing artifact App.ipa
+Publishing artifact App.app.dSYM.zip
+Publishing artifact Capacitor.framework.dSYM.zip
+Publishing artifact Cordova.framework.dSYM.zip
+Publishing artifact cardrop-app_12_artifacts.zip
+Publishing App.ipa to App Store Connect
+> app-store-connect publish --path /Users/builder/clone/build/ios/ipa/App.ipa --key-id ******** --issuer-id ******** --private-key @env:APP_STORE_CONNECT_PUBLISHER_PRIVATE_KEY
+
+Publish "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+App name: CarDrop
+Bundle identifier: rs.cardrop.app
+Certificate expires: 2027-06-14T20:25:45.000+0000
+Distribution type: App Store
+Min OS version: 15.0
+Provisioned devices: N/A
+Provisions all devices: No
+Supported platforms: iPhoneOS
+Version code: 1
+Version: 1.0.1
+
+Upload "/Users/builder/clone/build/ios/ipa/App.ipa" to App Store Connect
+Running altool at path '/Applications/Xcode-16.1.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Frameworks/AppStoreService.framework/Support/altool'...
+Running altool at path '/Applications/Xcode-16.1.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Frameworks/AppStoreService.framework/Support/altool'...
+2026-06-14 20:41:47.380 *** Error: [ContentDelivery.Uploader.6000023F8180] Validation failed (409) SDK version issue. This app was built with the iOS 18.1 SDK. All iOS and iPadOS apps must be built with the iOS 26 SDK or later, included in Xcode 26 or later, in order to be uploaded to App Store Connect or submitted for distribution. (ID: 13395dec-511c-48fe-8f3c-c5c090911fc6)
+2026-06-14 20:41:58.717 [ContentDelivery.Uploader.6000023F8180] 
+=============
+UPLOAD FAILED with 1 error.
+=============
+{"tool-version":"8.003.16003","tool-path":"\/Applications\/Xcode-16.1.app\/Contents\/SharedFrameworks\/ContentDeliveryServices.framework\/Versions\/A\/Frameworks\/AppStoreService.framework","os-version":"15.1.1","product-errors":[{"message":"Validation failed","userInfo":{"NSUnderlyingError":"Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=SDK version issue. This app was built with the iOS 18.1 SDK. All iOS and iPadOS apps must be built with the iOS 26 SDK or later, included in Xcode 26 or later, in order to be uploaded to App Store Connect or submitted for distribution., id=13395dec-511c-48fe-8f3c-c5c090911fc6, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=SDK version issue. This app was built with the iOS 18.1 SDK. All iOS and iPadOS apps must be built with the iOS 26 SDK or later, included in Xcode 26 or later, in order to be uploaded to App Store Connect or submitted for distribution., NSLocalizedDescription=Validation failed}","NSLocalizedDescription":"Validation failed","iris-code":"STATE_ERROR.VALIDATION_ERROR","NSLocalizedFailureReason":"SDK version issue. This app was built with the iOS 18.1 SDK. All iOS and iPadOS apps must be built with the iOS 26 SDK or later, included in Xcode 26 or later, in order to be uploaded to App Store Connect or submitted for distribution. (ID: 13395dec-511c-48fe-8f3c-c5c090911fc6)"},"code":409}]}
+
+
+Failed to upload archive at "/Users/builder/clone/build/ios/ipa/App.ipa":
+Validation failed
+Failed to publish /Users/builder/clone/build/ios/ipa/App.ipa
+
+Failed to publish App.ipa to App Store Connect.
+
+Build failed :|
+
+
+Publishing failed :|
+Failed to publish App.ipa to App Store Connect.
+

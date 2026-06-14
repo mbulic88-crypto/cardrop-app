@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'rs.cardrop.app',
-  appName: 'CarDrop',
+  appName: 'Cardrop',
   webDir: 'dist/public',
   // Ucitava produkcijsku verziju sajta direktno u WebView
   // Ne treba rebuild app-a svaki put kad se backend promeni
