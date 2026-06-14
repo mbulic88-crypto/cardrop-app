@@ -48,21 +48,16 @@ workflows:
       # FAZA 2: Priprema projekta
       # ─────────────────────────────────────────────
 
-      - name: 4. Instaliraj npm pakete
+      - name: 4. Instaliraj alate za ikone
         script: |
-          # ios/ folder je vec u git repo — samo trebamo cap sync
-          # Koristimo yarn v1 (stabilan na Node 22, nema v4 workspace bug)
-          npm install -g yarn@1
-          yarn install --no-lockfile --network-timeout 300000
-          npm install -g @capacitor/cli@8
+          # ios/ folder je vec u git repo sa ispravnim AppDelegate i Package.swift
+          # Jedino sto trebamo je @capacitor/assets za generisanje ikona
+          npm install -g @capacitor/assets
 
-      - name: 5. Pripremi dist/public placeholder za Capacitor sync
+      - name: 5. Pripremi web placeholder
         script: |
           mkdir -p dist/public
           echo '<!DOCTYPE html><html><head><title>Cardrop</title></head><body></body></html>' > dist/public/index.html
-
-      - name: 6. Sinhronizuj Capacitor konfiguraciju
-        script: cap sync ios
 
       # ─────────────────────────────────────────────
       # FAZA 3: iOS resursi (ikone, splash, manifest)
@@ -77,11 +72,11 @@ workflows:
 
       - name: 9. Generisi iOS ikone u svim velicinama
         script: |
-          # Generise ikone iz assets/icon.png u sve Apple-ove velicine
-          ./node_modules/.bin/capacitor-assets generate --ios \
+          # Globalni capacitor-assets (instaliran u koraku 4)
+          capacitor-assets generate --ios \
             --iconSource assets/icon.png \
             --splashSource assets/splash.png \
-            || ./node_modules/.bin/capacitor-assets generate --ios
+            || capacitor-assets generate --ios
 
       - name: 10. Dodaj Privacy Manifest i integriraj u Xcode projekat
         script: |
