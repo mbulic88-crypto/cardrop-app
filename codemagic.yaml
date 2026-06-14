@@ -5,7 +5,7 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      # Ove varijable dodaješ u Codemagic Settings → Environment variables
+      # Ove varijable dodajes u Codemagic Settings → Teams → Global variables
       # Pogledaj IOS_SETUP_GUIDE.md za detaljna uputstva
       groups:
         - apple_credentials
@@ -26,32 +26,40 @@ workflows:
       - name: 1. Instaliraj npm pakete
         script: npm ci
 
-      - name: 2. Inicijalizuj Capacitor iOS projekat
+      - name: 2. Build web app (potreban za Capacitor sync)
+        script: npm run build
+
+      - name: 3. Inicijalizuj Capacitor iOS projekat
         script: |
-          # Dodaje ios/ folder sa Xcode projektom
+          # Generise ios/ folder sa Xcode projektom (samo ako ne postoji)
           npx cap add ios || echo "iOS platform already exists, skipping"
 
-      - name: 3. Sinhronizuj web sadrzaj
+      - name: 4. Sinhronizuj web sadrzaj i konfiguraciju
         script: npx cap sync ios
 
-      - name: 4. Generisi splash screen sliku
+      - name: 5. Generisi splash screen sliku
         script: |
-          # Pravi tamni splash ekran 2732x2732 sa CarDrop bojama
-          convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png || \
-          python3 -c "
+          # Kreira tamni splash ekran (#1e1e1e) 2732x2732px za iOS
+          convert -size 2732x2732 xc:'#1e1e1e' assets/splash.png \
+            && echo "Splash generated with ImageMagick" \
+            || python3 -c "
 from PIL import Image
 img = Image.new('RGB', (2732, 2732), color=(30, 30, 30))
 img.save('assets/splash.png')
-" || echo "Splash generation skipped - will use default"
+print('Splash generated with PIL')
+" || echo "Warning: splash generation skipped"
 
-      - name: 5. Generisi ikone u svim velicinama
+      - name: 6. Generisi iOS ikone u svim velicinama
         script: |
-          # Kopira ikone iz assets/ foldera u sve potrebne iOS velicine
-          npx @capacitor/assets generate --ios --iconSource assets/icon.png
+          # Kopira assets/icon.png i assets/splash.png u sve potrebne iOS format/velicine
+          npx @capacitor/assets generate --ios \
+            --iconSource assets/icon.png \
+            --splashSource assets/splash.png \
+            || npx @capacitor/assets generate --ios
 
-      - name: 6. Kreiraj Apple Privacy Manifest (obavezan od 2024)
+      - name: 7. Dodaj Privacy Manifest i integriraj u Xcode projekat
         script: |
-          mkdir -p ios/App/App
+          # Kreiraj PrivacyInfo.xcprivacy fajl (obavezan od 2024)
           cat > ios/App/App/PrivacyInfo.xcprivacy << 'PRIVACY_EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -91,22 +99,42 @@ img.save('assets/splash.png')
           </plist>
           PRIVACY_EOF
 
-      - name: 7. Instaliraj CocoaPods (iOS biblioteke)
+          # Registruj PrivacyInfo.xcprivacy u Xcode projektu (xcodeproj gem)
+          # xcodeproj je pre-instaliran na Codemagic Mac masinama
+          ruby - << 'RUBY_EOF'
+          require 'xcodeproj'
+          project_path = Dir.glob('ios/App/*.xcodeproj').first
+          project = Xcodeproj::Project.open(project_path)
+          target = project.targets.find { |t| t.name == 'App' }
+          app_group = project.main_group['App'] || project.main_group.new_group('App', 'App')
+          existing = app_group.files.find { |f| f.path&.end_with?('PrivacyInfo.xcprivacy') }
+          unless existing
+            file_ref = app_group.new_file('PrivacyInfo.xcprivacy')
+            target.add_file_references([file_ref])
+            puts "PrivacyInfo.xcprivacy added to Xcode project"
+          else
+            puts "PrivacyInfo.xcprivacy already in project"
+          end
+          project.save
+          RUBY_EOF
+
+      - name: 8. Instaliraj CocoaPods (iOS biblioteke)
         script: |
           cd ios/App
           pod install
 
-      - name: 8. Postavi version number
+      - name: 9. Postavi build number
         script: |
           cd ios/App
           LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "0")
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 1.0.$BUILD_NUMBER
+          echo "Build number: $BUILD_NUMBER"
 
-      - name: 7. Postavi code signing i build
+      - name: 10. Code signing i build IPA
         script: |
-          # Automatski preuzima certifikate i provisioning profile iz App Store Connect
+          # Automatski preuzima certifikate iz App Store Connect API
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
@@ -126,10 +154,9 @@ img.save('assets/splash.png')
           success: true
           failure: true
       app_store_connect:
-        # Automatski salje .ipa fajl na App Store Connect
-        # API key se dodaje u Codemagic environment variables
+        # Automatski salje .ipa na App Store Connect / TestFlight
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        submit_to_testflight: true   # Prvo u TestFlight za testiranje
-        submit_to_app_store: false   # Posle testiranja, rucno submitujes na App Store
+        submit_to_testflight: true    # Prvo u TestFlight za testiranje
+        submit_to_app_store: false    # Posle testiranja, rucno submitujes
