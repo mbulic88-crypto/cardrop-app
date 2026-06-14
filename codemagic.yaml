@@ -35,10 +35,13 @@ workflows:
 
       - name: 2. Preuzmi Distribution Certificate i Provisioning Profile
         script: |
-          # Codemagic automatski kreira certifikat i profil ako ne postoje
+          # Generisi novi RSA privatni kljuc na build masini
+          openssl genrsa -out /tmp/cert_key.pem 2048
+          # Koristi taj kljuc za kreiranje Distribution Certificate kod Apple-a
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key @file:/tmp/cert_key.pem
 
       - name: 3. Dodaj certifikate u keychain
         script: keychain add-certificates
