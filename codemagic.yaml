@@ -66,7 +66,21 @@ workflows:
           rm -rf ios
           npx cap add ios
 
-      - name: 7. Sinhronizuj web sadrzaj i konfiguraciju
+      - name: 7. Zakrpi AppDelegate.swift (Capacitor v8 bug)
+        script: |
+          APPDELEGATE="ios/App/App/AppDelegate.swift"
+          echo "=== AppDelegate.swift pre-patcha ==="
+          cat "$APPDELEGATE"
+          # Capacitor v8 generise pogresan poziv za Universal Links
+          # ApplicationDelegateProxy nema overload sa 'continue:restorationHandler:'
+          # Zameni celu liniju sa 'return false' jer koristimo server.url (nema Universal Links)
+          sed -i '' \
+            's/return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)/return false/' \
+            "$APPDELEGATE"
+          echo "=== AppDelegate.swift posle patcha ==="
+          cat "$APPDELEGATE"
+
+      - name: 8. Sinhronizuj web sadrzaj i konfiguraciju
         script: npx cap sync ios
 
       # ─────────────────────────────────────────────
