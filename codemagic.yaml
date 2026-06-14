@@ -13,7 +13,7 @@ workflows:
         BUNDLE_ID: rs.cardrop.app
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
-      node: 20
+      node: 22
       xcode: latest
 
     cache:
@@ -50,12 +50,10 @@ workflows:
 
       - name: 4. Instaliraj npm pakete
         script: |
-          # Brisemo lockfile jer je generisan za drugu Node verziju
-          rm -f package-lock.json
-          npm install --legacy-peer-deps
-          # Globalna instalacija cap CLI-a
+          # NODE_OPTIONS fix za "Exit handler never called!" bug na Node 22
+          export NODE_OPTIONS=--max-old-space-size=4096
+          npm install --legacy-peer-deps --no-fund --no-audit
           npm install -g @capacitor/cli@8
-          # Verifikacija
           echo "--- Provera @capacitor/ios ---"
           ls node_modules/@capacitor/ios/package.json && echo "OK" || echo "NIJE INSTALIRAN"
 
