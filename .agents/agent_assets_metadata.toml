@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Wi8ShGtxVjfV6yVrgeb2W"
+uri = "file://cardrop-promo.pdf"
+type = "pdf"
+title = "CarDrop promo PDF za apartmane"
