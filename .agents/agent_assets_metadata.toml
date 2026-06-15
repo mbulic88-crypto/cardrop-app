@@ -18,3 +18,33 @@ id = "qEyDx23TglboYDGlNThxn"
 uri = "file://appstore-screenshots/screenshot-category-select.png"
 type = "image"
 title = "Screenshot 2 – Izbor kategorije (1242×2688)"
+
+[[outputs]]
+id = "Bh2dxcJA_WaqW_0bNlTPT"
+uri = "file://appstore-screenshots/ipad-parking-detail.png"
+type = "image"
+title = "iPad 1 – Parking detalji"
+
+[[outputs]]
+id = "K55n9FDKA87M9jUVoB15d"
+uri = "file://appstore-screenshots/ipad-dashboard.png"
+type = "image"
+title = "iPad 2 – Dashboard"
+
+[[outputs]]
+id = "620nLIIY3iu9Jf06QiRLb"
+uri = "file://appstore-screenshots/ipad-category-select.png"
+type = "image"
+title = "iPad 3 – Izbor kategorije"
+
+[[outputs]]
+id = "UAIH9-0hRbGsEvX7JVBx5"
+uri = "file://appstore-screenshots/ipad-home.png"
+type = "image"
+title = "iPad 4 – Početna"
+
+[[outputs]]
+id = "z702BxFjTHPDimsenSJqq"
+uri = "file://appstore-screenshots/ipad-map.png"
+type = "image"
+title = "iPad 5 – Mapa"
