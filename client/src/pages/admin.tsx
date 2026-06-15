@@ -1850,7 +1850,7 @@ export default function Admin() {
               const kredit = paid.filter(b => b.payment_method !== 'instant');
               const totalRevenue = paid.reduce((s, b) => s + parseFloat(b.total_price || '0'), 0);
               const instantPayout = instant.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.811 - STRIPE_FIXED_RSD), 0);
-              const kreditPayout = kredit.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.835), 0);
+              const kreditPayout = kredit.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.85), 0);
               const totalPayout = instantPayout + kreditPayout;
 
               const ownerMap: Record<string, { name: string; email: string; instant: number; kredit: number; count: number }> = {};
@@ -1864,7 +1864,7 @@ export default function Admin() {
                 }
                 const price = parseFloat(b.total_price || '0');
                 if (b.payment_method === 'instant') ownerMap[b.owner_id].instant += price * 0.811 - STRIPE_FIXED_RSD;
-                else ownerMap[b.owner_id].kredit += price * 0.835;
+                else ownerMap[b.owner_id].kredit += price * 0.85;
                 ownerMap[b.owner_id].count++;
               }
               const owners = Object.values(ownerMap).sort((a, b) => (b.instant + b.kredit) - (a.instant + a.kredit));
