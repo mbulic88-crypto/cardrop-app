@@ -153,7 +153,7 @@ export function markerEmoji(type: MarkerType | string): string {
 export function markerLabel(type: MarkerType | string): string {
   if (type === "zlatni_minut") return "Zlatni Minut";
   if (type === "pauk") return "Pauk Radar";
-  if (type === "stek") return "Štek Lokacija";
+  if (type === "stek") return "Javni skriveni parkinzi – Štek";
   if (type === "safe_zone") return "Safe Zone Alarm";
   if (type === "radar") return "Radar";
   if (type === "kamera") return "Saobraćajna Kamera";

@@ -8,6 +8,7 @@ import { saveSubscription, removeSubscription, sendPushToUser } from "./push";
 import Stripe from "stripe";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
+import { totalWithFee } from "@shared/stripeFee";
 import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
@@ -349,16 +350,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const isSubscriptionPlan = plan === 'premium' || plan === 'godisnji_premium';
 
-      let priceId: string | undefined;
-      if (isSubscriptionPlan) {
-        priceId = getMapHackRecurringPriceId(plan);
-      } else {
-        priceId = getMapHackPriceId(plan);
-      }
-
-      if (!priceId) {
-        return res.status(503).json({ message: "Plan trenutno nije dostupan za plaćanje. Pokušaj ponovo za nekoliko minuta ili kontaktiraj info@cardrop.app" });
-      }
+      const planInfo = validPlans[plan];
+      const baseAmountRsd = planInfo.amount / 100;
+      const totalAmountParas = Math.round(totalWithFee(baseAmountRsd) * 100);
 
       let sessionParams: Stripe.Checkout.SessionCreateParams;
 
@@ -375,9 +369,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateMapHackSubscription(userId, { stripeCustomerId });
         }
 
+        const recurringInterval: 'month' | 'year' = plan === 'godisnji_premium' ? 'year' : 'month';
+
         sessionParams = {
           customer: stripeCustomerId,
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: [{
+            price_data: {
+              currency: 'rsd',
+              unit_amount: totalAmountParas,
+              product_data: { name: planInfo.name, description: planInfo.description },
+              recurring: { interval: recurringInterval },
+            },
+            quantity: 1,
+          }],
           mode: 'subscription',
           subscription_data: {
             metadata: { userId, plan },
@@ -388,7 +392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         sessionParams = {
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: [{
+            price_data: {
+              currency: 'rsd',
+              unit_amount: totalAmountParas,
+              product_data: { name: planInfo.name, description: planInfo.description },
+            },
+            quantity: 1,
+          }],
           mode: 'payment',
           success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/map-hack/subscribe`,

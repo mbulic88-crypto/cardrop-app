@@ -54,15 +54,15 @@ const mhT = {
     legendRadarDesc: "Policijski radar ili patrola na putu",
     legendPrivatDesc: "Pregled privatnih parkinga za iznajmljivanje u Srbiji",
     legendFreeItems: ["Zlatni Minut i Pauk markeri", "SMS Plaćanje javnih zona (1 klik)", "Privatni parkinzi za najam", "Live Chat"],
-    legendPremiumItems: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Štek lokacije", "Radar markeri", "Push notifikacije"],
+    legendPremiumItems: ["Sve iz Free +", "Safe Zone alarm (300m, svi markeri)", "Javni skriveni parkinzi – Štek", "Radar markeri", "Push notifikacije"],
     legendDayPassItems: ["Sve Premium funkcije", "Važi 24 sata", "Bez pretplate"],
     freeFeat1: "Parking mapa Srbije sa zonama i ulicama", freeFeat2: "Live Chat (pisanje i čitanje u realnom vremenu)",
     freeFeat3: "Smart SMS plaćanje javnih zona (1 klik)", freeFeat4: "Pregled privatnih parkinga za najam",
     freeFeat5: "Vizuelni markeri za Pauka i 'Zlatni minut'", freeFeat6: "Pauk i Zlatni Minut push notifikacije (u Safe Zoni)",
-    freeFeat7: "Safe Zone alarm i Radar notifikacije (samo Premium)", freeFeat8: "Štek lokacije (zaključane)",
+    freeFeat7: "Safe Zone alarm i Radar notifikacije (samo Premium)", freeFeat8: "Javni skriveni – Štek (zaključane)",
     premFeat1: "Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)",
     premFeat2: "Push Notifikacije: instant alarm — ne moraš gledati u mapu",
-    premFeat3: "Štek Lokacije: otključana baza skrivenih parkinga",
+    premFeat3: "Javni skriveni – Štek: otključana baza skrivenih parkinga",
     premFeat4: "Radar Markeri: označi policijski radar i patrolu na mapi",
     premFeat5: "Pauk Heatmap: analitika kretanja pauka po danima i satima",
     dpFeat1: "Sve Premium funkcije (Štek, Radar, Push, Safe Zone)", dpFeat2: "Važi 24 sata", dpFeat3: "Bez pretplate",
@@ -101,15 +101,15 @@ const mhT = {
     legendRadarDesc: "Police radar or patrol on the road",
     legendPrivatDesc: "Browse private parking spots for rent in Serbia",
     legendFreeItems: ["Golden Minute & Tow Truck markers", "Smart SMS public zone payment (1 click)", "Private parking listings", "Live Chat"],
-    legendPremiumItems: ["Everything from Free +", "Safe Zone alarm (300m, all markers)", "Hidden spots (Štek)", "Radar markers", "Push notifications"],
+    legendPremiumItems: ["Everything from Free +", "Safe Zone alarm (300m, all markers)", "Javni skriveni – Štek (hidden spots)", "Radar markers", "Push notifications"],
     legendDayPassItems: ["All Premium features", "Valid 24 hours", "No subscription"],
     freeFeat1: "Serbia parking map with zones and streets", freeFeat2: "Live Chat (write and read in real time)",
     freeFeat3: "Smart SMS payment for public zones (1 click)", freeFeat4: "Browse private parking spots for rent",
     freeFeat5: "Visual markers for Tow Trucks and Golden Minute", freeFeat6: "Tow Truck & Golden Minute push notifications (in Safe Zone)",
-    freeFeat7: "Safe Zone alarm & Radar notifications (Premium only)", freeFeat8: "Hidden spots — Štek (locked)",
+    freeFeat7: "Safe Zone alarm & Radar notifications (Premium only)", freeFeat8: "Javni skriveni – Štek (locked)",
     premFeat1: "Safe Zone Alarm: push for every marker in your 300m zone (tow truck, radar, golden minute, štek)",
     premFeat2: "Push Notifications: instant alarm — no need to watch the map",
-    premFeat3: "Štek Spots: unlocked database of hidden parking",
+    premFeat3: "Javni skriveni – Štek: unlocked hidden spots database",
     premFeat4: "Radar Markers: mark police radars and patrols on the map",
     premFeat5: "Tow Truck Heatmap: analytics of tow truck movement by day and hour",
     dpFeat1: "All Premium features (Štek, Radar, Push, Safe Zone)", dpFeat2: "Valid 24 hours", dpFeat3: "No subscription",
@@ -4216,10 +4216,10 @@ export default function MapHackNS() {
       <div className="flex items-center gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto"
         style={{ display: chatFullscreen ? "none" : undefined, background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
         {([
-          { key: "zlatni_minut", label: "Zlatni Minut",     icon: "⏱" },
-          { key: "pauk",         label: "Pauk",             icon: "🚛" },
-          { key: "stek",         label: "Štek",             icon: "🏠" },
-          { key: "parking",      label: mh.filterPrivate,   icon: "🅿" },
+          { key: "parking",      label: mh.filterPrivate,          icon: "🅿" },
+          { key: "stek",         label: "Javni skriveni – Štek",   icon: "🏠" },
+          { key: "zlatni_minut", label: "Zlatni Minut",            icon: "⏱" },
+          { key: "pauk",         label: "Pauk",                    icon: "🚛" },
         ] as const).map(f => {
           const isActive = activeFilters.includes(f.key);
           const isLocked = f.key === "stek" && !isPremium;
@@ -4825,7 +4825,7 @@ export default function MapHackNS() {
               <button
                 key="stek"
                 data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature("stek"); setUpsellContext("Štek lokacije su dostupne Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature("stek"); setUpsellContext("Javni skriveni parkinzi (Štek) dostupni su Premium korisnicima"); setPremiumUpsellOpen(true); } }}
                 className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
                 style={{
                   width: 58, height: 58,
@@ -4841,8 +4841,8 @@ export default function MapHackNS() {
                       style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
                   )}
                 </div>
-                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  Štek
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 8, letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                  Skriveni
                 </span>
               </button>
             );
@@ -5675,7 +5675,7 @@ export default function MapHackNS() {
                           <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
                         </svg>
                       ), color: "#ef4444", label: mh.markerPaukRadar, desc: mh.legendPaukDesc, badge: "Free" },
-                    { icon: <Home size={14} />, color: "#22c55e", label: "Štek Parking", desc: mh.legendStekDesc, badge: "Premium" },
+                    { icon: <Home size={14} />, color: "#22c55e", label: "Javni skriveni – Štek", desc: mh.legendStekDesc, badge: "Premium" },
                     { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: mh.legendSafeZoneDesc, badge: "Premium" },
                     { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS", desc: mh.legendSmsDesc, badge: "Free" },
                     { icon: <RadioTower size={14} />, color: "#8b5cf6", label: mh.markerRadar, desc: mh.legendRadarDesc, badge: "Premium" },
@@ -5839,7 +5839,7 @@ export default function MapHackNS() {
               <div>
                 <span className="font-bold text-white text-sm">Premium funkcija</span>
                 <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
-                  {upsellContext || "Safe Zone, Štek lokacije, Radar, Push notifikacije"}
+                  {upsellContext || "Safe Zone, Javni skriveni – Štek, Radar, Push notifikacije"}
                 </p>
               </div>
               <button
