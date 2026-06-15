@@ -6,3 +6,33 @@ id = "Wi8ShGtxVjfV6yVrgeb2W"
 uri = "file://cardrop-promo.pdf"
 type = "pdf"
 title = "CarDrop promo PDF - fixed"
+
+[[outputs]]
+id = "M2Hx6pK-OUPQ_TH3n43d3"
+uri = "file://appstore-screenshots/1-landing.png"
+type = "image"
+title = "1 — Pronadi parking u sekundi"
+
+[[outputs]]
+id = "7ZNIcTZe_RTLHaiHKyjep"
+uri = "file://appstore-screenshots/2-categories.png"
+type = "image"
+title = "2 — Iznajmi svoje parking mesto"
+
+[[outputs]]
+id = "5rPdLB2dP8KK_buJPGeFZ"
+uri = "file://appstore-screenshots/3-auth.png"
+type = "image"
+title = "3 — Sigurna i brza registracija"
+
+[[outputs]]
+id = "T8DxwRu2x6BUzZIBxrP35"
+uri = "file://appstore-screenshots/4-maphack.png"
+type = "image"
+title = "4 — Map Hack NS"
+
+[[outputs]]
+id = "B8XeXI56U3q2m6_g0SId8"
+uri = "file://appstore-screenshots/5-booking.png"
+type = "image"
+title = "5 — Rezervisi. Parkiras. Ide."
