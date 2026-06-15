@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel, Loader2 } from "lucide-react";
+import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
 import { useLanguage } from "@/hooks/useLanguage";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
@@ -34,7 +34,7 @@ const translations = {
   sr: {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Rezerviši privatni parking direktno od vlasnika i plati onlajn — ili otkrij skrivena parking mesta koja znaju samo mestani: slobodna mesta, upozorenja za pauka i tajne lokacije u realnom vremenu.",
-    findSpotButton: "Pronađi parking",
+    findSpotButton: "Privatni parkinzi – iznajmi i rezerviši · Javni skriveni parkinzi – Štek, Zlatni Minut, Pauk Radar, Safe Zona",
     findSpotSubtitle: "Rezerviši direktno ili kontaktiraj vlasnika · Štek parkinzi i privatni parking za najam · Pauk radar, Zlatni minut i SafeZone alarmi",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "Iznajmite Parking Mesto",
@@ -150,7 +150,7 @@ const translations = {
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Reserve private parking directly from owners and pay online — or discover hidden spots only locals know: free spaces, tow truck alerts, and secret locations in real time.",
-    findSpotButton: "Find Parking",
+    findSpotButton: "Private Parking – rent & reserve · Hidden Public Spots – Štek, Golden Minute, Tow Radar, Safe Zone",
     findSpotSubtitle: "Book directly or contact the owner · Hidden Štek spots & private parking · Tow truck radar, Golden Minute & SafeZone alerts",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "List Parking Spot",
@@ -273,9 +273,8 @@ export default function Landing() {
   const [showIosModal, setShowIosModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [mhCheckoutPending, setMhCheckoutPending] = useState<string | null>(null);
   const { isInstallable, installApp } = usePWA();
   const { theme, setTheme } = useTheme();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -338,37 +337,6 @@ export default function Landing() {
       setLocation(path);
     }
   };
-
-  async function handleMapHackCTA(planId: string) {
-    if (!isAuthenticated) {
-      localStorage.setItem("cardrop-returnTo", "/map-hack");
-      setLocation("/auth");
-      return;
-    }
-    if (!user?.mapNickname) {
-      setLocation("/map-hack");
-      return;
-    }
-    setMhCheckoutPending(planId);
-    try {
-      const res = await fetch("/api/map-hack/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planId }),
-        credentials: "include",
-      });
-      const data = await res.json() as { url?: string; message?: string };
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-      } else {
-        setLocation("/map-hack/subscribe");
-      }
-    } catch {
-      setLocation("/map-hack/subscribe");
-    } finally {
-      setMhCheckoutPending(null);
-    }
-  }
 
   const scrollToSection = (id: string) => {
     setMenuOpen(false);
@@ -1108,14 +1076,11 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors disabled:opacity-60"
+                className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors"
                 data-testid="button-mh-premium-cta"
-                onClick={() => handleMapHackCTA("premium")}
-                disabled={mhCheckoutPending !== null}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                {mhCheckoutPending === "premium"
-                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
-                  : t.mapHackCTA}
+                {t.mapHackCTA}
               </button>
             </div>
 
@@ -1147,14 +1112,11 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors disabled:opacity-60"
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
                 data-testid="button-mh-daypass-cta"
-                onClick={() => handleMapHackCTA("day_pass")}
-                disabled={mhCheckoutPending !== null}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                {mhCheckoutPending === "day_pass"
-                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
-                  : t.mapHackCTA}
+                {t.mapHackCTA}
               </button>
             </div>
 
@@ -1191,14 +1153,11 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors disabled:opacity-60"
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
                 data-testid="button-mh-annual-cta"
-                onClick={() => handleMapHackCTA("godisnji_premium")}
-                disabled={mhCheckoutPending !== null}
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                {mhCheckoutPending === "godisnji_premium"
-                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
-                  : t.mapHackCTA}
+                {t.mapHackCTA}
               </button>
             </div>
           </div>
