@@ -13,7 +13,8 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingRenterConfirmationEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail } from './email';
+import { randomBytes } from 'crypto';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;
@@ -1902,6 +1903,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sessionPricingType = (session.metadata?.pricingType as string) || 'daily';
+      const approvalToken = randomBytes(32).toString('hex');
+
       const { booking, alreadyConsumed } = await storage.createBookingWithSession({
         spotId,
         renterId: userId,
@@ -1909,13 +1912,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: new Date(endTime),
         totalPrice,
         currency,
-        status: 'confirmed',
+        status: 'pending_approval',
         paymentStatus: 'paid',
         licensePlate: licensePlate || undefined,
         renterPhone: renterPhone || undefined,
         spaceNumber: validSpaceNumberVerify,
         bookingStripeSessionId: sessionId,
         pricingType: sessionPricingType,
+        approvalToken,
       });
 
       if (licensePlate) {
@@ -1929,20 +1933,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Push notifikacija vlasniku
       const startLabel = new Date(startTime).toLocaleDateString('sr-Latn-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
       sendPushToUser(spot.ownerId, {
-        title: "Nova rezervacija",
+        title: "Nova rezervacija ceka odobrenje",
         body: `${spot.title} — ${startLabel}`,
         icon: '/icons/icon-192x192.png',
         tag: `booking-${booking.id}`,
         url: '/dashboard',
       }).catch(() => {});
 
-      // Email notifikacije (vlasnik + zakupac)
+      // Email vlasniku sa dugmicima Odobri/Odbij
       (async () => {
         try {
           const [owner, renter] = await Promise.all([
             storage.getUser(spot.ownerId),
             storage.getUser(userId),
           ]);
+          const baseUrl = process.env.APP_URL || 'https://cardrop.app';
+          const approveUrl = `${baseUrl}/api/bookings/approve/${booking.approvalToken}`;
+          const rejectUrl = `${baseUrl}/api/bookings/reject/${booking.approvalToken}`;
           if (owner?.email) {
             await sendBookingOwnerEmail({
               ownerEmail: owner.email,
@@ -1956,19 +1963,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
-            });
-          }
-          if (renter?.email) {
-            await sendBookingRenterConfirmationEmail({
-              renterEmail: renter.email,
-              renterName: renter.firstName || renter.email,
-              spotTitle: spot.title,
-              spotAddress: spot.address,
-              ownerPhone: spot.phone || undefined,
-              startTime: new Date(booking.startTime),
-              endTime: new Date(booking.endTime),
-              totalPrice: booking.totalPrice,
-              currency: booking.currency || 'RSD',
+              approveUrl,
+              rejectUrl,
             });
           }
         } catch (emailErr) {
@@ -1980,6 +1976,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error verifying booking payment:", error);
       res.status(500).json({ message: "Greška pri verifikaciji plaćanja" });
+    }
+  });
+
+  // ── BOOKING APPROVE / REJECT (token links from owner email) ──
+  function approvalPage(status: 'approved' | 'rejected' | 'already' | 'invalid'): string {
+    const configs: Record<string, { color: string; bg: string; title: string; msg: string }> = {
+      approved: { color: '#1b4332', bg: '#f0fdf4', title: 'Rezervacija odobrena!', msg: 'Zakupac je obavestен. Rezervacija je aktivna.' },
+      rejected: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija odbijena', msg: 'Zakupac je obavestен da rezervacija nije prihvacena.' },
+      already:  { color: '#92400e', bg: '#fffbeb', title: 'Vec obradeno', msg: 'Ova rezervacija je vec odobrena ili odbijena.' },
+      invalid:  { color: '#6b7280', bg: '#f9fafb', title: 'Nevazeci link', msg: 'Link nije validan ili je istekao.' },
+    };
+    const c = configs[status];
+    return `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>CarDrop</title></head>
+<body style="margin:0;padding:40px 16px;background:#f4f4f4;font-family:Arial,sans-serif;text-align:center;">
+  <div style="max-width:440px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.1);">
+    <div style="background:#1b4332;padding:20px 24px;">
+      <h1 style="margin:0;color:#40916c;font-size:26px;letter-spacing:1px;">CarDrop</h1>
+    </div>
+    <div style="padding:36px 32px;background:${c.bg};">
+      <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:${c.color};">${c.title}</p>
+      <p style="margin:0 0 28px;color:#555;font-size:15px;">${c.msg}</p>
+      <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#fff;text-decoration:none;padding:11px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Otvori Dashboard</a>
+    </div>
+  </div>
+</body></html>`;
+  }
+
+  app.get('/api/bookings/approve/:token', async (req: any, res) => {
+    const { token } = req.params;
+    try {
+      const booking = await storage.resolveBookingApproval(token, true);
+      if (!booking) {
+        const existing = await storage.getBookingByApprovalToken(token);
+        return res.send(approvalPage(existing ? 'already' : 'invalid'));
+      }
+      const [spot, renter] = await Promise.all([
+        storage.getParkingSpot(booking.spotId),
+        storage.getUser(booking.renterId),
+      ]);
+      if (renter?.email && spot) {
+        sendBookingApprovedEmail({
+          renterEmail: renter.email,
+          renterName: renter.firstName || renter.email,
+          spotTitle: spot.title,
+          spotAddress: spot.address,
+          ownerPhone: spot.phone || undefined,
+          startTime: new Date(booking.startTime),
+          endTime: new Date(booking.endTime),
+          totalPrice: booking.totalPrice,
+          currency: booking.currency || 'RSD',
+        }).catch(() => {});
+      }
+      return res.send(approvalPage('approved'));
+    } catch (err) {
+      console.error('[APPROVE]', err);
+      return res.status(500).send(approvalPage('invalid'));
+    }
+  });
+
+  app.get('/api/bookings/reject/:token', async (req: any, res) => {
+    const { token } = req.params;
+    try {
+      const booking = await storage.resolveBookingApproval(token, false);
+      if (!booking) {
+        const existing = await storage.getBookingByApprovalToken(token);
+        return res.send(approvalPage(existing ? 'already' : 'invalid'));
+      }
+      const [spot, renter] = await Promise.all([
+        storage.getParkingSpot(booking.spotId),
+        storage.getUser(booking.renterId),
+      ]);
+      if (renter?.email && spot) {
+        sendBookingRejectedEmail({
+          renterEmail: renter.email,
+          renterName: renter.firstName || renter.email,
+          spotTitle: spot.title,
+          startTime: new Date(booking.startTime),
+          endTime: new Date(booking.endTime),
+          totalPrice: booking.totalPrice,
+          currency: booking.currency || 'RSD',
+        }).catch(() => {});
+      }
+      return res.send(approvalPage('rejected'));
+    } catch (err) {
+      console.error('[REJECT]', err);
+      return res.status(500).send(approvalPage('invalid'));
     }
   });
 

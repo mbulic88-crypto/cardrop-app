@@ -66,6 +66,8 @@ export interface IStorage {
   
   // Bookings operations
   getBooking(id: string): Promise<Booking | undefined>;
+  getBookingByApprovalToken(token: string): Promise<Booking | undefined>;
+  resolveBookingApproval(token: string, approved: boolean): Promise<Booking | undefined>;
   getUserBookings(userId: string): Promise<Booking[]>;
   getSpotBookings(spotId: string): Promise<Booking[]>;
   hasBookingOverlap(spotId: string, startTime: Date, endTime: Date, excludeSessionId?: string, spaceNumber?: number): Promise<boolean>;
@@ -383,6 +385,23 @@ export class DatabaseStorage implements IStorage {
   async getBooking(id: string): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
     return booking;
+  }
+
+  async getBookingByApprovalToken(token: string): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.approvalToken, token)).limit(1);
+    return booking;
+  }
+
+  async resolveBookingApproval(token: string, approved: boolean): Promise<Booking | undefined> {
+    const booking = await this.getBookingByApprovalToken(token);
+    if (!booking || booking.status !== 'pending_approval') return undefined;
+    const newStatus = approved ? 'confirmed' : 'rejected';
+    const [updated] = await db
+      .update(bookings)
+      .set({ status: newStatus, updatedAt: new Date() })
+      .where(eq(bookings.approvalToken, token))
+      .returning();
+    return updated;
   }
 
   async getUserBookings(userId: string): Promise<Booking[]> {
