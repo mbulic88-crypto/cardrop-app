@@ -175,7 +175,7 @@ export default function MapHackSubscribe() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
+      localStorage.setItem("cardrop-returnTo", "/map-hack");
       setLocation("/auth");
     }
   }, [isLoading, isAuthenticated, setLocation]);
@@ -249,7 +249,7 @@ export default function MapHackSubscribe() {
   const currentPlan = mapStatus?.plan;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className="h-screen overflow-hidden bg-background flex flex-col relative">
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>

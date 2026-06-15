@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel } from "lucide-react";
+import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel, Loader2 } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
 import { useLanguage } from "@/hooks/useLanguage";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
@@ -273,8 +273,9 @@ export default function Landing() {
   const [showIosModal, setShowIosModal] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
+  const [mhCheckoutPending, setMhCheckoutPending] = useState<string | null>(null);
   const { isInstallable, installApp } = usePWA();
   const { theme, setTheme } = useTheme();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -337,6 +338,37 @@ export default function Landing() {
       setLocation(path);
     }
   };
+
+  async function handleMapHackCTA(planId: string) {
+    if (!isAuthenticated) {
+      localStorage.setItem("cardrop-returnTo", "/map-hack");
+      setLocation("/auth");
+      return;
+    }
+    if (!user?.mapNickname) {
+      setLocation("/map-hack");
+      return;
+    }
+    setMhCheckoutPending(planId);
+    try {
+      const res = await fetch("/api/map-hack/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+        credentials: "include",
+      });
+      const data = await res.json() as { url?: string; message?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setLocation("/map-hack/subscribe");
+      }
+    } catch {
+      setLocation("/map-hack/subscribe");
+    } finally {
+      setMhCheckoutPending(null);
+    }
+  }
 
   const scrollToSection = (id: string) => {
     setMenuOpen(false);
@@ -1076,18 +1108,14 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors"
+                className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors disabled:opacity-60"
                 data-testid="button-mh-premium-cta"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
-                    setLocation("/auth");
-                  } else {
-                    setLocation("/map-hack/subscribe");
-                  }
-                }}
+                onClick={() => handleMapHackCTA("premium")}
+                disabled={mhCheckoutPending !== null}
               >
-                {t.mapHackCTA}
+                {mhCheckoutPending === "premium"
+                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
+                  : t.mapHackCTA}
               </button>
             </div>
 
@@ -1119,18 +1147,14 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors disabled:opacity-60"
                 data-testid="button-mh-daypass-cta"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
-                    setLocation("/auth");
-                  } else {
-                    setLocation("/map-hack/subscribe");
-                  }
-                }}
+                onClick={() => handleMapHackCTA("day_pass")}
+                disabled={mhCheckoutPending !== null}
               >
-                {t.mapHackCTA}
+                {mhCheckoutPending === "day_pass"
+                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
+                  : t.mapHackCTA}
               </button>
             </div>
 
@@ -1167,18 +1191,14 @@ export default function Landing() {
                 ))}
               </ul>
               <button
-                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors disabled:opacity-60"
                 data-testid="button-mh-annual-cta"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
-                    setLocation("/auth");
-                  } else {
-                    setLocation("/map-hack/subscribe");
-                  }
-                }}
+                onClick={() => handleMapHackCTA("godisnji_premium")}
+                disabled={mhCheckoutPending !== null}
               >
-                {t.mapHackCTA}
+                {mhCheckoutPending === "godisnji_premium"
+                  ? <span className="flex items-center gap-2 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{language === 'sr' ? 'Učitavanje...' : 'Loading...'}</span>
+                  : t.mapHackCTA}
               </button>
             </div>
           </div>
