@@ -1,8 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Loader2, Check, ChevronDown, ChevronUp, Clock, Home, Shield, Smartphone, RadioTower, Car } from "lucide-react";
-import { calcStripeFee } from "@shared/stripeFee";
-import { SiStripe } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -334,7 +332,7 @@ export default function MapHackSubscribe() {
                 390 <span className="text-base font-semibold text-muted-foreground">RSD / {language === "sr" ? "mes" : "mo"}</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-premium">
-                + ~{calcStripeFee(390)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
+                + <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada
               </span>
             </div>
           </CardHeader>
@@ -375,7 +373,7 @@ export default function MapHackSubscribe() {
                 120 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-day-pass">
-                + ~{calcStripeFee(120)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
+                + <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada
               </span>
             </div>
           </CardHeader>
@@ -411,7 +409,7 @@ export default function MapHackSubscribe() {
                 3.500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-godisnji">
-                + ~{calcStripeFee(3500)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
+                + <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada
               </span>
             </div>
           </CardHeader>

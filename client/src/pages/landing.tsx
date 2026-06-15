@@ -910,6 +910,11 @@ export default function Landing() {
                     {plan.price > 0 && (
                       <p className={`text-sm mt-1 ${isGold ? 'text-white/70' : isSilver ? 'text-[#444]' : 'text-muted-foreground'}`}>{t.pricingPerListing}</p>
                     )}
+                    {plan.price > 0 && (
+                      <p className="text-xs text-center mt-1 text-muted-foreground">
+                        + <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex-1 mb-6">
