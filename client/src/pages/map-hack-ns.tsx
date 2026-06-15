@@ -19,6 +19,7 @@ import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
 import type { MarkerType } from "@/components/MapHackMap";
 import { SiViber, SiWhatsapp, SiStripe } from "react-icons/si";
+import { calcStripeFee } from "@shared/stripeFee";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -59,10 +60,10 @@ const mhT = {
     freeFeat1: "Parking mapa Srbije sa zonama i ulicama", freeFeat2: "Live Chat (pisanje i čitanje u realnom vremenu)",
     freeFeat3: "Smart SMS plaćanje javnih zona (1 klik)", freeFeat4: "Pregled privatnih parkinga za najam",
     freeFeat5: "Vizuelni markeri za Pauka i 'Zlatni minut'", freeFeat6: "Pauk i Zlatni Minut push notifikacije (u Safe Zoni)",
-    freeFeat7: "Safe Zone alarm i Radar notifikacije (samo Premium)", freeFeat8: "Javni skriveni – Štek (zaključane)",
+    freeFeat7: "Safe Zone alarm i Radar notifikacije (samo Premium)", freeFeat8: "Javni skriveni parkinzi – Štek (zaključane)",
     premFeat1: "Safe Zone Alarm: push za svaki marker u tvojoj zoni 300m (pauk, radar, zlatni minut, štek)",
     premFeat2: "Push Notifikacije: instant alarm — ne moraš gledati u mapu",
-    premFeat3: "Javni skriveni – Štek: otključana baza skrivenih parkinga",
+    premFeat3: "Javni skriveni parkinzi – Štek: otključana baza skrivenih parkinga",
     premFeat4: "Radar Markeri: označi policijski radar i patrolu na mapi",
     premFeat5: "Pauk Heatmap: analitika kretanja pauka po danima i satima",
     dpFeat1: "Sve Premium funkcije (Štek, Radar, Push, Safe Zone)", dpFeat2: "Važi 24 sata", dpFeat3: "Bez pretplate",
@@ -106,10 +107,10 @@ const mhT = {
     freeFeat1: "Serbia parking map with zones and streets", freeFeat2: "Live Chat (write and read in real time)",
     freeFeat3: "Smart SMS payment for public zones (1 click)", freeFeat4: "Browse private parking spots for rent",
     freeFeat5: "Visual markers for Tow Trucks and Golden Minute", freeFeat6: "Tow Truck & Golden Minute push notifications (in Safe Zone)",
-    freeFeat7: "Safe Zone alarm & Radar notifications (Premium only)", freeFeat8: "Javni skriveni – Štek (locked)",
+    freeFeat7: "Safe Zone alarm & Radar notifications (Premium only)", freeFeat8: "Javni skriveni parkinzi – Štek (locked)",
     premFeat1: "Safe Zone Alarm: push for every marker in your 300m zone (tow truck, radar, golden minute, štek)",
     premFeat2: "Push Notifications: instant alarm — no need to watch the map",
-    premFeat3: "Javni skriveni – Štek: unlocked hidden spots database",
+    premFeat3: "Javni skriveni parkinzi – Štek: unlocked hidden spots database",
     premFeat4: "Radar Markers: mark police radars and patrols on the map",
     premFeat5: "Tow Truck Heatmap: analytics of tow truck movement by day and hour",
     dpFeat1: "All Premium features (Štek, Radar, Push, Safe Zone)", dpFeat2: "Valid 24 hours", dpFeat3: "No subscription",
@@ -281,10 +282,11 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           </div>
           <Radio selected={selectedPlan === "premium"} light={false} />
         </div>
-        <div className="mb-3">
+        <div className="mb-1">
           <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
           <span className="text-yellow-800 text-sm ml-1 font-medium">{mh.premiumPrice}</span>
         </div>
+        <span className="text-yellow-900/60 text-xs flex items-center gap-1 mb-2">+ ~{calcStripeFee(390)} RSD <SiStripe size={14} style={{ color: "rgba(0,0,0,0.45)" }} /> naknada</span>
         <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">{mh.premiumAllFree}</p>
         <div className="flex flex-col gap-1.5">
           <GoldRow ok text={mh.premFeat1} />
@@ -317,10 +319,11 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           </div>
           <Radio selected={selectedPlan === "day_pass"} light />
         </div>
-        <div className="mb-3">
+        <div className="mb-1">
           <span className="text-white text-3xl font-extrabold leading-none">120</span>
           <span className="text-red-200 text-sm ml-1 font-medium">{mh.dayPassPrice}</span>
         </div>
+        <span className="text-red-200 text-xs flex items-center gap-1 mb-2">+ ~{calcStripeFee(120)} RSD <SiStripe size={14} style={{ color: "rgba(255,255,255,0.6)" }} /> naknada</span>
         <div className="flex flex-col gap-1.5">
           <LightRow ok text={mh.dpFeat1} />
           <LightRow ok text={mh.dpFeat2} />
@@ -356,10 +359,11 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           </div>
           <Radio selected={selectedPlan === "godisnji_premium"} light />
         </div>
-        <div className="flex items-baseline gap-2 mb-2">
+        <div className="flex items-baseline gap-2 mb-1">
           <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
           <span className="text-indigo-300 text-sm font-medium">{mh.godisnjiPrice}</span>
         </div>
+        <span className="text-indigo-300 text-xs flex items-center gap-1 mb-2">+ ~{calcStripeFee(3500)} RSD <SiStripe size={14} style={{ color: "rgba(255,255,255,0.6)" }} /> naknada</span>
         <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
           <p className="text-indigo-200 text-xs font-semibold">{mh.godisnjiSavings}</p>
         </div>
@@ -4217,7 +4221,7 @@ export default function MapHackNS() {
         style={{ display: chatFullscreen ? "none" : undefined, background: "#0d1117", borderBottom: "1px solid rgba(255,255,255,0.06)", scrollbarWidth: "none" }}>
         {([
           { key: "parking",      label: mh.filterPrivate,          icon: "🅿" },
-          { key: "stek",         label: "Javni skriveni – Štek",   icon: "🏠" },
+          { key: "stek",         label: "Javni skriveni parkinzi – Štek",   icon: "🏠" },
           { key: "zlatni_minut", label: "Zlatni Minut",            icon: "⏱" },
           { key: "pauk",         label: "Pauk",                    icon: "🚛" },
         ] as const).map(f => {
@@ -5675,7 +5679,7 @@ export default function MapHackNS() {
                           <line x1="8" y1="18" x2="3" y2="21"/><line x1="16" y1="18" x2="21" y2="21"/>
                         </svg>
                       ), color: "#ef4444", label: mh.markerPaukRadar, desc: mh.legendPaukDesc, badge: "Free" },
-                    { icon: <Home size={14} />, color: "#22c55e", label: "Javni skriveni – Štek", desc: mh.legendStekDesc, badge: "Premium" },
+                    { icon: <Home size={14} />, color: "#22c55e", label: "Javni skriveni parkinzi – Štek", desc: mh.legendStekDesc, badge: "Premium" },
                     { icon: <Shield size={14} />, color: "#3b82f6", label: "Safe Zone", desc: mh.legendSafeZoneDesc, badge: "Premium" },
                     { icon: <Smartphone size={14} />, color: "#6366f1", label: "SMS", desc: mh.legendSmsDesc, badge: "Free" },
                     { icon: <RadioTower size={14} />, color: "#8b5cf6", label: mh.markerRadar, desc: mh.legendRadarDesc, badge: "Premium" },
@@ -5859,7 +5863,7 @@ export default function MapHackNS() {
                       <Home size={18} style={{ color: "#22c55e" }} />
                     </div>
                     <div>
-                      <span className="font-extrabold text-white text-sm tracking-wide">Javni skriveni – Štek</span>
+                      <span className="font-extrabold text-white text-sm tracking-wide">Javni skriveni parkinzi – Štek</span>
                       <p className="text-xs" style={{ color: "#4ade80" }}>Samo za Premium članove</p>
                     </div>
                   </div>
@@ -5947,6 +5951,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
                     <span className="text-yellow-800 text-xs ml-1">RSD/mes</span>
+                    <div className="text-yellow-900/60 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ ~{calcStripeFee(390)} RSD <SiStripe size={11} style={{ color: "rgba(0,0,0,0.4)" }} /> nak.</div>
                   </div>
                 </div>
                 <div className="mt-3 py-2 px-4 rounded-lg text-center font-bold text-sm" style={{ background: "rgba(0,0,0,0.15)", color: "#713f12" }}>
@@ -5980,6 +5985,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-white text-2xl font-extrabold leading-none">120</span>
                     <span className="text-red-200 text-xs ml-1">RSD</span>
+                    <div className="text-red-200 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ ~{calcStripeFee(120)} RSD <SiStripe size={11} style={{ color: "rgba(255,255,255,0.55)" }} /> nak.</div>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-2 mb-3">
@@ -6020,6 +6026,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-white text-2xl font-extrabold leading-none">3.500</span>
                     <span className="text-indigo-300 text-xs ml-1">RSD/god</span>
+                    <div className="text-indigo-300 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ ~{calcStripeFee(3500)} RSD <SiStripe size={11} style={{ color: "rgba(255,255,255,0.55)" }} /> nak.</div>
                   </div>
                 </div>
                 <div className="py-2 px-4 rounded-lg text-center font-bold text-sm text-white" style={{ background: "rgba(0,0,0,0.2)" }}>

@@ -78,7 +78,7 @@ const mhst = {
     legendZlatniMinutDesc: "Slobodno mesto — 10 minuta gratis. Požuri!",
     legendPaukLabel: "Pauk Radar",
     legendPaukDesc: "Pauk primećen u blizini — upozorenje!",
-    legendStekLabel: "Javni skriveni – Štek",
+    legendStekLabel: "Javni skriveni parkinzi – Štek",
     legendStekDesc: "Skriveno ali trajno slobodno mesto. Samo za Premium.",
     legendSafeZoneLabel: "Safe Zone",
     legendSafeZoneDesc: "Dobijas notifikaciju šta god da se desi u tvojoj Safe Zoni (pauk, radar, zlatni minut, štek)",
@@ -128,7 +128,7 @@ const mhst = {
     premiumFeatures: [
       "All Free features +",
       "Safe Zone alarm — push for every marker in 300m radius",
-      "Javni skriveni – Štek (hidden spots)",
+      "Javni skriveni parkinzi – Štek (hidden spots)",
       "Radar markers (police & patrol)",
       "Push notifications — no need to watch the map",
       "Tow truck heatmap analytics",
@@ -136,7 +136,7 @@ const mhst = {
     annualFeatures: [
       "All Free features +",
       "Safe Zone alarm — push for every marker in 300m radius",
-      "Javni skriveni – Štek (hidden spots)",
+      "Javni skriveni parkinzi – Štek (hidden spots)",
       "Radar markers (police & patrol)",
       "Push notifications — no need to watch the map",
       "365 days · save over 1,000 RSD",
@@ -146,7 +146,7 @@ const mhst = {
     legendZlatniMinutDesc: "Free spot — 10 minutes free. Hurry!",
     legendPaukLabel: "Tow Truck Radar",
     legendPaukDesc: "Tow truck spotted nearby — warning!",
-    legendStekLabel: "Javni skriveni – Štek",
+    legendStekLabel: "Javni skriveni parkinzi – Štek",
     legendStekDesc: "Hidden but permanently free spot. Premium only.",
     legendSafeZoneLabel: "Safe Zone",
     legendSafeZoneDesc: "Get notified about anything that happens in your Safe Zone (tow truck, radar, golden minute, štek)",
@@ -334,7 +334,7 @@ export default function MapHackSubscribe() {
                 390 <span className="text-base font-semibold text-muted-foreground">RSD / {language === "sr" ? "mes" : "mo"}</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-premium">
-                + ~{calcStripeFee(390)} RSD <SiStripe size={12} className="text-[#635bff]" /> naknada
+                + ~{calcStripeFee(390)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
               </span>
             </div>
           </CardHeader>
@@ -375,7 +375,7 @@ export default function MapHackSubscribe() {
                 120 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-day-pass">
-                + ~{calcStripeFee(120)} RSD <SiStripe size={12} className="text-[#635bff]" /> naknada
+                + ~{calcStripeFee(120)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
               </span>
             </div>
           </CardHeader>
@@ -411,7 +411,7 @@ export default function MapHackSubscribe() {
                 3.500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
               <span className="text-xs text-muted-foreground flex items-center gap-1" data-testid="text-fee-godisnji">
-                + ~{calcStripeFee(3500)} RSD <SiStripe size={12} className="text-[#635bff]" /> naknada
+                + ~{calcStripeFee(3500)} RSD <SiStripe size={15} className="text-[#635bff]" /> naknada
               </span>
             </div>
           </CardHeader>
