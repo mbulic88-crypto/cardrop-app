@@ -628,7 +628,7 @@ export default function MapHackNS() {
 
   // Map view state — declared unconditionally before early returns
   const [activeFilters, setActiveFilters] = useState<string[]>(["sve"]);
-  const [activeTab, setActiveTab] = useState<MarkerType>("zlatni_minut");
+  const [activeTab, setActiveTab] = useState<MarkerType>("stek");
   const [addMode, setAddMode] = useState<MarkerType | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<MapMarkerWithNickname | null>(null);
   const [selectedParking, setSelectedParking] = useState<ParkingListing | null>(null);
@@ -4841,8 +4841,8 @@ export default function MapHackNS() {
                       style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
                   )}
                 </div>
-                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 8, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  Skriveni
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 7.5, letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                  Skriveni – Štek
                 </span>
               </button>
             );
@@ -5859,7 +5859,7 @@ export default function MapHackNS() {
                       <Home size={18} style={{ color: "#22c55e" }} />
                     </div>
                     <div>
-                      <span className="font-extrabold text-white text-sm tracking-wide">Štek Parkinzi</span>
+                      <span className="font-extrabold text-white text-sm tracking-wide">Javni skriveni – Štek</span>
                       <p className="text-xs" style={{ color: "#4ade80" }}>Samo za Premium članove</p>
                     </div>
                   </div>
