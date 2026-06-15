@@ -34,8 +34,8 @@ const translations = {
   sr: {
     heroTitle: "Pronađite ili Iznajmite Parking Mesto ili Garažu",
     heroSubtitle: "Rezerviši privatni parking direktno od vlasnika i plati onlajn — ili otkrij skrivena parking mesta koja znaju samo mestani: slobodna mesta, upozorenja za pauka i tajne lokacije u realnom vremenu.",
-    findSpotButton: "Privatni parkinzi – iznajmi i rezerviši · Javni skriveni parkinzi – Štek, Zlatni Minut, Pauk Radar, Safe Zona",
-    findSpotSubtitle: "Rezerviši direktno ili kontaktiraj vlasnika · Štek parkinzi i privatni parking za najam · Pauk radar, Zlatni minut i SafeZone alarmi",
+    findSpotButton: "Pronađi parking",
+    findSpotSubtitle: "Privatni parkinzi – iznajmi i rezerviši · Javni skriveni parkinzi – Štek, Zlatni Minut, Pauk Radar, Safe Zona",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "Iznajmite Parking Mesto",
     howItWorks: "Kako Funkcioniše",
@@ -150,8 +150,8 @@ const translations = {
   en: {
     heroTitle: "Find or List a Parking Spot or Garage",
     heroSubtitle: "Reserve private parking directly from owners and pay online — or discover hidden spots only locals know: free spaces, tow truck alerts, and secret locations in real time.",
-    findSpotButton: "Private Parking – rent & reserve · Hidden Public Spots – Štek, Golden Minute, Tow Radar, Safe Zone",
-    findSpotSubtitle: "Book directly or contact the owner · Hidden Štek spots & private parking · Tow truck radar, Golden Minute & SafeZone alerts",
+    findSpotButton: "Find Parking",
+    findSpotSubtitle: "Private Parking – rent & reserve · Hidden Public Spots – Štek, Golden Minute, Tow Radar, Safe Zone",
     findSpotBranding: "Map Hack RS",
     listSpotButton: "List Parking Spot",
     howItWorks: "How It Works",
