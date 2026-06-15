@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen, CalendarDays, Phone } from "lucide-react";
+import { ChevronLeft, Loader2, AlertTriangle, Check, X, ChevronRight, ChevronDown, Building2, MapPin, MessageSquare, Send, Clock, Lock, Trash2, Target, Bell, BellOff, Home, Smartphone, Navigation, Search, Plus, RadioTower, Info, User, Download, Share, Menu, Maximize2, Minimize2, Mic, Shield, Car, Camera, CreditCard, ParkingSquare, LocateFixed, Wallet, DoorOpen, CalendarDays, Phone, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -690,6 +690,8 @@ export default function MapHackNS() {
   }, [availCalDayDropdown]);
   const [markerLabelEdit, setMarkerLabelEdit] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editChatText, setEditChatText] = useState("");
   const [chatCooldown, setChatCooldown] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ id: string; nickname: string; text: string } | null>(null);
   const [voiceState, setVoiceState] = useState<"idle" | "recording" | "uploading">("idle");
@@ -1064,6 +1066,20 @@ export default function MapHackNS() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
       toast({ title: "Poruka obrisana" });
+    },
+    onError: (err: unknown) => {
+      const errMsg = err instanceof Error ? err.message : "Greška";
+      toast({ title: "Greška", description: errMsg, variant: "destructive" });
+    },
+  });
+
+  const editChatMutation = useMutation({
+    mutationFn: ({ id, text }: { id: string; text: string }) =>
+      apiRequest("PATCH", `/api/map-hack/chat/${id}`, { text }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/chat"] });
+      setEditingChatId(null);
+      setEditChatText("");
     },
     onError: (err: unknown) => {
       const errMsg = err instanceof Error ? err.message : "Greška";
@@ -2677,9 +2693,10 @@ export default function MapHackNS() {
                 {/* Edit trigger */}
                 {markerLabelEdit === null && (
                   (() => {
-                    const canEdit = selectedMarker.type === "zlatni_minut"
-                      ? selectedMarker.userId === user.id
-                      : user.isAdmin;
+                    const isOwner = selectedMarker.userId === user?.id;
+                    const canEdit = (selectedMarker.type === "zlatni_minut" || selectedMarker.type === "stek")
+                      ? (isOwner || user?.isAdmin)
+                      : user?.isAdmin;
                     if (!canEdit) return null;
                     return (
                       <button
@@ -2708,8 +2725,8 @@ export default function MapHackNS() {
               Otvori u Google Maps
             </a>
 
-            {/* Admin: remove marker */}
-            {user.isAdmin && (
+            {/* Admin or stek owner: remove marker */}
+            {(user?.isAdmin || (selectedMarker.type === "stek" && selectedMarker.userId === user?.id)) && (
               <button
                 data-testid="btn-expire-selected-marker"
                 onClick={() => expireMarkerMutation.mutate(selectedMarker.id)}
@@ -5015,6 +5032,9 @@ export default function MapHackNS() {
                 </div>
               );
             }
+            const isOwnMsg = !msg.isSystem && msg.userId === user?.id;
+            const canEditMsg = isOwnMsg && !msg.audioUrl;
+            const canDeleteMsg = isOwnMsg || user?.isAdmin;
             return (
               <div key={msg.id} className="group flex items-start gap-2">
                 <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold"
@@ -5033,7 +5053,38 @@ export default function MapHackNS() {
                       <span className="ml-1 truncate">{msg.replyToText.slice(0, 60)}{msg.replyToText.length > 60 ? "…" : ""}</span>
                     </div>
                   )}
-                  {msg.audioUrl ? (
+                  {editingChatId === msg.id ? (
+                    <div className="flex flex-col gap-1.5 mt-0.5">
+                      <textarea
+                        value={editChatText}
+                        onChange={(e) => setEditChatText(e.target.value)}
+                        maxLength={500}
+                        rows={2}
+                        className="w-full text-sm rounded-lg px-2 py-1 resize-none"
+                        style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", color: "#e5e7eb", outline: "none" }}
+                        data-testid={`textarea-edit-chat-${msg.id}`}
+                      />
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => editChatMutation.mutate({ id: msg.id, text: editChatText.trim() })}
+                          disabled={editChatMutation.isPending || !editChatText.trim()}
+                          className="text-xs font-bold px-2.5 py-1 rounded-md"
+                          style={{ background: "#166534", color: "#4ade80" }}
+                          data-testid={`btn-save-edit-chat-${msg.id}`}
+                        >
+                          {editChatMutation.isPending ? "..." : "Sačuvaj"}
+                        </button>
+                        <button
+                          onClick={() => { setEditingChatId(null); setEditChatText(""); }}
+                          className="text-xs px-2.5 py-1 rounded-md"
+                          style={{ color: "#9ca3af", border: "1px solid rgba(255,255,255,0.10)" }}
+                          data-testid={`btn-cancel-edit-chat-${msg.id}`}
+                        >
+                          Otkaži
+                        </button>
+                      </div>
+                    </div>
+                  ) : msg.audioUrl ? (
                     <div className="mt-0.5 flex items-center gap-2 rounded-lg px-3 py-2"
                       style={{ background: "#1e3a5f", border: "1px solid rgba(59,130,246,0.3)", maxWidth: 240 }}>
                       <Mic size={13} style={{ color: "#60a5fa", flexShrink: 0 }} />
@@ -5046,26 +5097,38 @@ export default function MapHackNS() {
                     <p className="text-sm break-words mt-0.5" style={{ color: "#e5e7eb" }}>{msg.text}</p>
                   )}
                 </div>
-                <div className="flex flex-col gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ marginTop: 2 }}>
-                  <button
-                    data-testid={`btn-reply-${msg.id}`}
-                    onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.audioUrl ? "Glasovna poruka" : (msg.text ?? "") })}
-                    className="kraft-btn"
-                    style={{ color: "#6b7280", padding: "2px 4px", background: "transparent", border: "none" }}
-                    title="Odgovori">
-                    <MessageSquare size={12} />
-                  </button>
-                  {user?.isAdmin && (
+                {editingChatId !== msg.id && (
+                  <div className="flex flex-col gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ marginTop: 2 }}>
                     <button
-                      data-testid={`btn-admin-delete-msg-${msg.id}`}
-                      onClick={() => deleteChatMutation.mutate(msg.id)}
+                      data-testid={`btn-reply-${msg.id}`}
+                      onClick={() => setReplyingTo({ id: msg.id, nickname: msg.mapNickname, text: msg.audioUrl ? "Glasovna poruka" : (msg.text ?? "") })}
                       className="kraft-btn"
-                      style={{ color: "#ef4444", padding: "2px 4px", background: "transparent", border: "none" }}
-                      title="Obriši (Admin)">
-                      <Trash2 size={12} />
+                      style={{ color: "#6b7280", padding: "2px 4px", background: "transparent", border: "none" }}
+                      title="Odgovori">
+                      <MessageSquare size={12} />
                     </button>
-                  )}
-                </div>
+                    {canEditMsg && (
+                      <button
+                        data-testid={`btn-edit-msg-${msg.id}`}
+                        onClick={() => { setEditingChatId(msg.id); setEditChatText(msg.text ?? ""); }}
+                        className="kraft-btn"
+                        style={{ color: "#60a5fa", padding: "2px 4px", background: "transparent", border: "none" }}
+                        title="Izmeni">
+                        <Pencil size={12} />
+                      </button>
+                    )}
+                    {canDeleteMsg && (
+                      <button
+                        data-testid={`btn-delete-msg-${msg.id}`}
+                        onClick={() => deleteChatMutation.mutate(msg.id)}
+                        className="kraft-btn"
+                        style={{ color: "#ef4444", padding: "2px 4px", background: "transparent", border: "none" }}
+                        title="Obriši">
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

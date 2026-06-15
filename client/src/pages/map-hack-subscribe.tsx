@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Loader2, Check, ChevronDown, ChevronUp, Clock, Home, Shield, Smartphone, RadioTower, Car } from "lucide-react";
+import { calcStripeFee, totalWithFee } from "@shared/stripeFee";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -331,6 +332,9 @@ export default function MapHackSubscribe() {
               <span className="text-2xl font-extrabold text-foreground">
                 390 <span className="text-base font-semibold text-muted-foreground">RSD / {language === "sr" ? "mes" : "mo"}</span>
               </span>
+              <span className="text-xs text-muted-foreground" data-testid="text-fee-premium">
+                + ~{calcStripeFee(390)} RSD Stripe naknada = ~{totalWithFee(390)} RSD
+              </span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -369,6 +373,9 @@ export default function MapHackSubscribe() {
               <span className="text-2xl font-extrabold text-foreground">
                 120 <span className="text-base font-semibold text-muted-foreground">RSD</span>
               </span>
+              <span className="text-xs text-muted-foreground" data-testid="text-fee-day-pass">
+                + ~{calcStripeFee(120)} RSD Stripe naknada = ~{totalWithFee(120)} RSD
+              </span>
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -401,6 +408,9 @@ export default function MapHackSubscribe() {
               </div>
               <span className="text-2xl font-extrabold text-foreground">
                 3.500 <span className="text-base font-semibold text-muted-foreground">RSD</span>
+              </span>
+              <span className="text-xs text-muted-foreground" data-testid="text-fee-godisnji">
+                + ~{calcStripeFee(3500)} RSD Stripe naknada = ~{totalWithFee(3500)} RSD
               </span>
             </div>
           </CardHeader>

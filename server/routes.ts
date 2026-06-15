@@ -786,9 +786,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const marker = markers.find(m => m.id === req.params.id);
       if (!marker) return res.status(404).json({ message: "Marker nije pronađen" });
 
-      // Only owner can edit zlatni_minut; only admin can edit stek/pauk
-      if (marker.type === "zlatni_minut") {
-        if (marker.userId !== userId) {
+      // Owner can edit their own zlatni_minut or stek; admin can edit anything
+      const isOwner = marker.userId === userId;
+      if (marker.type === "zlatni_minut" || marker.type === "stek") {
+        if (!isOwner && !user.isAdmin) {
           return res.status(403).json({ message: "Samo vlasnik može menjati komentar" });
         }
       } else {
@@ -1053,14 +1054,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ─── Map Hack NS — Admin delete chat message ──────────────────────────────
+  // ─── Map Hack NS — Edit / Delete chat message (owner or admin) ───────────
+
+  app.patch('/api/map-hack/chat/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const msgs = await storage.getMapChatMessages(200);
+      const msg = msgs.find(m => m.id === req.params.id);
+      if (!msg) return res.status(404).json({ message: "Poruka nije pronađena" });
+      if (msg.isSystem) return res.status(403).json({ message: "Sistemske poruke se ne mogu menjati" });
+      if (msg.userId !== userId && !user.isAdmin) {
+        return res.status(403).json({ message: "Možete menjati samo svoje poruke" });
+      }
+      const text: string = (req.body.text ?? "").slice(0, 500).trim();
+      if (!text) return res.status(400).json({ message: "Poruka ne može biti prazna" });
+      const updated = await storage.updateMapChatMessage(req.params.id, text);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error editing chat message:", error);
+      res.status(500).json({ message: "Greška pri izmeni poruke" });
+    }
+  });
 
   app.delete('/api/map-hack/chat/:id', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      if (!user || (!user.isAdmin && !ADMIN_EMAIL_LIST.includes(user.email || ''))) {
-        return res.status(403).json({ message: "Nemate dozvolu" });
+      if (!user || !hasActiveMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
+      }
+      const msgs = await storage.getMapChatMessages(200);
+      const msg = msgs.find(m => m.id === req.params.id);
+      if (!msg) return res.status(404).json({ message: "Poruka nije pronađena" });
+      if (msg.userId !== userId && !user.isAdmin && !ADMIN_EMAIL_LIST.includes(user.email || '')) {
+        return res.status(403).json({ message: "Možete brisati samo svoje poruke" });
       }
       await storage.deleteMapChatMessage(req.params.id);
       res.json({ success: true });
