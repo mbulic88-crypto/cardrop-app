@@ -9,7 +9,7 @@ import Stripe from "stripe";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { getPlanById, type SubscriptionType } from "@shared/pricing";
 import { totalWithFee } from "@shared/stripeFee";
-import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, type ProductCategory } from "./stripeProducts";
+import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, getPlanBasePrice, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
@@ -1550,10 +1550,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const category = (spotData.category || 'private') as ProductCategory;
-      const priceId = getStripePriceId(category, tier);
-      if (!priceId) {
+      const basePrice = getPlanBasePrice(category, tier);
+      if (!basePrice) {
         return res.status(404).json({ message: "Price not found for this category and tier" });
       }
+      const totalAmountParas = Math.round(totalWithFee(basePrice) * 100);
 
       const validatedData = insertParkingSpotSchema.parse(spotData);
 
@@ -1570,7 +1571,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: [{
+          price_data: {
+            currency: 'rsd',
+            product_data: { name: `CarDrop - ${tier === 'gold' ? 'Gold' : 'Silver'} Plan` },
+            unit_amount: totalAmountParas,
+          },
+          quantity: 1,
+        }],
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
         cancel_url: `${baseUrl}/checkout/cancel?spot_id=${spot.id}`,
@@ -1696,16 +1704,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const category = (spot.category || 'private') as ProductCategory;
-      const priceId = getStripePriceId(category, tier);
-      if (!priceId) {
+      const basePrice = getPlanBasePrice(category, tier);
+      if (!basePrice) {
         return res.status(404).json({ message: "Price not found for this category and tier" });
       }
+      const totalAmountParas = Math.round(totalWithFee(basePrice) * 100);
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: [{
+          price_data: {
+            currency: 'rsd',
+            product_data: { name: `CarDrop - ${tier === 'gold' ? 'Gold' : 'Silver'} Plan` },
+            unit_amount: totalAmountParas,
+          },
+          quantity: 1,
+        }],
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
         cancel_url: `${baseUrl}/add-spot?category=${category}`,
@@ -2117,10 +2133,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid subscription tier" });
       }
 
-      const priceId = getStripePriceId('sale', tier);
-      if (!priceId) {
+      const salePriceBase = getPlanBasePrice('sale', tier);
+      if (!salePriceBase) {
         return res.status(404).json({ message: "Price not found for this tier" });
       }
+      const saleAmountParas = Math.round(totalWithFee(salePriceBase) * 100);
 
       const validatedData = insertSalesListingSchema.parse(listingData);
 
@@ -2136,7 +2153,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
+        line_items: [{
+          price_data: {
+            currency: 'rsd',
+            product_data: { name: `CarDrop - ${tier === 'gold' ? 'Gold' : 'Silver'} Plan` },
+            unit_amount: saleAmountParas,
+          },
+          quantity: 1,
+        }],
         mode: 'payment',
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
         cancel_url: `${baseUrl}/checkout/cancel?listing_id=${listing.id}`,

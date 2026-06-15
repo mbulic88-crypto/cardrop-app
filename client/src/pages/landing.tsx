@@ -1064,6 +1064,7 @@ export default function Landing() {
                   <span className="text-sm text-yellow-800">RSD{t.mapHackPerMonth}</span>
                 </div>
                 <p className="text-xs text-yellow-900/70 mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+                <p className="text-xs text-yellow-900/60 mt-0.5">+ <span style={{ color: "#a5b4fc", fontWeight: 700 }}>Stripe</span> naknada</p>
               </div>
               <p className="text-xs text-yellow-900/70 mb-4">{t.mapHackPremiumDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
@@ -1074,14 +1075,20 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/map-hack/subscribe">
-                <button
-                  className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors"
-                  data-testid="button-mh-premium-cta"
-                >
-                  {t.mapHackCTA}
-                </button>
-              </Link>
+              <button
+                className="w-full rounded-md py-2 text-sm font-bold bg-yellow-950 text-yellow-300 hover:bg-yellow-900 transition-colors"
+                data-testid="button-mh-premium-cta"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
+                    setLocation("/auth");
+                  } else {
+                    setLocation("/map-hack/subscribe");
+                  }
+                }}
+              >
+                {t.mapHackCTA}
+              </button>
             </div>
 
             {/* DAY PASS */}
@@ -1100,6 +1107,7 @@ export default function Landing() {
                   <span className="text-sm text-red-200">RSD / {t.mapHackPerDay}</span>
                 </div>
                 <p className="text-xs text-red-200 mt-0.5">{language === 'sr' ? 'Jednokratno plaćanje' : 'One-time payment'}</p>
+                <p className="text-xs text-red-200/80 mt-0.5">+ <span style={{ color: "#a5b4fc", fontWeight: 700 }}>Stripe</span> naknada</p>
               </div>
               <p className="text-xs text-red-200 mb-4">{t.mapHackDayPassDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
@@ -1110,14 +1118,20 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/map-hack/subscribe">
-                <button
-                  className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
-                  data-testid="button-mh-daypass-cta"
-                >
-                  {t.mapHackCTA}
-                </button>
-              </Link>
+              <button
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                data-testid="button-mh-daypass-cta"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
+                    setLocation("/auth");
+                  } else {
+                    setLocation("/map-hack/subscribe");
+                  }
+                }}
+              >
+                {t.mapHackCTA}
+              </button>
             </div>
 
             {/* GODIŠNJI */}
@@ -1141,6 +1155,7 @@ export default function Landing() {
                   <span className="text-sm text-indigo-300">RSD{t.mapHackPerYear}</span>
                 </div>
                 <p className="text-xs text-indigo-300 mt-0.5">{language === 'sr' ? 'Automatska obnova · otkazati u bilo kom trenutku' : 'Auto-renews · cancel anytime'}</p>
+                <p className="text-xs text-indigo-300/80 mt-0.5">+ <span style={{ color: "#a5b4fc", fontWeight: 700 }}>Stripe</span> naknada</p>
               </div>
               <p className="text-xs text-indigo-300 mb-4">{t.mapHackAnnualDesc}</p>
               <ul className="space-y-2 flex-1 mb-5">
@@ -1151,14 +1166,20 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/map-hack/subscribe">
-                <button
-                  className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
-                  data-testid="button-mh-annual-cta"
-                >
-                  {t.mapHackCTA}
-                </button>
-              </Link>
+              <button
+                className="w-full rounded-md py-2 text-sm font-bold bg-white/15 text-white border border-white/30 hover:bg-white/25 transition-colors"
+                data-testid="button-mh-annual-cta"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    localStorage.setItem("cardrop-returnTo", "/map-hack/subscribe");
+                    setLocation("/auth");
+                  } else {
+                    setLocation("/map-hack/subscribe");
+                  }
+                }}
+              >
+                {t.mapHackCTA}
+              </button>
             </div>
           </div>
 

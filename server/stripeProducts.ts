@@ -61,6 +61,11 @@ export function getMapHackRecurringPriceId(planId: string): string | undefined {
   return mapHackRecurringPriceIdCache.get(planId);
 }
 
+export function getPlanBasePrice(category: ProductCategory, tier: ProductTier): number {
+  const def = PRODUCT_DEFINITIONS.find(d => d.category === category && d.tier === tier);
+  return def?.priceRSD ?? 0;
+}
+
 export async function syncStripeProducts(): Promise<void> {
   let stripe: Stripe;
   try {
