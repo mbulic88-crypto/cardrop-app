@@ -2514,6 +2514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   currency: creditBooking.currency || 'RSD',
                   approveUrl,
                   rejectUrl,
+                  isCreditBooking: true,
                 });
               }
               if (renter?.email) {

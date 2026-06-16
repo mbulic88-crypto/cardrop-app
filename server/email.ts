@@ -172,11 +172,12 @@ export async function sendBookingOwnerEmail(opts: {
   currency: string;
   approveUrl: string;
   rejectUrl: string;
+  isCreditBooking?: boolean;
 }): Promise<void> {
   const {
     ownerEmail, ownerName, spotTitle, spotAddress,
     renterName, licensePlate, renterPhone, startTime, endTime,
-    totalPrice, currency, approveUrl, rejectUrl,
+    totalPrice, currency, approveUrl, rejectUrl, isCreditBooking,
   } = opts;
 
   const fmt = (d: Date) =>
@@ -199,7 +200,10 @@ export async function sendBookingOwnerEmail(opts: {
     <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Nova rezervacija!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
-      Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i placanje je uspesno. Potrebno je tvoje odobrenje.
+      ${isCreditBooking
+        ? `Neko je zatrazio rezervaciju tvog parkinga <strong>${spotTitle}</strong> putem CarDrop kredita. Kredit <strong>jos nije skinut</strong> — skinuce se tek kada odobris rezervaciju.`
+        : `Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i placanje je uspesno.`
+      } Potrebno je tvoje odobrenje.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>

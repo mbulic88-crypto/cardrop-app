@@ -401,31 +401,46 @@ export class DatabaseStorage implements IStorage {
       if (approved) {
         return await db.transaction(async (tx) => {
           const amountRsd = Math.round(parseFloat(booking.totalPrice));
-          const [user] = await tx.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, booking.renterId));
+          // Check balance inside transaction for consistency
+          const [user] = await tx.select({ creditBalance: users.creditBalance })
+            .from(users).where(eq(users.id, booking.renterId));
+
           if (!user || user.creditBalance < amountRsd) {
-            // Insufficient funds at approval time — cancel the booking cleanly
+            // Insufficient credit: atomically cancel (WHERE guard prevents double-processing)
             const [cancelled] = await tx.update(bookings)
               .set({ status: 'cancelled', updatedAt: new Date() })
-              .where(eq(bookings.approvalToken, token))
+              .where(and(eq(bookings.approvalToken, token), eq(bookings.status, 'pending_approval')))
               .returning();
+            if (!cancelled) return undefined; // concurrent request already processed
             return Object.assign(cancelled, { _insufficientCredit: true });
           }
-          await tx.update(users).set({ creditBalance: sql`${users.creditBalance} - ${amountRsd}`, updatedAt: new Date() }).where(eq(users.id, booking.renterId));
+
+          // Atomically claim the booking — WHERE guard ensures only ONE concurrent
+          // approve request can win (PostgreSQL row-level lock via UPDATE).
+          // The loser gets 0 rows and bails before any credit is touched.
+          const [confirmed] = await tx.update(bookings)
+            .set({ status: 'confirmed', paymentStatus: 'paid', updatedAt: new Date() })
+            .where(and(eq(bookings.approvalToken, token), eq(bookings.status, 'pending_approval')))
+            .returning();
+
+          if (!confirmed) return undefined; // concurrent approve already processed this
+
+          // Deduct credit only after atomically confirming the booking
+          await tx.update(users)
+            .set({ creditBalance: sql`${users.creditBalance} - ${amountRsd}`, updatedAt: new Date() })
+            .where(eq(users.id, booking.renterId));
           await tx.insert(creditTransactions).values({
             userId: booking.renterId, amount: -amountRsd, type: 'booking',
-            bookingId: booking.id, description: `Rezervacija #${booking.id.slice(0, 8)} — ${amountRsd} RSD`,
+            bookingId: confirmed.id,
+            description: `Rezervacija #${confirmed.id.slice(0, 8)} — ${amountRsd} RSD`,
           });
-          const [updated] = await tx.update(bookings)
-            .set({ status: 'confirmed', paymentStatus: 'paid', updatedAt: new Date() })
-            .where(eq(bookings.approvalToken, token))
-            .returning();
-          return updated;
+          return confirmed;
         });
       } else {
         // Credit reject → cancelled (credits were never deducted)
         const [updated] = await db.update(bookings)
           .set({ status: 'cancelled', updatedAt: new Date() })
-          .where(eq(bookings.approvalToken, token))
+          .where(and(eq(bookings.approvalToken, token), eq(bookings.status, 'pending_approval')))
           .returning();
         return updated;
       }
