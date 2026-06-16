@@ -239,6 +239,7 @@ export const bookings = pgTable("bookings", {
   renterPhone: varchar("renter_phone", { length: 30 }),
   spaceNumber: integer("space_number").notNull().default(1),
   bookingStripeSessionId: varchar("booking_stripe_session_id", { length: 255 }).unique(),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 255 }),
   paymentMethod: varchar("payment_method", { length: 20 }).default('cash'), // 'instant' | 'cash' | 'credit'
   pricingType: varchar("pricing_type", { length: 20 }).notNull().default('daily'), // hourly, daily, weekly, monthly
   approvalToken: varchar("approval_token", { length: 128 }),

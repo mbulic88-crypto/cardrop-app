@@ -173,11 +173,12 @@ export async function sendBookingOwnerEmail(opts: {
   approveUrl: string;
   rejectUrl: string;
   isCreditBooking?: boolean;
+  isInstantBooking?: boolean;
 }): Promise<void> {
   const {
     ownerEmail, ownerName, spotTitle, spotAddress,
     renterName, licensePlate, renterPhone, startTime, endTime,
-    totalPrice, currency, approveUrl, rejectUrl, isCreditBooking,
+    totalPrice, currency, approveUrl, rejectUrl, isCreditBooking, isInstantBooking,
   } = opts;
 
   const fmt = (d: Date) =>
@@ -202,7 +203,9 @@ export async function sendBookingOwnerEmail(opts: {
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
       ${isCreditBooking
         ? `Neko je zatrazio rezervaciju tvog parkinga <strong>${spotTitle}</strong> putem CarDrop kredita. Kredit <strong>jos nije skinut</strong> — skinuce se tek kada odobris rezervaciju.`
-        : `Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i placanje je uspesno.`
+        : isInstantBooking
+          ? `Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i platio karticom. Iznos od <strong>${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</strong> je blokiran na kartici zakupca — <strong>bice naplacen kada odobris</strong>, a oslobodjen ako odbijes.`
+          : `Neko je rezervisao tvoj parking <strong>${spotTitle}</strong>.`
       } Potrebno je tvoje odobrenje.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
@@ -232,8 +235,9 @@ export async function sendBookingApprovedEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
+  isInstantBooking?: boolean;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, spotAddress, ownerPhone, startTime, endTime, totalPrice, currency } = opts;
+  const { renterEmail, renterName, spotTitle, spotAddress, ownerPhone, startTime, endTime, totalPrice, currency, isInstantBooking } = opts;
   const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const html = baseTemplate(`
@@ -244,6 +248,7 @@ export async function sendBookingApprovedEmail(opts: {
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${renterName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
       Vlasnik je odobrio tvoju rezervaciju parkinga <strong>${spotTitle}</strong>. Sve je spremno!
+      ${isInstantBooking ? `Uplata od <strong>${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</strong> je uspesno izvrsena sa tvoje kartice.` : ''}
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
@@ -270,8 +275,9 @@ export async function sendBookingPendingApprovalEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
+  isInstantBooking?: boolean;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, spotAddress, startTime, endTime, totalPrice, currency } = opts;
+  const { renterEmail, renterName, spotTitle, spotAddress, startTime, endTime, totalPrice, currency, isInstantBooking } = opts;
   const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const html = baseTemplate(`
@@ -281,7 +287,11 @@ export async function sendBookingPendingApprovalEmail(opts: {
     <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Zahtev za rezervaciju poslat!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${renterName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
-      Tvoj zahtev za rezervaciju parkinga <strong>${spotTitle}</strong> je primljen i ceka odobrenje od strane vlasnika. Krediti jos uvek nisu skinuti — bice skinut tek kada vlasnik odobri rezervaciju.
+      Tvoj zahtev za rezervaciju parkinga <strong>${spotTitle}</strong> je primljen i ceka odobrenje od strane vlasnika.
+      ${isInstantBooking
+        ? `Kartica je blokirana na iznos <strong>${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</strong> — bice naplacena tek kada vlasnik odobri. Ako vlasnik odbije, blokada se automatski otpusta i kartica <strong>nece biti naplacena</strong>.`
+        : `Krediti jos uvek nisu skinuti — bice skinuti tek kada vlasnik odobri rezervaciju.`
+      }
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
@@ -311,6 +321,7 @@ export async function sendBookingRejectedEmail(opts: {
   const { renterEmail, renterName, spotTitle, startTime, endTime, totalPrice, currency, paymentMethod } = opts;
   const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
   const isCredit = paymentMethod === 'credit';
+  const isInstant = paymentMethod === 'instant';
 
   const html = baseTemplate(`
     <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
@@ -328,8 +339,10 @@ export async function sendBookingRejectedEmail(opts: {
       <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
     </table>
     ${isCredit
-      ? `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Dobra vest — krediti nisu skinut sa tvog naloga. Mozete pokusati sa rezervacijom drugog parkinga.</p>`
-      : `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Uplata ce biti vracena u roku od nekoliko dana. Kontaktuj nas na <a href="mailto:info@cardrop.app" style="color:#40916c;">info@cardrop.app</a> ako imas pitanja.</p>`
+      ? `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Dobra vest — krediti <strong>nisu skinuti</strong> sa tvog naloga. Mozete pokusati sa rezervacijom drugog parkinga.</p>`
+      : isInstant
+        ? `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Dobra vest — tvoja kartica <strong>nije naplacena</strong>. Blokada iznosa je automatski otpustena. Mozete pokusati sa rezervacijom drugog parkinga.</p>`
+        : `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Kontaktuj nas na <a href="mailto:info@cardrop.app" style="color:#40916c;">info@cardrop.app</a> ako imas pitanja.</p>`
     }
     <a href="https://cardrop.app" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Nadji drugi parking</a>
     <p style="color:#888;font-size:13px;margin-top:24px;">Hvala sto koristis CarDrop!</p>

@@ -54,7 +54,7 @@ export interface IStorage {
   activateMapHackPlanWithSession(userId: string, plan: string, expiresAt: Date, stripeSessionId: string): Promise<User | undefined>;
   activateSpotWithSession(spotId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, stripeSessionId: string, userId: string): Promise<{ spot: ParkingSpot | undefined; alreadyConsumed: boolean }>;
   activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }>;
-  createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string; pricingType?: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
+  createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string; pricingType?: string; stripePaymentIntentId?: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
   saveUserLicensePlate(userId: string, licensePlate: string): Promise<void>;
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
@@ -506,7 +506,7 @@ export class DatabaseStorage implements IStorage {
     return booking;
   }
 
-  async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string; pricingType?: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
+  async createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string; pricingType?: string; stripePaymentIntentId?: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }> {
     const result = await db
       .insert(bookings)
       .values(data)

@@ -1889,7 +1889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }],
         mode: 'payment',
         payment_intent_data: {
-          setup_future_usage: 'off_session',
+          capture_method: 'manual',
         },
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&booking=1`,
         cancel_url: `${baseUrl}/map-hack`,
@@ -1927,9 +1927,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-      if (session.payment_status !== 'paid') {
+      // With capture_method:'manual', session.payment_status is 'unpaid' (authorized not captured).
+      // Use session.status === 'complete' as the authoritative check for both modes.
+      if (session.status !== 'complete') {
         return res.status(400).json({ message: "Plaćanje nije završeno", status: session.payment_status });
       }
+
+      const stripePaymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : undefined;
       if (session.metadata?.renterId !== String(userId)) {
         return res.status(403).json({ message: "Neovlašćen pristup" });
       }
@@ -1971,11 +1977,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalPrice,
         currency,
         status: 'pending_approval',
-        paymentStatus: 'paid',
+        paymentStatus: 'pending',
+        paymentMethod: 'instant',
         licensePlate: licensePlate || undefined,
         renterPhone: renterPhone || undefined,
         spaceNumber: validSpaceNumberVerify,
         bookingStripeSessionId: sessionId,
+        stripePaymentIntentId,
         pricingType: sessionPricingType,
         approvalToken,
       });
@@ -1998,7 +2006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         url: '/dashboard',
       }).catch(() => {});
 
-      // Email vlasniku sa dugmicima Odobri/Odbij
+      // Email vlasniku sa dugmicima Odobri/Odbij + email zakupcu (kartica blokirana)
       (async () => {
         try {
           const [owner, renter] = await Promise.all([
@@ -2008,13 +2016,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const baseUrl = process.env.APP_URL || 'https://cardrop.app';
           const approveUrl = `${baseUrl}/api/bookings/approve/${booking.approvalToken}`;
           const rejectUrl = `${baseUrl}/api/bookings/reject/${booking.approvalToken}`;
+          const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat';
           if (owner?.email) {
             await sendBookingOwnerEmail({
               ownerEmail: owner.email,
               ownerName: owner.firstName || owner.email,
               spotTitle: spot.title,
               spotAddress: spot.address,
-              renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+              renterName,
               licensePlate: booking.licensePlate || undefined,
               renterPhone: booking.renterPhone || undefined,
               startTime: new Date(booking.startTime),
@@ -2023,6 +2032,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               currency: booking.currency || 'RSD',
               approveUrl,
               rejectUrl,
+              isInstantBooking: true,
+            });
+          }
+          if (renter?.email) {
+            await sendBookingPendingApprovalEmail({
+              renterEmail: renter.email,
+              renterName,
+              spotTitle: spot.title,
+              spotAddress: spot.address,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              isInstantBooking: true,
             });
           }
         } catch (emailErr) {
@@ -2038,13 +2061,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ── BOOKING APPROVE / REJECT (token links from owner email) ──
-  function approvalPage(status: 'approved' | 'rejected' | 'already' | 'invalid' | 'insufficient_credit'): string {
+  function approvalPage(status: 'approved' | 'rejected' | 'already' | 'invalid' | 'insufficient_credit' | 'capture_failed'): string {
     const configs: Record<string, { color: string; bg: string; title: string; msg: string }> = {
-      approved: { color: '#1b4332', bg: '#f0fdf4', title: 'Rezervacija odobrena!', msg: 'Zakupac je obavestен. Rezervacija je aktivna.' },
-      rejected: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija odbijena', msg: 'Zakupac je obavestен da rezervacija nije prihvacena.' },
+      approved: { color: '#1b4332', bg: '#f0fdf4', title: 'Rezervacija odobrena!', msg: 'Uplata je uspesno izvrsena. Zakupac je obavestен i rezervacija je aktivna.' },
+      rejected: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija odbijena', msg: 'Zakupac je obavestен. Kartica zakupca nije naplacena.' },
       already:  { color: '#92400e', bg: '#fffbeb', title: 'Vec obradeno', msg: 'Ova rezervacija je vec odobrena ili odbijena.' },
       invalid:  { color: '#6b7280', bg: '#f9fafb', title: 'Nevazeci link', msg: 'Link nije validan ili je istekao.' },
       insufficient_credit: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija otkazana', msg: 'Zakupac nema dovoljno kredita. Rezervacija je automatski otkazana i zakupac je obavestен.' },
+      capture_failed: { color: '#991b1b', bg: '#fef2f2', title: 'Naplata nije moguca', msg: 'Rok za autorizaciju kartice je istekao (7 dana). Rezervacija je otkazana i zakupac je obavestен.' },
     };
     const c = configs[status];
     return `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>CarDrop</title></head>
@@ -2090,6 +2114,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.send(approvalPage('insufficient_credit'));
       }
+
+      // Instant (Stripe card) booking: capture the authorized PaymentIntent
+      if (booking.paymentMethod === 'instant' && booking.stripePaymentIntentId) {
+        try {
+          const stripeClient = await getUncachableStripeClient();
+          await stripeClient.paymentIntents.capture(booking.stripePaymentIntentId);
+          await storage.updateBooking(booking.id, { paymentStatus: 'paid' });
+        } catch (captureErr: any) {
+          console.error('[APPROVE INSTANT] Capture failed:', captureErr?.message);
+          // Authorization expired (> 7 days) — cancel booking and notify renter
+          await storage.updateBooking(booking.id, { status: 'cancelled', paymentStatus: 'pending' });
+          if (renter?.email && spot) {
+            sendBookingRejectedEmail({
+              renterEmail: renter.email,
+              renterName: renter.firstName || renter.email,
+              spotTitle: spot.title,
+              startTime: new Date(booking.startTime),
+              endTime: new Date(booking.endTime),
+              totalPrice: booking.totalPrice,
+              currency: booking.currency || 'RSD',
+              paymentMethod: 'instant',
+            }).catch(() => {});
+          }
+          return res.send(approvalPage('capture_failed'));
+        }
+      }
+
       if (renter?.email && spot) {
         sendBookingApprovedEmail({
           renterEmail: renter.email,
@@ -2101,6 +2152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endTime: new Date(booking.endTime),
           totalPrice: booking.totalPrice,
           currency: booking.currency || 'RSD',
+          isInstantBooking: booking.paymentMethod === 'instant',
         }).catch(() => {});
       }
       return res.send(approvalPage('approved'));
@@ -2122,6 +2174,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getParkingSpot(booking.spotId),
         storage.getUser(booking.renterId),
       ]);
+
+      // Instant (Stripe card) booking: cancel the authorized PaymentIntent to release the hold
+      if (booking.paymentMethod === 'instant' && booking.stripePaymentIntentId) {
+        try {
+          const stripeClient = await getUncachableStripeClient();
+          await stripeClient.paymentIntents.cancel(booking.stripePaymentIntentId);
+        } catch (cancelErr: any) {
+          // Non-blocking: log and continue — hold expires automatically after 7 days anyway
+          console.error('[REJECT INSTANT] Could not cancel PaymentIntent (may already be cancelled/expired):', cancelErr?.message);
+        }
+      }
+
       if (renter?.email && spot) {
         sendBookingRejectedEmail({
           renterEmail: renter.email,
