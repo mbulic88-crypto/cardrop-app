@@ -3209,7 +3209,7 @@ export default function MapHackNS() {
                                 <SelectContent>
                                   {Array.from({ length: getParkingDaysInMonth(sYear, sMonth) }, (_, i) => i + 1).map(d => {
                                     const isPast = isParkingDatePast(sYear, sMonth, d);
-                                    const isUnavail = !isPast && isParkingDayBooked(new Date(sYear, sMonth, d));
+                                    const isUnavail = !isPast && isParkingDayFullyBooked(new Date(sYear, sMonth, d));
                                     return <SelectItem key={d} value={String(d)} disabled={isPast || isUnavail}>{d}{isUnavail ? " ✕" : ""}</SelectItem>;
                                   })}
                                 </SelectContent>
