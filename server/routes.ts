@@ -14,7 +14,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail } from './email';
 import { randomBytes } from 'crypto';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -2038,12 +2038,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ── BOOKING APPROVE / REJECT (token links from owner email) ──
-  function approvalPage(status: 'approved' | 'rejected' | 'already' | 'invalid'): string {
+  function approvalPage(status: 'approved' | 'rejected' | 'already' | 'invalid' | 'insufficient_credit'): string {
     const configs: Record<string, { color: string; bg: string; title: string; msg: string }> = {
       approved: { color: '#1b4332', bg: '#f0fdf4', title: 'Rezervacija odobrena!', msg: 'Zakupac je obavestен. Rezervacija je aktivna.' },
       rejected: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija odbijena', msg: 'Zakupac je obavestен da rezervacija nije prihvacena.' },
       already:  { color: '#92400e', bg: '#fffbeb', title: 'Vec obradeno', msg: 'Ova rezervacija je vec odobrena ili odbijena.' },
       invalid:  { color: '#6b7280', bg: '#f9fafb', title: 'Nevazeci link', msg: 'Link nije validan ili je istekao.' },
+      insufficient_credit: { color: '#991b1b', bg: '#fef2f2', title: 'Rezervacija otkazana', msg: 'Zakupac nema dovoljno kredita. Rezervacija je automatski otkazana i zakupac je obavestен.' },
     };
     const c = configs[status];
     return `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>CarDrop</title></head>
@@ -2073,6 +2074,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getParkingSpot(booking.spotId),
         storage.getUser(booking.renterId),
       ]);
+      // Edge case: credit booking was cancelled due to insufficient balance at approval time
+      if ((booking as any)._insufficientCredit) {
+        if (renter?.email && spot) {
+          sendBookingRejectedEmail({
+            renterEmail: renter.email,
+            renterName: renter.firstName || renter.email,
+            spotTitle: spot.title,
+            startTime: new Date(booking.startTime),
+            endTime: new Date(booking.endTime),
+            totalPrice: booking.totalPrice,
+            currency: booking.currency || 'RSD',
+            paymentMethod: 'credit',
+          }).catch(() => {});
+        }
+        return res.send(approvalPage('insufficient_credit'));
+      }
       if (renter?.email && spot) {
         sendBookingApprovedEmail({
           renterEmail: renter.email,
