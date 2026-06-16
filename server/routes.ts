@@ -3429,6 +3429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parkingNumber,
         stripeLink: body.stripeLink || null,
         stripeLinkActive: body.stripeLinkActive || false,
+        requiresApproval: body.requiresApproval || false,
       };
       const spot = await storage.createParkingSpot(spotData);
       res.status(201).json(spot);
@@ -3449,7 +3450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
         'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
         'stripeLink', 'stripeLinkActive', 'category', 'totalSpaces',
-        'hasRamp', 'rampPhone'];
+        'hasRamp', 'rampPhone', 'requiresApproval'];
       for (const f of fields) {
         if (body[f] !== undefined) updates[f] = body[f];
       }
