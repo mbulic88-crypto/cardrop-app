@@ -1802,6 +1802,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!spot.stripeLinkActive) {
         return res.status(403).json({ message: "Online plaćanje nije aktivno za ovaj parking" });
       }
+      if (spot.ownerId === String(userId)) {
+        return res.status(400).json({ message: "Ne možete rezervisati sopstveno parking mesto" });
+      }
 
       const start = new Date(startTime);
       const end = new Date(endTime);
@@ -2011,27 +2014,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         (async () => {
           try {
-            const [owner, renter] = await Promise.all([
-              storage.getUser(spot.ownerId),
-              storage.getUser(userId),
-            ]);
+            const renter = await storage.getUser(userId);
             const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
-            if (owner?.email) {
-              await sendBookingAutoConfirmedOwnerEmail({
-                ownerEmail: owner.email,
-                ownerName: owner.firstName || owner.email || '',
-                spotTitle: spot.title,
-                spotAddress: spot.address,
-                renterName,
-                licensePlate: booking.licensePlate || undefined,
-                renterPhone: booking.renterPhone || undefined,
-                startTime: new Date(booking.startTime),
-                endTime: new Date(booking.endTime),
-                totalPrice: booking.totalPrice,
-                currency: booking.currency || 'RSD',
-                pricingType: sessionPricingType,
-              });
-            }
             if (renter?.email) {
               await sendBookingApprovedEmail({
                 renterEmail: renter.email,
@@ -2629,27 +2613,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const finalBooking = resolvedBooking;
             (async () => {
               try {
-                const [owner, renter] = await Promise.all([
-                  storage.getUser(spot.ownerId),
-                  storage.getUser(userId),
-                ]);
+                const renter = await storage.getUser(userId);
                 const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
-                if (owner?.email) {
-                  await sendBookingAutoConfirmedOwnerEmail({
-                    ownerEmail: owner.email,
-                    ownerName: owner.firstName || owner.email || '',
-                    spotTitle: spot.title,
-                    spotAddress: spot.address,
-                    renterName,
-                    licensePlate: finalBooking.licensePlate || undefined,
-                    renterPhone: finalBooking.renterPhone || undefined,
-                    startTime: new Date(finalBooking.startTime),
-                    endTime: new Date(finalBooking.endTime),
-                    totalPrice: finalBooking.totalPrice,
-                    currency: finalBooking.currency || 'RSD',
-                    pricingType: reqPricingTypeC,
-                  });
-                }
                 if (renter?.email) {
                   await sendBookingApprovedEmail({
                     renterEmail: renter.email,
