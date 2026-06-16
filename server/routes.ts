@@ -2167,6 +2167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalPrice: booking.totalPrice,
             currency: booking.currency || 'RSD',
             paymentMethod: 'credit',
+            pricingType: booking.pricingType || undefined,
           }).catch(() => {});
         }
         return res.send(approvalPage('insufficient_credit'));
@@ -2192,6 +2193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
               paymentMethod: 'instant',
+              pricingType: booking.pricingType || undefined,
             }).catch(() => {});
           }
           return res.send(approvalPage('capture_failed'));
@@ -2210,6 +2212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalPrice: booking.totalPrice,
           currency: booking.currency || 'RSD',
           isInstantBooking: booking.paymentMethod === 'instant',
+          pricingType: booking.pricingType || undefined,
         }).catch(() => {});
       }
       return res.send(approvalPage('approved'));
@@ -2253,6 +2256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalPrice: booking.totalPrice,
           currency: booking.currency || 'RSD',
           paymentMethod: booking.paymentMethod || undefined,
+          pricingType: booking.pricingType || undefined,
         }).catch(() => {});
       }
       return res.send(approvalPage('rejected'));
@@ -2754,6 +2758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
+              pricingType: booking.pricingType || undefined,
             });
           }
           if (renter?.email) {
@@ -2767,6 +2772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               endTime: new Date(booking.endTime),
               totalPrice: booking.totalPrice,
               currency: booking.currency || 'RSD',
+              pricingType: booking.pricingType || undefined,
             });
           }
         } catch (emailErr) {

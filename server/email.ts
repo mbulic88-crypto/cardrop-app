@@ -19,7 +19,7 @@ function createTransporter() {
   });
 }
 
-const ADMIN_EMAIL = 'info@cardrop.app';
+const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'info@cardrop.app';
 
 async function sendMail(to: string, subject: string, html: string, cc?: string): Promise<boolean> {
   const transporter = createTransporter();
