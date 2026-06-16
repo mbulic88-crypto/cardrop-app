@@ -14,7 +14,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail } from './email';
 import { randomBytes } from 'crypto';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -2114,6 +2114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           endTime: new Date(booking.endTime),
           totalPrice: booking.totalPrice,
           currency: booking.currency || 'RSD',
+          paymentMethod: booking.paymentMethod || undefined,
         }).catch(() => {});
       }
       return res.send(approvalPage('rejected'));
@@ -2455,20 +2456,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const reqPaymentMethod: string = typeof req.body.paymentMethod === 'string' ? req.body.paymentMethod : '';
 
-      // Credit payment — atomically deduct from wallet and create confirmed booking
+      // Credit payment — check balance, create pending_approval booking, deduct only after owner approves
       if (reqPaymentMethod === 'credit') {
         if (!spot.stripeLinkActive) {
           return res.status(403).json({ message: "Online plaćanje nije aktivno za ovaj parking" });
         }
         const amountRsd = Math.round(parseFloat(totalPrice));
         try {
+          const approvalToken = randomBytes(32).toString('hex');
           const creditBooking = await storage.createBookingWithCredit({
             spotId, startTime, endTime, totalPrice, currency: spot.currency,
-            status: 'confirmed', paymentStatus: 'paid', renterId: userId,
+            status: 'pending_approval', paymentStatus: 'pending', renterId: userId,
             licensePlate: licensePlateC || undefined, renterPhone: renterPhoneC || undefined,
             spaceNumber: finalSpaceC, pricingType: reqPricingTypeC,
+            approvalToken,
           }, amountRsd);
           if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
+          const baseUrl = process.env.APP_URL || 'https://cardrop.app';
+          const approveUrl = `${baseUrl}/api/bookings/approve/${approvalToken}`;
+          const rejectUrl = `${baseUrl}/api/bookings/reject/${approvalToken}`;
           // Email notifikacije za kreditnu rezervaciju (vlasnik + zakupac)
           (async () => {
             try {
@@ -2489,15 +2495,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   endTime: new Date(creditBooking.endTime),
                   totalPrice: creditBooking.totalPrice,
                   currency: creditBooking.currency || 'RSD',
+                  approveUrl,
+                  rejectUrl,
                 });
               }
               if (renter?.email) {
-                await sendBookingRenterConfirmationEmail({
+                await sendBookingPendingApprovalEmail({
                   renterEmail: renter.email,
                   renterName: renter.firstName || renter.email,
                   spotTitle: spot.title,
                   spotAddress: spot.address,
-                  ownerPhone: spot.phone || undefined,
                   startTime: new Date(creditBooking.startTime),
                   endTime: new Date(creditBooking.endTime),
                   totalPrice: creditBooking.totalPrice,

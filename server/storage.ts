@@ -396,6 +396,27 @@ export class DatabaseStorage implements IStorage {
   async resolveBookingApproval(token: string, approved: boolean): Promise<Booking | undefined> {
     const booking = await this.getBookingByApprovalToken(token);
     if (!booking || booking.status !== 'pending_approval') return undefined;
+
+    if (approved && booking.paymentMethod === 'credit') {
+      return await db.transaction(async (tx) => {
+        const amountRsd = Math.round(parseFloat(booking.totalPrice));
+        const [user] = await tx.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, booking.renterId));
+        if (!user || user.creditBalance < amountRsd) {
+          throw Object.assign(new Error('Nedovoljan balans kredita'), { code: 'INSUFFICIENT_CREDIT', balance: user?.creditBalance ?? 0 });
+        }
+        await tx.update(users).set({ creditBalance: sql`${users.creditBalance} - ${amountRsd}`, updatedAt: new Date() }).where(eq(users.id, booking.renterId));
+        await tx.insert(creditTransactions).values({
+          userId: booking.renterId, amount: -amountRsd, type: 'booking',
+          bookingId: booking.id, description: `Rezervacija #${booking.id.slice(0, 8)} — ${amountRsd} RSD`,
+        });
+        const [updated] = await tx.update(bookings)
+          .set({ status: 'confirmed', paymentStatus: 'paid', updatedAt: new Date() })
+          .where(eq(bookings.approvalToken, token))
+          .returning();
+        return updated;
+      });
+    }
+
     const newStatus = approved ? 'confirmed' : 'rejected';
     const [updated] = await db
       .update(bookings)
@@ -701,19 +722,12 @@ export class DatabaseStorage implements IStorage {
     data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; pricingType?: string },
     amountRsd: number
   ): Promise<Booking> {
-    return await db.transaction(async (tx) => {
-      const [user] = await tx.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, data.renterId));
-      if (!user || user.creditBalance < amountRsd) {
-        throw Object.assign(new Error('Nedovoljan balans kredita'), { code: 'INSUFFICIENT_CREDIT', balance: user?.creditBalance ?? 0 });
-      }
-      await tx.update(users).set({ creditBalance: sql`${users.creditBalance} - ${amountRsd}`, updatedAt: new Date() }).where(eq(users.id, data.renterId));
-      const [booking] = await tx.insert(bookings).values({ ...data, paymentMethod: 'credit', status: 'confirmed', paymentStatus: 'paid' }).returning();
-      await tx.insert(creditTransactions).values({
-        userId: data.renterId, amount: -amountRsd, type: 'booking',
-        bookingId: booking.id, description: `Rezervacija #${booking.id.slice(0, 8)} — ${amountRsd} RSD`,
-      });
-      return booking;
-    });
+    const [user] = await db.select({ creditBalance: users.creditBalance }).from(users).where(eq(users.id, data.renterId));
+    if (!user || user.creditBalance < amountRsd) {
+      throw Object.assign(new Error('Nedovoljan balans kredita'), { code: 'INSUFFICIENT_CREDIT', balance: user?.creditBalance ?? 0 });
+    }
+    const [booking] = await db.insert(bookings).values({ ...data, paymentMethod: 'credit' }).returning();
+    return booking;
   }
 
   // Admin operations

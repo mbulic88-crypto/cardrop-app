@@ -189,8 +189,12 @@ export async function sendBookingOwnerEmail(opts: {
     <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:20px;margin:0 0 24px;text-align:center;">
       <p style="margin:0 0 6px;color:#1b4332;font-size:16px;font-weight:bold;">Nova rezervacija ceka tvoje odobrenje!</p>
       <p style="margin:0 0 16px;color:#555;font-size:13px;">Klikni dugme ispod da prihvatis ili odbijas rezervaciju.</p>
-      <a href="${approveUrl}" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;margin-right:12px;">ODOBRI</a>
-      <a href="${rejectUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODBIJ</a>
+      <table cellpadding="0" cellspacing="0" style="display:inline-table;margin:0 auto;">
+        <tr>
+          <td style="padding:0 6px;"><a href="${approveUrl}" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODOBRI</a></td>
+          <td style="padding:0 6px;"><a href="${rejectUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODBIJ</a></td>
+        </tr>
+      </table>
     </div>
     <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Nova rezervacija!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
@@ -253,6 +257,43 @@ export async function sendBookingApprovedEmail(opts: {
   await sendMail(renterEmail, `Rezervacija odobrena — ${spotTitle}`, html, ccAddr);
 }
 
+export async function sendBookingPendingApprovalEmail(opts: {
+  renterEmail: string;
+  renterName: string;
+  spotTitle: string;
+  spotAddress: string;
+  startTime: Date;
+  endTime: Date;
+  totalPrice: string | number;
+  currency: string;
+}): Promise<void> {
+  const { renterEmail, renterName, spotTitle, spotAddress, startTime, endTime, totalPrice, currency } = opts;
+  const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const html = baseTemplate(`
+    <div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;color:#92400e;font-size:18px;font-weight:bold;">Rezervacija ceka odobrenje vlasnika</p>
+    </div>
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Zahtev za rezervaciju poslat!</h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${renterName},</p>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      Tvoj zahtev za rezervaciju parkinga <strong>${spotTitle}</strong> je primljen i ceka odobrenje od strane vlasnika. Krediti jos uvek nisu skinuti — bice skinut tek kada vlasnik odobri rezervaciju.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos (na cekanju):</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
+    </table>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 20px;">Dobices email cim vlasnik donese odluku. Status rezervacije mozete videti i u svom Dashboard-u.</p>
+    <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Otvori Dashboard</a>
+    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala sto koristis CarDrop!</p>
+  `);
+
+  await sendMail(renterEmail, `Rezervacija na cekanju — ${spotTitle}`, html);
+}
+
 export async function sendBookingRejectedEmail(opts: {
   renterEmail: string;
   renterName: string;
@@ -261,9 +302,11 @@ export async function sendBookingRejectedEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
+  paymentMethod?: string;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, startTime, endTime, totalPrice, currency } = opts;
+  const { renterEmail, renterName, spotTitle, startTime, endTime, totalPrice, currency, paymentMethod } = opts;
   const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+  const isCredit = paymentMethod === 'credit';
 
   const html = baseTemplate(`
     <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
@@ -280,7 +323,10 @@ export async function sendBookingRejectedEmail(opts: {
       <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
       <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
     </table>
-    <p style="color:#555;line-height:1.6;margin:0 0 20px;">Uplata ce biti vracena u roku od nekoliko dana. Kontaktuj nas na <a href="mailto:info@cardrop.app" style="color:#40916c;">info@cardrop.app</a> ako imas pitanja.</p>
+    ${isCredit
+      ? `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Dobra vest — krediti nisu skinut sa tvog naloga. Mozete pokusati sa rezervacijom drugog parkinga.</p>`
+      : `<p style="color:#555;line-height:1.6;margin:0 0 20px;">Uplata ce biti vracena u roku od nekoliko dana. Kontaktuj nas na <a href="mailto:info@cardrop.app" style="color:#40916c;">info@cardrop.app</a> ako imas pitanja.</p>`
+    }
     <a href="https://cardrop.app" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Nadji drugi parking</a>
     <p style="color:#888;font-size:13px;margin-top:24px;">Hvala sto koristis CarDrop!</p>
   `);
