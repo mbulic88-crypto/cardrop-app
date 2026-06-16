@@ -2620,7 +2620,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (creditAutoConfirm) {
             // Auto-approve: deduct credits immediately and confirm booking
             const resolvedBooking = await storage.resolveBookingApproval(approvalToken, true);
-            const finalBooking = resolvedBooking || creditBooking;
+
+            // Guard: resolve failed (insufficient credit or DB error)
+            if (!resolvedBooking || (resolvedBooking as any)._insufficientCredit) {
+              return res.status(402).json({ message: 'Nedovoljno CarDrop kredita za rezervaciju.' });
+            }
+
+            const finalBooking = resolvedBooking;
             (async () => {
               try {
                 const [owner, renter] = await Promise.all([
