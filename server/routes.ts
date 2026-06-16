@@ -2074,20 +2074,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 pricingType: sessionPricingType,
               });
             }
-            if (renter?.email) {
-              await sendBookingPendingApprovalEmail({
-                renterEmail: renter.email,
-                renterName,
-                spotTitle: spot.title,
-                spotAddress: spot.address,
-                startTime: new Date(booking.startTime),
-                endTime: new Date(booking.endTime),
-                totalPrice: booking.totalPrice,
-                currency: booking.currency || 'RSD',
-                isInstantBooking: true,
-                pricingType: sessionPricingType,
-              });
-            }
           } catch (emailErr) {
             console.error('[EMAIL] Greška pri slanju email notifikacija:', emailErr);
           }
@@ -2664,19 +2650,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   approveUrl,
                   rejectUrl,
                   isCreditBooking: true,
-                  pricingType: reqPricingTypeC,
-                });
-              }
-              if (renter?.email) {
-                await sendBookingPendingApprovalEmail({
-                  renterEmail: renter.email,
-                  renterName,
-                  spotTitle: spot.title,
-                  spotAddress: spot.address,
-                  startTime: new Date(creditBooking.startTime),
-                  endTime: new Date(creditBooking.endTime),
-                  totalPrice: creditBooking.totalPrice,
-                  currency: creditBooking.currency || 'RSD',
                   pricingType: reqPricingTypeC,
                 });
               }
