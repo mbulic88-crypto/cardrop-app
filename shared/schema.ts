@@ -138,6 +138,7 @@ export const parkingSpots = pgTable("parking_spots", {
   // Pending changes: owner edits are held here until next midnight UTC+1
   pendingChanges: jsonb("pending_changes").$type<Record<string, unknown>>(),
   pendingChangesFrom: timestamp("pending_changes_from"),
+  requiresApproval: boolean("requires_approval").notNull().default(false),
 });
 
 export const parkingSpotsRelations = relations(parkingSpots, ({ one, many }) => ({
@@ -189,7 +190,7 @@ export const OWNER_EDITABLE_FIELDS = [
   'spotType', 'hasEvCharging', 'hasSecurityCamera', 'is24Hours',
   'phone', 'contactEmail',
   'pricingType', 'advertiserType', 'companyName', 'pib', 'numberOfSpots', 'contactPerson',
-  'totalSpaces', 'imageUrls',
+  'totalSpaces', 'imageUrls', 'requiresApproval',
 ] as const;
 
 // Edit schema: only explicitly whitelisted fields — nothing else can enter.
@@ -220,6 +221,7 @@ export const parkingSpotEditSchema = z.object({
   contactPerson: z.string().optional().nullable(),
   totalSpaces: z.number().int().min(1).max(100).optional().nullable(),
   imageUrls: z.array(z.string()).optional(),
+  requiresApproval: z.boolean().optional().default(false),
 });
 
 // Bookings table

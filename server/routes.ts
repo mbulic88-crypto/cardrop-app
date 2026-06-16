@@ -14,7 +14,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail } from './email';
+import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail, sendBookingAutoConfirmedOwnerEmail } from './email';
 import { randomBytes } from 'crypto';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -1888,9 +1888,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: 1,
         }],
         mode: 'payment',
-        payment_intent_data: {
-          capture_method: 'manual',
-        },
+        payment_intent_data: spot.requiresApproval
+          ? { capture_method: 'manual' }
+          : { capture_method: 'automatic' },
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&booking=1`,
         cancel_url: `${baseUrl}/map-hack`,
         metadata: {
@@ -1967,7 +1967,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const sessionPricingType = (session.metadata?.pricingType as string) || 'daily';
-      const approvalToken = randomBytes(32).toString('hex');
+      const autoConfirm = !spot.requiresApproval;
+      const approvalToken = autoConfirm ? undefined : randomBytes(32).toString('hex');
 
       const { booking, alreadyConsumed } = await storage.createBookingWithSession({
         spotId,
@@ -1976,8 +1977,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: new Date(endTime),
         totalPrice,
         currency,
-        status: 'pending_approval',
-        paymentStatus: 'pending',
+        status: autoConfirm ? 'confirmed' : 'pending_approval',
+        paymentStatus: autoConfirm ? 'paid' : 'pending',
         paymentMethod: 'instant',
         licensePlate: licensePlate || undefined,
         renterPhone: renterPhone || undefined,
@@ -1985,7 +1986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookingStripeSessionId: sessionId,
         stripePaymentIntentId,
         pricingType: sessionPricingType,
-        approvalToken,
+        approvalToken: approvalToken || randomBytes(32).toString('hex'),
       });
 
       if (licensePlate) {
@@ -1996,62 +1997,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: true, booking, alreadyConsumed: true, spot });
       }
 
-      // Push notifikacija vlasniku
       const startLabel = new Date(startTime).toLocaleDateString('sr-Latn-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      sendPushToUser(spot.ownerId, {
-        title: "Nova rezervacija ceka odobrenje",
-        body: `${spot.title} — ${startLabel}`,
-        icon: '/icons/icon-192x192.png',
-        tag: `booking-${booking.id}`,
-        url: '/dashboard',
-      }).catch(() => {});
 
-      // Email vlasniku sa dugmicima Odobri/Odbij + email zakupcu (kartica blokirana)
-      (async () => {
-        try {
-          const [owner, renter] = await Promise.all([
-            storage.getUser(spot.ownerId),
-            storage.getUser(userId),
-          ]);
-          const baseUrl = process.env.APP_URL || 'https://cardrop.app';
-          const approveUrl = `${baseUrl}/api/bookings/approve/${booking.approvalToken}`;
-          const rejectUrl = `${baseUrl}/api/bookings/reject/${booking.approvalToken}`;
-          const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat';
-          if (owner?.email) {
-            await sendBookingOwnerEmail({
-              ownerEmail: owner.email,
-              ownerName: owner.firstName || owner.email,
-              spotTitle: spot.title,
-              spotAddress: spot.address,
-              renterName,
-              licensePlate: booking.licensePlate || undefined,
-              renterPhone: booking.renterPhone || undefined,
-              startTime: new Date(booking.startTime),
-              endTime: new Date(booking.endTime),
-              totalPrice: booking.totalPrice,
-              currency: booking.currency || 'RSD',
-              approveUrl,
-              rejectUrl,
-              isInstantBooking: true,
-            });
+      if (autoConfirm) {
+        // Auto-confirm: notify owner (info only) + confirm renter
+        sendPushToUser(spot.ownerId, {
+          title: "Nova potvrđena rezervacija",
+          body: `${spot.title} — ${startLabel}`,
+          icon: '/icons/icon-192x192.png',
+          tag: `booking-${booking.id}`,
+          url: '/dashboard',
+        }).catch(() => {});
+
+        (async () => {
+          try {
+            const [owner, renter] = await Promise.all([
+              storage.getUser(spot.ownerId),
+              storage.getUser(userId),
+            ]);
+            const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
+            if (owner?.email) {
+              await sendBookingAutoConfirmedOwnerEmail({
+                ownerEmail: owner.email,
+                ownerName: owner.firstName || owner.email || '',
+                spotTitle: spot.title,
+                spotAddress: spot.address,
+                renterName,
+                licensePlate: booking.licensePlate || undefined,
+                renterPhone: booking.renterPhone || undefined,
+                startTime: new Date(booking.startTime),
+                endTime: new Date(booking.endTime),
+                totalPrice: booking.totalPrice,
+                currency: booking.currency || 'RSD',
+                pricingType: sessionPricingType,
+              });
+            }
+            if (renter?.email) {
+              await sendBookingApprovedEmail({
+                renterEmail: renter.email,
+                renterName,
+                spotTitle: spot.title,
+                spotAddress: spot.address,
+                ownerPhone: spot.phone || undefined,
+                startTime: new Date(booking.startTime),
+                endTime: new Date(booking.endTime),
+                totalPrice: booking.totalPrice,
+                currency: booking.currency || 'RSD',
+                isInstantBooking: true,
+                pricingType: sessionPricingType,
+              });
+            }
+          } catch (emailErr) {
+            console.error('[EMAIL] Greška pri slanju email notifikacija (auto-confirm):', emailErr);
           }
-          if (renter?.email) {
-            await sendBookingPendingApprovalEmail({
-              renterEmail: renter.email,
-              renterName,
-              spotTitle: spot.title,
-              spotAddress: spot.address,
-              startTime: new Date(booking.startTime),
-              endTime: new Date(booking.endTime),
-              totalPrice: booking.totalPrice,
-              currency: booking.currency || 'RSD',
-              isInstantBooking: true,
-            });
+        })();
+      } else {
+        // Manual approval: push + email owner with approve/reject buttons
+        sendPushToUser(spot.ownerId, {
+          title: "Nova rezervacija ceka odobrenje",
+          body: `${spot.title} — ${startLabel}`,
+          icon: '/icons/icon-192x192.png',
+          tag: `booking-${booking.id}`,
+          url: '/dashboard',
+        }).catch(() => {});
+
+        (async () => {
+          try {
+            const [owner, renter] = await Promise.all([
+              storage.getUser(spot.ownerId),
+              storage.getUser(userId),
+            ]);
+            const baseUrl = process.env.APP_URL || 'https://cardrop.app';
+            const approveUrl = `${baseUrl}/api/bookings/approve/${booking.approvalToken}`;
+            const rejectUrl = `${baseUrl}/api/bookings/reject/${booking.approvalToken}`;
+            const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
+            if (owner?.email) {
+              await sendBookingOwnerEmail({
+                ownerEmail: owner.email,
+                ownerName: owner.firstName || owner.email || '',
+                spotTitle: spot.title,
+                spotAddress: spot.address,
+                renterName,
+                licensePlate: booking.licensePlate || undefined,
+                renterPhone: booking.renterPhone || undefined,
+                startTime: new Date(booking.startTime),
+                endTime: new Date(booking.endTime),
+                totalPrice: booking.totalPrice,
+                currency: booking.currency || 'RSD',
+                approveUrl,
+                rejectUrl,
+                isInstantBooking: true,
+                pricingType: sessionPricingType,
+              });
+            }
+            if (renter?.email) {
+              await sendBookingPendingApprovalEmail({
+                renterEmail: renter.email,
+                renterName,
+                spotTitle: spot.title,
+                spotAddress: spot.address,
+                startTime: new Date(booking.startTime),
+                endTime: new Date(booking.endTime),
+                totalPrice: booking.totalPrice,
+                currency: booking.currency || 'RSD',
+                isInstantBooking: true,
+                pricingType: sessionPricingType,
+              });
+            }
+          } catch (emailErr) {
+            console.error('[EMAIL] Greška pri slanju email notifikacija:', emailErr);
           }
-        } catch (emailErr) {
-          console.error('[EMAIL] Greška pri slanju email notifikacija:', emailErr);
-        }
-      })();
+        })();
+      }
 
       res.json({ success: true, booking, spot });
     } catch (error: any) {
@@ -2103,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (renter?.email && spot) {
           sendBookingRejectedEmail({
             renterEmail: renter.email,
-            renterName: renter.firstName || renter.email,
+            renterName: renter.firstName || renter.email || '',
             spotTitle: spot.title,
             startTime: new Date(booking.startTime),
             endTime: new Date(booking.endTime),
@@ -2128,7 +2185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (renter?.email && spot) {
             sendBookingRejectedEmail({
               renterEmail: renter.email,
-              renterName: renter.firstName || renter.email,
+              renterName: renter.firstName || renter.email || '',
               spotTitle: spot.title,
               startTime: new Date(booking.startTime),
               endTime: new Date(booking.endTime),
@@ -2144,7 +2201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (renter?.email && spot) {
         sendBookingApprovedEmail({
           renterEmail: renter.email,
-          renterName: renter.firstName || renter.email,
+          renterName: renter.firstName || renter.email || '',
           spotTitle: spot.title,
           spotAddress: spot.address,
           ownerPhone: spot.phone || undefined,
@@ -2189,7 +2246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (renter?.email && spot) {
         sendBookingRejectedEmail({
           renterEmail: renter.email,
-          renterName: renter.firstName || renter.email,
+          renterName: renter.firstName || renter.email || '',
           spotTitle: spot.title,
           startTime: new Date(booking.startTime),
           endTime: new Date(booking.endTime),
@@ -2553,23 +2610,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
             approvalToken,
           }, amountRsd);
           if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
+
+          const creditAutoConfirm = !spot.requiresApproval;
+
+          if (creditAutoConfirm) {
+            // Auto-approve: deduct credits immediately and confirm booking
+            const resolvedBooking = await storage.resolveBookingApproval(approvalToken, true);
+            const finalBooking = resolvedBooking || creditBooking;
+            (async () => {
+              try {
+                const [owner, renter] = await Promise.all([
+                  storage.getUser(spot.ownerId),
+                  storage.getUser(userId),
+                ]);
+                const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
+                if (owner?.email) {
+                  await sendBookingAutoConfirmedOwnerEmail({
+                    ownerEmail: owner.email,
+                    ownerName: owner.firstName || owner.email || '',
+                    spotTitle: spot.title,
+                    spotAddress: spot.address,
+                    renterName,
+                    licensePlate: finalBooking.licensePlate || undefined,
+                    renterPhone: finalBooking.renterPhone || undefined,
+                    startTime: new Date(finalBooking.startTime),
+                    endTime: new Date(finalBooking.endTime),
+                    totalPrice: finalBooking.totalPrice,
+                    currency: finalBooking.currency || 'RSD',
+                    pricingType: reqPricingTypeC,
+                  });
+                }
+                if (renter?.email) {
+                  await sendBookingApprovedEmail({
+                    renterEmail: renter.email,
+                    renterName,
+                    spotTitle: spot.title,
+                    spotAddress: spot.address,
+                    ownerPhone: spot.phone || undefined,
+                    startTime: new Date(finalBooking.startTime),
+                    endTime: new Date(finalBooking.endTime),
+                    totalPrice: finalBooking.totalPrice,
+                    currency: finalBooking.currency || 'RSD',
+                    pricingType: reqPricingTypeC,
+                  });
+                }
+              } catch (emailErr) {
+                console.error('[EMAIL] Greška pri slanju email notifikacija za auto-kreditnu rezervaciju:', emailErr);
+              }
+            })();
+            const creditResponse = finalSpaceC !== validSpaceC ? { ...finalBooking, autoAssignedSpace: finalSpaceC } : finalBooking;
+            return res.status(201).json(creditResponse);
+          }
+
+          // Manual approval: notify owner to approve/reject
           const baseUrl = process.env.APP_URL || 'https://cardrop.app';
           const approveUrl = `${baseUrl}/api/bookings/approve/${approvalToken}`;
           const rejectUrl = `${baseUrl}/api/bookings/reject/${approvalToken}`;
-          // Email notifikacije za kreditnu rezervaciju (vlasnik + zakupac)
           (async () => {
             try {
               const [owner, renter] = await Promise.all([
                 storage.getUser(spot.ownerId),
                 storage.getUser(userId),
               ]);
+              const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
               if (owner?.email) {
                 await sendBookingOwnerEmail({
                   ownerEmail: owner.email,
-                  ownerName: owner.firstName || owner.email,
+                  ownerName: owner.firstName || owner.email || '',
                   spotTitle: spot.title,
                   spotAddress: spot.address,
-                  renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+                  renterName,
                   licensePlate: creditBooking.licensePlate || undefined,
                   renterPhone: creditBooking.renterPhone || undefined,
                   startTime: new Date(creditBooking.startTime),
@@ -2579,18 +2689,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   approveUrl,
                   rejectUrl,
                   isCreditBooking: true,
+                  pricingType: reqPricingTypeC,
                 });
               }
               if (renter?.email) {
                 await sendBookingPendingApprovalEmail({
                   renterEmail: renter.email,
-                  renterName: renter.firstName || renter.email,
+                  renterName,
                   spotTitle: spot.title,
                   spotAddress: spot.address,
                   startTime: new Date(creditBooking.startTime),
                   endTime: new Date(creditBooking.endTime),
                   totalPrice: creditBooking.totalPrice,
                   currency: creditBooking.currency || 'RSD',
+                  pricingType: reqPricingTypeC,
                 });
               }
             } catch (emailErr) {
@@ -2632,10 +2744,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (owner?.email) {
             await sendBookingOwnerEmail({
               ownerEmail: owner.email,
-              ownerName: owner.firstName || owner.email,
+              ownerName: owner.firstName || owner.email || '',
               spotTitle: spot.title,
               spotAddress: spot.address,
-              renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email : 'Nepoznat',
+              renterName: renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat',
               licensePlate: booking.licensePlate || undefined,
               renterPhone: booking.renterPhone || undefined,
               startTime: new Date(booking.startTime),
@@ -2647,7 +2759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (renter?.email) {
             await sendBookingRenterConfirmationEmail({
               renterEmail: renter.email,
-              renterName: renter.firstName || renter.email,
+              renterName: renter.firstName || renter.email || '',
               spotTitle: spot.title,
               spotAddress: spot.address,
               ownerPhone: spot.phone || undefined,

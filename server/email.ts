@@ -89,6 +89,17 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function formatDateTime(date: Date): string {
+  return date.toLocaleString('sr-Latn-RS', {
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function fmtBook(date: Date, pricingType?: string): string {
+  return pricingType === 'hourly' ? formatDateTime(date) : formatDate(date);
+}
+
 export async function sendMapHackPurchaseEmail(
   to: string,
   name: string,
@@ -170,24 +181,23 @@ export async function sendBookingOwnerEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
-  approveUrl: string;
-  rejectUrl: string;
+  approveUrl?: string;
+  rejectUrl?: string;
   isCreditBooking?: boolean;
   isInstantBooking?: boolean;
+  pricingType?: string;
 }): Promise<void> {
   const {
     ownerEmail, ownerName, spotTitle, spotAddress,
     renterName, licensePlate, renterPhone, startTime, endTime,
-    totalPrice, currency, approveUrl, rejectUrl, isCreditBooking, isInstantBooking,
+    totalPrice, currency, approveUrl, rejectUrl, isCreditBooking, isInstantBooking, pricingType,
   } = opts;
-
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const plateValue = licensePlate || '—';
   const phoneValue = renterPhone || '—';
 
   const html = baseTemplate(`
+    ${approveUrl && rejectUrl ? `
     <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:20px;margin:0 0 24px;text-align:center;">
       <p style="margin:0 0 6px;color:#1b4332;font-size:16px;font-weight:bold;">Nova rezervacija ceka tvoje odobrenje!</p>
       <p style="margin:0 0 16px;color:#555;font-size:13px;">Klikni dugme ispod da prihvatis ili odbijas rezervaciju.</p>
@@ -197,7 +207,7 @@ export async function sendBookingOwnerEmail(opts: {
           <td style="padding:0 6px;"><a href="${rejectUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODBIJ</a></td>
         </tr>
       </table>
-    </div>
+    </div>` : ''}
     <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Nova rezervacija!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
@@ -214,8 +224,8 @@ export async function sendBookingOwnerEmail(opts: {
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Zakupac:</strong> ${renterName}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Tablica:</strong> ${plateValue}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Telefon zakupca:</strong> ${phoneValue}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
     </table>
     <p style="color:#888;font-size:13px;margin-top:24px;">Hvala sto koristis CarDrop!</p>
@@ -236,9 +246,9 @@ export async function sendBookingApprovedEmail(opts: {
   totalPrice: string | number;
   currency: string;
   isInstantBooking?: boolean;
+  pricingType?: string;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, spotAddress, ownerPhone, startTime, endTime, totalPrice, currency, isInstantBooking } = opts;
-  const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+  const { renterEmail, renterName, spotTitle, spotAddress, ownerPhone, startTime, endTime, totalPrice, currency, isInstantBooking, pricingType } = opts;
 
   const html = baseTemplate(`
     <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
@@ -253,8 +263,8 @@ export async function sendBookingApprovedEmail(opts: {
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
       ${ownerPhone ? `<tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Kontakt vlasnika:</strong> ${ownerPhone}</td></tr>` : ''}
     </table>
@@ -276,9 +286,9 @@ export async function sendBookingPendingApprovalEmail(opts: {
   totalPrice: string | number;
   currency: string;
   isInstantBooking?: boolean;
+  pricingType?: string;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, spotAddress, startTime, endTime, totalPrice, currency, isInstantBooking } = opts;
-  const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+  const { renterEmail, renterName, spotTitle, spotAddress, startTime, endTime, totalPrice, currency, isInstantBooking, pricingType } = opts;
 
   const html = baseTemplate(`
     <div style="background:#fffbeb;border:2px solid #f59e0b;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
@@ -296,8 +306,8 @@ export async function sendBookingPendingApprovalEmail(opts: {
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos (na cekanju):</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
     </table>
     <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 20px;">Dobices email cim vlasnik donese odluku. Status rezervacije mozete videti i u svom Dashboard-u.</p>
@@ -317,9 +327,9 @@ export async function sendBookingRejectedEmail(opts: {
   totalPrice: string | number;
   currency: string;
   paymentMethod?: string;
+  pricingType?: string;
 }): Promise<void> {
-  const { renterEmail, renterName, spotTitle, startTime, endTime, totalPrice, currency, paymentMethod } = opts;
-  const fmt = (d: Date) => d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
+  const { renterEmail, renterName, spotTitle, startTime, endTime, totalPrice, currency, paymentMethod, pricingType } = opts;
   const isCredit = paymentMethod === 'credit';
   const isInstant = paymentMethod === 'instant';
 
@@ -334,8 +344,8 @@ export async function sendBookingRejectedEmail(opts: {
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
-      <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
-      <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
       <tr><td style="color:#991b1b;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
     </table>
     ${isCredit
@@ -362,15 +372,13 @@ export async function sendBookingRenterConfirmationEmail(opts: {
   endTime: Date;
   totalPrice: string | number;
   currency: string;
+  pricingType?: string;
 }): Promise<void> {
   const {
     renterEmail, renterName, spotTitle, spotAddress,
     ownerPhone, startTime, endTime,
-    totalPrice, currency,
+    totalPrice, currency, pricingType,
   } = opts;
-
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const ownerContactValue = ownerPhone || '—';
 
@@ -383,8 +391,8 @@ export async function sendBookingRenterConfirmationEmail(opts: {
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmt(startTime)}</td></tr>
-      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmt(endTime)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Kontakt vlasnika:</strong> ${ownerContactValue}</td></tr>
     </table>
@@ -396,4 +404,54 @@ export async function sendBookingRenterConfirmationEmail(opts: {
   `);
 
   await sendMail(renterEmail, `Potvrda rezervacije — ${spotTitle}`, html);
+}
+
+export async function sendBookingAutoConfirmedOwnerEmail(opts: {
+  ownerEmail: string;
+  ownerName: string;
+  spotTitle: string;
+  spotAddress: string;
+  renterName: string;
+  licensePlate?: string;
+  renterPhone?: string;
+  startTime: Date;
+  endTime: Date;
+  totalPrice: string | number;
+  currency: string;
+  pricingType?: string;
+}): Promise<void> {
+  const {
+    ownerEmail, ownerName, spotTitle, spotAddress,
+    renterName, licensePlate, renterPhone, startTime, endTime,
+    totalPrice, currency, pricingType,
+  } = opts;
+
+  const plateValue = licensePlate || '—';
+  const phoneValue = renterPhone || '—';
+
+  const html = baseTemplate(`
+    <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;color:#1b4332;font-size:18px;font-weight:bold;">Nova automatski potvrđena rezervacija!</p>
+    </div>
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Rezervacija je automatski odobrena</h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i rezervacija je <strong>automatski potvrđena</strong> — nije potrebno tvoje odobrenje.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Zakupac:</strong> ${renterName}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Tablica:</strong> ${plateValue}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Telefon zakupca:</strong> ${phoneValue}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Od:</strong> ${fmtBook(startTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Do:</strong> ${fmtBook(endTime, pricingType)}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Iznos:</strong> ${Number(totalPrice).toLocaleString('sr-RS')} ${currency}</td></tr>
+    </table>
+    <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Otvori Dashboard</a>
+    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala sto koristis CarDrop!</p>
+  `);
+
+  const ccAddr = ownerEmail === ADMIN_EMAIL ? undefined : ADMIN_EMAIL;
+  await sendMail(ownerEmail, `Automatski odobrena rezervacija — ${spotTitle}`, html, ccAddr);
 }

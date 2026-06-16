@@ -72,6 +72,7 @@ type SpotFormData = {
   category: string;
   isActive: boolean;
   isPremium: boolean;
+  requiresApproval: boolean;
   subscriptionType: string;
   stripeLink: string;
   stripeLinkActive: boolean;
@@ -104,6 +105,7 @@ const defaultSpotForm: SpotFormData = {
   category: "private",
   isActive: true,
   isPremium: false,
+  requiresApproval: false,
   subscriptionType: "standard",
   stripeLink: "",
   stripeLinkActive: false,
@@ -248,6 +250,10 @@ function SpotFormFields({ form, setForm, isEdit }: { form: SpotFormData; setForm
           <label className="flex items-center gap-2 cursor-pointer">
             <Switch checked={form.isActive} onCheckedChange={v => set("isActive", v)} data-testid="switch-active" />
             <span className="text-sm">Aktivan</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Switch checked={form.requiresApproval} onCheckedChange={v => set("requiresApproval", v)} data-testid="switch-requires-approval" />
+            <span className="text-sm">Ručno odobrenje</span>
           </label>
         </div>
         {/* Stripe link section */}
@@ -1197,12 +1203,14 @@ export default function Admin() {
                                 category: spot.category || "private",
                                 isActive: spot.isActive,
                                 isPremium: spot.isPremium,
+                                requiresApproval: spot.requiresApproval ?? false,
                                 subscriptionType: spot.subscriptionType || "standard",
                                 stripeLink: spot.stripeLink || "",
                                 stripeLinkActive: spot.stripeLinkActive || false,
                                 totalSpaces: spot.totalSpaces ?? 1,
                                 hasRamp: spot.hasRamp ?? false,
                                 rampPhone: "",
+                                rampWebhookUrl: "",
                               });
                               setEditUploadedImages(spot.imageUrls || []);
                               setShowPendingDetails(false);

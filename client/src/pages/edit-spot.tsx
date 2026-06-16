@@ -194,6 +194,7 @@ const makeFormSchema = (v: Pick<typeof est.sr, 'validTitle' | 'validDesc' | 'val
   companyName: z.string().optional(),
   pib: z.string().optional(),
   contactPerson: z.string().optional(),
+  requiresApproval: z.boolean().default(false),
 });
 type FormValues = z.infer<ReturnType<typeof makeFormSchema>>;
 
@@ -246,6 +247,7 @@ export default function EditSpot() {
       currency: "RSD", spotType: "uncovered", hasEvCharging: false,
       hasSecurityCamera: false, is24Hours: true,
       advertiserType: "owner", companyName: "", pib: "", contactPerson: "",
+      requiresApproval: false,
     },
   });
 
@@ -296,6 +298,7 @@ export default function EditSpot() {
         companyName: spot.companyName || "",
         pib: spot.pib || "",
         contactPerson: spot.contactPerson || "",
+        requiresApproval: spot.requiresApproval ?? false,
       });
     }
   }, [spot, form]);
@@ -542,6 +545,14 @@ export default function EditSpot() {
                   <FormItem className="flex items-center gap-2">
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-24h" /></FormControl>
                     <FormLabel className="!mt-0 cursor-pointer">{t.is24h}</FormLabel>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="requiresApproval" render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-requires-approval" /></FormControl>
+                    <FormLabel className="!mt-0 cursor-pointer">
+                      {language === 'sr' ? 'Ručno odobrenje rezervacija (isključite za automatsku potvrdu)' : 'Manual booking approval (disable for auto-confirm)'}
+                    </FormLabel>
                   </FormItem>
                 )} />
               </div>
