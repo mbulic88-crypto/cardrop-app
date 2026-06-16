@@ -1802,9 +1802,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!spot.stripeLinkActive) {
         return res.status(403).json({ message: "Online plaćanje nije aktivno za ovaj parking" });
       }
-      if (spot.ownerId === String(userId)) {
-        return res.status(400).json({ message: "Ne možete rezervisati sopstveno parking mesto" });
-      }
 
       const start = new Date(startTime);
       const end = new Date(endTime);
@@ -2505,9 +2502,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (!spot.isActive) {
         return res.status(400).json({ message: "Parking mesto nije aktivno" });
-      }
-      if (spot.ownerId === userId) {
-        return res.status(400).json({ message: "Ne možete rezervisati sopstveno parking mesto" });
       }
 
       // Determine pricing type from request body, validated against spot's offered types
