@@ -2011,7 +2011,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         (async () => {
           try {
-            const renter = await storage.getUser(userId);
+            const [owner, renter] = await Promise.all([
+              storage.getUser(spot.ownerId),
+              storage.getUser(userId),
+            ]);
             const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
             if (renter?.email) {
               await sendBookingApprovedEmail({
@@ -2025,6 +2028,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 totalPrice: booking.totalPrice,
                 currency: booking.currency || 'RSD',
                 isInstantBooking: true,
+                pricingType: sessionPricingType,
+              });
+            }
+            if (owner?.email) {
+              await sendBookingAutoConfirmedOwnerEmail({
+                ownerEmail: owner.email,
+                ownerName: owner.firstName || owner.email || '',
+                spotTitle: spot.title,
+                spotAddress: spot.address,
+                renterName,
+                licensePlate: booking.licensePlate || undefined,
+                renterPhone: booking.renterPhone || undefined,
+                startTime: new Date(booking.startTime),
+                endTime: new Date(booking.endTime),
+                totalPrice: booking.totalPrice,
+                currency: booking.currency || 'RSD',
                 pricingType: sessionPricingType,
               });
             }
@@ -2593,7 +2612,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const finalBooking = resolvedBooking;
             (async () => {
               try {
-                const renter = await storage.getUser(userId);
+                const [owner, renter] = await Promise.all([
+                  storage.getUser(spot.ownerId),
+                  storage.getUser(userId),
+                ]);
                 const renterName = renter ? `${renter.firstName || ''} ${renter.lastName || ''}`.trim() || renter.email || '' : 'Nepoznat';
                 if (renter?.email) {
                   await sendBookingApprovedEmail({
@@ -2602,6 +2624,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     spotTitle: spot.title,
                     spotAddress: spot.address,
                     ownerPhone: spot.phone || undefined,
+                    startTime: new Date(finalBooking.startTime),
+                    endTime: new Date(finalBooking.endTime),
+                    totalPrice: finalBooking.totalPrice,
+                    currency: finalBooking.currency || 'RSD',
+                    pricingType: reqPricingTypeC,
+                  });
+                }
+                if (owner?.email) {
+                  await sendBookingAutoConfirmedOwnerEmail({
+                    ownerEmail: owner.email,
+                    ownerName: owner.firstName || owner.email || '',
+                    spotTitle: spot.title,
+                    spotAddress: spot.address,
+                    renterName,
+                    licensePlate: finalBooking.licensePlate || undefined,
+                    renterPhone: finalBooking.renterPhone || undefined,
                     startTime: new Date(finalBooking.startTime),
                     endTime: new Date(finalBooking.endTime),
                     totalPrice: finalBooking.totalPrice,
