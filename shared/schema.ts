@@ -49,6 +49,7 @@ export const users = pgTable("users", {
   stripeCustomerId: varchar("stripe_customer_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
   savedLicensePlate: varchar("saved_license_plate", { length: 30 }),
+  savedPhone: varchar("saved_phone", { length: 30 }),
   creditBalance: integer("credit_balance").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

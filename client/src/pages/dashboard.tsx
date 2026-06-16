@@ -1693,7 +1693,7 @@ export default function Dashboard() {
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex h-screen w-full bg-background">
         <Sidebar collapsible="icon">
           <SidebarHeader className="p-4">
             <Link href="/map-hack" className="flex items-center gap-2.5" data-testid="link-home">
@@ -1754,7 +1754,7 @@ export default function Dashboard() {
             </h1>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 md:pb-6">
             {renderSection()}
           </main>
         </div>
@@ -1784,8 +1784,6 @@ export default function Dashboard() {
         ))}
       </nav>
 
-      {/* Spacer so content isn't hidden behind the mobile nav */}
-      <div className="md:hidden h-16" />
 
       <AlertDialog open={accountDeletedInfo !== null}>
         <AlertDialogContent data-testid="dialog-account-deleted">

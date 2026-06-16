@@ -1444,6 +1444,12 @@ export default function MapHackNS() {
   }, [user?.savedLicensePlate, selectedParking?.id]);
 
   useEffect(() => {
+    if (user?.savedPhone && !parkingPhone) {
+      setParkingPhone(user.savedPhone);
+    }
+  }, [user?.savedPhone, selectedParking?.id]);
+
+  useEffect(() => {
     if (skipPaymentMethodDefaultRef.current) {
       skipPaymentMethodDefaultRef.current = false;
       return;
@@ -3244,7 +3250,9 @@ export default function MapHackNS() {
                                 <SelectContent>{Array.from({ length: 23 }, (_, i) => i).map(h => {
                                   const isToday = parkingBookingStartDate ? parkingBookingStartDate.toDateString() === new Date().toDateString() : false;
                                   const isPastHour = isToday && h < new Date().getHours();
-                                  return <SelectItem key={h} value={String(h)} disabled={isPastHour}>{String(h).padStart(2, '0')}h{isPastHour ? " ✕" : ""}</SelectItem>;
+                                  const isBooked = parkingBookingStartDate ? isHourBooked(parkingBookingStartDate, h) : false;
+                                  const isDisabled = isPastHour || isBooked;
+                                  return <SelectItem key={h} value={String(h)} disabled={isDisabled}>{String(h).padStart(2, '0')}h{isDisabled ? " ✕" : ""}</SelectItem>;
                                 })}</SelectContent>
                               </Select>
                               <Select value={String(parkingStartMinute)} onValueChange={(v) => {
@@ -3265,7 +3273,11 @@ export default function MapHackNS() {
                             <div className="grid grid-cols-2 gap-1">
                               <Select value={String(parkingEndHour)} onValueChange={(v) => setParkingEndHour(Number(v))}>
                                 <SelectTrigger data-testid="select-end-hour-map" className="bg-transparent border-white/10 text-white"><SelectValue /></SelectTrigger>
-                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i + 1).map(h => (<SelectItem key={h} value={String(h)} disabled={h <= parkingStartHour}>{String(h).padStart(2, '0')}h</SelectItem>))}</SelectContent>
+                                <SelectContent>{Array.from({ length: 23 }, (_, i) => i + 1).map(h => {
+                                  const isBooked = parkingBookingStartDate ? isHourBooked(parkingBookingStartDate, h) : false;
+                                  const isDisabled = h <= parkingStartHour || isBooked;
+                                  return <SelectItem key={h} value={String(h)} disabled={isDisabled}>{String(h).padStart(2, '0')}h{isBooked ? " ✕" : ""}</SelectItem>;
+                                })}</SelectContent>
                               </Select>
                               <div
                                 className="flex items-center justify-center rounded-md text-xs font-medium"

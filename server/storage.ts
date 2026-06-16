@@ -56,6 +56,7 @@ export interface IStorage {
   activateSalesListingWithSession(listingId: string, tier: 'silver' | 'gold', subscriptionExpiresAt: Date | null, sessionId: string, userId: string): Promise<{ listing: SalesListing | undefined; alreadyConsumed: boolean }>;
   createBookingWithSession(data: InsertBooking & { renterId: string; licensePlate?: string; renterPhone?: string; spaceNumber?: number; bookingStripeSessionId: string; pricingType?: string; stripePaymentIntentId?: string }): Promise<{ booking: Booking; alreadyConsumed: boolean }>;
   saveUserLicensePlate(userId: string, licensePlate: string): Promise<void>;
+  saveUserPhone(userId: string, phone: string): Promise<void>;
   // Parking spots operations
   getAllParkingSpots(): Promise<ParkingSpot[]>;
   getParkingSpot(id: string): Promise<ParkingSpot | undefined>;
@@ -525,6 +526,10 @@ export class DatabaseStorage implements IStorage {
 
   async saveUserLicensePlate(userId: string, licensePlate: string): Promise<void> {
     await db.update(users).set({ savedLicensePlate: licensePlate, updatedAt: new Date() }).where(eq(users.id, userId));
+  }
+
+  async saveUserPhone(userId: string, phone: string): Promise<void> {
+    await db.update(users).set({ savedPhone: phone, updatedAt: new Date() }).where(eq(users.id, userId));
   }
 
   // Reviews operations

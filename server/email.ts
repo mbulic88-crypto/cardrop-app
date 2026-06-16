@@ -431,12 +431,12 @@ export async function sendBookingAutoConfirmedOwnerEmail(opts: {
 
   const html = baseTemplate(`
     <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:16px;margin:0 0 24px;text-align:center;">
-      <p style="margin:0;color:#1b4332;font-size:18px;font-weight:bold;">Nova automatski potvrđena rezervacija!</p>
+      <p style="margin:0;color:#1b4332;font-size:18px;font-weight:bold;">Nova potvrđena rezervacija!</p>
     </div>
-    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Rezervacija je automatski odobrena</h2>
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Rezervacija je odobrena</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
     <p style="color:#555;line-height:1.6;margin:0 0 20px;">
-      Neko je rezervisao tvoj parking <strong>${spotTitle}</strong> i rezervacija je <strong>automatski potvrđena</strong> — nije potrebno tvoje odobrenje.
+      Neko je rezervisao tvoj parking <strong>${spotTitle}</strong>. Rezervacija je potvrđena — nije potrebno tvoje odobrenje.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
       <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Parking:</strong> ${spotTitle}</td></tr>
@@ -453,5 +453,5 @@ export async function sendBookingAutoConfirmedOwnerEmail(opts: {
   `);
 
   const ccAddr = ownerEmail === ADMIN_EMAIL ? undefined : ADMIN_EMAIL;
-  await sendMail(ownerEmail, `Automatski odobrena rezervacija — ${spotTitle}`, html, ccAddr);
+  await sendMail(ownerEmail, `Rezervacija odobrena — ${spotTitle}`, html, ccAddr);
 }

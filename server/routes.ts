@@ -1992,6 +1992,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (licensePlate) {
         await storage.saveUserLicensePlate(userId, licensePlate);
       }
+      const renterPhoneVerify = session.metadata?.renterPhone as string | undefined;
+      if (renterPhoneVerify) {
+        await storage.saveUserPhone(userId, renterPhoneVerify);
+      }
 
       if (alreadyConsumed) {
         return res.json({ success: true, booking, alreadyConsumed: true, spot });
@@ -2597,6 +2601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             approvalToken,
           }, amountRsd);
           if (licensePlateC) await storage.saveUserLicensePlate(userId, licensePlateC);
+          if (renterPhoneC) await storage.saveUserPhone(userId, renterPhoneC);
 
           const creditAutoConfirm = !spot.requiresApproval;
 
