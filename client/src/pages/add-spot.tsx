@@ -1009,25 +1009,6 @@ export default function AddSpot() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="autoRenewal"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between">
-                      <div>
-                        <FormLabel>{t.autoRenewal}</FormLabel>
-                        <FormDescription>{t.autoRenewalDescription}</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-auto-renewal"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <div className="space-y-6">
