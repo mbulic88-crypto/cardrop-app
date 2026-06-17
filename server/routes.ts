@@ -332,9 +332,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { plan } = req.body;
 
       const validPlans: Record<string, { name: string; amount: number; description: string }> = {
-        premium: { name: "CarDrop Map Hack NS — Premium", amount: 39000, description: "Premium plan — 30 dana" },
-        day_pass: { name: "CarDrop Map Hack NS — Day Pass", amount: 12000, description: "Day Pass — 24 sata" },
-        godisnji_premium: { name: "CarDrop Map Hack NS — Godišnji", amount: 350000, description: "Godišnji Premium — 365 dana" },
+        premium: { name: "CarDrop Map Hack Premium", amount: 39000, description: "Mesečna pretplata — 30 dana" },
+        day_pass: { name: "CarDrop Map Hack Day Pass", amount: 12000, description: "Jednodnevni pristup — 24 sata" },
+        godisnji_premium: { name: "CarDrop Map Hack Godišnji", amount: 350000, description: "Godišnja pretplata — 365 dana" },
       };
 
       if (!plan || !validPlans[plan]) {
@@ -392,6 +392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         sessionParams = {
+          customer_email: currentUser.email ?? undefined,
           line_items: [{
             price_data: {
               currency: 'rsd',
@@ -1558,6 +1559,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertParkingSpotSchema.parse(spotData);
 
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
       const spot = await storage.createParkingSpot({
         ...validatedData,
         category: category,
@@ -1568,13 +1572,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } as any);
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const spotProductName = `CarDrop Oglas ${tier === 'gold' ? 'Gold' : 'Silver'} — ${validatedData.title}`;
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
+        customer_email: currentUser.email ?? undefined,
         line_items: [{
           price_data: {
             currency: 'rsd',
-            product_data: { name: `CarDrop - ${tier === 'gold' ? 'Gold' : 'Silver'} Plan` },
+            product_data: {
+              name: spotProductName,
+              description: `Premium oglas — ${tier === 'gold' ? 'Gold' : 'Silver'} plan`,
+            },
             unit_amount: totalAmountParas,
           },
           quantity: 1,
@@ -1703,6 +1712,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Spot not found" });
       }
 
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
       const category = (spot.category || 'private') as ProductCategory;
       const basePrice = getPlanBasePrice(category, tier);
       if (!basePrice) {
@@ -1711,13 +1723,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalAmountParas = Math.round(totalWithFee(basePrice) * 100);
 
       const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const spotProductName = `CarDrop Oglas ${tier === 'gold' ? 'Gold' : 'Silver'} — ${spot.title}`;
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
+        customer_email: currentUser.email ?? undefined,
         line_items: [{
           price_data: {
             currency: 'rsd',
-            product_data: { name: `CarDrop - ${tier === 'gold' ? 'Gold' : 'Silver'} Plan` },
+            product_data: {
+              name: spotProductName,
+              description: `Premium oglas — ${tier === 'gold' ? 'Gold' : 'Silver'} plan`,
+            },
             unit_amount: totalAmountParas,
           },
           quantity: 1,
@@ -1879,8 +1896,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currency,
             product_data: {
               name: spot.parkingNumber
-                ? `Parking ${spot.parkingNumber} — ${spot.title}`
-                : `Parking: ${spot.title}`,
+                ? `CarDrop Rezervacija — Parking ${spot.parkingNumber} — ${spot.title}`
+                : `CarDrop Rezervacija — ${spot.title}`,
               description: `${start.toLocaleDateString('sr-Latn-RS')} – ${end.toLocaleDateString('sr-Latn-RS')}`,
             },
             unit_amount: amountInSmallestUnit,
@@ -1889,8 +1906,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }],
         mode: 'payment',
         payment_intent_data: spot.requiresApproval
-          ? { capture_method: 'manual' }
-          : { capture_method: 'automatic' },
+          ? { capture_method: 'manual', receipt_email: currentUser.email ?? undefined }
+          : { capture_method: 'automatic', receipt_email: currentUser.email ?? undefined },
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&booking=1`,
         cancel_url: `${baseUrl}/map-hack`,
         metadata: {
@@ -3589,12 +3606,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `${origin}/map-hack`
         : `${origin}/dashboard?tab=profile`;
 
+      const currentUser = await storage.getUser(userId);
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
+        customer_email: currentUser?.email ?? undefined,
         line_items: [{
           price_data: {
             currency: 'rsd',
-            product_data: { name: `CarDrop Kredit — ${label}` },
+            product_data: {
+              name: `CarDrop Kredit — ${label}`,
+              description: 'CarDrop kredit za rezervacije parking mesta',
+            },
             unit_amount: Math.round(amountRsd * 1.015) * 100,
           },
           quantity: 1,
