@@ -695,28 +695,32 @@ export default function AddSpot() {
                 )}
               />
 
-              {/* Hidden lat/lng fields - auto-populated by address autocomplete */}
+              {/* Hidden lat/lng fields - auto-populated by address autocomplete or map click */}
               <input type="hidden" {...form.register('latitude')} />
               <input type="hidden" {...form.register('longitude')} />
 
-              {/* Draggable map — shows after address is selected from autocomplete */}
-              {hasCustomLocation && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">
-                    {language === "sr" ? "Proverite lokaciju na mapi" : "Check location on map"}
-                  </p>
-                  <DraggableLocationMap
-                    latitude={parseFloat(watchedLat)}
-                    longitude={parseFloat(watchedLng)}
-                    onPositionChange={(lat, lng) => {
-                      form.setValue('latitude', lat.toFixed(7));
-                      form.setValue('longitude', lng.toFixed(7));
-                    }}
-                    height="240px"
-                    hint={language === "sr" ? "Prevucite pin na tačnu lokaciju ako nije ispravna" : "Drag the pin to the exact location if incorrect"}
-                  />
-                </div>
-              )}
+              {/* Interactive map — always visible, click to place or drag to fine-tune */}
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-foreground">
+                  {language === "sr" ? "Lokacija na mapi" : "Location on map"}
+                </p>
+                <DraggableLocationMap
+                  latitude={parseFloat(watchedLat) || 45.2671}
+                  longitude={parseFloat(watchedLng) || 19.8335}
+                  hasPinPlaced={!!hasCustomLocation}
+                  onPositionChange={(lat, lng) => {
+                    form.setValue('latitude', lat.toFixed(7));
+                    form.setValue('longitude', lng.toFixed(7));
+                  }}
+                  onAddressResolve={(address) => {
+                    form.setValue('address', address);
+                  }}
+                  height="280px"
+                  hint={language === "sr"
+                    ? "Kliknite na mapu ili prevucite pin da odredite tačnu lokaciju"
+                    : "Click on the map or drag the pin to set the exact location"}
+                />
+              </div>
 
               {/* Company specific fields */}
               {isCompany && (
