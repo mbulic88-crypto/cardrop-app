@@ -1598,8 +1598,24 @@ export default function MapHackNS() {
       .catch(() => {});
   }, []);
 
-  async function savePlan(planId: PlanId) {
+  async function savePlan(planId: PlanId, newWin?: Window | null) {
     if (planId !== "free") {
+      if (isIos) {
+        try {
+          const r = await fetch("/api/ios-checkout/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "map_hack" }),
+          });
+          const d = await r.json() as { checkoutUrl?: string; message?: string };
+          if (!r.ok) throw new Error(d.message || "Greška");
+          if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
+        } catch (err) {
+          try { if (newWin) newWin.close(); } catch {}
+          throw err;
+        }
+        return;
+      }
       const res = await fetch("/api/map-hack/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1634,6 +1650,9 @@ export default function MapHackNS() {
     if (!/^[a-zA-Z0-9_\- ]+$/.test(nick)) { setError("Samo slova, brojevi, razmak, crtica i donja crta"); return; }
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
 
+    // Open window synchronously BEFORE any await — iOS Safari popup blocker
+    const newWin = isIos && selectedPlan !== "free" ? window.open('', '_blank') : null;
+
     setIsSaving(true);
     try {
       const profileRes = await fetch("/api/map-hack/profile", {
@@ -1646,8 +1665,12 @@ export default function MapHackNS() {
         }),
       });
       const profileData = await profileRes.json();
-      if (!profileRes.ok) { setError(profileData.message || "Greška pri čuvanju profila"); return; }
-      await savePlan(selectedPlan);
+      if (!profileRes.ok) {
+        try { if (newWin) newWin.close(); } catch {}
+        setError(profileData.message || "Greška pri čuvanju profila");
+        return;
+      }
+      await savePlan(selectedPlan, newWin);
       // After onboarding, show permissions screen before entering map
       setShowPermissions(true);
     } catch (err) {
@@ -1664,13 +1687,18 @@ export default function MapHackNS() {
     if (!user) return;
     if (selectedPlan === null) { setError("Izaberi paket"); return; }
     if (!user.mapPrivacyAcceptedAt && !privacyAccepted) { setError("Prihvati politiku privatnosti"); return; }
+
+    // Open window synchronously BEFORE any await — iOS Safari popup blocker
+    const newWin = isIos && selectedPlan !== "free" ? window.open('', '_blank') : null;
+
     setIsSaving(true);
     try {
       if (privacyAccepted && !user.mapPrivacyAcceptedAt) {
         await apiRequest("POST", "/api/map-hack/accept-privacy", {});
       }
-      await savePlan(selectedPlan);
+      await savePlan(selectedPlan, newWin);
     } catch (err) {
+      try { if (newWin) newWin.close(); } catch {}
       const msg = err instanceof Error ? err.message : "Greška. Pokušaj ponovo.";
       setError(msg);
       toast({ title: "Greška", description: msg, variant: "destructive" });
