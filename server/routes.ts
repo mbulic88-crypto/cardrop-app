@@ -4138,14 +4138,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ─── iOS Checkout — App Store Guideline 3.1.1 compliance ───────────────────
-  // Standalone server-side HTML route (no React SPA) — validates the one-time
-  // token, marks it used IMMEDIATELY, creates a Stripe Checkout session using
-  // the plan stored in the token, then 302-redirects the browser to Stripe.
-  // The plan is chosen in-app BEFORE the token is created.
+  // ─── iOS Checkout helpers ─────────────────────────────────────────────────
 
-  const iosErrHtml = (msg: string) =>
-    `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CarDrop Plaćanje</title><style>*{box-sizing:border-box}body{margin:0;background:#1B4332;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.c{background:rgba(255,255,255,.09);border-radius:18px;padding:36px 28px;max-width:340px;width:90%;text-align:center;color:#fff}.i{width:52px;height:52px;border-radius:50%;background:rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px}.t{font-weight:700;font-size:18px;margin-bottom:10px}.m{color:rgba(255,255,255,.65);font-size:14px;line-height:1.5}</style></head><body><div class="c"><div class="i">!</div><div class="t">Greška</div><div class="m">${msg}</div></div></body></html>`;
+  const iosErrHtml = (msg: string): string =>
+    `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>CarDrop</title><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#1B4332;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.c{background:rgba(255,255,255,.09);border-radius:18px;padding:36px 28px;max-width:340px;width:90%;text-align:center;color:#fff}.i{width:52px;height:52px;border-radius:50%;background:rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px}.t{font-weight:700;font-size:18px;margin-bottom:10px}.m{color:rgba(255,255,255,.65);font-size:14px;line-height:1.6}</style></head><body><div class="c"><div class="i">&#9888;</div><div class="t">Greška</div><div class="m">${msg}</div></div></body></html>`;
+
+  type IosCard = { id: string; label: string; priceRsd: number; totalRsd: number; period: string; desc: string; grad: string; tc: string; ltc: string; badge: string; features: string[] };
+
+  function buildIosCheckoutPage(tokenId: string, storedPlan: string, cards: IosCard[], subtitle: string): string {
+    const fmt = (n: number) => Math.round(n).toLocaleString('de-DE');
+    const cardsHtml = cards.map(p => {
+      const fee = p.totalRsd - p.priceRsd;
+      const feats = p.features.map(f => `<div class="feat"><div class="ck" style="color:${p.tc}">&#10003;</div><span style="color:${p.ltc}">${f}</span></div>`).join('');
+      return `<div class="card${p.id === storedPlan ? ' sel' : ''}" data-plan="${p.id}" onclick="sel('${p.id}')" style="background:${p.grad}">
+<div class="ct"><div><span class="cn" style="color:${p.tc}">${p.label}</span>${p.badge ? `<span class="cbadge" style="color:${p.tc}">${p.badge}</span>` : ''}<div class="cd" style="color:${p.ltc}">${p.desc}</div></div><div class="cp"><div class="cpa" style="color:${p.tc}">${fmt(p.priceRsd)}</div><div class="cper" style="color:${p.ltc}">${p.period}</div></div></div>
+<div class="cfee" style="color:${p.ltc}">+ ${fmt(fee)}&nbsp;RSD Stripe naknada &bull; <strong style="color:${p.tc}">Ukupno: ${fmt(p.totalRsd)}&nbsp;RSD</strong></div>
+<div class="feats">${feats}</div></div>`;
+    }).join('\n');
+
+    return `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>CarDrop &ndash; Plaćanje</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#1B4332;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff;padding-bottom:40px}.hdr{text-align:center;padding:24px 20px 10px}.logo{display:inline-flex;align-items:center;gap:9px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#52B788;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}.logo-n{font-weight:900;font-size:20px}.sub{color:#74C69D;font-size:13px;margin-top:5px}.sbadge{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 16px 12px;background:rgba(255,255,255,.07);border-radius:10px;padding:9px}.sbtxt{color:rgba(255,255,255,.7);font-size:11px}.sbname{color:#635BFF;font-size:13px;font-weight:800}.cards{padding:0 16px;display:flex;flex-direction:column;gap:9px}.card{border-radius:14px;padding:13px;cursor:pointer;border:2px solid transparent;transition:border-color .2s,transform .15s}.card.sel{border-color:rgba(255,255,255,.5);transform:scale(1.02)}.ct{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}.cn{font-weight:800;font-size:14px;letter-spacing:.5px}.cbadge{background:rgba(0,0,0,.2);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:6px;text-transform:uppercase}.cd{font-size:11px;margin-top:2px;opacity:.8}.cp{text-align:right;flex-shrink:0;margin-left:8px}.cpa{font-size:20px;font-weight:900;line-height:1}.cper{font-size:11px;opacity:.75}.cfee{font-size:10px;opacity:.65;margin:4px 0 7px}.feats{display:flex;flex-direction:column;gap:3px}.feat{display:flex;align-items:center;gap:5px;font-size:11px}.ck{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.2);display:inline-flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}.fn{color:rgba(255,255,255,.4);font-size:10px;text-align:center;margin:9px 16px 0}.err{display:none;margin:9px 16px 0;background:rgba(239,68,68,.15);border-radius:10px;padding:10px;color:#fca5a5;font-size:13px;text-align:center}.bwrap{padding:12px 16px 0}.btn{width:100%;padding:14px;border-radius:12px;background:#52B788;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.btn:disabled{opacity:.6;cursor:not-allowed}.sp{width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;display:none;animation:r .7s linear infinite;flex-shrink:0}@keyframes r{to{transform:rotate(360deg)}}</style></head>
+<body>
+<div class="hdr"><div class="logo"><div class="logo-ic">C</div><span class="logo-n">CarDrop</span></div><div class="sub">${subtitle}</div></div>
+<div class="sbadge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#635BFF" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="sbtxt">Sigurno plaćanje putem</span><span class="sbname">stripe</span></div>
+<div class="cards">${cardsHtml}</div>
+<div class="fn">Stripe naknada: 3,9% + ~35&nbsp;RSD (0,30&euro;) &bull; Prikazana cena uključuje naknadu</div>
+<div class="err" id="err"></div>
+<div class="bwrap"><button class="btn" id="btn" onclick="pay()"><div class="sp" id="sp"></div><span id="btxt">Plati i nastavi &#8594;</span></button></div>
+<script>var tok="${tokenId}",selPlan="${storedPlan}";function sel(p){selPlan=p;document.querySelectorAll(".card").forEach(function(c){c.classList.toggle("sel",c.dataset.plan===p);})}async function pay(){var btn=document.getElementById("btn"),sp=document.getElementById("sp"),btxt=document.getElementById("btxt"),err=document.getElementById("err");err.style.display="none";btn.disabled=true;sp.style.display="block";btxt.textContent="Preusmeravanje\u2026";try{var r=await fetch("/api/ios-checkout/create-session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:tok,plan:selPlan})});var d=await r.json();if(!r.ok)throw new Error(d.message||"Gre\u0161ka");window.location.href=d.url;}catch(e){err.textContent=e.message;err.style.display="block";btn.disabled=false;sp.style.display="none";btxt.textContent="Plati i nastavi \u2192";}}</script>
+</body></html>`;
+  }
+
+  // ─── iOS Checkout — App Store Guideline 3.1.1 compliance ───────────────────
+  // GET /ios-checkout: server-rendered HTML page (no React SPA).
+  //   Validates the token (does NOT mark it used here). Renders plan cards with
+  //   the stored plan pre-selected and an explicit Stripe fee breakdown per card.
+  //   The "Pay" button POSTs to /api/ios-checkout/create-session.
+  // POST /api/ios-checkout/create-session: enforces plan === token.plan,
+  //   marks token used, creates Stripe Checkout session, returns { url }.
+  // POST /api/ios-checkout/token: stores type + plan + spotId, returns link.
 
   app.get('/ios-checkout', async (req: any, res) => {
     const tokenId = req.query.token as string;
@@ -4159,31 +4190,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (new Date() > tokenRecord.expiresAt) return res.status(410).send(iosErrHtml("Link je istekao (važi 5 minuta). Vrati se i pokušaj ponovo."));
       if (!tokenRecord.plan) return res.status(400).send(iosErrHtml("Plan nije specificiran. Vrati se u aplikaciju."));
 
-      // Mark token used IMMEDIATELY — single-use enforcement at page open
+      // Build plan cards — token NOT marked used here; create-session does that.
+      const mk = (id: string, label: string, price: number, period: string, desc: string, grad: string, tc: string, ltc: string, badge: string, features: string[]): IosCard => ({
+        id, label, priceRsd: price, totalRsd: Math.round(totalWithFee(price)), period, desc, grad, tc, ltc, badge, features,
+      });
+
+      let cards: IosCard[];
+      let subtitle: string;
+
+      if (tokenRecord.type === 'map_hack') {
+        cards = [
+          mk('premium',          'PREMIUM',   390,  'RSD/mes', 'Mesečna pretplata — 30 dana',   'linear-gradient(145deg,#78350f,#b45309,#d97706)', '#FFF', 'rgba(255,220,130,.85)', 'Preporučeno', ['Štek lokacije', 'Safe Zone alarm', 'Pauk radar', 'Push notifikacije']),
+          mk('day_pass',         'DAY PASS',  120,  'RSD',     'Jednodnevni pristup — 24 sata', 'linear-gradient(145deg,#7f1d1d,#b91c1c,#dc2626)', '#FFF', 'rgba(255,190,190,.85)', '', ['Štek lokacije', 'Safe Zone alarm', 'Važi 24 sata']),
+          mk('godisnji_premium', 'GODIŠNJI', 3500, 'RSD/god', 'Godišnja pretplata — 365 dana', 'linear-gradient(145deg,#1e1b4b,#312e81,#4338ca)', '#FFF', 'rgba(196,181,253,.85)', '2 mes. gratis', ['Štek lokacije', 'Safe Zone alarm', 'Pauk radar', '365 dana pristupa']),
+        ];
+        subtitle = 'Map Hack NS — Odaberi plan';
+      } else if (tokenRecord.type === 'spot') {
+        if (!tokenRecord.spotId) return res.status(400).send(iosErrHtml("Oglas nije specificiran. Vrati se u aplikaciju."));
+        const spot = await storage.getParkingSpot(tokenRecord.spotId);
+        if (!spot || spot.ownerId !== tokenRecord.userId) return res.status(404).send(iosErrHtml("Oglas nije pronađen."));
+        const cat = (spot.category || 'private') as ProductCategory;
+        const goldPrice   = getPlanBasePrice(cat, 'gold'   as any) ?? 0;
+        const silverPrice = getPlanBasePrice(cat, 'silver' as any) ?? 0;
+        cards = [
+          mk('gold',   'GOLD',   goldPrice,   'RSD', 'Zlatni pin, vrh liste, maksimalna vidljivost', 'linear-gradient(145deg,#78350f,#b45309,#d97706)', '#FFF', 'rgba(255,220,130,.85)', '', ['Zlatni pin na mapi', 'Vrh liste rezultata', '180 dana Gold + 180 dana Standard']),
+          mk('silver', 'SILVER', silverPrice, 'RSD', 'Srebrni pin, poboljšana pozicija',             'linear-gradient(145deg,#3f3f46,#71717a,#a1a1aa)', '#FFF', 'rgba(228,228,231,.85)', '', ['Srebrni pin na mapi', 'Poboljšana pozicija', '90 dana Silver + 90 dana Standard']),
+        ];
+        subtitle = `Aktiviraj oglas: ${spot.title}`;
+      } else {
+        return res.status(400).send(iosErrHtml("Nepoznat tip checkout-a."));
+      }
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(buildIosCheckoutPage(tokenId, tokenRecord.plan, cards, subtitle));
+    } catch (error) {
+      console.error("iOS checkout page error:", error);
+      return res.status(500).send(iosErrHtml("Greška servera. Vrati se u aplikaciju i pokušaj ponovo."));
+    }
+  });
+
+  // Validates token + enforces plan === token.plan, marks used, creates Stripe session.
+  app.post('/api/ios-checkout/create-session', async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { token: tokenId, plan } = req.body;
+
+      if (!tokenId || !plan) {
+        return res.status(400).json({ message: "Token i plan su obavezni" });
+      }
+
+      const [tokenRecord] = await db.select().from(iosCheckoutTokens).where(eq(iosCheckoutTokens.id, tokenId));
+
+      if (!tokenRecord) return res.status(404).json({ message: "Token nije pronađen" });
+      if (tokenRecord.used) return res.status(410).json({ message: "Token je već iskorišćen — vrati se u aplikaciju i pokušaj ponovo" });
+      if (new Date() > tokenRecord.expiresAt) return res.status(410).json({ message: "Token je istekao — vrati se u aplikaciju i pokušaj ponovo" });
+
+      // Enforce plan stored in token — prevents plan substitution
+      if (plan !== tokenRecord.plan) {
+        return res.status(400).json({ message: "Odabrani plan se ne poklapa sa tokenom" });
+      }
+
+      // Mark token used before Stripe call — single-use enforcement
       await db.update(iosCheckoutTokens).set({ used: true }).where(eq(iosCheckoutTokens.id, tokenId));
 
       const currentUser = await storage.getUser(tokenRecord.userId);
-      if (!currentUser) return res.status(404).send(iosErrHtml("Korisnik nije pronađen."));
+      if (!currentUser) return res.status(404).json({ message: "Korisnik nije pronađen" });
 
-      const stripe = await getUncachableStripeClient();
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const plan = tokenRecord.plan;
-      let stripeUrl: string;
 
       if (tokenRecord.type === 'map_hack') {
         const validPlans: Record<string, { name: string; amount: number; description: string }> = {
-          premium: { name: "CarDrop Map Hack Premium", amount: 390, description: "Mesečna pretplata — 30 dana" },
-          day_pass: { name: "CarDrop Map Hack Day Pass", amount: 120, description: "Jednodnevni pristup — 24 sata" },
+          premium:          { name: "CarDrop Map Hack Premium",  amount: 390,  description: "Mesečna pretplata — 30 dana"   },
+          day_pass:         { name: "CarDrop Map Hack Day Pass", amount: 120,  description: "Jednodnevni pristup — 24 sata" },
           godisnji_premium: { name: "CarDrop Map Hack Godišnji", amount: 3500, description: "Godišnja pretplata — 365 dana" },
         };
-        if (!validPlans[plan]) return res.status(400).send(iosErrHtml("Nevalidan plan."));
-        if (!currentUser.mapPrivacyAcceptedAt) return res.status(403).send(iosErrHtml("Prihvati politiku privatnosti u aplikaciji pre kupovine."));
+
+        if (!validPlans[plan]) return res.status(400).json({ message: "Nevalidan plan" });
+
+        if (!currentUser.mapPrivacyAcceptedAt) {
+          return res.status(403).json({ message: "Prihvati politiku privatnosti pre kupovine" });
+        }
 
         const planInfo = validPlans[plan];
         const totalAmountParas = Math.round(totalWithFee(planInfo.amount) * 100);
         const isSubscriptionPlan = plan === 'premium' || plan === 'godisnji_premium';
 
         let sessionParams: Stripe.Checkout.SessionCreateParams;
+
         if (isSubscriptionPlan) {
           let stripeCustomerId = currentUser.stripeCustomerId ?? undefined;
           if (!stripeCustomerId) {
@@ -4215,19 +4308,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             metadata: { userId: tokenRecord.userId, plan },
           };
         }
-        const session = await stripe.checkout.sessions.create(sessionParams);
-        stripeUrl = session.url!;
 
-      } else if (tokenRecord.type === 'spot') {
-        if (plan !== 'silver' && plan !== 'gold') return res.status(400).send(iosErrHtml("Nevalidan plan za oglas."));
-        if (!tokenRecord.spotId) return res.status(400).send(iosErrHtml("Oglas nije specificiran."));
+        const session = await stripe.checkout.sessions.create(sessionParams);
+        return res.json({ url: session.url });
+      }
+
+      if (tokenRecord.type === 'spot') {
+        if (plan !== 'silver' && plan !== 'gold') {
+          return res.status(400).json({ message: "Nevalidan plan za oglas" });
+        }
+        if (!tokenRecord.spotId) return res.status(400).json({ message: "Spot ID nije pronađen" });
 
         const spot = await storage.getParkingSpot(tokenRecord.spotId);
-        if (!spot || spot.ownerId !== tokenRecord.userId) return res.status(404).send(iosErrHtml("Oglas nije pronađen."));
+        if (!spot || spot.ownerId !== tokenRecord.userId) {
+          return res.status(404).json({ message: "Oglas nije pronađen" });
+        }
 
         const category = (spot.category || 'private') as ProductCategory;
         const basePrice = getPlanBasePrice(category, plan as any);
-        if (!basePrice) return res.status(404).send(iosErrHtml("Cena nije pronađena."));
+        if (!basePrice) return res.status(404).json({ message: "Cena nije pronađena" });
 
         const totalAmountParas = Math.round(totalWithFee(basePrice) * 100);
         const spotProductName = `CarDrop Oglas ${plan === 'gold' ? 'Gold' : 'Silver'} — ${spot.title}`;
@@ -4241,23 +4340,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cancel_url: `${baseUrl}/add-spot?category=${category}`,
           metadata: { type: 'spot_listing', spotId: spot.id, userId: tokenRecord.userId, tier: plan, category },
         });
-        await storage.updateParkingSpot(spot.id, { stripeSessionId: session.id } as any);
-        stripeUrl = session.url!;
 
-      } else {
-        return res.status(400).send(iosErrHtml("Nepoznat tip checkout-a."));
+        await storage.updateParkingSpot(spot.id, { stripeSessionId: session.id } as any);
+        return res.json({ url: session.url, spotId: spot.id });
       }
 
-      return res.redirect(302, stripeUrl);
+      res.status(400).json({ message: "Nepoznat tip checkout-a" });
     } catch (error) {
-      console.error("iOS checkout error:", error);
-      const msg = error instanceof Error ? error.message : "Greška servera";
-      return res.status(500).send(iosErrHtml(`Greška: ${msg}`));
+      console.error("Error creating iOS checkout session:", error);
+      const msg = error instanceof Error ? error.message : "Greška";
+      res.status(500).json({ message: msg });
     }
   });
 
-  // Generates a short-lived one-time token (plan + type stored server-side).
-  // Safari opens GET /ios-checkout?token=... which immediately consumes it.
+  // Creates a short-lived one-time token (type + plan + spotId stored server-side).
+  // Safari opens GET /ios-checkout?token=... which shows plan cards for confirmation.
   app.post('/api/ios-checkout/token', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.session.userId;

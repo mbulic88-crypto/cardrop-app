@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Zap, Download, Sun, Moon, PlusCircle, Home, Building2, Truck, Users, Car, Clock, CalendarDays, Menu, X, LogIn, LayoutDashboard, Tag, Sparkles, Check, Mail, Phone, MapPin, Info, CreditCard, Crown, Star, Shield, Lock, Share, Smartphone, User as UserIcon, Hotel } from "lucide-react";
 import { SiInstagram, SiFacebook, SiTiktok } from "react-icons/si";
 import { useLanguage } from "@/hooks/useLanguage";
+import { detectIos } from "@/lib/detectIos";
 import googlePlayBadgeImg from "@assets/image_1777741996093.png";
 import heroImage from "@assets/hero-female-driver_2.jpg";
 import phoneGpsImage from "@assets/phone-gps-navigation.jpg";
@@ -281,7 +282,7 @@ export default function Landing() {
 
   useEffect(() => {
     const ua = navigator.userAgent;
-    setIsIos(/iPhone|iPad|iPod/i.test(ua));
+    setIsIos(detectIos());
     setIsAndroid(/Android/i.test(ua));
   }, []);
 

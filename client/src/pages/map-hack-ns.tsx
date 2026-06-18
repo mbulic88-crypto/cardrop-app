@@ -14,6 +14,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
+import { detectIos } from "@/lib/detectIos";
 import { MapHackMap, markerColor, markerEmoji, markerLabel, haversineMeters, parkingPinStyle } from "@/components/MapHackMap";
 import type { ParkingListing } from "@/components/MapHackMap";
 import type { MapMarker, MapChatMessage, MapSafeZone, MapWatchArea } from "@shared/schema";
@@ -746,7 +747,7 @@ export default function MapHackNS() {
   const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: pushSubscribe, isLoading: pushLoading, permission: pushPermission } = usePushNotifications();
   useEffect(() => {
     const ua = navigator.userAgent;
-    setIsIos(/iPhone|iPad|iPod/i.test(ua));
+    setIsIos(detectIos());
     setIsAndroid(/Android/i.test(ua));
   }, []);
 

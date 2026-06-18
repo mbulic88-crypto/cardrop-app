@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useLocation, useSearch } from "wouter";
+import { detectIos } from "@/lib/detectIos";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import LoginRequiredDialog from "@/components/LoginRequiredDialog";
@@ -424,7 +425,7 @@ export default function AddSpot() {
   });
 
   useEffect(() => {
-    setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
+    setIsIos(detectIos());
   }, []);
 
   const stripeMutation = useMutation({
