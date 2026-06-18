@@ -557,20 +557,22 @@ export default function Landing() {
               {t.myReservations}
             </Button>
 
-            <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
-              <a
-                href="https://play.google.com/store/apps/details?id=cardrop.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="link-google-play"
-                className="rounded-md flex items-center justify-center p-2 border border-border/50"
-              >
-                <img
-                  src={googlePlayBadgeImg}
-                  alt="Get it on Google Play"
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
-              </a>
+            <div className={`grid ${isIos ? "grid-cols-1" : "grid-cols-2"} gap-3`} data-testid="install-instructions">
+              {!isIos && (
+                <a
+                  href="https://play.google.com/store/apps/details?id=cardrop.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="link-google-play"
+                  className="rounded-md flex items-center justify-center p-2 border border-border/50"
+                >
+                  <img
+                    src={googlePlayBadgeImg}
+                    alt="Get it on Google Play"
+                    style={{ width: "100%", height: "auto", display: "block" }}
+                  />
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => setShowIosModal(true)}

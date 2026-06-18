@@ -215,7 +215,7 @@ function Radio({ selected, light = true }: { selected: boolean; light?: boolean 
   );
 }
 
-function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void }) {
+function PlanCards({ selectedPlan, onSelect, isIos = false }: { selectedPlan: PlanId | null; onSelect: (p: PlanId) => void; isIos?: boolean }) {
   const { language } = useLanguage();
   const mh = language === "sr" ? mhT.sr : mhT.en;
   return (
@@ -285,7 +285,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
           <span className="text-yellow-800 text-sm ml-1 font-medium">{mh.premiumPrice}</span>
         </div>
-        <span className="text-yellow-900/60 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>
+        {!isIos && <span className="text-yellow-900/60 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
         <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">{mh.premiumAllFree}</p>
         <div className="flex flex-col gap-1.5">
           <GoldRow ok text={mh.premFeat1} />
@@ -322,7 +322,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <span className="text-white text-3xl font-extrabold leading-none">120</span>
           <span className="text-red-200 text-sm ml-1 font-medium">{mh.dayPassPrice}</span>
         </div>
-        <span className="text-red-200 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>
+        {!isIos && <span className="text-red-200 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
         <div className="flex flex-col gap-1.5">
           <LightRow ok text={mh.dpFeat1} />
           <LightRow ok text={mh.dpFeat2} />
@@ -362,7 +362,7 @@ function PlanCards({ selectedPlan, onSelect }: { selectedPlan: PlanId | null; on
           <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
           <span className="text-indigo-300 text-sm font-medium">{mh.godisnjiPrice}</span>
         </div>
-        <span className="text-indigo-300 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>
+        {!isIos && <span className="text-indigo-300 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
         <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
           <p className="text-indigo-200 text-xs font-semibold">{mh.godisnjiSavings}</p>
         </div>
@@ -1785,6 +1785,7 @@ export default function MapHackNS() {
               <PlanCards
                 selectedPlan={selectedPlan}
                 onSelect={(p) => { setSelectedPlan(p); setError(""); }}
+                isIos={isIos}
               />
             </div>
 
@@ -2028,6 +2029,7 @@ export default function MapHackNS() {
               <PlanCards
                 selectedPlan={selectedPlan}
                 onSelect={(p) => { setSelectedPlan(p); setError(""); }}
+                isIos={isIos}
               />
             </div>
 
@@ -5940,10 +5942,19 @@ export default function MapHackNS() {
                 onClick={async () => {
                   setUpsellPending(true);
                   try {
-                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "premium" }) });
-                    const data = await res.json() as { url?: string; message?: string };
-                    if (!res.ok) throw new Error(data.message || "Greška");
-                    window.location.href = data.url!;
+                    if (isIos) {
+                      const newWin = window.open('', '_blank');
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const d = await r.json() as { checkoutUrl?: string; message?: string };
+                      if (!r.ok) throw new Error(d.message || "Greška");
+                      if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
+                      setUpsellPending(false);
+                    } else {
+                      const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "premium" }) });
+                      const data = await res.json() as { url?: string; message?: string };
+                      if (!res.ok) throw new Error(data.message || "Greška");
+                      window.location.href = data.url!;
+                    }
                   } catch (err) {
                     toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
                     setUpsellPending(false);
@@ -5962,7 +5973,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
                     <span className="text-yellow-800 text-xs ml-1">RSD/mes</span>
-                    <div className="text-yellow-900/60 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>
+                    {!isIos && <div className="text-yellow-900/60 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
                   </div>
                 </div>
                 <div className="mt-3 py-2 px-4 rounded-lg text-center font-bold text-sm" style={{ background: "rgba(0,0,0,0.15)", color: "#713f12" }}>
@@ -5977,10 +5988,19 @@ export default function MapHackNS() {
                 onClick={async () => {
                   setUpsellPending(true);
                   try {
-                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "day_pass" }) });
-                    const data = await res.json() as { url?: string; message?: string };
-                    if (!res.ok) throw new Error(data.message || "Greška");
-                    window.location.href = data.url!;
+                    if (isIos) {
+                      const newWin = window.open('', '_blank');
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const d = await r.json() as { checkoutUrl?: string; message?: string };
+                      if (!r.ok) throw new Error(d.message || "Greška");
+                      if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
+                      setUpsellPending(false);
+                    } else {
+                      const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "day_pass" }) });
+                      const data = await res.json() as { url?: string; message?: string };
+                      if (!res.ok) throw new Error(data.message || "Greška");
+                      window.location.href = data.url!;
+                    }
                   } catch (err) {
                     toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
                     setUpsellPending(false);
@@ -5996,7 +6016,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-white text-2xl font-extrabold leading-none">120</span>
                     <span className="text-red-200 text-xs ml-1">RSD</span>
-                    <div className="text-red-200 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>
+                    {!isIos && <div className="text-red-200 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
                   </div>
                 </div>
                 <div className="flex gap-3 mt-2 mb-3">
@@ -6015,10 +6035,19 @@ export default function MapHackNS() {
                 onClick={async () => {
                   setUpsellPending(true);
                   try {
-                    const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "godisnji_premium" }) });
-                    const data = await res.json() as { url?: string; message?: string };
-                    if (!res.ok) throw new Error(data.message || "Greška");
-                    window.location.href = data.url!;
+                    if (isIos) {
+                      const newWin = window.open('', '_blank');
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const d = await r.json() as { checkoutUrl?: string; message?: string };
+                      if (!r.ok) throw new Error(d.message || "Greška");
+                      if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
+                      setUpsellPending(false);
+                    } else {
+                      const res = await fetch("/api/map-hack/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: "godisnji_premium" }) });
+                      const data = await res.json() as { url?: string; message?: string };
+                      if (!res.ok) throw new Error(data.message || "Greška");
+                      window.location.href = data.url!;
+                    }
                   } catch (err) {
                     toast({ title: "Greška", description: err instanceof Error ? err.message : "Pokušaj ponovo", variant: "destructive" });
                     setUpsellPending(false);
@@ -6037,7 +6066,7 @@ export default function MapHackNS() {
                   <div className="text-right">
                     <span className="text-white text-2xl font-extrabold leading-none">3.500</span>
                     <span className="text-indigo-300 text-xs ml-1">RSD/god</span>
-                    <div className="text-indigo-300 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>
+                    {!isIos && <div className="text-indigo-300 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
                   </div>
                 </div>
                 <div className="py-2 px-4 rounded-lg text-center font-bold text-sm text-white" style={{ background: "rgba(0,0,0,0.2)" }}>

@@ -297,6 +297,8 @@ export default function AddSpot() {
   const langMenuRef = useRef<HTMLDivElement>(null);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionType>('standard');
   const [rentalDurationType, setRentalDurationType] = useState<'short' | 'long'>('short');
+  const [isIos, setIsIos] = useState(false);
+  const [iosPayPending, setIosPayPending] = useState(false);
   
   // Get category from URL params
   const urlParams = new URLSearchParams(searchString);
@@ -420,6 +422,10 @@ export default function AddSpot() {
       });
     },
   });
+
+  useEffect(() => {
+    setIsIos(/iPhone|iPad|iPod/i.test(navigator.userAgent));
+  }, []);
 
   const stripeMutation = useMutation({
     mutationFn: async (data: { spotId: string; tier: string }) => {
@@ -1150,7 +1156,7 @@ export default function AddSpot() {
                   </div>
                 )}
 
-                {selectedPlan && selectedPlan !== 'standard' && (
+                {selectedPlan && selectedPlan !== 'standard' && !isIos && (
                   <div className="flex items-center justify-center gap-2.5 py-3" data-testid="stripe-trust-addspot">
                     <Shield className="w-4.5 h-4.5 text-[#635BFF]" />
                     <span className="text-sm text-foreground font-medium">
@@ -1266,17 +1272,37 @@ export default function AddSpot() {
 
               {(selectedPlan === 'silver' || selectedPlan === 'gold') ? (
                 <Button
-                  onClick={() => {
-                    stripeMutation.mutate({ spotId: spotId!, tier: selectedPlan });
+                  onClick={async () => {
+                    if (isIos) {
+                      setIosPayPending(true);
+                      const newWin = window.open('', '_blank');
+                      try {
+                        const res = await fetch('/api/ios-checkout/token', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ type: 'spot', spotId: spotId! }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || "Greška");
+                        if (newWin) { newWin.location.href = data.checkoutUrl; } else { window.location.href = data.checkoutUrl; }
+                      } catch (err) {
+                        try { if (newWin) newWin.close(); } catch {}
+                        toast({ title: language === 'sr' ? "Greška" : "Error", description: language === 'sr' ? "Pokušajte ponovo." : "Please try again.", variant: "destructive" });
+                      } finally {
+                        setIosPayPending(false);
+                      }
+                    } else {
+                      stripeMutation.mutate({ spotId: spotId!, tier: selectedPlan });
+                    }
                   }}
                   className={`w-full ${selectedPlan === 'gold' 
                     ? 'bg-gradient-to-r from-[#DAA520] via-[#FFD700] to-[#B8860B] text-white border-0' 
                     : 'bg-gradient-to-r from-[#C0C0C0] via-[#E8E8E8] to-[#A8A9AD] text-[#333] border-0'}`}
                   size="lg"
-                  disabled={stripeMutation.isPending}
+                  disabled={stripeMutation.isPending || iosPayPending}
                   data-testid="button-proceed-to-payment"
                 >
-                  {stripeMutation.isPending
+                  {(stripeMutation.isPending || iosPayPending)
                     ? (language === 'sr' ? 'Preusmeravanje...' : 'Redirecting...')
                     : (language === 'sr' 
                       ? `Plati ${getPlanById(selectedPlan)?.price?.toLocaleString('sr-RS')} RSD - ${selectedPlan === 'gold' ? 'Gold' : 'Silver'} paket`

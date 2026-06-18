@@ -12,7 +12,7 @@ import { totalWithFee } from "@shared/stripeFee";
 import { getStripePriceId, getMapHackPriceId, getMapHackRecurringPriceId, getPlanBasePrice, type ProductCategory } from "./stripeProducts";
 import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
-import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings } from "@shared/schema";
+import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings, iosCheckoutTokens } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
 import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail, sendBookingAutoConfirmedOwnerEmail } from './email';
 import { randomBytes } from 'crypto';
@@ -4135,6 +4135,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in accommodation image upload:", error);
       res.status(500).json({ message: "Upload failed" });
+    }
+  });
+
+  // ─── iOS Checkout — App Store Guideline 3.1.1 compliance ───────────────────
+  // Generates a short-lived token so Safari can open /ios-checkout for payment.
+
+  app.post('/api/ios-checkout/token', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const { type, spotId } = req.body;
+
+      if (!type || (type !== 'map_hack' && type !== 'spot')) {
+        return res.status(400).json({ message: "Nevalidan tip checkout-a" });
+      }
+      if (type === 'spot' && !spotId) {
+        return res.status(400).json({ message: "spotId je obavezan za spot checkout" });
+      }
+
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+      const [token] = await db
+        .insert(iosCheckoutTokens)
+        .values({ userId, type, spotId: spotId ? String(spotId) : null, expiresAt })
+        .returning();
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const checkoutUrl = `${baseUrl}/ios-checkout?token=${token.id}`;
+
+      res.json({ checkoutUrl });
+    } catch (error) {
+      console.error("Error creating iOS checkout token:", error);
+      res.status(500).json({ message: "Greška pri kreiranju tokena" });
+    }
+  });
+
+  app.get('/api/ios-checkout/info', async (req: any, res) => {
+    try {
+      const tokenId = req.query.token as string;
+      if (!tokenId) return res.status(400).json({ message: "Token je obavezan" });
+
+      const [tokenRecord] = await db
+        .select()
+        .from(iosCheckoutTokens)
+        .where(eq(iosCheckoutTokens.id, tokenId));
+
+      if (!tokenRecord) return res.status(404).json({ message: "Token nije pronađen" });
+      if (tokenRecord.used) return res.status(410).json({ message: "Token je već iskorišćen — vrati se u aplikaciju i pokušaj ponovo" });
+      if (new Date() > tokenRecord.expiresAt) return res.status(410).json({ message: "Token je istekao — vrati se u aplikaciju i pokušaj ponovo" });
+
+      res.json({ type: tokenRecord.type, spotId: tokenRecord.spotId });
+    } catch (error) {
+      console.error("Error fetching iOS checkout info:", error);
+      res.status(500).json({ message: "Greška" });
+    }
+  });
+
+  app.post('/api/ios-checkout/create-session', async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const { token: tokenId, plan } = req.body;
+
+      if (!tokenId || !plan) {
+        return res.status(400).json({ message: "Token i plan su obavezni" });
+      }
+
+      const [tokenRecord] = await db
+        .select()
+        .from(iosCheckoutTokens)
+        .where(eq(iosCheckoutTokens.id, tokenId));
+
+      if (!tokenRecord) return res.status(404).json({ message: "Token nije pronađen" });
+      if (tokenRecord.used) return res.status(410).json({ message: "Token je već iskorišćen" });
+      if (new Date() > tokenRecord.expiresAt) return res.status(410).json({ message: "Token je istekao" });
+
+      await db.update(iosCheckoutTokens).set({ used: true }).where(eq(iosCheckoutTokens.id, tokenId));
+
+      const currentUser = await storage.getUser(tokenRecord.userId);
+      if (!currentUser) return res.status(404).json({ message: "Korisnik nije pronađen" });
+
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+      if (tokenRecord.type === 'map_hack') {
+        const validPlans: Record<string, { name: string; amount: number; description: string }> = {
+          premium: { name: "CarDrop Map Hack Premium", amount: 39000, description: "Mesečna pretplata — 30 dana" },
+          day_pass: { name: "CarDrop Map Hack Day Pass", amount: 12000, description: "Jednodnevni pristup — 24 sata" },
+          godisnji_premium: { name: "CarDrop Map Hack Godišnji", amount: 350000, description: "Godišnja pretplata — 365 dana" },
+        };
+
+        if (!validPlans[plan]) return res.status(400).json({ message: "Nevalidan plan" });
+
+        if (!currentUser.mapPrivacyAcceptedAt) {
+          return res.status(403).json({ message: "Morate prihvatiti Politiku privatnosti pre kupovine" });
+        }
+
+        const planInfo = validPlans[plan];
+        const baseAmountRsd = planInfo.amount / 100;
+        const totalAmountParas = Math.round(totalWithFee(baseAmountRsd) * 100);
+        const isSubscriptionPlan = plan === 'premium' || plan === 'godisnji_premium';
+
+        let sessionParams: Stripe.Checkout.SessionCreateParams;
+
+        if (isSubscriptionPlan) {
+          let stripeCustomerId = currentUser.stripeCustomerId ?? undefined;
+          if (!stripeCustomerId) {
+            const customer = await stripe.customers.create({
+              email: currentUser.email ?? undefined,
+              name: currentUser.mapNickname ?? (`${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}`.trim() || undefined),
+              metadata: { userId: tokenRecord.userId },
+            });
+            stripeCustomerId = customer.id;
+            await storage.updateMapHackSubscription(tokenRecord.userId, { stripeCustomerId });
+          }
+          const recurringInterval: 'month' | 'year' = plan === 'godisnji_premium' ? 'year' : 'month';
+          sessionParams = {
+            customer: stripeCustomerId,
+            line_items: [{ price_data: { currency: 'rsd', unit_amount: totalAmountParas, product_data: { name: planInfo.name, description: planInfo.description }, recurring: { interval: recurringInterval } }, quantity: 1 }],
+            mode: 'subscription',
+            subscription_data: { metadata: { userId: tokenRecord.userId, plan } },
+            success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/map-hack/subscribe`,
+            metadata: { userId: tokenRecord.userId, plan },
+          };
+        } else {
+          sessionParams = {
+            customer_email: currentUser.email ?? undefined,
+            line_items: [{ price_data: { currency: 'rsd', unit_amount: totalAmountParas, product_data: { name: planInfo.name, description: planInfo.description } }, quantity: 1 }],
+            mode: 'payment',
+            success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/map-hack/subscribe`,
+            metadata: { userId: tokenRecord.userId, plan },
+          };
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionParams);
+        return res.json({ url: session.url });
+      }
+
+      if (tokenRecord.type === 'spot') {
+        if (plan !== 'silver' && plan !== 'gold') {
+          return res.status(400).json({ message: "Nevalidan plan za oglas" });
+        }
+        if (!tokenRecord.spotId) return res.status(400).json({ message: "Spot ID nije pronađen" });
+
+        const spot = await storage.getParkingSpot(tokenRecord.spotId);
+        if (!spot || spot.ownerId !== tokenRecord.userId) {
+          return res.status(404).json({ message: "Oglas nije pronađen" });
+        }
+
+        const category = (spot.category || 'private') as ProductCategory;
+        const basePrice = getPlanBasePrice(category, plan as any);
+        if (!basePrice) return res.status(404).json({ message: "Cena nije pronađena" });
+
+        const totalAmountParas = Math.round(totalWithFee(basePrice) * 100);
+        const spotProductName = `CarDrop Oglas ${plan === 'gold' ? 'Gold' : 'Silver'} — ${spot.title}`;
+
+        const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          customer_email: currentUser.email ?? undefined,
+          line_items: [{ price_data: { currency: 'rsd', product_data: { name: spotProductName, description: `Premium oglas — ${plan === 'gold' ? 'Gold' : 'Silver'} plan` }, unit_amount: totalAmountParas }, quantity: 1 }],
+          mode: 'payment',
+          success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
+          cancel_url: `${baseUrl}/add-spot?category=${category}`,
+          metadata: { type: 'spot_listing', spotId: spot.id, userId: tokenRecord.userId, tier: plan, category },
+        });
+
+        await storage.updateParkingSpot(spot.id, { stripeSessionId: session.id } as any);
+        return res.json({ url: session.url, spotId: spot.id });
+      }
+
+      res.status(400).json({ message: "Nepoznat tip checkout-a" });
+    } catch (error) {
+      console.error("Error creating iOS checkout session:", error);
+      const msg = error instanceof Error ? error.message : "Greška";
+      res.status(500).json({ message: msg });
     }
   });
 

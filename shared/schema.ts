@@ -591,3 +591,19 @@ export const insertPartnerAccommodationSchema = createInsertSchema(partnerAccomm
 
 export type InsertPartnerAccommodation = z.infer<typeof insertPartnerAccommodationSchema>;
 export type PartnerAccommodation = typeof partnerAccommodations.$inferSelect;
+
+// ─── iOS Checkout Tokens ──────────────────────────────────────────────────────
+// Short-lived one-time tokens for iOS App Store compliance (guideline 3.1.1).
+// Generated server-side when user taps a paid plan on iOS; Safari opens the
+// /ios-checkout page which then creates a Stripe hosted-checkout session.
+
+export const iosCheckoutTokens = pgTable("ios_checkout_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar("type", { length: 20 }).notNull(), // 'map_hack' | 'spot'
+  spotId: varchar("spot_id", { length: 100 }),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type IosCheckoutToken = typeof iosCheckoutTokens.$inferSelect;
