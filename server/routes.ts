@@ -4296,7 +4296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             line_items: [{ price_data: { currency: 'rsd', unit_amount: totalAmountParas, product_data: { name: planInfo.name, description: planInfo.description }, recurring: { interval: recurringInterval } }, quantity: 1 }],
             mode: 'subscription',
             subscription_data: { metadata: { userId: tokenRecord.userId, plan } },
-            success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `${baseUrl}/ios-done?type=map_hack&plan=${plan}`,
             cancel_url: `${baseUrl}/map-hack/subscribe`,
             metadata: { userId: tokenRecord.userId, plan },
           };
@@ -4305,9 +4305,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customer_email: currentUser.email ?? undefined,
             line_items: [{ price_data: { currency: 'rsd', unit_amount: totalAmountParas, product_data: { name: planInfo.name, description: planInfo.description } }, quantity: 1 }],
             mode: 'payment',
-            success_url: `${baseUrl}/map-hack?plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+            success_url: `${baseUrl}/ios-done?type=map_hack&plan=${plan}`,
             cancel_url: `${baseUrl}/map-hack/subscribe`,
-            metadata: { userId: tokenRecord.userId, plan },
+            metadata: { type: 'map_hack', userId: tokenRecord.userId, plan },
           };
         }
 
@@ -4338,7 +4338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customer_email: currentUser.email ?? undefined,
           line_items: [{ price_data: { currency: 'rsd', product_data: { name: spotProductName, description: `Premium oglas — ${plan === 'gold' ? 'Gold' : 'Silver'} plan` }, unit_amount: totalAmountParas }, quantity: 1 }],
           mode: 'payment',
-          success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}&spot_id=${spot.id}`,
+          success_url: `${baseUrl}/ios-done?type=spot&plan=${plan}`,
           cancel_url: `${baseUrl}/add-spot?category=${category}`,
           metadata: { type: 'spot_listing', spotId: spot.id, userId: tokenRecord.userId, tier: plan, category },
         });

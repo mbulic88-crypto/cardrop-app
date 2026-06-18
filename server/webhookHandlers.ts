@@ -115,6 +115,53 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
   }
 }
 
+async function handleMapHackDayPassWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
+  if (event.type !== 'checkout.session.completed') return;
+
+  const session = event.data.object;
+  const metadata = session.metadata as Record<string, string> | undefined;
+  if (metadata?.type !== 'map_hack') return;
+  if (metadata?.plan !== 'day_pass') return;
+
+  const { userId } = metadata;
+  if (!userId) {
+    console.error('[MapHack DayPass Webhook] Missing userId in metadata');
+    return;
+  }
+
+  const paymentStatus = session.payment_status as string | undefined;
+  if (paymentStatus !== 'paid') {
+    console.log(`[MapHack DayPass Webhook] payment_status=${paymentStatus}, skipping`);
+    return;
+  }
+
+  const stripeSessionId = session.id as string | undefined;
+  if (!stripeSessionId) return;
+
+  try {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const user = await storage.activateMapHackPlanWithSession(userId, 'day_pass', expiresAt, stripeSessionId);
+
+    if (!user) {
+      console.error('[MapHack DayPass Webhook] User not found:', userId);
+      return;
+    }
+
+    console.log(`[MapHack DayPass Webhook] Day Pass activated for user ${userId}, expires=${expiresAt.toISOString()}`);
+
+    if (user.email) {
+      sendMapHackPurchaseEmail(user.email, user.firstName || user.email, 'day_pass', expiresAt).catch(() => {});
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('unique') || msg.includes('duplicate')) {
+      console.log(`[MapHack DayPass Webhook] Session ${stripeSessionId} already consumed, skipping`);
+    } else {
+      console.error('[MapHack DayPass Webhook] Error activating Day Pass:', err);
+    }
+  }
+}
+
 async function handleSpotListingWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
   if (event.type !== 'checkout.session.completed') return;
 
@@ -237,6 +284,7 @@ export class WebhookHandlers {
     try {
       const event = JSON.parse(payload.toString()) as { type: string; data: { object: Record<string, unknown> } };
       await handleMapHackWebhookEvent(event);
+      await handleMapHackDayPassWebhookEvent(event);
       await handleCreditTopupWebhookEvent(event);
       await handleSpotListingWebhookEvent(event);
     } catch (err) {

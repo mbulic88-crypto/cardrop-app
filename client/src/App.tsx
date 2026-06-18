@@ -20,6 +20,7 @@ import AddSale from "@/pages/add-sale";
 import SaleDetail from "@/pages/sale-detail";
 import CheckoutSuccess from "@/pages/checkout-success";
 import CheckoutCancel from "@/pages/checkout-cancel";
+import IosDone from "@/pages/ios-done";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AuthPage from "@/pages/auth";
 import Accommodations from "@/pages/accommodations";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/add-sale" component={AddSale} />
       <Route path="/checkout/success" component={CheckoutSuccess} />
       <Route path="/checkout/cancel" component={CheckoutCancel} />
+      <Route path="/ios-done" component={IosDone} />
       <Route path="/admin" component={Admin} />
       <Route path="/smestaji/:city" component={Accommodations} />
       <Route path="/smestaji" component={Accommodations} />
