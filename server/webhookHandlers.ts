@@ -1,6 +1,6 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { storage } from './storage';
-import { sendMapHackRenewalEmail, sendMapHackCancellationEmail } from './email';
+import { sendMapHackRenewalEmail, sendMapHackCancellationEmail, sendSpotListingPurchaseEmail } from './email';
 
 async function handleMapHackWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
   // ── Subscription cancelled ────────────────────────────────────────────────
@@ -115,6 +115,70 @@ async function handleMapHackWebhookEvent(event: { type: string; data: { object: 
   }
 }
 
+async function handleSpotListingWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
+  if (event.type !== 'checkout.session.completed') return;
+
+  const session = event.data.object;
+  const metadata = session.metadata as Record<string, string> | undefined;
+  if (metadata?.type !== 'spot_listing') return;
+
+  const { spotId, userId, tier } = metadata;
+  if (!spotId || !userId || !tier) {
+    console.error('[Spot Listing Webhook] Missing metadata fields', { spotId, userId, tier });
+    return;
+  }
+
+  const paymentStatus = session.payment_status as string | undefined;
+  if (paymentStatus !== 'paid') {
+    console.log(`[Spot Listing Webhook] payment_status=${paymentStatus}, skipping`);
+    return;
+  }
+
+  if (tier !== 'silver' && tier !== 'gold') {
+    console.error('[Spot Listing Webhook] Invalid tier:', tier);
+    return;
+  }
+
+  const stripeSessionId = session.id as string | undefined;
+  if (!stripeSessionId) return;
+
+  try {
+    const { calculateExpiryDate } = await import('../shared/pricing.js');
+    const subscriptionExpiresAt = calculateExpiryDate(tier as 'silver' | 'gold');
+
+    const { spot, alreadyConsumed } = await storage.activateSpotWithSession(
+      spotId, tier as 'silver' | 'gold', subscriptionExpiresAt, stripeSessionId, userId
+    );
+
+    if (alreadyConsumed) {
+      console.log(`[Spot Listing Webhook] Session ${stripeSessionId} already consumed, skipping`);
+      return;
+    }
+
+    if (!spot) {
+      console.error('[Spot Listing Webhook] Spot not found after activation:', spotId);
+      return;
+    }
+
+    console.log(`[Spot Listing Webhook] Spot ${spotId} activated — plan=${tier}, user=${userId}`);
+
+    // Send confirmation email to spot owner
+    const user = await storage.getUser(userId);
+    if (user?.email) {
+      sendSpotListingPurchaseEmail({
+        to: user.email,
+        name: user.firstName || user.email,
+        plan: tier as 'silver' | 'gold',
+        spotTitle: spot.title,
+        spotAddress: spot.address || '',
+        expiresAt: spot.subscriptionExpiresAt ?? null,
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[Spot Listing Webhook] Error activating spot:', err);
+  }
+}
+
 async function handleCreditTopupWebhookEvent(event: { type: string; data: { object: Record<string, unknown> } }): Promise<void> {
   if (event.type !== 'checkout.session.completed') return;
 
@@ -174,6 +238,7 @@ export class WebhookHandlers {
       const event = JSON.parse(payload.toString()) as { type: string; data: { object: Record<string, unknown> } };
       await handleMapHackWebhookEvent(event);
       await handleCreditTopupWebhookEvent(event);
+      await handleSpotListingWebhookEvent(event);
     } catch (err) {
       console.error('[Webhook] Error handling custom event:', err);
     }

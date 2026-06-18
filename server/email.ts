@@ -100,6 +100,35 @@ function fmtBook(date: Date, pricingType?: string): string {
   return pricingType === 'hourly' ? formatDateTime(date) : formatDate(date);
 }
 
+export async function sendSpotListingPurchaseEmail(opts: {
+  to: string;
+  name: string;
+  plan: 'silver' | 'gold';
+  spotTitle: string;
+  spotAddress: string;
+  expiresAt: Date | null;
+}): Promise<void> {
+  const { to, name, plan, spotTitle, spotAddress, expiresAt } = opts;
+  const planLabel = plan === 'gold' ? 'Gold' : 'Silver';
+  const expires = expiresAt ? formatDate(expiresAt) : 'Neograničeno';
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Oglas aktiviran!</h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${name},</p>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      Tvoj parking oglas je uspešno plaćen i sada je aktivan sa <strong>${planLabel} planom</strong>.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:6px;padding:16px;margin:0 0 24px;">
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Oglas:</strong> ${spotTitle}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Adresa:</strong> ${spotAddress}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Plan:</strong> ${planLabel}</td></tr>
+      <tr><td style="color:#1b4332;font-size:14px;padding:4px 0;"><strong>Aktivan do:</strong> ${expires}</td></tr>
+    </table>
+    <a href="https://cardrop.app/dashboard" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:bold;font-size:15px;">Pogledaj oglas</a>
+    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala što koristiš CarDrop!</p>
+  `);
+  await sendMail(to, `Oglas aktiviran — ${planLabel} plan`, html);
+}
+
 export async function sendMapHackPurchaseEmail(
   to: string,
   name: string,
