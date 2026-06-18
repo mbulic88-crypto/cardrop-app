@@ -1,0 +1,2 @@
+- [detectIos utility](detect-ios.md) — shared iOS/iPadOS detection helper at client/src/lib/detectIos.ts; handles iPadOS 13+ desktop mode via maxTouchPoints.
+- [iOS checkout flow](ios-checkout-flow.md) — App Store 3.1.1 compliance: token flow, server-rendered HTML page, plan whitelist, XSS escaping pattern.

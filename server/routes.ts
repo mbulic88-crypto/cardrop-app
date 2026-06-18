@@ -4147,6 +4147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   function buildIosCheckoutPage(tokenId: string, storedPlan: string, cards: IosCard[], subtitle: string): string {
     const fmt = (n: number) => Math.round(n).toLocaleString('de-DE');
+    // HTML-escape user-controlled text to prevent XSS
+    const he = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     const cardsHtml = cards.map(p => {
       const fee = p.totalRsd - p.priceRsd;
       const feats = p.features.map(f => `<div class="feat"><div class="ck" style="color:${p.tc}">&#10003;</div><span style="color:${p.ltc}">${f}</span></div>`).join('');
@@ -4159,13 +4161,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return `<!DOCTYPE html><html lang="sr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>CarDrop &ndash; Plaćanje</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#1B4332;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#fff;padding-bottom:40px}.hdr{text-align:center;padding:24px 20px 10px}.logo{display:inline-flex;align-items:center;gap:9px}.logo-ic{width:36px;height:36px;border-radius:50%;background:#52B788;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}.logo-n{font-weight:900;font-size:20px}.sub{color:#74C69D;font-size:13px;margin-top:5px}.sbadge{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 16px 12px;background:rgba(255,255,255,.07);border-radius:10px;padding:9px}.sbtxt{color:rgba(255,255,255,.7);font-size:11px}.sbname{color:#635BFF;font-size:13px;font-weight:800}.cards{padding:0 16px;display:flex;flex-direction:column;gap:9px}.card{border-radius:14px;padding:13px;cursor:pointer;border:2px solid transparent;transition:border-color .2s,transform .15s}.card.sel{border-color:rgba(255,255,255,.5);transform:scale(1.02)}.ct{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}.cn{font-weight:800;font-size:14px;letter-spacing:.5px}.cbadge{background:rgba(0,0,0,.2);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:6px;text-transform:uppercase}.cd{font-size:11px;margin-top:2px;opacity:.8}.cp{text-align:right;flex-shrink:0;margin-left:8px}.cpa{font-size:20px;font-weight:900;line-height:1}.cper{font-size:11px;opacity:.75}.cfee{font-size:10px;opacity:.65;margin:4px 0 7px}.feats{display:flex;flex-direction:column;gap:3px}.feat{display:flex;align-items:center;gap:5px;font-size:11px}.ck{width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.2);display:inline-flex;align-items:center;justify-content:center;font-size:8px;flex-shrink:0}.fn{color:rgba(255,255,255,.4);font-size:10px;text-align:center;margin:9px 16px 0}.err{display:none;margin:9px 16px 0;background:rgba(239,68,68,.15);border-radius:10px;padding:10px;color:#fca5a5;font-size:13px;text-align:center}.bwrap{padding:12px 16px 0}.btn{width:100%;padding:14px;border-radius:12px;background:#52B788;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.btn:disabled{opacity:.6;cursor:not-allowed}.sp{width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;display:none;animation:r .7s linear infinite;flex-shrink:0}@keyframes r{to{transform:rotate(360deg)}}</style></head>
 <body>
-<div class="hdr"><div class="logo"><div class="logo-ic">C</div><span class="logo-n">CarDrop</span></div><div class="sub">${subtitle}</div></div>
+<div class="hdr"><div class="logo"><div class="logo-ic">C</div><span class="logo-n">CarDrop</span></div><div class="sub">${he(subtitle)}</div></div>
 <div class="sbadge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#635BFF" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="sbtxt">Sigurno plaćanje putem</span><span class="sbname">stripe</span></div>
 <div class="cards">${cardsHtml}</div>
 <div class="fn">Stripe naknada: 3,9% + ~35&nbsp;RSD (0,30&euro;) &bull; Prikazana cena uključuje naknadu</div>
 <div class="err" id="err"></div>
 <div class="bwrap"><button class="btn" id="btn" onclick="pay()"><div class="sp" id="sp"></div><span id="btxt">Plati i nastavi &#8594;</span></button></div>
-<script>var tok="${tokenId}",selPlan="${storedPlan}";function sel(p){selPlan=p;document.querySelectorAll(".card").forEach(function(c){c.classList.toggle("sel",c.dataset.plan===p);})}async function pay(){var btn=document.getElementById("btn"),sp=document.getElementById("sp"),btxt=document.getElementById("btxt"),err=document.getElementById("err");err.style.display="none";btn.disabled=true;sp.style.display="block";btxt.textContent="Preusmeravanje\u2026";try{var r=await fetch("/api/ios-checkout/create-session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:tok,plan:selPlan})});var d=await r.json();if(!r.ok)throw new Error(d.message||"Gre\u0161ka");window.location.href=d.url;}catch(e){err.textContent=e.message;err.style.display="block";btn.disabled=false;sp.style.display="none";btxt.textContent="Plati i nastavi \u2192";}}</script>
+<script>var tok=${JSON.stringify(tokenId)},selPlan=${JSON.stringify(storedPlan)};function sel(p){selPlan=p;document.querySelectorAll(".card").forEach(function(c){c.classList.toggle("sel",c.dataset.plan===p);})}async function pay(){var btn=document.getElementById("btn"),sp=document.getElementById("sp"),btxt=document.getElementById("btxt"),err=document.getElementById("err");err.style.display="none";btn.disabled=true;sp.style.display="block";btxt.textContent="Preusmeravanje\u2026";try{var r=await fetch("/api/ios-checkout/create-session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:tok,plan:selPlan})});var d=await r.json();if(!r.ok)throw new Error(d.message||"Gre\u0161ka");window.location.href=d.url;}catch(e){err.textContent=e.message;err.style.display="block";btn.disabled=false;sp.style.display="none";btxt.textContent="Plati i nastavi \u2192";}}</script>
 </body></html>`;
   }
 
@@ -4363,8 +4365,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!type || (type !== 'map_hack' && type !== 'spot')) {
         return res.status(400).json({ message: "Nevalidan tip checkout-a" });
       }
-      if (!plan) {
-        return res.status(400).json({ message: "Plan je obavezan" });
+      const ALLOWED_PLANS: Record<string, string[]> = {
+        map_hack: ['premium', 'day_pass', 'godisnji_premium'],
+        spot: ['gold', 'silver'],
+      };
+      if (!plan || !ALLOWED_PLANS[type].includes(plan)) {
+        return res.status(400).json({ message: "Nevalidan plan za tip checkout-a" });
       }
       if (type === 'spot' && !spotId) {
         return res.status(400).json({ message: "spotId je obavezan za spot checkout" });
