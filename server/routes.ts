@@ -3448,7 +3448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'companyName', 'pib', 'numberOfSpots', 'contactPerson', 'pricingType',
         'subscriptionType', 'autoRenewal', 'isPremium', 'isActive',
         'stripeLink', 'stripeLinkActive', 'category', 'totalSpaces',
-        'hasRamp', 'rampPhone', 'requiresApproval'];
+        'hasRamp', 'rampPhone', 'rampWebhookUrl', 'requiresApproval'];
       for (const f of fields) {
         if (body[f] !== undefined) updates[f] = body[f];
       }
