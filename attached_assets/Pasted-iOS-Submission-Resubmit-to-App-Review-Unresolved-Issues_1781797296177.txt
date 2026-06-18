@@ -1,0 +1,101 @@
+iOS Submission
+Resubmit to App Review
+Unresolved Issues
+
+Your app version was rejected and no other items submitted can be accepted or approved. You can make edits to your app version below.
+
+Items Submitted (1)
+You can review and make edits to your items below, or communicate with Apple. Accepted items won't be available for release until all items with issues are resubmitted and accepted. You can also remove those items and resubmit them later.
+Item
+Type
+Review Status
+Action
+iOS App 1.0
+
+1.0.1 (1)
+
+App Version
+Rejected
+2.3.10 Performance: Accurate Metadata
+
+3.1.1 Business: Payments - In-App Purchase
+
+4.8.0 Design: Login Services
+
+See More
+Edit
+
+Messages (1)
+
+AppleToday 10:01 AM
+Hello, 
+
+We noticed this is your first app submission and want to congratulate you on joining the Apple Developer Program. We look forward to working together on your submissions.
+
+When App Review identifies an issue with a submission, we’ll contact you with a message in App Store Connect with details about what we found and how to resolve the issue. Learn more about App Review and tips for a smooth review experience. 
+
+See below for additional information about the issues that require your attention for this submission. If you have any questions, we are here to help. Reply to this message in App Store Connect and let us know.
+
+Review Environment
+Submission ID: e065e8ce-b1c2-4ddd-ab2e-ca77e6dc6d0b
+Review date: June 18, 2026
+Review Device: iPad Air 11-inch (M3)
+Version reviewed: 1.0 (1)
+
+Guideline 2.3.10 - Performance - Accurate Metadata
+Issue Description
+
+The app or metadata includes information about third-party platforms that may not be relevant for App Store users, who are focused on experiences offered by the app itself.
+
+Next Steps
+
+Revise the app's binary and screenshots to remove Google Play references. 
+
+Revised screenshots should accurately reflect the app in use on the supported devices and highlight the app's main features in the majority of the screenshots. Note some screenshots may only be viewed and updated by selecting "View All Sizes in Media Manager" in the Previews and Screenshots section of App Store Connect. 
+
+Reply to App Review in App Store Connect with additional information if the app's functionality and how it interacts with third-party platforms has been misunderstood.
+
+Resources
+
+Learn how to edit App Store metadata on App Store Connect Help.
+Guideline 4.8 - Design - Login Services
+
+Issue Description
+
+The app uses a third-party login service, but does not appear to offer as an equivalent login option another login service with all of the following features:
+
+- The login option limits data collection to the user’s name and email address.
+- The login option allows users to keep their email address private from all parties as part of setting up their account.
+- The login option does not collect interactions with the app for advertising purposes without consent. 
+
+Next Steps
+
+Revise the app to offer as an equivalent login option another login service that meets all of the above requirements.
+
+If the app already includes another login service that meets all of the above requirements, reply to App Review in App Store Connect, identify which login service meets all of the requirements, and explain why it meets all of the requirements.
+
+Note that Sign in with Apple is a login service that meets all the requirements specified in guideline 4.8.
+
+Resources
+
+Learn about Sign in with Apple.
+Guideline 3.1.1 - Business - Payments - In-App Purchase
+
+Issue Description
+
+We noticed that the app includes or accesses paid digital content, services, or functionality by means other than In-App Purchase, which is not appropriate for the App Store. Specifically: 
+
+- The subscription can be purchased in the app using payment mechanisms other than In-App Purchase. 
+
+Next Steps
+
+The paid digital content, services, or subscriptions included in or accessed by the app must be available for purchase in the app using In-App Purchase. 
+
+If you have any additional information to provide regarding the digital content and services in the app and how the guidelines apply to them, please reply to this message in App Store Connect and let us know. If there is information you'd like us to consider in our review of future submissions, please feel free to include it in the App Review Information section of App Store Connect. 
+
+Resources
+
+- See how to implement In-App Purchase with the StoreKit framework.
+- Review step-by-step instructions for creating In-App Purchases in App Store Connect. 
+- Learn more about business requirements in guideline 3.1.1.
+- Learn more about submitting In-App Purchases and subscriptions to App Review.
