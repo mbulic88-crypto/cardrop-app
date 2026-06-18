@@ -57,6 +57,13 @@
       "when": 1781659200000,
       "tag": "0007_partner_accommodations",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781784000000,
+      "tag": "0008_apple_signin",
+      "breakpoints": true
     }
   ]
 }

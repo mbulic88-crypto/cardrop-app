@@ -22,7 +22,16 @@ The platform features a dual-theme design with green accent colors:
 *   **Frontend**: React with TypeScript, Tailwind CSS, Shadcn UI.
 *   **Backend**: Express.js with TypeScript.
 *   **Database**: PostgreSQL (Neon-backed).
-*   **Authentication**: Custom email/password authentication with bcryptjs password hashing. Google OAuth support via google-auth-library. Session-based auth using express-session + connect-pg-simple. Auth page at `/auth` route with login/register toggle. All `req.session.userId` based (no more Replit Auth/OIDC). Google OAuth requires `VITE_GOOGLE_CLIENT_ID` env var to enable the Google Sign-In button.
+*   **Authentication**: Custom email/password authentication with bcryptjs password hashing. Google OAuth support via google-auth-library. Apple Sign-In support via Apple JS SDK + JWKS JWT verification (jose library). Session-based auth using express-session + connect-pg-simple. Auth page at `/auth` route with login/register toggle. All `req.session.userId` based (no more Replit Auth/OIDC). Google OAuth requires `VITE_GOOGLE_CLIENT_ID` env var to enable the Google Sign-In button. Apple Sign-In requires `VITE_APPLE_CLIENT_ID` + `APPLE_CLIENT_ID` env vars (see Apple Sign-In Setup below). Account linking: if Apple returns an email that already exists (Google/email account), the accounts are merged — no duplicate user created.
+*   **Apple Sign-In Setup** (required for App Store Guideline 4.8 compliance):
+    1. In Apple Developer Portal → Certificates, Identifiers & Profiles → Identifiers: register a **Services ID** (format e.g. `app.cardrop.service`). This is the **client_id**, different from the App ID.
+    2. On the Services ID, enable **Sign in with Apple** → Configure → add `cardrop.app` as a domain and `https://cardrop.app` as a Return URL.
+    3. In Apple Developer Portal → Keys: create a new key, enable **Sign in with Apple**, download the `.p8` private key file.
+    4. Set the following secrets in Replit Secrets panel:
+       - `APPLE_CLIENT_ID` = your Services ID (e.g. `app.cardrop.service`) — used by backend for JWT audience validation
+       - `VITE_APPLE_CLIENT_ID` = same Services ID — makes the Apple button appear on /auth
+       - `VITE_APPLE_REDIRECT_URI` = `https://cardrop.app` — must match the Return URL registered in Apple Developer Portal
+    5. The backend verifies Apple `id_token` JWT using Apple's public JWKS at `https://appleid.apple.com/auth/keys` — no private key is needed server-side for this flow.
 *   **Object Storage**: Replit Object Storage for image uploads with ACL security.
 *   **Mapping**: Interactive Mapbox GL JS map (react-map-gl v7 + mapbox-gl v3) for spot discovery. Map Hack NS uses the Mapbox Standard style with night preset (warm night look). The general spot-discovery map uses Leaflet (react-leaflet). MapHackMap component lives at `client/src/components/MapHackMap.tsx` and uses react-map-gl with Source/Layer for GeoJSON circles (safe zones, watch areas, heatmap) and Marker for HTML overlays (parking pins, event markers).
 *   **Theme System**: next-themes integration with dark mode as default, light mode with WhatsApp cream color scheme.

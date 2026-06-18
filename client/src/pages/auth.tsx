@@ -421,11 +421,12 @@ function AppleSignInButton({
       });
 
       const response = await (window as any).AppleID.auth.signIn();
-      onSuccess(response);
+      await onSuccess(response);
     } catch (error: any) {
       if (error?.error !== "popup_closed_by_user") {
         console.error("Apple sign-in error:", error);
       }
+    } finally {
       setLoading(false);
     }
   };
