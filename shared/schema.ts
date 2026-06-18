@@ -51,6 +51,7 @@ export const users = pgTable("users", {
   savedLicensePlate: varchar("saved_license_plate", { length: 30 }),
   savedPhone: varchar("saved_phone", { length: 30 }),
   creditBalance: integer("credit_balance").notNull().default(0),
+  appleId: varchar("apple_id").unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

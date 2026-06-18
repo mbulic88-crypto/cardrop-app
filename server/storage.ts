@@ -40,6 +40,7 @@ import { eq, and, gte, lte, desc, or, sql, gt } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByAppleId(appleId: string): Promise<User | undefined>;
   getUserByMapNickname(nickname: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   updateMapHackSubscription(userId: string, data: { stripeCustomerId?: string | null; stripeSubscriptionId?: string | null }): Promise<User | undefined>;
@@ -157,6 +158,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByAppleId(appleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.appleId, appleId));
     return user;
   }
 

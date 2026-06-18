@@ -45,6 +45,9 @@ const authTranslations = {
     googleError: "Google prijava nije uspela",
     googleErrorDesc: "Pokušajte ponovo ili koristite email",
     googleLoading: "Google prijava se učitava...",
+    appleError: "Apple prijava nije uspela",
+    appleErrorDesc: "Pokušajte ponovo ili koristite email",
+    appleSignIn: "Prijava putem Apple-a",
   },
   en: {
     back: "Back",
@@ -77,6 +80,9 @@ const authTranslations = {
     googleError: "Google sign-in failed",
     googleErrorDesc: "Please try again or use email",
     googleLoading: "Google sign-in loading...",
+    appleError: "Apple sign-in failed",
+    appleErrorDesc: "Please try again or use email",
+    appleSignIn: "Sign in with Apple",
   },
 };
 
@@ -168,7 +174,33 @@ export default function AuthPage() {
     }
   };
 
+  const handleAppleLogin = async (response: any) => {
+    setLoading(true);
+    try {
+      const idToken = response?.authorization?.id_token;
+      const appleUser = response?.user ?? null;
+      const userData = await apiRequest("POST", "/api/auth/apple", {
+        id_token: idToken,
+        user: appleUser,
+      });
+      queryClient.setQueryData(["/api/auth/user"], userData);
+      toast({ title: t.loginSuccess, description: t.registerSuccessDesc });
+      const returnTo = localStorage.getItem("cardrop-returnTo");
+      localStorage.removeItem("cardrop-returnTo");
+      setLocation(returnTo || "/map-hack");
+    } catch (error: any) {
+      toast({
+        title: t.appleError,
+        description: t.appleErrorDesc,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -284,21 +316,31 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {googleClientId && (
-            <>
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">{t.or}</span>
-                </div>
+          {(googleClientId || appleClientId) && (
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
               </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">{t.or}</span>
+              </div>
+            </div>
+          )}
 
-              <div id="google-signin-container" data-testid="google-signin-container">
-                <GoogleSignInButton onSuccess={handleGoogleLogin} clientId={googleClientId} loadingText={t.googleLoading} />
-              </div>
-            </>
+          {googleClientId && (
+            <div id="google-signin-container" data-testid="google-signin-container">
+              <GoogleSignInButton onSuccess={handleGoogleLogin} clientId={googleClientId} loadingText={t.googleLoading} />
+            </div>
+          )}
+
+          {appleClientId && (
+            <div className={googleClientId ? "mt-3" : ""} data-testid="apple-signin-container">
+              <AppleSignInButton
+                onSuccess={handleAppleLogin}
+                clientId={appleClientId}
+                label={t.appleSignIn}
+              />
+            </div>
           )}
 
           <div className="mt-5 text-center text-sm">
@@ -343,6 +385,66 @@ export default function AuthPage() {
   );
 }
 
+
+function AppleSignInButton({
+  onSuccess,
+  clientId,
+  label,
+}: {
+  onSuccess: (response: any) => void;
+  clientId: string;
+  label: string;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      if (!(window as any).AppleID) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load Apple Sign-In SDK"));
+          document.body.appendChild(script);
+        });
+      }
+
+      const redirectURI = import.meta.env.VITE_APPLE_REDIRECT_URI || window.location.origin;
+
+      (window as any).AppleID.auth.init({
+        clientId,
+        scope: "name email",
+        redirectURI,
+        usePopup: true,
+      });
+
+      const response = await (window as any).AppleID.auth.signIn();
+      onSuccess(response);
+    } catch (error: any) {
+      if (error?.error !== "popup_closed_by_user") {
+        console.error("Apple sign-in error:", error);
+      }
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      data-testid="button-apple-signin"
+      className="w-full flex items-center justify-center gap-3 rounded-md bg-black text-white py-2.5 px-4 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-black"
+    >
+      <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="currentColor" aria-hidden="true">
+        <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+      </svg>
+      {loading ? "..." : label}
+    </button>
+  );
+}
 
 function GoogleSignInButton({
   onSuccess,
