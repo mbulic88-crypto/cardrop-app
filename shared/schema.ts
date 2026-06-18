@@ -601,6 +601,7 @@ export const iosCheckoutTokens = pgTable("ios_checkout_tokens", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: varchar("type", { length: 20 }).notNull(), // 'map_hack' | 'spot'
+  plan: varchar("plan", { length: 50 }), // e.g. 'premium', 'day_pass', 'godisnji_premium', 'gold', 'silver'
   spotId: varchar("spot_id", { length: 100 }),
   expiresAt: timestamp("expires_at").notNull(),
   used: boolean("used").notNull().default(false),

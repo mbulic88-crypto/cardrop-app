@@ -1605,7 +1605,7 @@ export default function MapHackNS() {
           const r = await fetch("/api/ios-checkout/token", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "map_hack" }),
+            body: JSON.stringify({ type: "map_hack", plan: planId }),
           });
           const d = await r.json() as { checkoutUrl?: string; message?: string };
           if (!r.ok) throw new Error(d.message || "Greška");
@@ -5972,7 +5972,7 @@ export default function MapHackNS() {
                   try {
                     if (isIos) {
                       const newWin = window.open('', '_blank');
-                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack", plan: "premium" }) });
                       const d = await r.json() as { checkoutUrl?: string; message?: string };
                       if (!r.ok) throw new Error(d.message || "Greška");
                       if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
@@ -6018,7 +6018,7 @@ export default function MapHackNS() {
                   try {
                     if (isIos) {
                       const newWin = window.open('', '_blank');
-                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack", plan: "day_pass" }) });
                       const d = await r.json() as { checkoutUrl?: string; message?: string };
                       if (!r.ok) throw new Error(d.message || "Greška");
                       if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }
@@ -6065,7 +6065,7 @@ export default function MapHackNS() {
                   try {
                     if (isIos) {
                       const newWin = window.open('', '_blank');
-                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack" }) });
+                      const r = await fetch("/api/ios-checkout/token", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "map_hack", plan: "godisnji_premium" }) });
                       const d = await r.json() as { checkoutUrl?: string; message?: string };
                       if (!r.ok) throw new Error(d.message || "Greška");
                       if (newWin) { newWin.location.href = d.checkoutUrl!; } else { window.location.href = d.checkoutUrl!; }

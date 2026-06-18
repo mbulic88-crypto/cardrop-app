@@ -1280,7 +1280,7 @@ export default function AddSpot() {
                         const res = await fetch('/api/ios-checkout/token', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ type: 'spot', spotId: spotId! }),
+                          body: JSON.stringify({ type: 'spot', plan: selectedPlan, spotId: spotId! }),
                         });
                         const data = await res.json();
                         if (!res.ok) throw new Error(data.message || "Greška");
