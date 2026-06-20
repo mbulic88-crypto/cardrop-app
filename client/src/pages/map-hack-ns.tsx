@@ -977,24 +977,31 @@ export default function MapHackNS() {
   });
 
   const [stekImageUploading, setStekImageUploading] = useState(false);
+  const [stekUploadProgress, setStekUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [stekImageViewIdx, setStekImageViewIdx] = useState<number | null>(null);
   const stekFileRef = useRef<HTMLInputElement | null>(null);
 
-  async function handleStekImageUpload(markerId: string, file: File) {
-    if (!file) return;
+  async function handleStekImageUpload(markerId: string, files: File[]) {
+    if (!files.length) return;
     setStekImageUploading(true);
+    let lastUpdated: any = null;
     try {
-      const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
-      await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      const imageURL = uploadURL.split("?")[0];
-      const updated = await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
+      for (let i = 0; i < files.length; i++) {
+        setStekUploadProgress({ current: i + 1, total: files.length });
+        const file = files[i];
+        const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
+        await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+        const imageURL = uploadURL.split("?")[0];
+        lastUpdated = await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
+        setSelectedMarker(prev => prev?.id === markerId ? { ...prev, images: lastUpdated.images ?? [] } : prev);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
-      setSelectedMarker(prev => prev?.id === markerId ? { ...prev, images: updated.images ?? [] } : prev);
-      toast({ title: "Slika dodata" });
+      toast({ title: files.length > 1 ? `${files.length} slike dodate` : "Slika dodata" });
     } catch (err: any) {
       toast({ title: "Greška pri uploadu", description: err.message, variant: "destructive" });
     } finally {
       setStekImageUploading(false);
+      setStekUploadProgress(null);
     }
   }
 
@@ -2822,10 +2829,11 @@ export default function MapHackNS() {
                         ref={stekFileRef}
                         type="file"
                         accept="image/*"
+                        multiple
                         style={{ display: "none" }}
                         onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) handleStekImageUpload(selectedMarker.id, f);
+                          const files = Array.from(e.target.files ?? []).slice(0, 5 - imgs.length);
+                          if (files.length) handleStekImageUpload(selectedMarker.id, files);
                           e.target.value = "";
                         }}
                       />
@@ -2836,8 +2844,10 @@ export default function MapHackNS() {
                         className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold"
                         style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}
                       >
-                        {stekImageUploading ? (
-                          <span>Učitavam sliku...</span>
+                        {stekImageUploading && stekUploadProgress ? (
+                          <span>Učitavam {stekUploadProgress.current}/{stekUploadProgress.total}...</span>
+                        ) : stekImageUploading ? (
+                          <span>Učitavam...</span>
                         ) : (
                           <>
                             <Camera size={13} />
