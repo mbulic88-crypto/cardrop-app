@@ -2805,7 +2805,7 @@ export default function MapHackNS() {
                           style={{ width: 64, height: 64 }}
                         >
                           <img
-                            src={img.startsWith("http") ? img : `/objects${img}`}
+                            src={img}
                             alt={`Štek slika ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
@@ -2901,7 +2901,7 @@ export default function MapHackNS() {
       {stekImageViewIdx !== null && selectedMarker?.type === "stek" && (() => {
         const imgs = selectedMarker.images ?? [];
         const img = imgs[stekImageViewIdx];
-        const src = img?.startsWith("http") ? img : `/objects${img}`;
+        const src = img ?? "";
         const isOwner = selectedMarker.userId === user?.id;
         const canManage = isOwner || !!user?.isAdmin;
         return (

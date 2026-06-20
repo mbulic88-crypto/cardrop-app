@@ -2037,7 +2037,7 @@ export default function Admin() {
                                       style={{ width: 72, height: 72 }}
                                       data-testid={`btn-stek-admin-img-${marker.id}-${idx}`}
                                     >
-                                      <img src={img.startsWith("http") ? img : `/objects${img}`} alt={`Slika ${idx + 1}`} className="w-full h-full object-cover" />
+                                      <img src={img} alt={`Slika ${idx + 1}`} className="w-full h-full object-cover" />
                                     </button>
                                   ))}
                                   {imgs.length < 5 && (
@@ -2071,7 +2071,7 @@ export default function Admin() {
               const imgs = (marker as any).images as string[] ?? [];
               const img = imgs[stekImgViewer.idx];
               if (!img) return null;
-              const src = img.startsWith("http") ? img : `/objects${img}`;
+              const src = img;
               return (
                 <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90" onClick={() => setStekImgViewer(null)}>
                   <div className="relative w-full max-w-lg px-4" onClick={e => e.stopPropagation()}>
