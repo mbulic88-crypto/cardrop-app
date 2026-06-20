@@ -791,7 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      if (!user || !hasActiveMapHackPlan(user)) {
+      if (!user || (!hasActiveMapHackPlan(user) && !user.isAdmin)) {
         return res.status(403).json({ message: "Potreban je aktivan Map Hack plan" });
       }
 
@@ -850,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      if (!user || !hasPremiumMapHackPlan(user)) {
+      if (!user || (!hasPremiumMapHackPlan(user) && !user.isAdmin)) {
         return res.status(403).json({ message: "Potreban je Premium plan" });
       }
       const markers = await storage.getActiveMapMarkers();

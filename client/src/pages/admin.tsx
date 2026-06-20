@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { DraggableLocationMap } from "@/components/DraggableLocationMap";
-import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp, DoorOpen, Hotel, Edit2 } from "lucide-react";
+import { ArrowLeft, Trash2, Users, Car, Shield, Loader2, Power, ShoppingBag, MapPin, Activity, Gift, Plus, Edit, FileText, Link as LinkIcon, Upload, X, CreditCard, Hash, CalendarDays, ChevronDown, ChevronUp, DoorOpen, Hotel, Edit2, Home, Camera, ImageIcon, Check } from "lucide-react";
 import parkInLogo from "@assets/Parkin pic_1763062246399.png";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
@@ -628,6 +628,13 @@ export default function Admin() {
   const [grantPlan, setGrantPlan] = useState("premium");
   const [grantHistory, setGrantHistory] = useState<{ email: string; plan: string; grantedAt: Date }[]>([]);
 
+  // Štek admin state
+  const [stekLabelEdit, setStekLabelEdit] = useState<{ id: string; value: string } | null>(null);
+  const [stekImgViewer, setStekImgViewer] = useState<{ markerId: string; idx: number } | null>(null);
+  const [stekUploading, setStekUploading] = useState<string | null>(null);
+  const stekFileRef = useRef<HTMLInputElement | null>(null);
+  const stekUploadTargetRef = useRef<string | null>(null);
+
   const { data: currentUser, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
@@ -773,6 +780,48 @@ export default function Admin() {
       toast({ title: "Greška pri brisanju markera", variant: "destructive" });
     },
   });
+
+  const updateStekLabelMutation = useMutation({
+    mutationFn: ({ id, label }: { id: string; label: string | null }) =>
+      apiRequest("PATCH", `/api/map-hack/markers/${id}`, { label }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/map-hack/markers"] });
+      setStekLabelEdit(null);
+      toast({ title: "Informacija sačuvana" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const removeStekImageMutation = useMutation({
+    mutationFn: ({ id, imageUrl }: { id: string; imageUrl: string }) =>
+      apiRequest("DELETE", `/api/map-hack/markers/${id}/images`, { imageUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/map-hack/markers"] });
+      setStekImgViewer(null);
+      toast({ title: "Slika uklonjena" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  async function handleAdminStekImageUpload(markerId: string, file: File) {
+    setStekUploading(markerId);
+    try {
+      const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
+      await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      const imageURL = uploadURL.split("?")[0];
+      await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/map-hack/markers"] });
+      toast({ title: "Slika dodata" });
+    } catch (err: any) {
+      toast({ title: "Greška pri uploadu", description: err.message, variant: "destructive" });
+    } finally {
+      setStekUploading(null);
+    }
+  }
 
   const deleteImageMutation = useMutation({
     mutationFn: async ({ spotId, imageUrl }: { spotId: string; imageUrl: string }) => {
@@ -976,7 +1025,7 @@ export default function Admin() {
 
       <main className="container mx-auto p-4 max-w-6xl">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-7 mb-6">
             <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Korisnici ({users?.length || 0})</span>
@@ -996,6 +1045,11 @@ export default function Admin() {
               <MapPin className="h-4 w-4" />
               <span className="hidden sm:inline">Map Hack</span>
               <span className="sm:hidden"><MapPin className="h-3 w-3" /></span>
+            </TabsTrigger>
+            <TabsTrigger value="stek" className="flex items-center gap-2" data-testid="tab-stek">
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Štek ({(mapMarkersList || []).filter(m => m.type === 'stek').length})</span>
+              <span className="sm:hidden"><Home className="h-3 w-3" /></span>
             </TabsTrigger>
             <TabsTrigger value="rezervacije" className="flex items-center gap-2" data-testid="tab-rezervacije">
               <CalendarDays className="h-4 w-4" />
@@ -1848,7 +1902,209 @@ export default function Admin() {
             </div>
           </TabsContent>
 
-          {/* ── REZERVACIJE TAB ─────────────────────────────────────────── */}
+          {/* ── ŠTEK TAB ──────────────────────────────────────────────── */}
+          <TabsContent value="stek">
+            <input
+              ref={stekFileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={e => {
+                const f = e.target.files?.[0];
+                const id = stekUploadTargetRef.current;
+                if (f && id) handleAdminStekImageUpload(id, f);
+                e.target.value = "";
+              }}
+            />
+            <div className="space-y-4">
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Ukupno Štek", value: (mapMarkersList || []).filter(m => m.type === 'stek').length },
+                  { label: "Sa slikama", value: (mapMarkersList || []).filter(m => m.type === 'stek' && (m as any).images?.length > 0).length },
+                  { label: "Aktivni", value: (mapMarkersList || []).filter(m => m.type === 'stek' && (!m.expiresAt || new Date(m.expiresAt) > new Date())).length },
+                ].map(stat => (
+                  <Card key={stat.label}>
+                    <CardContent className="p-4">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Štek marker list */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Home className="h-5 w-5 text-green-500" />
+                    Javni skriveni parkinzi — Štek
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {markersLoading ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                  ) : (() => {
+                    const stekMarkers = (mapMarkersList || []).filter(m => m.type === 'stek');
+                    if (stekMarkers.length === 0) return <p className="text-center text-muted-foreground py-8">Nema Štek markera</p>;
+                    return (
+                      <div className="space-y-3">
+                        {stekMarkers.map(marker => {
+                          const imgs = (marker as any).images as string[] ?? [];
+                          const isExpired = marker.expiresAt ? new Date(marker.expiresAt) < new Date() : false;
+                          const isEditingLabel = stekLabelEdit?.id === marker.id;
+                          return (
+                            <div key={marker.id} className={`rounded-lg border p-4 space-y-3 ${isExpired ? 'opacity-50 border-border/40' : 'border-border'}`} data-testid={`row-stek-${marker.id}`}>
+                              {/* Header row */}
+                              <div className="flex items-start justify-between gap-3 flex-wrap">
+                                <div className="space-y-0.5 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant={isExpired ? "secondary" : "outline"} className="text-xs text-green-600 border-green-600/40">Štek</Badge>
+                                    {isExpired && <Badge variant="secondary" className="text-xs">Istekao</Badge>}
+                                    {imgs.length > 0 && (
+                                      <Badge variant="outline" className="text-xs gap-1">
+                                        <ImageIcon className="h-3 w-3" />{imgs.length} foto
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground font-mono">{parseFloat(marker.lat).toFixed(5)}, {parseFloat(marker.lng).toFixed(5)}</p>
+                                  <p className="text-xs text-muted-foreground">Korisnik: <span className="font-mono">{marker.userId}</span></p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Dodato: {new Date(marker.createdAt).toLocaleString("sr-RS")}
+                                    {marker.expiresAt && <> · Ističe: {new Date(marker.expiresAt).toLocaleString("sr-RS")}</>}
+                                  </p>
+                                </div>
+                                {/* Delete */}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" disabled={deleteMapMarkerMutation.isPending} data-testid={`btn-delete-stek-${marker.id}`}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Obrisati Štek marker?</AlertDialogTitle>
+                                      <AlertDialogDescription>Ovaj Štek marker i sve njegove slike biće trajno obrisani.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Otkaži</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteMapMarkerMutation.mutate(marker.id)} className="bg-destructive text-destructive-foreground">Obriši</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+
+                              {/* Label / Info */}
+                              <div className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Informacija</p>
+                                {isEditingLabel ? (
+                                  <div className="flex gap-2 items-start">
+                                    <Textarea
+                                      value={stekLabelEdit.value}
+                                      onChange={e => setStekLabelEdit({ id: marker.id, value: e.target.value.slice(0, 120) })}
+                                      rows={2}
+                                      placeholder="Opis lokacije, napomene..."
+                                      className="text-sm flex-1 resize-none"
+                                    />
+                                    <div className="flex flex-col gap-1">
+                                      <Button size="icon" onClick={() => updateStekLabelMutation.mutate({ id: marker.id, label: stekLabelEdit.value.trim() || null })} disabled={updateStekLabelMutation.isPending} data-testid={`btn-save-stek-label-${marker.id}`}>
+                                        <Check className="h-4 w-4" />
+                                      </Button>
+                                      <Button size="icon" variant="outline" onClick={() => setStekLabelEdit(null)}>
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-foreground flex-1">{marker.label || <span className="text-muted-foreground italic">Nema informacija</span>}</p>
+                                    <Button size="icon" variant="ghost" onClick={() => setStekLabelEdit({ id: marker.id, value: marker.label ?? "" })} data-testid={`btn-edit-stek-label-${marker.id}`}>
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Images */}
+                              <div className="space-y-1.5">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Slike ({imgs.length}/5)</p>
+                                <div className="flex gap-2 flex-wrap items-center">
+                                  {imgs.map((img, idx) => (
+                                    <button
+                                      key={img}
+                                      onClick={() => setStekImgViewer({ markerId: marker.id, idx })}
+                                      className="relative rounded-md overflow-hidden shrink-0 border border-border"
+                                      style={{ width: 72, height: 72 }}
+                                      data-testid={`btn-stek-admin-img-${marker.id}-${idx}`}
+                                    >
+                                      <img src={img.startsWith("http") ? img : `/objects${img}`} alt={`Slika ${idx + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                  ))}
+                                  {imgs.length < 5 && (
+                                    <button
+                                      onClick={() => { stekUploadTargetRef.current = marker.id; stekFileRef.current?.click(); }}
+                                      disabled={stekUploading === marker.id}
+                                      className="flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground hover-elevate shrink-0"
+                                      style={{ width: 72, height: 72 }}
+                                      data-testid={`btn-stek-admin-add-img-${marker.id}`}
+                                    >
+                                      {stekUploading === marker.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                                      <span className="text-[10px]">Dodaj</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Fullscreen image viewer */}
+            {stekImgViewer && (() => {
+              const marker = (mapMarkersList || []).find(m => m.id === stekImgViewer.markerId);
+              if (!marker) return null;
+              const imgs = (marker as any).images as string[] ?? [];
+              const img = imgs[stekImgViewer.idx];
+              if (!img) return null;
+              const src = img.startsWith("http") ? img : `/objects${img}`;
+              return (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90" onClick={() => setStekImgViewer(null)}>
+                  <div className="relative w-full max-w-lg px-4" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-white">{stekImgViewer.idx + 1} / {imgs.length}</span>
+                      <Button size="icon" variant="ghost" onClick={() => setStekImgViewer(null)}>
+                        <X className="h-4 w-4 text-white" />
+                      </Button>
+                    </div>
+                    <img src={src} alt="Štek" className="w-full rounded-xl object-contain max-h-[60vh]" />
+                    <div className="flex gap-2 mt-3">
+                      {stekImgViewer.idx > 0 && (
+                        <Button variant="secondary" className="flex-1" onClick={() => setStekImgViewer(v => v ? { ...v, idx: v.idx - 1 } : null)}>← Prethodna</Button>
+                      )}
+                      {stekImgViewer.idx < imgs.length - 1 && (
+                        <Button variant="secondary" className="flex-1" onClick={() => setStekImgViewer(v => v ? { ...v, idx: v.idx + 1 } : null)}>Sledeća →</Button>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      className="w-full mt-2"
+                      onClick={() => removeStekImageMutation.mutate({ id: stekImgViewer.markerId, imageUrl: img })}
+                      disabled={removeStekImageMutation.isPending}
+                    >
+                      {removeStekImageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                      Ukloni sliku
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+          </TabsContent>
+
           <TabsContent value="rezervacije">
             {(() => {
               const EUR_TO_RSD = 117;
