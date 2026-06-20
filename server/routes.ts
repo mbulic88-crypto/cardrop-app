@@ -577,6 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lat: mapMarkersTable.lat,
           lng: mapMarkersTable.lng,
           label: mapMarkersTable.label,
+          images: mapMarkersTable.images,
           createdAt: mapMarkersTable.createdAt,
           expiresAt: mapMarkersTable.expiresAt,
           mapNickname: usersTable.mapNickname,
@@ -840,6 +841,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating marker label:", error);
       res.status(500).json({ message: "Greška pri ažuriranju markera" });
+    }
+  });
+
+  // ─── Map Hack NS — Štek image upload ─────────────────────────────────────
+
+  app.post('/api/map-hack/markers/:id/images', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user || !hasPremiumMapHackPlan(user)) {
+        return res.status(403).json({ message: "Potreban je Premium plan" });
+      }
+      const markers = await storage.getActiveMapMarkers();
+      const marker = markers.find(m => m.id === req.params.id);
+      if (!marker) return res.status(404).json({ message: "Marker nije pronađen" });
+      if (marker.type !== 'stek') return res.status(400).json({ message: "Slike su dostupne samo za Štek markere" });
+      if (marker.userId !== userId && !user.isAdmin) {
+        return res.status(403).json({ message: "Samo vlasnik može dodati sliku" });
+      }
+      if (marker.images.length >= 5) {
+        return res.status(400).json({ message: "Maksimalno 5 slika po Štek parking mestu" });
+      }
+      const { imageURL } = req.body;
+      if (!imageURL) return res.status(400).json({ message: "imageURL je obavezan" });
+
+      const objectStorageService = new ObjectStorageService();
+      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(imageURL, {
+        owner: userId,
+        visibility: "public",
+      });
+
+      const updatedImages = [...marker.images, objectPath];
+      const updated = await storage.updateMapMarkerImages(marker.id, updatedImages);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error adding stek image:", error);
+      res.status(500).json({ message: "Greška pri dodavanju slike" });
+    }
+  });
+
+  app.delete('/api/map-hack/markers/:id/images', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "Nije autorizovano" });
+      const markers = await storage.getActiveMapMarkers();
+      const marker = markers.find(m => m.id === req.params.id);
+      if (!marker) return res.status(404).json({ message: "Marker nije pronađen" });
+      if (marker.userId !== userId && !user.isAdmin) {
+        return res.status(403).json({ message: "Samo vlasnik može ukloniti sliku" });
+      }
+      const { imageUrl } = req.body;
+      if (!imageUrl) return res.status(400).json({ message: "imageUrl je obavezan" });
+      const updatedImages = marker.images.filter(img => img !== imageUrl);
+      const updated = await storage.updateMapMarkerImages(marker.id, updatedImages);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error removing stek image:", error);
+      res.status(500).json({ message: "Greška pri uklanjanju slike" });
     }
   });
 

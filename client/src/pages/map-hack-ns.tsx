@@ -120,7 +120,7 @@ const mhT = {
   },
 };
 
-type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null };
+type MapMarkerWithNickname = MapMarker & { mapNickname?: string | null; images?: string[] };
 
 type MapHackStatus = {
   phase: "trial" | "trial_expired" | "active" | "plan_expired";
@@ -970,6 +970,40 @@ export default function MapHackNS() {
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
       setMarkerLabelEdit(null);
       toast({ title: "Sačuvano" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Greška", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const [stekImageUploading, setStekImageUploading] = useState(false);
+  const [stekImageViewIdx, setStekImageViewIdx] = useState<number | null>(null);
+  const stekFileRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleStekImageUpload(markerId: string, file: File) {
+    if (!file) return;
+    setStekImageUploading(true);
+    try {
+      const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
+      await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      const imageURL = uploadURL.split("?")[0];
+      await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      toast({ title: "Slika dodata" });
+    } catch (err: any) {
+      toast({ title: "Greška pri uploadu", description: err.message, variant: "destructive" });
+    } finally {
+      setStekImageUploading(false);
+    }
+  }
+
+  const removeStekImageMutation = useMutation({
+    mutationFn: ({ id, imageUrl }: { id: string; imageUrl: string }) =>
+      apiRequest("DELETE", `/api/map-hack/markers/${id}/images`, { imageUrl }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setStekImageViewIdx(null);
+      toast({ title: "Slika uklonjena" });
     },
     onError: (err: any) => {
       toast({ title: "Greška", description: err.message, variant: "destructive" });
@@ -2752,6 +2786,75 @@ export default function MapHackNS() {
               </>
             )}
 
+            {/* Štek: image gallery */}
+            {selectedMarker.type === "stek" && (() => {
+              const imgs = selectedMarker.images ?? [];
+              const isOwner = selectedMarker.userId === user?.id;
+              const canManage = isOwner || !!user?.isAdmin;
+              return (
+                <>
+                  {/* Image thumbnails */}
+                  {imgs.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {imgs.map((img, idx) => (
+                        <button
+                          key={img}
+                          data-testid={`btn-stek-img-${idx}`}
+                          onClick={() => setStekImageViewIdx(idx)}
+                          className="relative rounded-lg overflow-hidden flex-shrink-0"
+                          style={{ width: 64, height: 64 }}
+                        >
+                          <img
+                            src={img.startsWith("http") ? img : `/objects${img}`}
+                            alt={`Štek slika ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {imgs.length > 1 && idx === imgs.length - 1 && (
+                            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white" style={{ background: "rgba(0,0,0,0.35)" }}>
+                              {imgs.length} foto
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload button (owner or admin, max 5) */}
+                  {canManage && imgs.length < 5 && isPremium && (
+                    <>
+                      <input
+                        ref={stekFileRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleStekImageUpload(selectedMarker.id, f);
+                          e.target.value = "";
+                        }}
+                      />
+                      <button
+                        data-testid="btn-stek-add-image"
+                        onClick={() => stekFileRef.current?.click()}
+                        disabled={stekImageUploading}
+                        className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold"
+                        style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}
+                      >
+                        {stekImageUploading ? (
+                          <span>Učitavam sliku...</span>
+                        ) : (
+                          <>
+                            <Camera size={13} />
+                            Dodaj foto ({imgs.length}/5)
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </>
+              );
+            })()}
+
             {/* Google Maps link */}
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${selectedMarker.lat},${selectedMarker.lng}`}
@@ -2764,6 +2867,19 @@ export default function MapHackNS() {
               <Navigation size={14} />
               Otvori u Google Maps
             </a>
+
+            {/* Štek: SMS parking payment button */}
+            {selectedMarker.type === "stek" && (
+              <button
+                data-testid="btn-stek-sms-parking"
+                onClick={() => { setSelectedMarker(null); openSmsModal(); }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold"
+                style={{ background: "rgba(168,85,247,0.10)", border: "1px solid rgba(168,85,247,0.35)", color: "#c084fc" }}
+              >
+                <MessageSquare size={14} />
+                Plati javni parking putem SMS poruke
+              </button>
+            )}
 
             {/* Admin or stek owner: remove marker */}
             {(user?.isAdmin || (selectedMarker.type === "stek" && selectedMarker.userId === user?.id)) && (
@@ -2780,6 +2896,54 @@ export default function MapHackNS() {
           </div>
         </div>
       )}
+
+      {/* Štek image fullscreen viewer */}
+      {stekImageViewIdx !== null && selectedMarker?.type === "stek" && (() => {
+        const imgs = selectedMarker.images ?? [];
+        const img = imgs[stekImageViewIdx];
+        const src = img?.startsWith("http") ? img : `/objects${img}`;
+        const isOwner = selectedMarker.userId === user?.id;
+        const canManage = isOwner || !!user?.isAdmin;
+        return (
+          <div
+            className="fixed inset-0 z-[99999] flex flex-col items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.92)" }}
+            onClick={() => setStekImageViewIdx(null)}
+          >
+            <div className="relative w-full max-w-sm px-4" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-semibold text-white">{stekImageViewIdx + 1} / {imgs.length}</span>
+                <button onClick={() => setStekImageViewIdx(null)} className="flex items-center justify-center rounded-full" style={{ width: 32, height: 32, background: "rgba(255,255,255,0.1)" }}>
+                  <X size={16} style={{ color: "#fff" }} />
+                </button>
+              </div>
+              {/* Image */}
+              <img src={src} alt="Štek" className="w-full rounded-xl object-contain" style={{ maxHeight: "60svh" }} />
+              {/* Navigation */}
+              <div className="flex gap-2 mt-3">
+                {stekImageViewIdx > 0 && (
+                  <button onClick={() => setStekImageViewIdx(i => (i ?? 0) - 1)} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "rgba(255,255,255,0.1)" }}>← Prethodna</button>
+                )}
+                {stekImageViewIdx < imgs.length - 1 && (
+                  <button onClick={() => setStekImageViewIdx(i => (i ?? 0) + 1)} className="flex-1 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: "rgba(255,255,255,0.1)" }}>Sledeća →</button>
+                )}
+              </div>
+              {/* Delete button */}
+              {canManage && img && (
+                <button
+                  onClick={() => removeStekImageMutation.mutate({ id: selectedMarker.id, imageUrl: img })}
+                  disabled={removeStekImageMutation.isPending}
+                  className="w-full mt-2 py-2 rounded-xl text-xs font-medium"
+                  style={{ color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" }}
+                >
+                  {removeStekImageMutation.isPending ? "Brišem..." : "Ukloni sliku"}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
       {/* ── Private Parking Detail Panel (admin only) ── */}
       {selectedParking && (
         <div

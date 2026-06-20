@@ -136,6 +136,7 @@ export interface IStorage {
   deleteMapMarker(id: string): Promise<void>;
   expireMapMarker(id: string): Promise<void>;
   updateMapMarkerLabel(id: string, label: string | null): Promise<MapMarker>;
+  updateMapMarkerImages(id: string, images: string[]): Promise<MapMarker>;
   getMapChatMessages(limit?: number): Promise<MapChatMessage[]>;
   createMapChatMessage(data: InsertMapChatMessage): Promise<MapChatMessage>;
   deleteMapChatMessage(id: string): Promise<void>;
@@ -861,6 +862,15 @@ export class DatabaseStorage implements IStorage {
     const [marker] = await db
       .update(mapMarkers)
       .set({ label })
+      .where(eq(mapMarkers.id, id))
+      .returning();
+    return marker;
+  }
+
+  async updateMapMarkerImages(id: string, images: string[]): Promise<MapMarker> {
+    const [marker] = await db
+      .update(mapMarkers)
+      .set({ images })
       .where(eq(mapMarkers.id, id))
       .returning();
     return marker;
