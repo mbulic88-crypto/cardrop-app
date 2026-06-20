@@ -4798,7 +4798,39 @@ export default function MapHackNS() {
             <span className="font-bold text-center" style={{ color: "#7dd3fc", fontSize: 9, letterSpacing: "0.02em", lineHeight: 1.2 }}>Izdaj parking</span>
           </button>
 
-          {/* Moje rezervacije — 2. mesto, odmah posle Izdaj parking */}
+          {/* Štek — 2. mesto, odmah posle Izdaj parking */}
+          {(() => {
+            const locked = !isPremium;
+            const count = mapMarkers.filter(m => m.type === "stek").length;
+            const isActive = addMode === "stek";
+            return (
+              <button
+                key="stek"
+                data-testid="action-bar-stek"
+                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature("stek"); setUpsellContext("Javni skriveni parkinzi (Štek) dostupni su Premium korisnicima"); setPremiumUpsellOpen(true); } }}
+                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
+                style={{
+                  width: 58, height: 58,
+                  background: locked ? "#1f2937" : isActive ? "#15803d" : "#0e5c28",
+                  border: `1.5px solid ${locked ? "#374151" : isActive ? "#22c55e" : "#1a8a3e"}`,
+                  opacity: locked ? 0.5 : 1,
+                }}>
+                <div className="relative">
+                  <Home size={18} style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac" }} />
+                  {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
+                  {!locked && count > 0 && (
+                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
+                      style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
+                  )}
+                </div>
+                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 7.5, letterSpacing: "0.02em", lineHeight: 1.2 }}>
+                  Skriveni – Štek
+                </span>
+              </button>
+            );
+          })()}
+
+          {/* Moje rezervacije */}
           <button
             data-testid="action-bar-moje-rezervacije"
             onClick={() => setLocation("/dashboard?tab=bookings")}
@@ -4858,38 +4890,6 @@ export default function MapHackNS() {
                   )}
                 </div>
                 <span className="font-bold" style={{ color: isActive ? "#fff" : "#fca5a5", fontSize: 10, letterSpacing: "0.02em" }}>Pauk</span>
-              </button>
-            );
-          })()}
-
-          {/* Štek */}
-          {(() => {
-            const locked = !isPremium;
-            const count = mapMarkers.filter(m => m.type === "stek").length;
-            const isActive = addMode === "stek";
-            return (
-              <button
-                key="stek"
-                data-testid="action-bar-stek"
-                onClick={() => { if (!locked) { setAddMode(isActive ? null : "stek"); setActiveTab("stek"); setWatchZonePlaceMode(false); } else { setUpsellFeature("stek"); setUpsellContext("Javni skriveni parkinzi (Štek) dostupni su Premium korisnicima"); setPremiumUpsellOpen(true); } }}
-                className="kraft-btn flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-xl"
-                style={{
-                  width: 58, height: 58,
-                  background: locked ? "#1f2937" : isActive ? "#15803d" : "#0e5c28",
-                  border: `1.5px solid ${locked ? "#374151" : isActive ? "#22c55e" : "#1a8a3e"}`,
-                  opacity: locked ? 0.5 : 1,
-                }}>
-                <div className="relative">
-                  <Home size={18} style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac" }} />
-                  {locked && <Lock size={9} style={{ color: "#6b7280", position: "absolute", bottom: -2, right: -3 }} />}
-                  {!locked && count > 0 && (
-                    <span className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full font-bold"
-                      style={{ width: 14, height: 14, background: "#fff", color: "#15803d", fontSize: 7 }}>{count}</span>
-                  )}
-                </div>
-                <span className="font-bold text-center" style={{ color: locked ? "#4b5563" : isActive ? "#fff" : "#86efac", fontSize: 7.5, letterSpacing: "0.02em", lineHeight: 1.2 }}>
-                  Skriveni – Štek
-                </span>
               </button>
             );
           })()}
