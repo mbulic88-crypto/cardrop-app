@@ -18,19 +18,19 @@ const termsT = {
       "5. Obaveze Vlasnika Parking Mesta",
       "6. Obaveze Zakupaca",
       "7. Pretplate i Plaćanja",
-      "8. Sadržaj Korisnika",
-      "9. Sistem Ocenjivanja",
-      "10. Intelektualna Svojina",
-      "11. Zabranjena Ponašanja",
-      "12. Raskid Naloga",
-      "13. Ograničenje Odgovornosti",
-      "14. Obeštećenje",
-      "15. Primenljivo Pravo",
-      "16. Rešavanje Sporova",
-      "17. Kontakt sa Trećim Stranama",
-      "18. Izmene Uslova",
-      "19. Završne Odredbe",
-      "20. Kontakt Informacije",
+      "10. Sadržaj Korisnika",
+      "11. Sistem Ocenjivanja",
+      "12. Intelektualna Svojina",
+      "13. Zabranjena Ponašanja",
+      "14. Raskid Naloga",
+      "15. Ograničenje Odgovornosti",
+      "16. Obeštećenje",
+      "17. Primenljivo Pravo",
+      "18. Rešavanje Sporova",
+      "19. Kontakt sa Trećim Stranama",
+      "20. Izmene Uslova",
+      "21. Završne Odredbe",
+      "22. Kontakt Informacije",
     ],
   },
   en: {
@@ -45,19 +45,19 @@ const termsT = {
       "5. Obligations of Parking Space Owners",
       "6. Obligations of Tenants",
       "7. Subscriptions and Payments",
-      "8. User Content",
-      "9. Review System",
-      "10. Intellectual Property",
-      "11. Prohibited Behaviors",
-      "12. Account Termination",
-      "13. Limitation of Liability",
-      "14. Indemnification",
-      "15. Applicable Law",
-      "16. Dispute Resolution",
-      "17. Third-Party Services",
-      "18. Amendments to Terms",
-      "19. Final Provisions",
-      "20. Contact Information",
+      "10. User Content",
+      "11. Review System",
+      "12. Intellectual Property",
+      "13. Prohibited Behaviors",
+      "14. Account Termination",
+      "15. Limitation of Liability",
+      "16. Indemnification",
+      "17. Applicable Law",
+      "18. Dispute Resolution",
+      "19. Third-Party Services",
+      "20. Amendments to Terms",
+      "21. Final Provisions",
+      "22. Contact Information",
     ],
   },
 };
@@ -124,14 +124,14 @@ export default function Terms() {
               </p>
               <ul className="space-y-2 text-muted-foreground list-disc list-inside">
                 <li><strong>NE</strong> poseduje, ne upravlja i ne kontroliše nijedno parking mesto koje se oglašava na Platformi</li>
-                <li><strong>NE</strong> učestvuje u bilo kakvim transakcijama između korisnika</li>
+                <li><strong>NE</strong> učestvuje direktno u fizičkom pružanju usluge parkiranja</li>
                 <li><strong>NE</strong> garantuje dostupnost, kvalitet, bezbednost ili zakonitost oglašenih parking mesta</li>
                 <li><strong>NE</strong> pruža usluge parkiranja niti iznajmljivanja parking mesta</li>
-                <li><strong>NE</strong> vrši posredovanje u plaćanjima između vlasnika i zakupaca parking mesta</li>
-                <li><strong>NE</strong> preuzima nikakvu odgovornost za ishod dogovora između korisnika</li>
+                <li><strong>NE</strong> preuzima nikakvu odgovornost za fizičko stanje parking mesta ili štetu na vozilima</li>
+                <li><strong>NE</strong> preuzima nikakvu odgovornost za ishod dogovora između korisnika van platforme</li>
               </ul>
               <p className="text-muted-foreground mt-3">
-                Platforma isključivo pruža tehnološku infrastrukturu i prostor za oglašavanje. Svi dogovori, uslovi korišćenja parking mesta, plaćanja i drugi aspekti odnosa između korisnika su isključiva odgovornost samih korisnika.
+                CarDrop <strong>obrađuje online plaćanja rezervacija</strong> kao tehnički posrednik putem Stripe platforme, pri čemu naplaćuje posredničku naknadu od <strong>15% od vrednosti svake uspešno realizovane rezervacije</strong>. Ostatak od 85% isplaćuje se vlasniku parking mesta prema kalendarskom rasporedu isplata, umanjeno za eventualne troškove bankarske transakcije.
               </p>
             </section>
 
@@ -219,22 +219,116 @@ export default function Terms() {
             <section>
               <h3 className="text-xl font-semibold mb-3">{s[6]}</h3>
               <p className="text-muted-foreground mb-3">
-                CarDrop nudi sledeće pakete pretplate za korisnike koji žele da oglašavaju parking mesta:
+                CarDrop nudi sledeće pakete pretplate za oglašavanje parking mesta:
               </p>
               <ul className="space-y-2 text-muted-foreground list-disc list-inside mb-3">
-                <li><strong>Besplatan paket (Free)</strong> – osnovno oglašavanje sa ograničenim funkcijama</li>
-                <li><strong>Silver paket</strong> – 800 RSD mesečno, proširene mogućnosti oglašavanja</li>
-                <li><strong>Gold paket</strong> – 1.200 RSD mesečno, premium mogućnosti oglašavanja i dodatne funkcije</li>
+                <li><strong>Besplatan (Free)</strong> – osnovno oglašavanje, neograničeno trajanje, 0 RSD</li>
+                <li><strong>Premium mesečni</strong> – 1.000 RSD / 30 dana – zlatni okvir, prioritetno rangiranje</li>
+                <li><strong>Premium polugodišnji</strong> – 5.000 RSD / 180 dana (uštedite 17%)</li>
+                <li><strong>Premium godišnji</strong> – 9.000 RSD / 365 dana (uštedite 25%)</li>
+                <li><strong>Za firme i kamionske parkinge</strong> – posebni planovi, dostupni na upit</li>
               </ul>
               <p className="text-muted-foreground mb-3">
-                Sva plaćanja pretplata se obrađuju putem Stripe platnog procesora. Korišćenjem Stripe sistema, prihvatate i njihove uslove korišćenja. CarDrop ne čuva podatke o vašim platnim karticama – ove podatke obrađuje isključivo Stripe.
+                Sva plaćanja pretplata obrađuju se putem <strong>Stripe</strong> platnog procesora. CarDrop ne čuva podatke o platnim karticama – sve obrađuje isključivo Stripe (PCI DSS Level 1).
               </p>
               <p className="text-muted-foreground mb-3">
-                <strong>Automatsko obnavljanje:</strong> Pretplate se automatski obnavljaju na kraju svakog obračunskog perioda, osim ako korisnik ne otkaže pretplatu pre isteka tekućeg perioda. Korisnik je odgovoran za blagovremeno otkazivanje pretplate.
+                <strong>Automatsko obnavljanje:</strong> Pretplate se automatski obnavljaju na kraju obračunskog perioda, osim ako korisnik ne otkaže pre isteka. Otkazivanje je moguće u svakom trenutku u podešavanjima naloga ili na info@cardropp.app.
               </p>
               <p className="text-muted-foreground">
-                <strong>Politika povraćaja:</strong> Plaćene pretplate se generalno ne vraćaju. U izuzetnim slučajevima, CarDrop može po sopstvenom nahođenju odobriti delimičan ili potpun povraćaj. Zahteve za povraćaj šaljite na info@cardropp.app. Napominjemo da se plaćanja za pretplate odnose na pristup funkcijama Platforme, a ne na transakcije između korisnika – za finansijske sporove između korisnika CarDrop nije odgovoran.
+                <strong>Povraćaj pretplata:</strong> Plaćene pretplate se generalno ne vraćaju. U izuzetnim slučajevima CarDrop može po sopstvenom nahođenju odobriti delimičan povraćaj. Zahteve šaljite na info@cardropp.app.
               </p>
+            </section>
+
+            {/* Naknada platforme i finansijski model */}
+            <section>
+              <h3 className="text-xl font-semibold mb-3">
+                {language === "sr" ? "8. Naknada Platforme i Raspodela Prihoda" : "8. Platform Fee and Revenue Distribution"}
+              </h3>
+              <p className="text-muted-foreground mb-3">
+                {language === "sr"
+                  ? "Za svaku uspešno realizovanu rezervaciju putem platforme, CarDrop naplaćuje posredničku naknadu u iznosu od:"
+                  : "For each successfully completed booking through the platform, CarDrop charges an intermediary fee of:"}
+              </p>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-3 flex gap-6 flex-wrap">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary">15%</p>
+                  <p className="text-sm text-muted-foreground">{language === "sr" ? "Naknada platforme" : "Platform fee"}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">85%</p>
+                  <p className="text-sm text-muted-foreground">{language === "sr" ? "Vlasniku parking mesta" : "To parking space owner"}</p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-muted-foreground list-disc list-inside">
+                <li>
+                  {language === "sr"
+                    ? "Vlasniku pripada 85% uplaćenog iznosa, umanjeno za eventualne troškove bankarske transakcije (Stripe)."
+                    : "The owner receives 85% of the paid amount, minus any bank transaction fees (Stripe)."}
+                </li>
+                <li>
+                  {language === "sr"
+                    ? "Isplate se vrše prema kalendarskom rasporedu isplata koji CarDrop objavljuje na platformi."
+                    : "Payouts are made according to the payment schedule published by CarDrop on the platform."}
+                </li>
+                <li>
+                  {language === "sr"
+                    ? "CarDrop zadržava pravo izmene naknade uz prethodnu najavu od 30 dana korisnicima."
+                    : "CarDrop reserves the right to change the fee with 30 days prior notice to users."}
+                </li>
+              </ul>
+            </section>
+
+            {/* Politika otkazivanja i povraćaja */}
+            <section>
+              <h3 className="text-xl font-semibold mb-3">
+                {language === "sr" ? "9. Politika Otkazivanja i Povraćaja Novca" : "9. Cancellation and Refund Policy"}
+              </h3>
+
+              <p className="text-muted-foreground mb-4">
+                {language === "sr"
+                  ? "Pravila otkazivanja rezervacija zavise od toga ko otkazuje i kada:"
+                  : "Cancellation rules depend on who cancels and when:"}
+              </p>
+
+              <div className="space-y-4">
+                <div className="border border-border rounded-lg p-4">
+                  <h4 className="font-semibold text-foreground mb-2">
+                    {language === "sr" ? "A) Korisnik (zakupac) otkazuje rezervaciju" : "A) User (renter) cancels the booking"}
+                  </h4>
+                  <ul className="space-y-2 text-muted-foreground text-sm list-disc list-inside">
+                    <li>
+                      <strong>{language === "sr" ? "Blagovremeno otkazivanje (više od 7 dana pre početka):" : "Early cancellation (more than 7 days before start):"}</strong>{" "}
+                      {language === "sr"
+                        ? "Povraćaj 90% uplaćenog iznosa. Preostalih 10% zadržava platforma na ime administrativnih troškova."
+                        : "90% refund of the paid amount. The remaining 10% is retained by the platform as an administrative fee."}
+                    </li>
+                    <li>
+                      <strong>{language === "sr" ? "Kasno otkazivanje (manje od 7 dana pre početka):" : "Late cancellation (less than 7 days before start):"}</strong>{" "}
+                      {language === "sr"
+                        ? "Povraćaj 50% uplaćenog iznosa. Ostatak služi kao kompenzacija vlasniku parkinga i platformi."
+                        : "50% refund of the paid amount. The remainder compensates the parking owner and platform."}
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border border-border rounded-lg p-4">
+                  <h4 className="font-semibold text-foreground mb-2">
+                    {language === "sr" ? "B) Vlasnik parkinga otkazuje rezervaciju" : "B) Parking owner cancels the booking"}
+                  </h4>
+                  <ul className="space-y-2 text-muted-foreground text-sm list-disc list-inside">
+                    <li>
+                      {language === "sr"
+                        ? "Korisniku (zakupcu) se vraća 100% uplaćenog iznosa, bez obzira na vreme otkazivanja."
+                        : "The user (renter) receives a 100% refund of the paid amount, regardless of when the cancellation occurs."}
+                    </li>
+                    <li>
+                      {language === "sr"
+                        ? "Napomena: Učestalo otkazivanje od strane vlasnika može dovesti do penalizacije ili privremenog/trajnog suspendovanja profila na CarDrop platformi."
+                        : "Note: Frequent cancellations by the owner may result in penalties or temporary/permanent suspension of the profile on the CarDrop platform."}
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </section>
 
             <section>

@@ -174,6 +174,7 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Sadržaj chat poruka</strong> — javne poruke unutar Map Hack chat-a</li>
                 <li><strong className="text-foreground">Koordinate postavljenih markera</strong> — lokacije koje korisnici sami unose (pauk, radar, štek, zlatni minut). <em>Mi ne prikupljamo realtime GPS lokaciju uređaja korisnika.</em></li>
                 <li><strong className="text-foreground">Podaci o pretplati</strong> — plan, datum aktivacije i isteka</li>
+                <li><strong className="text-foreground">Podaci o rezervacijama</strong> — datum i vreme rezervacije, registarska oznaka vozila, iznos transakcije, status plaćanja i metod plaćanja. Ovi podaci se čuvaju u svrhu realizacije usluge, rešavanja sporova i zakonskih obaveza.</li>
                 <li><strong className="text-foreground">Push notifikacija endpoint</strong> — za slanje obaveštenja (samo uz eksplicitnu dozvolu)</li>
                 <li><strong className="text-foreground">Podaci o sesiji</strong> — tehnički kolačići za prijavu</li>
               </ul>
@@ -272,10 +273,14 @@ export default function PrivacyPolicy() {
                 </p>
                 <p>
                   <strong className="text-foreground">6.2 Procesuiranje plaćanja.</strong>{" "}
-                  Sva plaćanja pretplata za oglašavanje na platformi obrađuje <strong className="text-foreground">Stripe Inc.</strong>, certificiran prema PCI DSS Level 1 standardu. CarDrop ne prikuplja, ne čuva ni ne obrađuje podatke o platnim karticama korisnika. Plaćanja između zakupaca i vlasnika prostora (zakup parking mesta) odvijaju se direktno — gotovinom ili bankovnim transferom — i nisu posredovana platformom CarDrop.
+                  Sva plaćanja na platformi — kako pretplata za oglašavanje, tako i <strong className="text-foreground">online plaćanja rezervacija parking mesta</strong> — obrađuje <strong className="text-foreground">Stripe Inc.</strong>, certificiran prema PCI DSS Level 1 standardu. CarDrop ne prikuplja, ne čuva ni ne obrađuje podatke o platnim karticama korisnika.
                 </p>
                 <p>
-                  <strong className="text-foreground">6.3 Ograničenje odgovornosti.</strong>{" "}
+                  <strong className="text-foreground">6.3 Finansijski model — naknada platforme.</strong>{" "}
+                  Za svaku uspešno realizovanu rezervaciju, CarDrop zadržava <strong className="text-foreground">15% posredničke naknade</strong>. Preostalih <strong className="text-foreground">85% isplaćuje se vlasniku parking mesta</strong> prema kalendarskom rasporedu isplata, umanjeno za eventualne troškove bankarske transakcije. Ovi finansijski podaci čuvaju se minimum 5 godina u skladu sa zakonskim obavezama.
+                </p>
+                <p>
+                  <strong className="text-foreground">6.4 Ograničenje odgovornosti.</strong>{" "}
                   CarDrop nije strana u ugovoru između vlasnika parking prostora i zakupca i ne snosi odgovornost za sporove, štetu ili neispunjavanje obaveza između tih strana.
                 </p>
               </div>

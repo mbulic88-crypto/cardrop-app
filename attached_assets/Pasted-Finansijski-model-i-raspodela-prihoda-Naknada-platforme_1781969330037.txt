@@ -1,0 +1,30 @@
+Finansijski model i raspodela prihoda
+Naknada platforme: Cardrop naplaćuje posredničku naknadu u iznosu od 15% od ukupne vrednosti svake uspešno realizovane rezervacije.
+
+Isplata vlasnicima: Vlasniku parking mesta pripada 85% od ukupnog iznosa uplaćene rezervacije, umanjeno za eventualne troškove bankarskih transakcija (isplata preko Stripe-a), što se isplaćuje prema definisanom kalendaru isplata.
+Politika otkazivanja i povraćaja novca (Cancellation Policy)
+Pravila otkazivanja zavise od toga ko otkazuje i kada se otkazivanje vrši:
+
+A) Kada otkazuje korisnik (Vozač/Zakupac):
+Blagovremeno otkazivanje (Više od 7 dana pre početka): Ako korisnik otkaže rezervaciju minimum 7 dana (168 sati) pre planiranog početka rezervacije, ostvaruje pravo na povraćaj od 90% uplaćenog iznosa. (Preostalih 10% zadržava platforma na ime administrativnih troškova i troškova transakcije).
+Kasno otkazivanje (Manje od 7 dana pre početka): Ako korisnik otkaže rezervaciju unutar 7 dana pre početka, ostvaruje pravo na povraćaj od 50% uplaćenog iznosa. (Ostatak služi kao kompenzacija vlasniku parkinga za zauzeto vreme i platformi).
+
+B) Kada otkazuje Vlasnik parkinga:
+Ukoliko vlasnik parking mesta otkaže potvrđenu rezervaciju u bilo kom trenutku pre njenog početka, korisniku (zakupcu) se vraća 100% uplaćenog iznosa.
+Napomena za vlasnike: Učestalo otkazivanje od strane vlasnika može dovesti do penalizacije ili privremenog/trajnog suspendovanja profila na Cardrop platformi.
+
+3. Prava i obaveze korisnika (Sadržaj i profil)
+Tačnost informacija: Vlasnik parking mesta je dužan da prilikom postavljanja oglasa unese tačne informacije, lokaciju, cenu, kao i stvarne fotografije (slike) parking mesta. Zabranjeno je kačenje lažnih ili tuđih fotografija
+Dodatne informacije: Korisnici su dužni da unose tačne podatke o vozilu i vremenu zakupa. Svaka zloupotreba sistema (npr. ostavljanje vozila duže od zakupljenog vremena) biće sankcionisana.
+
+4. Ograničenje odgovornosti platforme (Disclamer)
+Cardrop je posrednik: Cardrop posluje isključivo kao platforma za oglašavanje i posredovanje (tržište/marketplace) koja povezuje vlasnike parking mesta i vozače.
+Isključenje odgovornosti za štetu: Cardrop nije vlasnik niti pružalac usluge parkinga, niti ima kontrolu nad fizičkim stanjem parking mesta. Shodno tome, aplikacija se ne može smatrati odgovornom za:
+
+Eventualnu materijalnu ili nematerijalnu štetu na vozilu nastalu tokom korišćenja parkinga.
+
+Krađu, obijanje vozila ili nestanak stvari iz vozila.
+
+Sporove između vlasnika parkinga i zakupca.
+
+Tačnost podataka koje su vlasnici samostalno uneli (iako nastojimo da proverimo profile).
