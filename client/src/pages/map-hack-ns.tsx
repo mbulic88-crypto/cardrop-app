@@ -987,8 +987,9 @@ export default function MapHackNS() {
       const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
       await fetch(uploadURL, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
       const imageURL = uploadURL.split("?")[0];
-      await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
+      const updated = await apiRequest("POST", `/api/map-hack/markers/${markerId}/images`, { imageURL });
       queryClient.invalidateQueries({ queryKey: ["/api/map-hack/markers"] });
+      setSelectedMarker(prev => prev?.id === markerId ? { ...prev, images: updated.images ?? [] } : prev);
       toast({ title: "Slika dodata" });
     } catch (err: any) {
       toast({ title: "Greška pri uploadu", description: err.message, variant: "destructive" });
@@ -2809,11 +2810,6 @@ export default function MapHackNS() {
                             alt={`Štek slika ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
-                          {imgs.length > 1 && idx === imgs.length - 1 && (
-                            <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white" style={{ background: "rgba(0,0,0,0.35)" }}>
-                              {imgs.length} foto
-                            </div>
-                          )}
                         </button>
                       ))}
                     </div>
