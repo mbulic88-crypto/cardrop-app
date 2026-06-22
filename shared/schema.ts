@@ -43,6 +43,7 @@ export const users = pgTable("users", {
   mapHackPlan: varchar("map_hack_plan", { length: 20 }),
   mapHackPlanExpiresAt: timestamp("map_hack_plan_expires_at"),
   mapHackStripeSessionId: varchar("map_hack_stripe_session_id"),
+  mapHackExpiredEmailSentAt: timestamp("map_hack_expired_email_sent_at"),
   mapProfileLastChangedAt: timestamp("map_profile_last_changed_at"),
   mapNotificationsEnabled: boolean("map_notifications_enabled").notNull().default(true),
   mapPrivacyAcceptedAt: timestamp("map_privacy_accepted_at"),

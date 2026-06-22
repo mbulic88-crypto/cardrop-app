@@ -198,6 +198,37 @@ export async function sendMapHackCancellationEmail(
   await sendMail(to, 'Map Hack pretplata otkazana', html);
 }
 
+export async function sendMapHackExpiredEmail(
+  to: string,
+  name: string,
+  plan: string,
+): Promise<void> {
+  const label = planLabel(plan);
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Tvoja pretplata je istekla</h2>
+    <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${name},</p>
+    <p style="color:#555;line-height:1.6;margin:0 0 20px;">
+      Tvoj <strong>${label}</strong> plan je istekao. Više nemaš pristup premium funkcijama Map Hack RS mape —
+      Safe Zone alarmu, Štek lokacijama, Radar markerima i push notifikacijama.
+    </p>
+    <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:16px;margin:0 0 24px;">
+      <p style="margin:0;color:#7a5f00;font-size:14px;line-height:1.6;">
+        <strong>Šta gubiš bez premijuma:</strong><br/>
+        · Safe Zone alarm — push kada se neko pojavi u 300m krugu<br/>
+        · Štek lokacije — skrivena slobodna mesta<br/>
+        · Radar markeri — policija i patrola<br/>
+        · Push notifikacije u realnom vremenu
+      </p>
+    </div>
+    <p style="color:#555;line-height:1.6;margin:0 0 24px;">
+      Obnovi plan u par sekundi i nastavi da parkiraš pametno.
+    </p>
+    <a href="https://cardrop.app/map-hack/subscribe" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:bold;font-size:16px;">Obnovi pretplatu</a>
+    <p style="color:#888;font-size:13px;margin-top:24px;">Hvala što koristiš CarDrop!</p>
+  `);
+  await sendMail(to, `Map Hack pretplata istekla — obnovi plan`, html);
+}
+
 export async function sendBookingOwnerEmail(opts: {
   ownerEmail: string;
   ownerName: string;

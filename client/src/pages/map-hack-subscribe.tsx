@@ -249,7 +249,7 @@ export default function MapHackSubscribe() {
   const currentPlan = mapStatus?.plan;
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex flex-col relative">
+    <div className="bg-background flex flex-col relative" style={{ height: '100dvh', overflow: 'hidden' }}>
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>

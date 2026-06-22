@@ -14,7 +14,7 @@ import { db } from "./db";
 import { sql, eq, or, gt, desc } from "drizzle-orm";
 import { mapMarkers as mapMarkersTable, users as usersTable, pushSubscriptions as pushSubscriptionsTable, bookings, iosCheckoutTokens } from "@shared/schema";
 import { sanitizeObject } from './sanitize';
-import { sendMapHackPurchaseEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail, sendBookingAutoConfirmedOwnerEmail } from './email';
+import { sendMapHackPurchaseEmail, sendMapHackExpiredEmail, sendBookingOwnerEmail, sendBookingApprovedEmail, sendBookingRejectedEmail, sendBookingPendingApprovalEmail, sendBookingRenterConfirmationEmail, sendBookingAutoConfirmedOwnerEmail } from './email';
 import { randomBytes } from 'crypto';
 
 function haversineMetersServer(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -257,6 +257,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             planExpiresAt: planExpiresAt.toISOString(),
           });
         } else {
+          // Send expiry email once (only if not already sent)
+          if (!user.mapHackExpiredEmailSentAt) {
+            const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Korisniče';
+            if (user.email) {
+              sendMapHackExpiredEmail(user.email, userName, user.mapHackPlan!).catch(console.error);
+            }
+            storage.updateUser(userId, { mapHackExpiredEmailSentAt: new Date() }).catch(console.error);
+          }
           return res.json({
             phase: "plan_expired",
             trialStartedAt: trialStartedAt.toISOString(),
