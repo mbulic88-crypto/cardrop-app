@@ -1396,7 +1396,8 @@ export default function Admin() {
                           const app = price * APP_FEE_ADM;
                           if (method === 'instant') {
                             const stripe = price * 0.039 + 35;
-                            return { neto: price - app - stripe, stripe, app };
+                            // Stripe fee already charged to customer on top of price — do not deduct from owner
+                            return { neto: price - app, stripe, app };
                           }
                           return { neto: price - app, stripe: 0, app };
                         };
@@ -2113,7 +2114,7 @@ export default function Admin() {
               const instant = paid.filter(b => b.payment_method === 'instant');
               const kredit = paid.filter(b => b.payment_method !== 'instant');
               const totalRevenue = paid.reduce((s, b) => s + parseFloat(b.total_price || '0'), 0);
-              const instantPayout = instant.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.811 - STRIPE_FIXED_RSD), 0);
+              const instantPayout = instant.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.85), 0);
               const kreditPayout = kredit.reduce((s, b) => s + (parseFloat(b.total_price || '0') * 0.85), 0);
               const totalPayout = instantPayout + kreditPayout;
 
@@ -2127,7 +2128,7 @@ export default function Admin() {
                   };
                 }
                 const price = parseFloat(b.total_price || '0');
-                if (b.payment_method === 'instant') ownerMap[b.owner_id].instant += price * 0.811 - STRIPE_FIXED_RSD;
+                if (b.payment_method === 'instant') ownerMap[b.owner_id].instant += price * 0.85;
                 else ownerMap[b.owner_id].kredit += price * 0.85;
                 ownerMap[b.owner_id].count++;
               }
