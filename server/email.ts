@@ -261,12 +261,8 @@ export async function sendBookingOwnerEmail(opts: {
     <div style="background:#f0fdf4;border:2px solid #40916c;border-radius:8px;padding:20px;margin:0 0 24px;text-align:center;">
       <p style="margin:0 0 6px;color:#1b4332;font-size:16px;font-weight:bold;">Nova rezervacija ceka tvoje odobrenje!</p>
       <p style="margin:0 0 16px;color:#555;font-size:13px;">Klikni dugme ispod da prihvatis ili odbijas rezervaciju.</p>
-      <table cellpadding="0" cellspacing="0" style="display:inline-table;margin:0 auto;">
-        <tr>
-          <td style="padding:0 6px;"><a href="${approveUrl}" style="display:inline-block;background:#40916c;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODOBRI</a></td>
-          <td style="padding:0 6px;"><a href="${rejectUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;">ODBIJ</a></td>
-        </tr>
-      </table>
+      <a href="${approveUrl}" style="background:#40916c;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;margin:0 6px;">ODOBRI</a>
+      <a href="${rejectUrl}" style="background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:6px;font-weight:bold;font-size:16px;margin:0 6px;">ODBIJ</a>
     </div>` : ''}
     <h2 style="margin:0 0 16px;color:#1b4332;font-size:22px;">Nova rezervacija!</h2>
     <p style="color:#555;line-height:1.6;margin:0 0 12px;">Zdravo ${ownerName},</p>
