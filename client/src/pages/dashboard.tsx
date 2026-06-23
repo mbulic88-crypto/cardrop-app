@@ -56,8 +56,10 @@ const CREDIT_STRIPE_PCT = 0.015;
 function calcPayout(price: number, method: string | null): { neto: number; stripeFee: number; appFee: number } {
   const appFee = price * APP_FEE;
   if (method === 'instant') {
+    // Stripe fee is already charged to the customer on top of the price,
+    // so the platform receives ~price net from Stripe — do not deduct again.
     const stripeFee = price * INSTANT_STRIPE_PCT + INSTANT_STRIPE_FIXED;
-    return { neto: price - appFee - stripeFee, stripeFee, appFee };
+    return { neto: price - appFee, stripeFee, appFee };
   }
   if (method === 'credit') {
     const stripeFee = price * CREDIT_STRIPE_PCT;
@@ -183,7 +185,7 @@ const dashT: { sr: DashT; en: DashT } = {
     thisWeek: 'Ova nedelja', thisMonth: 'Ovaj mesec', lastMonth: 'Prošli mesec', allTime: 'Sve',
     from: 'Od', to: 'Do', clearFilter: 'Obriši filter', exportCsv: 'Izvezi CSV', forPayout: 'Za isplatu',
     payoutTitle: (n) => `Obračun isplate — ${n} rezervacija`,
-    afterFees: 'posle 15% app + 3.9% + 35 RSD Stripe', afterCredit: 'posle 15% app + 1.5% Stripe',
+    afterFees: 'posle 15% app provizije (Stripe naknada naplaćena kupcu)', afterCredit: 'posle 15% app + 1.5% Stripe',
     totalPayout: 'Ukupno za isplatu', fromTotal: (n) => `od ${n} RSD ukupno`,
     noBookingsPeriod: 'Nema rezervacija u izabranom periodu',
     colParking: 'Parking', colTenant: 'Stanar', colPeriod: 'Period',
@@ -267,7 +269,7 @@ const dashT: { sr: DashT; en: DashT } = {
     thisWeek: 'This week', thisMonth: 'This month', lastMonth: 'Last month', allTime: 'All',
     from: 'From', to: 'To', clearFilter: 'Clear filter', exportCsv: 'Export CSV', forPayout: 'For payout',
     payoutTitle: (n) => `Payout summary — ${n} bookings`,
-    afterFees: 'after 15% app + 3.9% + 35 RSD Stripe', afterCredit: 'after 15% app + 1.5% Stripe',
+    afterFees: 'after 15% app fee (Stripe fee charged to customer)', afterCredit: 'after 15% app + 1.5% Stripe',
     totalPayout: 'Total payout', fromTotal: (n) => `from ${n} RSD total`,
     noBookingsPeriod: 'No bookings in the selected period',
     colParking: 'Parking', colTenant: 'Renter', colPeriod: 'Period',
@@ -1135,7 +1137,7 @@ export default function Dashboard() {
                               <div className="flex flex-col gap-0.5 items-end">
                                 <span className="font-semibold text-foreground">{Math.round(price).toLocaleString()} RSD</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {t.net}: {Math.round(neto).toLocaleString()} + {Math.round(stripeFee).toLocaleString()} RSD Stripe
+                                  {t.net}: {Math.round(neto).toLocaleString()} RSD
                                 </span>
                               </div>
                             </td>

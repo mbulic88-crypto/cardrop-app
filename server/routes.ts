@@ -3795,7 +3795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           COUNT(*) FILTER (WHERE b.payment_status = 'paid' AND b.payment_method = 'instant') AS instant_count,
           COUNT(*) FILTER (WHERE b.payment_status = 'paid' AND (b.payment_method IS NULL OR b.payment_method != 'instant')) AS kredit_count,
           COALESCE(SUM(b.total_price) FILTER (WHERE b.payment_status = 'paid'), 0) AS total_revenue,
-          COALESCE(SUM(b.total_price * 0.811 - ${STRIPE_FIXED_RSD}) FILTER (WHERE b.payment_status = 'paid' AND b.payment_method = 'instant'), 0) AS instant_payout,
+          COALESCE(SUM(b.total_price * 0.85) FILTER (WHERE b.payment_status = 'paid' AND b.payment_method = 'instant'), 0) AS instant_payout,
           COALESCE(SUM(b.total_price * 0.835) FILTER (WHERE b.payment_status = 'paid' AND (b.payment_method IS NULL OR b.payment_method != 'instant')), 0) AS kredit_payout
         FROM bookings b
         WHERE b.start_time >= ${fromDate} AND b.start_time <= ${toDate}
