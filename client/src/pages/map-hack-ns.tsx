@@ -282,11 +282,12 @@ function PlanCards({ selectedPlan, onSelect, isIos = false }: { selectedPlan: Pl
           </div>
           <Radio selected={selectedPlan === "premium"} light={false} />
         </div>
-        <div className="mb-1">
-          <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
-          <span className="text-yellow-800 text-sm ml-1 font-medium">{mh.premiumPrice}</span>
-        </div>
-        {!isIos && <span className="text-yellow-900/60 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
+        {!isIos && (
+          <div className="mb-1">
+            <span className="text-yellow-950 text-3xl font-extrabold leading-none">390</span>
+            <span className="text-yellow-800 text-sm ml-1 font-medium">{mh.premiumPrice}</span>
+          </div>
+        )}
         <p className="text-yellow-900/60 text-xs font-semibold mb-2 uppercase tracking-wide">{mh.premiumAllFree}</p>
         <div className="flex flex-col gap-1.5">
           <GoldRow ok text={mh.premFeat1} />
@@ -319,11 +320,12 @@ function PlanCards({ selectedPlan, onSelect, isIos = false }: { selectedPlan: Pl
           </div>
           <Radio selected={selectedPlan === "day_pass"} light />
         </div>
-        <div className="mb-1">
-          <span className="text-white text-3xl font-extrabold leading-none">120</span>
-          <span className="text-red-200 text-sm ml-1 font-medium">{mh.dayPassPrice}</span>
-        </div>
-        {!isIos && <span className="text-red-200 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
+        {!isIos && (
+          <div className="mb-1">
+            <span className="text-white text-3xl font-extrabold leading-none">120</span>
+            <span className="text-red-200 text-sm ml-1 font-medium">{mh.dayPassPrice}</span>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <LightRow ok text={mh.dpFeat1} />
           <LightRow ok text={mh.dpFeat2} />
@@ -359,11 +361,12 @@ function PlanCards({ selectedPlan, onSelect, isIos = false }: { selectedPlan: Pl
           </div>
           <Radio selected={selectedPlan === "godisnji_premium"} light />
         </div>
-        <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
-          <span className="text-indigo-300 text-sm font-medium">{mh.godisnjiPrice}</span>
-        </div>
-        {!isIos && <span className="text-indigo-300 text-xs flex items-center gap-1 mb-2">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</span>}
+        {!isIos && (
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-white text-3xl font-extrabold leading-none">3.500</span>
+            <span className="text-indigo-300 text-sm font-medium">{mh.godisnjiPrice}</span>
+          </div>
+        )}
         <div className="bg-white/10 rounded-md px-3 py-1.5 mb-3">
           <p className="text-indigo-200 text-xs font-semibold">{mh.godisnjiSavings}</p>
         </div>
@@ -6169,11 +6172,12 @@ export default function MapHackNS() {
                     </div>
                     <p className="text-yellow-900/70 text-xs mt-0.5">Safe Zone, Štek, Radar, Push notifikacije</p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
-                    <span className="text-yellow-800 text-xs ml-1">RSD/mes</span>
-                    {!isIos && <div className="text-yellow-900/60 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
-                  </div>
+                  {!isIos && (
+                    <div className="text-right">
+                      <span className="text-yellow-950 text-2xl font-extrabold leading-none">390</span>
+                      <span className="text-yellow-800 text-xs ml-1">RSD/mes</span>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3 py-2 px-4 rounded-lg text-center font-bold text-sm" style={{ background: "rgba(0,0,0,0.15)", color: "#713f12" }}>
                   {upsellPending ? "Učitava..." : "Pretplati se →"}
@@ -6212,11 +6216,12 @@ export default function MapHackNS() {
                     <span className="text-white font-extrabold text-base tracking-wide">DAY PASS</span>
                     <p className="text-red-200 text-xs mt-0.5">Sve Premium funkcije na 24 sata</p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-white text-2xl font-extrabold leading-none">120</span>
-                    <span className="text-red-200 text-xs ml-1">RSD</span>
-                    {!isIos && <div className="text-red-200 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
-                  </div>
+                  {!isIos && (
+                    <div className="text-right">
+                      <span className="text-white text-2xl font-extrabold leading-none">120</span>
+                      <span className="text-red-200 text-xs ml-1">RSD</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3 mt-2 mb-3">
                   <LightRow ok text="Važi 24 sata" />
@@ -6262,19 +6267,19 @@ export default function MapHackNS() {
                     </div>
                     <p className="text-indigo-300 text-xs mt-0.5">365 dana pristupa svim Premium funkcijama</p>
                   </div>
-                  <div className="text-right">
-                    <span className="text-white text-2xl font-extrabold leading-none">3.500</span>
-                    <span className="text-indigo-300 text-xs ml-1">RSD/god</span>
-                    {!isIos && <div className="text-indigo-300 text-[10px] flex items-center justify-end gap-0.5 mt-0.5">+ <span style={{ color: "#635bff", fontWeight: 700 }}>Stripe</span> naknada</div>}
-                  </div>
+                  {!isIos && (
+                    <div className="text-right">
+                      <span className="text-white text-2xl font-extrabold leading-none">3.500</span>
+                      <span className="text-indigo-300 text-xs ml-1">RSD/god</span>
+                    </div>
+                  )}
                 </div>
                 <div className="py-2 px-4 rounded-lg text-center font-bold text-sm text-white" style={{ background: "rgba(0,0,0,0.2)" }}>
                   {upsellPending ? "Učitava..." : "Pretplati se →"}
                 </div>
               </button>
 
-              <p className="text-center text-xs" style={{ color: "#4b5563" }}>Otkaži bilo kada · Bez skrivenih troškova</p>
-              <p className="text-center text-xs pb-2" style={{ color: "#4b5563" }}>Sigurno plaćanje putem Stripe-a · RSD</p>
+              <p className="text-center text-xs pb-2" style={{ color: "#4b5563" }}>Otkaži bilo kada · Bez skrivenih troškova</p>
             </div>
           </div>
         </div>
