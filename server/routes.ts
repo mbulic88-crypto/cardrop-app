@@ -3777,6 +3777,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin — otkazivanje rezervacije (oslobađa termin u kalendaru)
+  app.patch('/api/admin/bookings/:id/cancel', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const [updated] = await db.update(bookings)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(eq(bookings.id, id))
+        .returning();
+      if (!updated) return res.status(404).json({ message: "Rezervacija nije pronađena" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Greška pri otkazivanju" });
+    }
+  });
+
   // Admin — agregirane metrike za rezervacije u periodu
   app.get('/api/admin/bookings/metrics', isAuthenticated, isAdmin, async (req, res) => {
     try {

@@ -741,6 +741,13 @@ export default function Admin() {
     },
   });
 
+  const cancelBookingMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("PATCH", `/api/admin/bookings/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/bookings"] });
+    },
+  });
+
   const deleteListingMutation = useMutation({
     mutationFn: async (listingId: string) => {
       await apiRequest("DELETE", `/api/admin/sales-listings/${listingId}`);
@@ -2247,6 +2254,22 @@ export default function Admin() {
                                         <Badge variant="outline" className={`text-xs ${b.payment_status === 'paid' ? 'text-green-600' : b.status === 'cancelled' ? 'text-red-500' : 'text-yellow-500'}`}>
                                           {b.payment_status === 'paid' ? 'Plaćeno' : b.status === 'cancelled' ? 'Otkazano' : 'Na čekanju'}
                                         </Badge>
+                                      </td>
+                                      <td className="p-3">
+                                        {b.status !== 'cancelled' && (
+                                          <button
+                                            title="Otkaži i oslobodi termin"
+                                            disabled={cancelBookingMutation.isPending}
+                                            onClick={() => {
+                                              if (confirm('Otkazati rezervaciju i osloboditi termin?')) {
+                                                cancelBookingMutation.mutate(b.id);
+                                              }
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive transition-colors"
+                                          >
+                                            <X className="w-4 h-4" />
+                                          </button>
+                                        )}
                                       </td>
                                     </tr>
                                     );
