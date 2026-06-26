@@ -21,10 +21,12 @@ export default function IosDone() {
   const label = planLabels[plan] || planLabels[type] || "Plan";
 
   useEffect(() => {
-    // Try to close the Safari tab — works only if opened via window.open()
+    // Try to close the Safari tab immediately — works if opened via window.open()
+    try { window.close(); } catch {}
+    // Fallback: retry after short delay in case browser deferred it
     const t = setTimeout(() => {
       try { window.close(); } catch {}
-    }, 800);
+    }, 300);
     return () => clearTimeout(t);
   }, []);
 

@@ -4387,6 +4387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customer_email: currentUser.email ?? undefined,
             line_items: [{ price_data: { currency: 'rsd', unit_amount: totalAmountParas, product_data: { name: planInfo.name, description: planInfo.description } }, quantity: 1 }],
             mode: 'payment',
+            payment_intent_data: { receipt_email: currentUser.email ?? undefined },
             success_url: `${baseUrl}/ios-done?type=map_hack&plan=${plan}`,
             cancel_url: `${baseUrl}/map-hack/subscribe`,
             metadata: { type: 'map_hack', userId: tokenRecord.userId, plan },
