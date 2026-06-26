@@ -11,7 +11,10 @@ export function usePWA() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    const ua = navigator.userAgent;
+    // Standalone PWA OR native WKWebView wrapper (App Store app — no "Safari" token in UA)
+    const isWkWebView = /iPhone|iPad|iPod/.test(ua) && /AppleWebKit/.test(ua) && !/Safari/.test(ua);
+    if (window.matchMedia('(display-mode: standalone)').matches || isWkWebView) {
       setIsInstalled(true);
       return;
     }

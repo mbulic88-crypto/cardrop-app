@@ -352,7 +352,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header - Hamburger Left, Logo Center */}
-      <header className="absolute top-0 left-0 right-0 z-30">
+      <header className="absolute top-0 left-0 right-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-2">
             {/* Left: Hamburger Menu + Flags */}
@@ -509,8 +509,8 @@ export default function Landing() {
       </header>
       {/* Hero Section - Image on top, content below */}
       <div className="relative">
-        {/* Hero Image Area - light overlay for bright sunny feel */}
-        <div className="relative h-[50vh] min-h-[320px] md:h-[55vh] md:min-h-[400px] overflow-hidden">
+        {/* Hero Image Area - extends under safe-area (status bar) on iOS */}
+        <div className="relative overflow-hidden" style={{ height: 'calc(50vh + env(safe-area-inset-top, 0px))', minHeight: 'calc(320px + env(safe-area-inset-top, 0px))' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/20 z-10" />
           <img 
             src={heroImage} 
@@ -558,7 +558,7 @@ export default function Landing() {
               {t.myReservations}
             </Button>
 
-            <div className={`grid ${isIos ? "grid-cols-1" : "grid-cols-2"} gap-3`} data-testid="install-instructions">
+            <div className="grid grid-cols-2 gap-3" data-testid="install-instructions">
               {!isIos && (
                 <a
                   href="https://play.google.com/store/apps/details?id=cardrop.app"
@@ -574,28 +574,28 @@ export default function Landing() {
                   />
                 </a>
               )}
-              <button
-                type="button"
-                onClick={() => setShowIosModal(true)}
-                data-testid="button-install-iphone"
-                className={`rounded-md flex flex-col items-center justify-center p-2 gap-1.5 transition-all hover-elevate cursor-pointer ${isIos ? "border-2 border-accent" : "border border-border/50"}`}
+              {isIos && (
+                <div className="col-span-1" />
+              )}
+              <a
+                href="https://apps.apple.com/app/cardrop/id6780248259"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-app-store"
+                className="rounded-md flex items-center justify-center p-2 border border-border/50"
               >
-                {/* App Store badge placeholder — styled to match Google Play badge weight */}
-                <div className={`w-full rounded flex items-center justify-center gap-2 px-3 py-2 ${isIos ? "bg-foreground" : "bg-foreground/80"}`}>
+                <div className="w-full rounded flex items-center justify-center gap-2 px-3 py-2 bg-foreground">
                   <svg viewBox="0 0 24 24" className="w-5 h-5 fill-background flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                   </svg>
                   <div className="flex flex-col items-start">
                     <span className="text-background text-[9px] leading-tight font-normal">
-                      {language === "sr" ? "Uskoro na" : "Coming soon to"}
+                      {language === "sr" ? "Preuzmi na" : "Download on the"}
                     </span>
                     <span className="text-background text-sm font-semibold leading-tight">App Store</span>
                   </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground leading-tight text-center">
-                  {language === "sr" ? "Tapni za Safari uputstvo" : "Tap for Safari guide"}
-                </p>
-              </button>
+              </a>
             </div>
           </div>
         </div>
