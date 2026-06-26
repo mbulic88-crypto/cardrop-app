@@ -350,7 +350,7 @@ export default function Landing() {
   const t = language === "sr" ? translations.sr : translations.en;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={{ marginTop: 'calc(-1 * env(safe-area-inset-top, 0px))' }}>
       {/* Header - Hamburger Left, Logo Center */}
       <header className="absolute top-0 left-0 right-0 z-30" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-4 py-4">

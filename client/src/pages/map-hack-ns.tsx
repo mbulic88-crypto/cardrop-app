@@ -2636,7 +2636,7 @@ export default function MapHackNS() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117", paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#0d1117", marginTop: 'calc(-1 * env(safe-area-inset-top, 0px))', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* ── Push notification banner — blocked ── */}
       {isAuthenticated && pushSupported && pushPermission === 'denied' && !pushBannerDismissed && (
         <div
