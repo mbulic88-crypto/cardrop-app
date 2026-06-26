@@ -4262,6 +4262,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //   marks token used, creates Stripe Checkout session, returns { url }.
   // POST /api/ios-checkout/token: stores type + plan + spotId, returns link.
 
+  // Serve AASA with correct Content-Type for iOS Universal Links
+  app.get('/.well-known/apple-app-site-association', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+      applinks: {
+        apps: [],
+        details: [
+          {
+            appID: 'KW2V6BWBZX.rs.cardrop.app',
+            paths: ['/ios-done*', '/map-hack*', '/map-hack/subscribe*', '/'],
+          },
+        ],
+      },
+    }));
+  });
+
   app.get('/ios-checkout', async (req: any, res) => {
     const tokenId = req.query.token as string;
     if (!tokenId) return res.status(400).send(iosErrHtml("Nevažeći link. Vrati se u aplikaciju i pokušaj ponovo."));
