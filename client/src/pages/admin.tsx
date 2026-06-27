@@ -729,8 +729,7 @@ export default function Admin() {
 
   const toggleSpotMutation = useMutation({
     mutationFn: async (spotId: string) => {
-      const res = await apiRequest("PATCH", `/api/admin/parking-spots/${spotId}/toggle-active`);
-      return res.json();
+      return await apiRequest("PATCH", `/api/admin/parking-spots/${spotId}/toggle-active`);
     },
     onSuccess: (data: ParkingSpot) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/parking-spots"] });
@@ -763,8 +762,7 @@ export default function Admin() {
 
   const toggleListingMutation = useMutation({
     mutationFn: async (listingId: string) => {
-      const res = await apiRequest("PATCH", `/api/admin/sales-listings/${listingId}/toggle-active`);
-      return res.json();
+      return await apiRequest("PATCH", `/api/admin/sales-listings/${listingId}/toggle-active`);
     },
     onSuccess: (data: SalesListing) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/sales-listings"] });
