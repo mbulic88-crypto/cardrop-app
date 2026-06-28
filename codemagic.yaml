@@ -154,8 +154,8 @@ workflows:
           existing = app_group.files.find { |f| f.path&.end_with?('PrivacyInfo.xcprivacy') }
           unless existing
             file_ref = app_group.new_file('PrivacyInfo.xcprivacy')
-            target.add_file_references([file_ref])
-            puts "PrivacyInfo.xcprivacy added to Xcode project"
+            target.resources_build_phase.add_file_reference(file_ref)
+            puts "PrivacyInfo.xcprivacy added to Copy Bundle Resources"
           else
             puts "PrivacyInfo.xcprivacy already in project"
           end
