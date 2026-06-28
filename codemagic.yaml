@@ -186,6 +186,8 @@ workflows:
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           echo "Novi build broj: $BUILD_NUMBER"
+          # Sacuvaj broj za korak 14 (koji nema pristup ovim varijablama)
+          echo $BUILD_NUMBER > /tmp/cardrop_build_number.txt
           # Metod 1: agvtool
           agvtool new-version -all $BUILD_NUMBER 2>&1 || echo "agvtool nije uspeo, prelazim na direktno editovanje"
           agvtool new-marketing-version 1.0 2>&1 || true
@@ -197,11 +199,19 @@ workflows:
 
       - name: 14. Kompajliraj i potpisi IPA
         script: |
-          # Capacitor v8 koristi SPM — gradimo iz .xcodeproj direktno
+          # Citaj build broj koji je sacuvan u koraku 13
+          BUILD_NUMBER=$(cat /tmp/cardrop_build_number.txt 2>/dev/null | tr -d '[:space:]')
+          if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
+            echo "UPOZORENJE: build broj nije procitan, koristim fallback 100"
+            BUILD_NUMBER=100
+          fi
+          echo "Kompajliram sa CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
+          # --xcarg prenosi build setting direktno xcodebuild-u (najveci prioritet!)
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme "$XCODE_SCHEME" \
-            --config "Release"
+            --config "Release" \
+            --xcarg "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
 
     artifacts:
       - build/ios/ipa/*.ipa
