@@ -192,6 +192,21 @@ workflows:
           # Backup: azuriraj i CURRENT_PROJECT_VERSION u project fajlu
           sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
 
+      - name: 13b. Dijagnostika - pun xcodebuild log
+        script: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -archivePath /tmp/diagnostic.xcarchive \
+            archive \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            DEVELOPMENT_TEAM=KW2V6BWBZX \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE=Manual \
+            2>&1 | tail -150
+        ignore_failure: true
+
       - name: 14. Kompajliraj i potpisi IPA
         script: |
           # Capacitor v8 koristi SPM — gradimo iz .xcodeproj direktno
