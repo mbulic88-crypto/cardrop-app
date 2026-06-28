@@ -174,44 +174,31 @@ workflows:
       - name: 13. Postavi build number (automatski uvecava)
         script: |
           cd ios/App
-          # Izvuci SAMO cifre iz outputa (sprjecava problem sa viserednim tekstom)
           RAW=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || true)
           LATEST_BUILD=$(echo "$RAW" | grep -oE '[0-9]+' | tail -1)
-          echo "Raw output from app-store-connect: '$RAW'"
-          echo "Extracted latest build: '$LATEST_BUILD'"
-          # Ako nije validan broj, postavi na 9 (BUILD_NUMBER = 10, sigurno > 1)
+          echo "App Store Connect odgovor: '$RAW' -> broj: '$LATEST_BUILD'"
           if ! echo "$LATEST_BUILD" | grep -qE '^[0-9]+$'; then
-            echo "UPOZORENJE: neispravan broj, koristim fallback 9"
+            echo "Fallback: LATEST_BUILD=9"
             LATEST_BUILD=9
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
-          echo "Novi build broj: $BUILD_NUMBER"
-          # Sacuvaj broj za korak 14 (koji nema pristup ovim varijablama)
+          echo "BUILD_NUMBER = $BUILD_NUMBER"
           echo $BUILD_NUMBER > /tmp/cardrop_build_number.txt
-          # Metod 1: agvtool
-          agvtool new-version -all $BUILD_NUMBER 2>&1 || echo "agvtool nije uspeo, prelazim na direktno editovanje"
-          agvtool new-marketing-version 1.0 2>&1 || true
-          # Metod 2: Direktno sed u project.pbxproj (siguran fallback)
+          # KLJUCNO: PlistBuddy direktno upisuje LITERAL broj u Info.plist
+          # Xcode nece raditi substituciju varijable jer vidi plain string, ne $(...)
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/Info.plist
+          VERIFY=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist)
+          echo "Info.plist CFBundleVersion je sada: '$VERIFY'"
+          # Backup: azuriraj i CURRENT_PROJECT_VERSION u project fajlu
           sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
-          # Verifikacija
-          echo "=== Verifikacija CURRENT_PROJECT_VERSION ==="
-          grep "CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | head -2
 
       - name: 14. Kompajliraj i potpisi IPA
         script: |
-          # Citaj build broj koji je sacuvan u koraku 13
-          BUILD_NUMBER=$(cat /tmp/cardrop_build_number.txt 2>/dev/null | tr -d '[:space:]')
-          if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
-            echo "UPOZORENJE: build broj nije procitan, koristim fallback 100"
-            BUILD_NUMBER=100
-          fi
-          echo "Kompajliram sa CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
-          # --xcarg prenosi build setting direktno xcodebuild-u (najveci prioritet!)
+          # Capacitor v8 koristi SPM — gradimo iz .xcodeproj direktno
           xcode-project build-ipa \
             --project ios/App/App.xcodeproj \
             --scheme "$XCODE_SCHEME" \
-            --config "Release" \
-            --xcarg "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
+            --config "Release"
 
     artifacts:
       - build/ios/ipa/*.ipa
