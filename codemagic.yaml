@@ -174,11 +174,26 @@ workflows:
       - name: 13. Postavi build number (automatski uvecava)
         script: |
           cd ios/App
-          LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "1")
+          # Izvuci SAMO cifre iz outputa (sprjecava problem sa viserednim tekstom)
+          RAW=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || true)
+          LATEST_BUILD=$(echo "$RAW" | grep -oE '[0-9]+' | tail -1)
+          echo "Raw output from app-store-connect: '$RAW'"
+          echo "Extracted latest build: '$LATEST_BUILD'"
+          # Ako nije validan broj, postavi na 9 (BUILD_NUMBER = 10, sigurno > 1)
+          if ! echo "$LATEST_BUILD" | grep -qE '^[0-9]+$'; then
+            echo "UPOZORENJE: neispravan broj, koristim fallback 9"
+            LATEST_BUILD=9
+          fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
-          agvtool new-version -all $BUILD_NUMBER
-          agvtool new-marketing-version 1.0.$BUILD_NUMBER
-          echo "Build number set to: $BUILD_NUMBER"
+          echo "Novi build broj: $BUILD_NUMBER"
+          # Metod 1: agvtool
+          agvtool new-version -all $BUILD_NUMBER 2>&1 || echo "agvtool nije uspeo, prelazim na direktno editovanje"
+          agvtool new-marketing-version 1.0 2>&1 || true
+          # Metod 2: Direktno sed u project.pbxproj (siguran fallback)
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*/CURRENT_PROJECT_VERSION = $BUILD_NUMBER/g" App.xcodeproj/project.pbxproj
+          # Verifikacija
+          echo "=== Verifikacija CURRENT_PROJECT_VERSION ==="
+          grep "CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | head -2
 
       - name: 14. Kompajliraj i potpisi IPA
         script: |
