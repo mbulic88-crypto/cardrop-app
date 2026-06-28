@@ -174,7 +174,7 @@ workflows:
       - name: 13. Postavi build number (automatski uvecava)
         script: |
           cd ios/App
-          LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "0")
+          LATEST_BUILD=$(app-store-connect get-latest-build-number "$BUNDLE_ID" 2>/dev/null || echo "1")
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 1.0.$BUILD_NUMBER

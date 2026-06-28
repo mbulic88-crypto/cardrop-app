@@ -1,0 +1,63 @@
+Click on the build steps for details.
+Preparing build machine
+25s
+Fetching app sources
+4s
+Restoring cache
+8s
+1. Otkljucaj macOS keychain (privremeni)
+< 1s
+2. Preuzmi Distribution Certificate i Provisioning Profile
+1s
+
+
+
+Show command
+Found 1 Bundle ID matching specified filters: identifier=rs.cardrop.app, platform=IOS.
+- Cardrop iOS App rs.cardrop.app (84M58BSH2W)
+
+Found 3 Signing Certificates matching specified filters: certificateType=DISTRIBUTION,IOS_DISTRIBUTION.
+Did not find any Signing Certificates for given private key
+Creating new Signing Certificate: certificate type: DISTRIBUTION
+POST https://api.appstoreconnect.apple.com/v1/certificates returned 409: There is a problem with the request entity - You already have a current Distribution certificate or a pending certificate request.
+
+
+Build failed :|
+Step 4 script `2. Preuzmi Distribution Certificate i Provisioning Profile` exited with status code 1
+Found 1 Bundle ID matching specified filters: identifier=rs.cardrop.app, platform=IOS.
+- Cardrop iOS App rs.cardrop.app (84M58BSH2W)
+
+Found 3 Signing Certificates matching specified filters: certificateType=DISTRIBUTION,IOS_DISTRIBUTION.
+Did not find any Signing Certificates for given private key
+Creating new Signing Certificate: certificate type: DISTRIBUTION
+POST https://api.appstoreconnect.apple.com/v1/certificates returned 409: There is a problem with the request entity - You already have a current Distribution certificate or a pending certificate request.
+
+
+Build failed :|
+Step 4 script `2. Preuzmi Distribution Certificate i Provisioning Profile` exited with status code 1
+
+3. Dodaj certifikate u keychain
+< 1s
+4. Instaliraj alate za ikone
+< 1s
+5. Pripremi web placeholder
+< 1s
+6. Kreiraj fajlove koje Xcode ocekuje (zamena za cap sync)
+< 1s
+8. Generisi splash screen sliku
+< 1s
+9. Generisi iOS ikone u svim velicinama
+< 1s
+10. Dodaj Privacy Manifest i integriraj u Xcode projekat
+< 1s
+12. Postavi code signing u Xcode projektu
+< 1s
+13. Postavi build number (automatski uvecava)
+< 1s
+14. Kompajliraj i potpisi IPA
+< 1s
+Publishing
+< 1s
+Cleaning up
+< 1s
+Step 4 script `2. Preuzmi Distribution Certificate i Provisioning Profile` exited with status code 1
